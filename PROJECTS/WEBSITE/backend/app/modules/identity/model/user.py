@@ -12,6 +12,8 @@ class UserRead(BaseModel):
     display_name: str
     role: UserRole
     plan_tier: PlanTier
+    mission_credits: int = 0
+    premium_unlock_until: datetime | None = None
     created_at: datetime
 
     model_config = {"from_attributes": True}

@@ -1,4 +1,5 @@
 from app.infrastructure.db.models import PlanTier, User, UserRole
+from datetime import datetime, timezone
 
 _TIER_RANK: dict[PlanTier, int] = {
     PlanTier.free: 0,
@@ -21,6 +22,14 @@ def can_view_premium_content(user: User | None) -> bool:
         return False
     if is_staff(user):
         return True
+    if user.premium_unlock_until:
+        unlock_until = user.premium_unlock_until
+        if unlock_until.tzinfo is None:
+            unlock_until = unlock_until.replace(tzinfo=timezone.utc)
+        else:
+            unlock_until = unlock_until.astimezone(timezone.utc)
+        if unlock_until > datetime.now(timezone.utc):
+            return True
     return tier_rank(user.plan_tier) >= tier_rank(PlanTier.starter)
 
 

@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import uuid
 from typing import Any
 from uuid import UUID
 
@@ -24,6 +25,8 @@ def create_access_token(*, subject_user_id: UUID, extra_claims: dict[str, Any] |
     to_encode: dict[str, Any] = {
         "sub": str(subject_user_id),
         "exp": expire,
+        "typ": "access",
+        "jti": uuid.uuid4().hex,
     }
     if extra_claims:
         to_encode.update(extra_claims)
@@ -38,6 +41,9 @@ def decode_token(token: str) -> dict[str, Any]:
 def parse_user_id_from_token(token: str) -> UUID:
     try:
         payload = decode_token(token)
+        token_type = payload.get("typ")
+        if token_type not in (None, "access"):
+            raise JWTError("unexpected token type")
         sub = payload.get("sub")
         if not sub:
             raise JWTError("missing sub")

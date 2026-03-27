@@ -4,12 +4,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useI18n } from "@/components/i18n/LanguageProvider";
 import { ApiRequestError } from "@/lib/api";
 import { setToken } from "@/lib/auth";
-import { loginRequest } from "@/lib/client-api";
+import { fetchOnboardingProfile, loginRequest } from "@/lib/client-api";
 
 export function LoginForm() {
   const router = useRouter();
+  const { refreshAuth } = useAuth();
+  const { t } = useI18n();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -23,10 +27,16 @@ export function LoginForm() {
     try {
       const token = await loginRequest(email, password);
       setToken(token.access_token);
-      router.push("/dashboard");
+      await refreshAuth().catch(() => null);
+      try {
+        const onboarding = await fetchOnboardingProfile();
+        router.push(onboarding.needs_onboarding ? "/onboarding" : "/dashboard");
+      } catch {
+        router.push("/dashboard");
+      }
       router.refresh();
     } catch (err) {
-      setError(err instanceof ApiRequestError ? err.message : "Failed to log in");
+      setError(err instanceof ApiRequestError ? err.message : t("login.failed"));
     } finally {
       setPending(false);
     }
@@ -41,7 +51,7 @@ export function LoginForm() {
       ) : null}
       <div className="space-y-1">
         <label htmlFor="email" className="text-xs font-medium text-zinc-700">
-          Email
+          {t("login.emailLabel")}
         </label>
         <input
           id="email"
@@ -50,12 +60,12 @@ export function LoginForm() {
           required
           autoComplete="email"
           className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none ring-zinc-900 focus:ring-2"
-          placeholder="you@example.com"
+          placeholder={t("login.emailPlaceholder")}
         />
       </div>
       <div className="space-y-1">
         <label htmlFor="password" className="text-xs font-medium text-zinc-700">
-          Password
+          {t("login.passwordLabel")}
         </label>
         <input
           id="password"
@@ -65,7 +75,7 @@ export function LoginForm() {
           autoComplete="current-password"
           minLength={8}
           className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none ring-zinc-900 focus:ring-2"
-          placeholder="••••••••"
+          placeholder={t("login.passwordPlaceholder")}
         />
       </div>
       <button
@@ -73,12 +83,12 @@ export function LoginForm() {
         disabled={pending}
         className="w-full rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-60"
       >
-        {pending ? "Signing in…" : "Continue"}
+        {pending ? t("login.submitPending") : t("login.submitIdle")}
       </button>
       <p className="text-center text-sm text-zinc-600">
-        No account?{" "}
+        {t("login.noAccountPrefix")}{" "}
         <Link href="/signup" className="font-medium text-zinc-900 underline">
-          Sign up
+          {t("login.noAccountLink")}
         </Link>
       </p>
     </form>

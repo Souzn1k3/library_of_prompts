@@ -21,3 +21,7 @@ class LessonListItem(BaseModel):
 class LessonRead(LessonListItem):
     body: str = Field(min_length=1)
     body_locked: bool = False
+
+
+class PopularLessonItem(LessonListItem):
+    completion_count: int = 0

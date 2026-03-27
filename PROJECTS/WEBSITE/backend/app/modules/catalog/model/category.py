@@ -17,7 +17,7 @@ class CategoryBase(BaseModel):
     def slug_format(cls, v: str) -> str:
         s = v.strip().lower()
         if not _SLUG_RE.match(s):
-            raise ValueError("slug must be lowercase kebab-case")
+            raise ValueError("Use only lowercase letters, numbers, and hyphens.")
         return s
 
 
@@ -41,7 +41,7 @@ class CategoryUpdate(BaseModel):
             return None
         s = v.strip().lower()
         if not _SLUG_RE.match(s):
-            raise ValueError("slug must be lowercase kebab-case")
+            raise ValueError("Use only lowercase letters, numbers, and hyphens.")
         return s
 
 

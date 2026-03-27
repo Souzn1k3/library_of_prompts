@@ -1,34 +1,38 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
+import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/LanguageProvider";
-import { getToken, setToken } from "@/lib/auth";
 
 export function HeaderNav() {
-  const [authed, setAuthed] = useState(false);
+  const router = useRouter();
+  const { status, logout } = useAuth();
   const { t } = useI18n();
 
-  useEffect(() => {
-    setAuthed(Boolean(getToken()));
-  }, []);
-
-  function logout() {
-    setToken(null);
-    setAuthed(false);
-    window.location.href = "/";
+  async function handleLogout() {
+    await logout();
+    router.push("/");
+    router.refresh();
   }
 
-  if (authed) {
+  if (status === "loading") {
+    return <span className="hidden min-w-24 sm:inline-block" aria-hidden />;
+  }
+
+  if (status === "authenticated") {
     return (
       <>
+        <Link href="/missions" className="transition hover:text-zinc-900">
+          {t("nav.missions")}
+        </Link>
         <Link href="/dashboard" className="transition hover:text-zinc-900">
           {t("nav.dashboard")}
         </Link>
         <button
           type="button"
-          onClick={logout}
+          onClick={handleLogout}
           className="text-sm text-zinc-600 transition hover:text-zinc-900"
         >
           {t("nav.logout")}

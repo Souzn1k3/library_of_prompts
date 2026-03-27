@@ -15,8 +15,10 @@ dependencies = [
   "structlog>=24.4.0",
   "python-jose[cryptography]>=3.3.0",
   "passlib[bcrypt]>=1.7.4",
-  "bcrypt>=4.0.0,<5",
+  "bcrypt>=4.0.0,<4.1",
   "email-validator>=2.2.0",
+  "stripe>=10.10.0",
+  "redis>=5.2.0",
 ]
 
 [project.optional-dependencies]
@@ -28,7 +30,10 @@ dev = [
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-asyncio_default_fixture_loop_scope = "function"
+# Shared loop for asyncpg + SQLAlchemy engine imported at module scope (avoids closed-loop errors on Windows).
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+norecursedirs = [".venv", "node_modules", "__pycache__", "pytest-cache-files-*"]
 
 [build-system]
 requires = ["setuptools>=61"]

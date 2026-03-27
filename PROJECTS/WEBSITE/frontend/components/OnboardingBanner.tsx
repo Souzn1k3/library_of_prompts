@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 
 const STORAGE_KEY = "pv_onboarding_dismissed_v1";
 
 export function OnboardingBanner() {
   const [visible, setVisible] = useState(false);
+  const { status } = useAuth();
   const { t } = useI18n();
 
   useEffect(() => {
@@ -28,7 +30,7 @@ export function OnboardingBanner() {
     setVisible(false);
   }
 
-  if (!visible) {
+  if (!visible || status !== "unauthenticated") {
     return null;
   }
 

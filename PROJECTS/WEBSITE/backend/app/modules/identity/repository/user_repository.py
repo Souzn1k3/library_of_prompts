@@ -26,7 +26,10 @@ class UserRepository:
             await self._session.flush()
             await self._session.refresh(user)
         except IntegrityError as e:
-            raise ConflictError("Email already registered") from e
+            raise ConflictError(
+                "Email already registered",
+                message_key="errors.email_already_registered",
+            ) from e
         return user
 
     async def save(self, user: User) -> User:

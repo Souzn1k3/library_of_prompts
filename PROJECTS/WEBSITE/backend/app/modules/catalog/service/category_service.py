@@ -82,7 +82,10 @@ class CategoryService:
         try:
             created = await self._repo.create(row)
         except IntegrityError as e:
-            raise ConflictError("Could not create category (slug or parent conflict)") from e
+            raise ConflictError(
+                "We couldn't create this category. Check the name and parent category.",
+                message_key="errors.category_create_conflict",
+            ) from e
         return _to_read(created)
 
     async def update(self, category_id: uuid.UUID, data: CategoryUpdate) -> CategoryRead:
@@ -96,6 +99,7 @@ class CategoryService:
                     code="invalid_parent",
                     message="Category cannot be its own parent",
                     status_code=400,
+                    message_key="errors.category_self_parent",
                 )
             if pid is not None:
                 await self._repo.get_by_id_or_raise(pid)
@@ -113,7 +117,10 @@ class CategoryService:
         try:
             updated = await self._repo.update(row)
         except IntegrityError as e:
-            raise ConflictError("Could not update category (slug or parent conflict)") from e
+            raise ConflictError(
+                "We couldn't update this category. Check the name and parent category.",
+                message_key="errors.category_update_conflict",
+            ) from e
         return _to_read(updated)
 
     async def delete(self, category_id: uuid.UUID) -> None:
@@ -123,11 +130,13 @@ class CategoryService:
                 code="category_has_children",
                 message="Remove or move child categories first",
                 status_code=400,
+                message_key="errors.category_has_children",
             )
         if await self._repo.count_prompts(category_id) > 0:
             raise AppError(
                 code="category_has_prompts",
                 message="Reassign prompts before deleting this category",
                 status_code=400,
+                message_key="errors.category_has_prompts",
             )
         await self._repo.delete(row)

@@ -22,6 +22,8 @@ class SavedPromptRepositoryProtocol(Protocol):
 class PromptRepositoryProtocol(Protocol):
     async def get_by_id(self, prompt_id: uuid.UUID) -> Prompt | None: ...
 
+    async def adjust_save_count(self, prompt_id: uuid.UUID, delta: int) -> None: ...
+
 
 def _to_list_item(row: Prompt) -> PromptListItem:
     return PromptListItem.model_validate(row)
@@ -47,9 +49,14 @@ class SavedPromptService:
         try:
             await self._saved.add(user_id, prompt_id)
         except IntegrityError as e:
-            raise ConflictError("Prompt already saved") from e
+            raise ConflictError(
+                "Prompt already saved",
+                message_key="errors.prompt_already_saved",
+            ) from e
+        await self._prompts.adjust_save_count(prompt_id, 1)
 
     async def unsave(self, user_id: uuid.UUID, prompt_id: uuid.UUID) -> None:
         removed = await self._saved.remove(user_id, prompt_id)
         if not removed:
             raise NotFoundError("saved_prompt", str(prompt_id))
+        await self._prompts.adjust_save_count(prompt_id, -1)
