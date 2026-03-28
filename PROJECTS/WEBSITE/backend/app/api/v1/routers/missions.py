@@ -8,6 +8,7 @@ from app.infrastructure.db.session import get_db
 from app.modules.analytics.repository.analytics_repository import AnalyticsRepository
 from app.modules.analytics.service.analytics_service import AnalyticsService
 from app.modules.catalog.repository.prompt_repository import PromptRepository
+from app.modules.economy.repository.wallet_repository import WalletRepository
 from app.modules.missions.model.mission import MissionCurrentRead, MissionListRead, MissionRead
 from app.modules.missions.repository.mission_repository import MissionRepository
 from app.modules.missions.service.mission_service import MissionService
@@ -21,6 +22,7 @@ def mission_service(session: AsyncSession = Depends(get_db)) -> MissionService:
         MissionRepository(session),
         OnboardingRepository(session),
         PromptRepository(session),
+        wallet_repo=WalletRepository(session),
         analytics=AnalyticsService(AnalyticsRepository(session)),
     )
 

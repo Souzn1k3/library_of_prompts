@@ -11,16 +11,21 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="mx-auto max-w-md space-y-8">
+    <div className="mx-auto max-w-xl space-y-6">
       <div className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+        <p className="pv-kicker">
+          <T k="login.pageTitle" />
+        </p>
+        <h1 className="pv-title text-zinc-900">
           <T k="login.pageTitle" />
         </h1>
         <p className="text-sm text-zinc-600">
           <T k="login.pageSubtitle" />
         </p>
       </div>
-      <LoginForm />
+      <div className="pv-panel px-5 py-5 sm:px-6">
+        <LoginForm />
+      </div>
     </div>
   );
 }

@@ -13,6 +13,7 @@ from app.infrastructure.db.models import (
     PromptOutputType,
     PromptStatus,
     PromptTechnique,
+    StoreItemKind,
 )
 
 
@@ -52,9 +53,18 @@ class PromptListItem(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class StoreUnlockOffer(BaseModel):
+    item_slug: str
+    item_title: str
+    price: int
+    currency: str = "LMN"
+    kind: StoreItemKind
+
+
 class PromptRead(PromptListItem):
     body: str = Field(min_length=1)
     body_locked: bool = False
+    unlock_offer: StoreUnlockOffer | None = None
 
 
 class PromptDiscoveryFilters(BaseModel):

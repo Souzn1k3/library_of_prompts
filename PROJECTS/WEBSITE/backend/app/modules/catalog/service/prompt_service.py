@@ -21,7 +21,9 @@ from app.modules.catalog.model.prompt import (
     PromptListItem,
     PromptRead,
     PromptSort,
+    StoreUnlockOffer,
 )
+from app.modules.economy.repository.store_repository import StoreRepository
 
 
 class PromptRepositoryProtocol(Protocol):
@@ -127,22 +129,55 @@ def _to_list_item(row: Prompt) -> PromptListItem:
     )
 
 
-def _apply_read_gating(row: Prompt, viewer: User | None) -> PromptRead:
+def _apply_read_gating(
+    row: Prompt,
+    *,
+    viewer: User | None,
+    locked: bool,
+    unlock_offer: StoreUnlockOffer | None = None,
+) -> PromptRead:
     if row.category and row.category.is_restricted and not can_view_restricted_category(viewer):
         raise NotFoundError("prompt", row.slug)
 
-    locked = bool(row.is_premium) and not can_view_premium_content(viewer)
     body = mask_body_if_needed(body=row.body, locked=locked)
     base = _to_list_item(row)
-    return PromptRead(**base.model_dump(), body=body, body_locked=locked)
+    return PromptRead(**base.model_dump(), body=body, body_locked=locked, unlock_offer=unlock_offer)
 
 
 class PromptService:
-    def __init__(self, repo: PromptRepositoryProtocol) -> None:
+    def __init__(self, repo: PromptRepositoryProtocol, store_repo: StoreRepository | None = None) -> None:
         self._repo = repo
+        self._store_repo = store_repo
 
     def _restrict_catalog(self, viewer: User | None) -> bool:
         return not can_view_restricted_category(viewer)
+
+    async def _resolve_unlock_offer(
+        self,
+        row: Prompt,
+        viewer: User | None,
+    ) -> tuple[bool, StoreUnlockOffer | None]:
+        locked = bool(row.is_premium) and not can_view_premium_content(viewer)
+        if not locked or viewer is None or self._store_repo is None:
+            return locked, None
+
+        has_personal_access = await self._store_repo.user_has_prompt_access(user_id=viewer.id, prompt_id=row.id)
+        if has_personal_access:
+            return False, None
+
+        item = await self._store_repo.find_active_unlock_offer_for_prompt(row.id)
+        if item is None:
+            return True, None
+
+        return (
+            True,
+            StoreUnlockOffer(
+                item_slug=item.slug,
+                item_title=item.title,
+                price=item.price,
+                kind=item.kind,
+            ),
+        )
 
     async def list_published(
         self,
@@ -213,7 +248,8 @@ class PromptService:
         row = await self._repo.get_by_slug(slug)
         if row is None or row.status != PromptStatus.published:
             raise NotFoundError("prompt", slug)
-        read = _apply_read_gating(row, viewer)
+        locked, unlock_offer = await self._resolve_unlock_offer(row, viewer)
+        read = _apply_read_gating(row, viewer=viewer, locked=locked, unlock_offer=unlock_offer)
         await self._repo.increment_view_count(row.id)
         return read
 
@@ -221,7 +257,8 @@ class PromptService:
         row = await self._repo.get_by_id(prompt_id)
         if row is None or row.status != PromptStatus.published:
             raise NotFoundError("prompt", str(prompt_id))
-        read = _apply_read_gating(row, viewer)
+        locked, unlock_offer = await self._resolve_unlock_offer(row, viewer)
+        read = _apply_read_gating(row, viewer=viewer, locked=locked, unlock_offer=unlock_offer)
         await self._repo.increment_view_count(row.id)
         return read
 

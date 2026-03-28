@@ -35,8 +35,8 @@ export function OnboardingBanner() {
   }
 
   return (
-    <div className="border-b border-zinc-200 bg-zinc-50">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 px-4 py-3 text-sm text-zinc-800 sm:flex-row sm:items-center sm:justify-between">
+    <div className="px-4 pt-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-3 rounded-[1.5rem] border border-[var(--pv-border)] bg-white/75 px-4 py-3 text-sm text-zinc-800 shadow-[0_16px_36px_rgba(15,23,42,0.06)] sm:flex-row sm:items-center sm:justify-between">
         <p className="leading-relaxed">
           <span className="font-medium text-zinc-900">{t("onboarding.welcome")}</span>{" "}
           {t("onboarding.prefix")}{" "}
@@ -56,7 +56,7 @@ export function OnboardingBanner() {
         <button
           type="button"
           onClick={dismiss}
-          className="shrink-0 rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-900 transition hover:border-zinc-400"
+          className="shrink-0 rounded-full border border-[var(--pv-border)] bg-white px-3 py-1.5 text-xs font-semibold text-zinc-900 transition hover:border-[var(--pv-border-strong)]"
         >
           {t("onboarding.dismiss")}
         </button>

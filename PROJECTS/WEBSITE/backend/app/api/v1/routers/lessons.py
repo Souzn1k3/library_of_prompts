@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +14,7 @@ from app.modules.analytics.service.analytics_service import AnalyticsService
 from app.modules.education.model.lesson import LessonListItem, LessonRead, PopularLessonItem
 from app.modules.education.repository.lesson_repository import LessonRepository
 from app.modules.education.service.lesson_service import LessonService
+from app.modules.economy.repository.wallet_repository import WalletRepository
 from app.modules.missions.repository.mission_repository import MissionRepository
 from app.modules.missions.service.mission_service import MissionService
 from app.modules.onboarding.repository.onboarding_repository import OnboardingRepository
@@ -36,6 +39,7 @@ def mission_service(session: AsyncSession = Depends(get_db)) -> MissionService:
         MissionRepository(session),
         OnboardingRepository(session),
         PromptRepository(session),
+        wallet_repo=WalletRepository(session),
         analytics=AnalyticsService(AnalyticsRepository(session)),
     )
 
@@ -103,11 +107,19 @@ async def complete_lesson(
             message="Upgrade your plan to open this lesson.",
             status_code=403,
         )
+    today_key = datetime.now(timezone.utc).date().isoformat()
     await missions.record_event(
         user=current_user,
         event_type="lesson_completed",
         lesson_id=lesson.id,
         source_event_key=f"lesson_completed:{current_user.id}:{lesson.id}",
+    )
+    await missions.record_event(
+        user=current_user,
+        event_type="streak_activity",
+        lesson_id=lesson.id,
+        source_event_key=f"streak_activity:{current_user.id}:{today_key}",
+        payload={"source": "lesson_completed"},
     )
     await get_cache().bump_many(("lessons", "recommendations"))
     return Response(status_code=status.HTTP_204_NO_CONTENT)

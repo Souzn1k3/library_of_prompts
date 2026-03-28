@@ -6,6 +6,8 @@ from app.api.v1.routers import (
     auth,
     billing,
     categories,
+    store,
+    wallet,
     contributors,
     contributions,
     health,
@@ -24,6 +26,8 @@ api_router.include_router(analytics.router)
 api_router.include_router(billing.router)
 api_router.include_router(admin.router)
 api_router.include_router(categories.router)
+api_router.include_router(store.router)
+api_router.include_router(wallet.router)
 api_router.include_router(contributors.router)
 api_router.include_router(prompts.router)
 api_router.include_router(lessons.router)

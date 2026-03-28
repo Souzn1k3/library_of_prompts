@@ -11,6 +11,9 @@ import type {
   MissionCurrentRead,
   MissionListRead,
   MissionRead,
+  WalletRead,
+  StoreItem,
+  PurchaseResult,
   OnboardingGoal,
   OnboardingProfile,
   OnboardingRole,
@@ -303,6 +306,28 @@ export async function fetchMissions(): Promise<MissionListRead> {
 
 export async function fetchMissionBySlug(slug: string): Promise<MissionRead> {
   return authFetch<MissionRead>(`/api/v1/missions/${encodeURIComponent(slug)}`);
+}
+
+export async function fetchWallet(): Promise<WalletRead> {
+  return authFetch<WalletRead>("/api/v1/wallet");
+}
+
+export async function walletCheckIn(): Promise<WalletRead> {
+  return authFetch<WalletRead>("/api/v1/wallet/check-in", {
+    method: "POST",
+  });
+}
+
+export async function fetchStoreItems(): Promise<StoreItem[]> {
+  return authFetch<StoreItem[]>("/api/v1/store");
+}
+
+export async function purchaseStoreItem(slug: string, clientToken?: string): Promise<PurchaseResult> {
+  return authFetch<PurchaseResult>(`/api/v1/store/${encodeURIComponent(slug)}/purchase`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ client_token: clientToken ?? null }),
+  });
 }
 
 export async function completeLesson(slug: string): Promise<void> {

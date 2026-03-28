@@ -3,9 +3,12 @@ import { T } from "@/components/i18n/T";
 
 export default function SubmitPage() {
   return (
-    <div className="mx-auto max-w-xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+        <p className="pv-kicker">
+          <T k="submit.pageTitle" />
+        </p>
+        <h1 className="pv-title text-zinc-900">
           <T k="submit.pageTitle" />
         </h1>
         <p className="text-sm text-zinc-600">

@@ -9,13 +9,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.infrastructure.db.models import (
+    CurrencyTransactionType,
     LessonMission,
     LessonMissionPrompt,
+    MissionStep,
     MissionCompletionEvent,
+    MissionProgressStatus,
     MissionRewardType,
     SavedPrompt,
     User,
     UserMissionProgress,
+    UserMissionStepProgress,
     UserMissionRewardGrant,
 )
 
@@ -38,6 +42,10 @@ class MissionRepository:
             .options(
                 selectinload(LessonMission.lesson),
                 selectinload(LessonMission.prompt_links).selectinload(LessonMissionPrompt.prompt),
+                selectinload(LessonMission.steps)
+                .selectinload(MissionStep.target_prompt),
+                selectinload(LessonMission.steps)
+                .selectinload(MissionStep.target_lesson),
             )
             .order_by(LessonMission.sort_order.asc(), LessonMission.created_at.asc())
         )
@@ -51,6 +59,10 @@ class MissionRepository:
             .options(
                 selectinload(LessonMission.lesson),
                 selectinload(LessonMission.prompt_links).selectinload(LessonMissionPrompt.prompt),
+                selectinload(LessonMission.steps)
+                .selectinload(MissionStep.target_prompt),
+                selectinload(LessonMission.steps)
+                .selectinload(MissionStep.target_lesson),
             )
         )
         result = await self._session.execute(stmt)
@@ -58,6 +70,11 @@ class MissionRepository:
 
     async def list_user_progress(self, user_id: uuid.UUID) -> list[UserMissionProgress]:
         stmt = select(UserMissionProgress).where(UserMissionProgress.user_id == user_id)
+        result = await self._session.execute(stmt)
+        return result.scalars().all()
+
+    async def list_user_step_progress(self, user_id: uuid.UUID) -> list[UserMissionStepProgress]:
+        stmt = select(UserMissionStepProgress).where(UserMissionStepProgress.user_id == user_id)
         result = await self._session.execute(stmt)
         return result.scalars().all()
 
@@ -75,10 +92,43 @@ class MissionRepository:
         await self._session.refresh(progress)
         return progress
 
+    async def create_step_progress(self, progress: UserMissionStepProgress) -> UserMissionStepProgress:
+        self._session.add(progress)
+        await self._session.flush()
+        await self._session.refresh(progress)
+        return progress
+
     async def save_progress(self, progress: UserMissionProgress) -> UserMissionProgress:
         await self._session.flush()
         await self._session.refresh(progress)
         return progress
+
+    async def save_step_progress(self, progress: UserMissionStepProgress) -> UserMissionStepProgress:
+        await self._session.flush()
+        await self._session.refresh(progress)
+        return progress
+
+    async def reset_progress_cycle(
+        self,
+        *,
+        progress: UserMissionProgress,
+        step_progress_rows: list[UserMissionStepProgress],
+    ) -> None:
+        progress.status = MissionProgressStatus.not_started
+        progress.progress_count = 0
+        progress.started_at = None
+        progress.last_event_at = None
+        progress.completed_at = None
+        progress.reward_granted_at = None
+
+        for row in step_progress_rows:
+            row.status = MissionProgressStatus.not_started
+            row.progress_count = 0
+            row.started_at = None
+            row.last_event_at = None
+            row.completed_at = None
+
+        await self._session.flush()
 
     async def add_completion_event(
         self,
@@ -86,6 +136,7 @@ class MissionRepository:
         progress_id: uuid.UUID,
         user_id: uuid.UUID,
         mission_id: uuid.UUID,
+        mission_step_id: uuid.UUID | None,
         event_type: str,
         source_event_key: str,
         prompt_id: uuid.UUID | None,
@@ -99,6 +150,7 @@ class MissionRepository:
                 progress_id=progress_id,
                 user_id=user_id,
                 mission_id=mission_id,
+                mission_step_id=mission_step_id,
                 event_type=event_type,
                 source_event_key=source_event_key,
                 prompt_id=prompt_id,
@@ -147,6 +199,7 @@ class MissionRepository:
         user_id: uuid.UUID,
         mission_id: uuid.UUID,
         reward_type: MissionRewardType,
+        reward_cycle: int,
         badge_code: str | None,
         credits: int,
         premium_access_until: datetime | None,
@@ -158,13 +211,14 @@ class MissionRepository:
                 user_id=user_id,
                 mission_id=mission_id,
                 reward_type=reward_type,
+                reward_cycle=reward_cycle,
                 badge_code=badge_code,
                 credits=credits,
                 premium_access_until=premium_access_until,
                 created_at=created_at,
             )
             .on_conflict_do_nothing(
-                index_elements=["user_id", "mission_id", "reward_type"],
+                index_elements=["user_id", "mission_id", "reward_type", "reward_cycle"],
             )
         )
         if not self._is_sqlite():
@@ -180,7 +234,9 @@ class MissionRepository:
         *,
         user_id: uuid.UUID,
         mission: LessonMission,
+        reward_cycle: int,
         now: datetime,
+        wallet_repo=None,
     ) -> datetime | None:
         granted_any = False
 
@@ -190,6 +246,7 @@ class MissionRepository:
                     user_id=user_id,
                     mission_id=mission.id,
                     reward_type=MissionRewardType.badge,
+                    reward_cycle=1,
                     badge_code=mission.reward_badge,
                     credits=0,
                     premium_access_until=None,
@@ -203,6 +260,7 @@ class MissionRepository:
                 user_id=user_id,
                 mission_id=mission.id,
                 reward_type=MissionRewardType.credits,
+                reward_cycle=reward_cycle,
                 badge_code=None,
                 credits=mission.reward_credits,
                 premium_access_until=None,
@@ -210,11 +268,22 @@ class MissionRepository:
             )
             if credit_granted:
                 granted_any = True
-                await self._session.execute(
-                    update(User)
-                    .where(User.id == user_id)
-                    .values(mission_credits=User.mission_credits + mission.reward_credits)
-                )
+                if wallet_repo is not None:
+                    await wallet_repo.adjust_balance(
+                        user_id=user_id,
+                        amount=mission.reward_credits,
+                        reason=CurrencyTransactionType.mission_reward,
+                        context=f"mission:{mission.slug}:cycle:{reward_cycle}",
+                        source_id=mission.id,
+                        metadata={"mission_slug": mission.slug, "reward_cycle": reward_cycle},
+                        now=now,
+                    )
+                else:
+                    await self._session.execute(
+                        update(User)
+                        .where(User.id == user_id)
+                        .values(mission_credits=User.mission_credits + mission.reward_credits)
+                    )
 
         if mission.reward_premium_days > 0:
             premium_until = now + timedelta(days=mission.reward_premium_days)
@@ -222,6 +291,7 @@ class MissionRepository:
                 user_id=user_id,
                 mission_id=mission.id,
                 reward_type=MissionRewardType.premium_unlock,
+                reward_cycle=reward_cycle,
                 badge_code=None,
                 credits=0,
                 premium_access_until=premium_until,
@@ -270,7 +340,11 @@ class MissionRepository:
             )
             .order_by(UserMissionRewardGrant.created_at.asc())
         )
-        badges = [row[0] for row in badge_rows.fetchall() if row[0]]
+        badges: list[str] = []
+        for row in badge_rows.fetchall():
+            badge = row[0]
+            if badge and badge not in badges:
+                badges.append(badge)
         return credits, badges, premium_unlock_until
 
     async def user_has_saved_prompts(self, user_id: uuid.UUID) -> bool:

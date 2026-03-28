@@ -130,7 +130,7 @@ export function PlansClient({ plans, error }: PlansClientProps) {
   return (
     <div className="space-y-6">
       {error ? (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           {error}
         </div>
       ) : null}
@@ -138,7 +138,7 @@ export function PlansClient({ plans, error }: PlansClientProps) {
       {status === "loading" ? (
         <p className="text-sm text-zinc-600">{t("dashboard.loading")}</p>
       ) : isAuthenticated ? (
-        <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700">
+        <div className="pv-panel px-5 py-5 text-sm text-zinc-700 sm:px-6">
           <p>
             {t("plans.currentTier")}:{" "}
             <span className="font-medium text-zinc-900">{t(getTierTranslationKey(currentTier))}</span>
@@ -155,7 +155,7 @@ export function PlansClient({ plans, error }: PlansClientProps) {
               type="button"
               onClick={openPortal}
               disabled={portalPending}
-              className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 transition hover:border-zinc-400 disabled:opacity-60"
+              className="pv-button-secondary disabled:opacity-60"
             >
               {portalPending ? t("plans.openingCheckout") : t("plans.manageBilling")}
             </button>
@@ -171,7 +171,7 @@ export function PlansClient({ plans, error }: PlansClientProps) {
       )}
 
       {actionError ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+        <div className="rounded-[1.5rem] border border-red-200 bg-red-50 p-4 text-sm text-red-800">
           {actionError}
         </div>
       ) : null}
@@ -183,10 +183,10 @@ export function PlansClient({ plans, error }: PlansClientProps) {
           return (
             <div
               key={plan.tier}
-              className={`rounded-lg border bg-white p-5 shadow-card ${
+              className={`pv-card p-5 ${
                 preferredTier === plan.tier
                   ? "border-zinc-900 ring-1 ring-zinc-900/20"
-                  : "border-zinc-200"
+                  : ""
               }`}
             >
               <div className="flex items-baseline justify-between gap-2">
@@ -210,16 +210,16 @@ export function PlansClient({ plans, error }: PlansClientProps) {
                 ) : !isAuthenticated ? (
                   <Link
                     href="/signup"
-                    className="inline-flex items-center justify-center rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 transition hover:border-zinc-400"
+                    className="pv-button-secondary"
                   >
                     {t("plans.createAccountCta")}
                   </Link>
                 ) : isCurrent ? (
-                  <span className="inline-flex items-center rounded-md bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-700">
+                  <span className="inline-flex items-center rounded-full bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-700">
                     {t("plans.currentPlan")}
                   </span>
                 ) : isLowerOrEqual ? (
-                  <span className="inline-flex items-center rounded-md bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-700">
+                  <span className="inline-flex items-center rounded-full bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-700">
                     {t("plans.included")}
                   </span>
                 ) : (
@@ -227,7 +227,7 @@ export function PlansClient({ plans, error }: PlansClientProps) {
                     type="button"
                     onClick={() => upgrade(plan.tier)}
                     disabled={pendingTier === plan.tier}
-                    className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-60"
+                    className="pv-button-primary disabled:opacity-60"
                   >
                     {pendingTier === plan.tier
                       ? t("plans.openingCheckout")

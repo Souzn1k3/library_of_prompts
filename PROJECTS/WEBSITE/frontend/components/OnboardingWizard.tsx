@@ -178,12 +178,12 @@ export function OnboardingWizard() {
 
   if (loadError) {
     return (
-      <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+      <div className="space-y-3 rounded-[1.5rem] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
         <p>{loadError}</p>
         <button
           type="button"
           onClick={() => setLoadAttempt((value) => value + 1)}
-          className="rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-900 transition hover:border-amber-400"
+          className="rounded-full border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 transition hover:border-amber-400"
         >
           {t("dashboard.retry")}
         </button>
@@ -284,7 +284,7 @@ export function OnboardingWizard() {
       </div>
 
       {needsWizard && step < 3 ? (
-        <div className="space-y-4 rounded-lg border border-zinc-200 bg-white p-5 shadow-card">
+        <div className="pv-panel space-y-4 px-5 py-5">
           {step === 0 ? (
             <OptionStep
               title={t("onboardingWizard.stepRoleTitle")}
@@ -318,7 +318,7 @@ export function OnboardingWizard() {
               type="button"
               onClick={() => setStep((v) => Math.max(0, v - 1))}
               disabled={step === 0 || pending}
-              className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 disabled:opacity-50"
+              className="pv-button-secondary disabled:opacity-50"
             >
               {t("onboardingWizard.back")}
             </button>
@@ -331,7 +331,7 @@ export function OnboardingWizard() {
                   (step === 0 && !role) ||
                   (step === 1 && !goal)
                 }
-                className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+                className="pv-button-primary disabled:opacity-60"
               >
                 {t("onboardingWizard.continue")}
               </button>
@@ -340,7 +340,7 @@ export function OnboardingWizard() {
                 type="button"
                 onClick={completeOnboardingFlow}
                 disabled={pending || !aiContext}
-                className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+                className="pv-button-primary disabled:opacity-60"
               >
                 {pending ? t("onboardingWizard.preparing") : t("onboardingWizard.finishSetup")}
               </button>
@@ -351,15 +351,15 @@ export function OnboardingWizard() {
 
       {!needsWizard || step >= 3 ? (
         <div className="space-y-5">
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+          <div className="rounded-[1.5rem] border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
             {t("onboardingWizard.readyBody")}
           </div>
 
           {starter?.action ? (
-            <section className="space-y-3 rounded-lg border border-zinc-200 bg-white p-5 shadow-card">
+            <section className="pv-panel space-y-3 px-5 py-5">
               <h2 className="text-lg font-semibold text-zinc-900">{t("onboardingWizard.firstWinTitle")}</h2>
               <p className="text-sm text-zinc-600">{starter.action.instruction}</p>
-              <div className="rounded-md border border-zinc-200 bg-zinc-50 p-3">
+              <div className="rounded-[1.25rem] border border-zinc-200 bg-zinc-50/90 p-3">
                 <p className="text-sm font-medium text-zinc-900">{starter.action.prompt_title}</p>
                 <pre className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap text-xs text-zinc-700">
                   {starter.action.prompt_body}
@@ -370,12 +370,12 @@ export function OnboardingWizard() {
                   type="button"
                   onClick={completeFirstWin}
                   disabled={firstWinPending}
-                  className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+                  className="pv-button-primary disabled:opacity-60"
                 >
                   {firstWinPending ? t("onboardingWizard.completing") : t("onboardingWizard.completeFirstWin")}
                 </button>
               ) : (
-                <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+                <div className="rounded-[1.25rem] border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
                   {t("onboardingWizard.firstWinDone")}
                 </div>
               )}
@@ -388,7 +388,7 @@ export function OnboardingWizard() {
             </section>
           ) : null}
 
-          <section className="space-y-3 rounded-lg border border-zinc-200 bg-white p-5 shadow-card">
+          <section className="pv-panel space-y-3 px-5 py-5">
             <h2 className="text-lg font-semibold text-zinc-900">{t("onboardingWizard.recommendedPromptsTitle")}</h2>
             {starter?.prompts?.length ? (
               <ul className="space-y-2">
@@ -396,7 +396,7 @@ export function OnboardingWizard() {
                   <li key={prompt.id}>
                     <Link
                       href={`/prompt/${encodeURIComponent(prompt.slug)}`}
-                      className="block rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 transition hover:border-zinc-300"
+                      className="block rounded-[1.25rem] border border-zinc-200 bg-zinc-50/90 px-3 py-3 transition hover:border-zinc-300"
                     >
                       <p className="text-sm font-medium text-zinc-900">{prompt.title}</p>
                       {prompt.summary ? <p className="text-xs text-zinc-600">{prompt.summary}</p> : null}
@@ -409,7 +409,7 @@ export function OnboardingWizard() {
             )}
           </section>
 
-          <section className="rounded-lg border border-zinc-200 bg-white p-5 shadow-card">
+          <section className="pv-panel px-5 py-5">
             <h2 className="text-lg font-semibold text-zinc-900">{t("onboardingWizard.recommendedLessonTitle")}</h2>
             {starter?.lesson ? (
               <div className="mt-2 space-y-1">
@@ -434,13 +434,13 @@ export function OnboardingWizard() {
           <div className="flex flex-wrap gap-3">
             <Link
               href="/dashboard"
-              className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white"
+              className="pv-button-primary"
             >
               {t("onboardingWizard.goDashboard")}
             </Link>
             <Link
               href="/catalog"
-              className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-900"
+              className="pv-button-secondary"
             >
               {t("onboardingWizard.browseCatalog")}
             </Link>
@@ -449,7 +449,7 @@ export function OnboardingWizard() {
       ) : null}
 
       {error ? (
-        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+        <div className="rounded-[1.25rem] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
           {error}
         </div>
       ) : null}
@@ -482,9 +482,9 @@ function OptionStep({
             key={option.value}
             type="button"
             onClick={() => onSelect(option.value)}
-            className={`rounded-md border px-3 py-3 text-left transition ${
+            className={`rounded-[1.25rem] border px-3 py-3 text-left transition ${
               selected === option.value
-                ? "border-zinc-900 bg-zinc-900 text-white"
+                ? "border-[var(--pv-brand)] bg-[var(--pv-brand)] text-white"
                 : "border-zinc-200 bg-white text-zinc-900 hover:border-zinc-400"
             }`}
           >

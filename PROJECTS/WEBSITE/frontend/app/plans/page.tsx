@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 
 import { PlansClient } from "@/components/PlansClient";
@@ -27,15 +28,26 @@ export default async function PlansPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+    <div className="pv-page">
+      <section className="pv-panel px-6 py-7 sm:px-8 sm:py-8">
+        <p className="pv-kicker">
+          <T k="plans.title" />
+        </p>
+        <h1 className="mt-3 pv-title text-zinc-950">
           <T k="plans.title" />
         </h1>
-        <p className="max-w-2xl text-sm text-zinc-600">
+        <p className="mt-3 max-w-3xl text-base leading-relaxed text-[var(--pv-muted)]">
           <T k="plans.subtitle" />
         </p>
-      </header>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <Link href="/catalog" className="pv-button-secondary">
+            <T k="home.explorePrompts" />
+          </Link>
+          <Link href="/learn" className="pv-button-primary">
+            <T k="home.startLearning" />
+          </Link>
+        </div>
+      </section>
       <PlansClient plans={plans} error={error} />
     </div>
   );

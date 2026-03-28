@@ -5,7 +5,6 @@ import { cache } from "react";
 
 import { PromptViewTracker } from "@/components/analytics/PromptViewTracker";
 import { TrackedUpgradeButton } from "@/components/analytics/TrackedUpgradeButton";
-import { ContributorBadge } from "@/components/ContributorBadge";
 import { CopyPromptButton } from "@/components/CopyPromptButton";
 import { PromptCard } from "@/components/PromptCard";
 import { SavePromptButton } from "@/components/SavePromptButton";
@@ -71,7 +70,8 @@ export default async function PromptPage(props: Props) {
     ]);
 
     const category = categories.find((item) => item.id === prompt.category_id);
-    const relatedLessons = pickRelatedLessonsForPrompts([prompt], popularLessons, 4);
+    const relatedLessons = pickRelatedLessonsForPrompts([prompt], popularLessons, 2);
+    const primaryLesson = relatedLessons[0] ?? null;
     const interactionMetadata = {
       prompt_slug: prompt.slug,
       category_slug: category?.slug ?? null,
@@ -79,7 +79,7 @@ export default async function PromptPage(props: Props) {
     };
 
     return (
-      <article className="space-y-8">
+      <article className="pv-page-sm">
         <PromptViewTracker
           promptId={prompt.id}
           promptSlug={prompt.slug}
@@ -96,150 +96,128 @@ export default async function PromptPage(props: Props) {
             name: prompt.title,
             url: absoluteUrl(`/prompt/${prompt.slug}`),
             description: prompt.summary ?? prompt.title,
-            author: prompt.contributor_slug
-              ? {
-                  "@type": "Person",
-                  name: prompt.contributor_slug,
-                  url: absoluteUrl(`/contributors/${prompt.contributor_slug}`),
-                }
-              : undefined,
           }}
         />
 
-        <div className="space-y-3">
-          <Link
-            href="/catalog"
-            className="text-xs font-medium text-zinc-500 transition hover:text-zinc-800"
-          >
-            ← {getTranslation(language, "prompt.backToCatalog")}
+        <section className="pv-panel px-6 py-6 sm:px-7">
+          <Link href="/catalog" className="pv-inline-link">
+            <span aria-hidden="true">←</span>
+            {getTranslation(language, "prompt.backToCatalog")}
           </Link>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
-              {prompt.title}
-            </h1>
-            <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs text-zinc-700">
-              {getTranslation(language, getTechniqueTranslationKey(prompt.technique))}
-            </span>
-          </div>
-          {prompt.summary ? (
-            <p className="max-w-2xl text-sm leading-relaxed text-zinc-600">{prompt.summary}</p>
-          ) : null}
-          {category ? (
-            <p className="text-xs text-zinc-500">
-              {getTranslation(language, "prompt.categoryLabel")}:{" "}
-              <Link
-                href={`/category/${encodeURIComponent(category.slug)}`}
-                className="font-medium text-zinc-700 underline"
-              >
-                {category.name}
-              </Link>
-            </p>
-          ) : null}
-          <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-            {prompt.difficulty ? (
-              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-blue-900">
-                {getTranslation(language, getDifficultyTranslationKey(prompt.difficulty))}
-              </span>
-            ) : null}
-            {prompt.output_type ? (
-              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-emerald-900">
-                {getTranslation(language, getOutputTypeTranslationKey(prompt.output_type))}
-              </span>
-            ) : null}
-            <ContributorBadge tier={prompt.contributor_tier} />
-            {prompt.contributor_slug ? (
-              <Link
-                href={`/contributors/${encodeURIComponent(prompt.contributor_slug)}`}
-                className="font-medium text-zinc-700 underline"
-              >
-                @{prompt.contributor_slug}
-              </Link>
-            ) : null}
-            <span>
-              {getTranslation(language, "prompt.savedLabel")}: {prompt.save_count ?? 0}
-            </span>
-            <span>
-              {getTranslation(language, "prompt.copiedLabel")}: {prompt.copy_count ?? 0}
-            </span>
-            {prompt.contributor_reputation_score != null ? (
-              <span>
-                {getTranslation(language, "prompt.creatorScoreLabel")}: {prompt.contributor_reputation_score}
-              </span>
-            ) : null}
-            {prompt.quality_score != null ? (
-              <span>
-                {getTranslation(language, "prompt.qualityLabel")}: {prompt.quality_score}
-              </span>
-            ) : null}
-          </div>
-        {prompt.body_locked ? (
-          <div className="max-w-2xl space-y-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-950">
-            <p>{getTranslation(language, "prompt.previewOnlyMessage")}</p>
-              <TrackedUpgradeButton
-                href="/plans?tier=starter"
-                page={`/prompt/${prompt.slug}`}
-                feature="locked_prompt_cta"
-                metadata={{
-                  prompt_id: prompt.id,
-                  prompt_slug: prompt.slug,
-                  target_tier: "starter",
-                }}
-                className="inline-flex items-center justify-center rounded-md bg-amber-900 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-amber-800"
-                label={getTranslation(language, "prompt.upgradeToUnlock")}
-              />
-            </div>
-          ) : null}
-        </div>
 
-        <section>
-          <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
-            {getTranslation(language, "prompt.sectionTitle")}
-          </h2>
-          <pre className="mt-3 whitespace-pre-wrap rounded-lg border border-zinc-200 bg-zinc-50 p-4 font-mono text-sm leading-relaxed text-zinc-900">
-            {prompt.body}
-          </pre>
+          <div className="mt-5 space-y-4">
+            <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+              <span className="font-medium text-zinc-700">
+                {getTranslation(language, getTechniqueTranslationKey(prompt.technique))}
+              </span>
+              {prompt.difficulty ? (
+                <span>
+                  · {getTranslation(language, getDifficultyTranslationKey(prompt.difficulty))}
+                </span>
+              ) : null}
+              {prompt.output_type ? (
+                <span>
+                  · {getTranslation(language, getOutputTypeTranslationKey(prompt.output_type))}
+                </span>
+              ) : null}
+              {category ? <span>· {category.name}</span> : null}
+            </div>
+
+            <div className="space-y-3">
+              <h1 className="pv-title text-zinc-950">{prompt.title}</h1>
+              {prompt.summary ? (
+                <p className="max-w-3xl text-base leading-relaxed text-zinc-600">{prompt.summary}</p>
+              ) : null}
+            </div>
+
+            {prompt.body_locked ? (
+              <div className="rounded-[1.25rem] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                <p>{getTranslation(language, "prompt.previewOnlyMessage")}</p>
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <TrackedUpgradeButton
+                    href="/pricing?tier=starter"
+                    page={`/prompt/${prompt.slug}`}
+                    feature="locked_prompt_cta"
+                    metadata={{
+                      prompt_id: prompt.id,
+                      prompt_slug: prompt.slug,
+                      target_tier: "starter",
+                    }}
+                    className="inline-flex pv-button-primary"
+                    label={getTranslation(language, "prompt.upgradeToUnlock")}
+                  />
+                  {prompt.unlock_offer ? (
+                    <Link href="/store" className="pv-button-secondary">
+                      {`${getTranslation(language, "prompt.unlockWithLumens")} · ${prompt.unlock_offer.price} ${prompt.unlock_offer.currency}`}
+                    </Link>
+                  ) : null}
+                </div>
+                {prompt.unlock_offer ? (
+                  <p className="mt-3 text-xs text-amber-900/80">
+                    {prompt.unlock_offer.item_title}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
         </section>
 
-        <div className="flex flex-wrap items-start gap-3">
-          {!prompt.body_locked ? (
-            <CopyPromptButton promptId={prompt.id} body={prompt.body} metadata={interactionMetadata} />
-          ) : null}
-          <SavePromptButton promptId={prompt.id} promptSlug={prompt.slug} metadata={interactionMetadata} />
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <section className="pv-panel px-6 py-6 sm:px-7">
+            <pre className="overflow-x-auto whitespace-pre-wrap rounded-[1.25rem] bg-zinc-50 p-5 font-mono text-sm leading-relaxed text-zinc-900">
+              {prompt.body}
+            </pre>
+          </section>
+
+          <aside className="space-y-4">
+            <section className="pv-panel px-5 py-5">
+              <p className="pv-kicker">
+                {prompt.body_locked
+                  ? prompt.unlock_offer
+                    ? getTranslation(language, "prompt.unlockWithLumens")
+                    : getTranslation(language, "prompt.upgradeToUnlock")
+                  : getTranslation(language, "dashboard.tryNow")}
+              </p>
+              <div className="mt-4 flex flex-col gap-3">
+                {!prompt.body_locked ? (
+                  <CopyPromptButton promptId={prompt.id} body={prompt.body} metadata={interactionMetadata} />
+                ) : null}
+                {prompt.body_locked && prompt.unlock_offer ? (
+                  <Link href="/store" className="pv-button-primary">
+                    {`${getTranslation(language, "prompt.unlockWithLumens")} · ${prompt.unlock_offer.price} ${prompt.unlock_offer.currency}`}
+                  </Link>
+                ) : null}
+                <SavePromptButton promptId={prompt.id} promptSlug={prompt.slug} metadata={interactionMetadata} />
+              </div>
+
+              {primaryLesson ? (
+                <div className="mt-5 border-t border-[var(--pv-border)] pt-4">
+                  <p className="text-sm font-medium text-zinc-950">{primaryLesson.title}</p>
+                  <Link
+                    href={`/learn/${encodeURIComponent(primaryLesson.slug)}`}
+                    className="mt-3 inline-flex text-sm font-medium text-[var(--pv-brand)]"
+                  >
+                    {getTranslation(language, "prompt.learnHowItWorks")}
+                  </Link>
+                </div>
+              ) : null}
+            </section>
+          </aside>
         </div>
 
         {related.length > 0 ? (
-          <section className="space-y-3">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
-              {getTranslation(language, "prompt.relatedPrompts")}
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-2">
+          <section className="pv-panel px-6 py-6 sm:px-7">
+            <div className="pv-section-head">
+              <div className="pv-section-copy">
+                <p className="pv-kicker">{getTranslation(language, "prompt.relatedPrompts")}</p>
+                <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
+                  {getTranslation(language, "prompt.relatedPrompts")}
+                </h2>
+              </div>
+            </div>
+            <div className="mt-6 grid gap-4 lg:grid-cols-2">
               {related.map((item) => (
                 <PromptCard key={item.id} prompt={item} />
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        {relatedLessons.length > 0 ? (
-          <section className="space-y-3">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
-              {getTranslation(language, "prompt.relatedLessons")}
-            </h2>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {relatedLessons.map((lesson) => (
-                <Link
-                  key={lesson.id}
-                  href={`/learn/${encodeURIComponent(lesson.slug)}`}
-                  className="rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm shadow-card transition hover:border-zinc-300"
-                >
-                  <p className="font-medium text-zinc-900">{lesson.title}</p>
-                  <p className="mt-1 text-xs text-zinc-500">
-                    {lesson.completion_count} {getTranslation(language, "learn.completions")} ·{" "}
-                    {lesson.locked
-                      ? getTranslation(language, "learn.locked")
-                      : getTranslation(language, "learn.open")}
-                  </p>
-                </Link>
               ))}
             </div>
           </section>
@@ -251,7 +229,7 @@ export default async function PromptPage(props: Props) {
       notFound();
     }
     return (
-      <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+      <div className="rounded-[1.25rem] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
         <p className="font-medium">{getTranslation(language, "prompt.loadFailedTitle")}</p>
         <p className="mt-1 text-amber-800">
           {e instanceof ApiRequestError ? e.message : getTranslation(language, "prompt.unexpectedError")}

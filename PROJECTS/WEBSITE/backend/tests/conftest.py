@@ -2,18 +2,31 @@
 from __future__ import annotations
 
 import os
+import subprocess
+import sys
 import uuid
+from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
 
 import pytest
 import pytest_asyncio
+import psycopg2
+from psycopg2 import sql
 from httpx import ASGITransport, AsyncClient
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 # In-process tests: skip Redis so cache/rate-limit stay in-memory.
 os.environ.setdefault("REDIS_URL", "")
+os.environ.setdefault("APP_ENV", "test")
 os.environ.setdefault(
     "DATABASE_URL",
-    "postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/prompts_vault",
+    "postgresql+asyncpg://postgres:postgres@127.0.0.1:5432/prompts_vault_test",
 )
+os.environ.setdefault("EXPECTED_DATABASE_NAME", "prompts_vault_test")
+os.environ.setdefault("EXPECTED_DATABASE_SCHEMA", "public")
+os.environ.setdefault("EXPECTED_DATABASE_HOST", "127.0.0.1")
+os.environ.setdefault("EXPECTED_DATABASE_PORT", "5432")
 os.environ.setdefault("JWT_SECRET_KEY", "pytest-test-jwt-secret-key-32chars-min!!")
 os.environ.setdefault("DEBUG", "true")
 os.environ.setdefault("BILLING_MOCK_MODE", "true")
@@ -22,6 +35,68 @@ os.environ.setdefault("BILLING_CHECKOUT_CANCEL_URL", "http://127.0.0.1:3000/plan
 os.environ.setdefault("BILLING_PORTAL_RETURN_URL", "http://127.0.0.1:3000/dashboard")
 os.environ.setdefault("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
 os.environ.setdefault("CACHE_ENABLED", "true")
+
+
+def _sync_database_url(async_url: str) -> str:
+    return async_url.replace("+asyncpg", "")
+
+
+def _database_name(sync_url: str) -> str:
+    return urlsplit(sync_url).path.lstrip("/")
+
+
+def _admin_database_url(sync_url: str) -> str:
+    parsed = urlsplit(sync_url)
+    return urlunsplit(parsed._replace(path="/postgres"))
+
+
+def _ensure_test_database() -> None:
+    sync_url = _sync_database_url(os.environ["DATABASE_URL"])
+    db_name = _database_name(sync_url)
+    if not db_name:
+        raise RuntimeError("DATABASE_URL must include a database name for tests.")
+    if db_name == "prompts_vault":
+        raise RuntimeError("Tests must not run against the primary prompts_vault database.")
+
+    admin_url = _admin_database_url(sync_url)
+    admin_conn = psycopg2.connect(admin_url)
+    try:
+        admin_conn.autocommit = True
+        with admin_conn.cursor() as cur:
+            cur.execute("SELECT 1 FROM pg_database WHERE datname = %s", (db_name,))
+            if cur.fetchone() is None:
+                cur.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(db_name)))
+    finally:
+        admin_conn.close()
+
+
+def _reset_test_schema() -> None:
+    sync_url = _sync_database_url(os.environ["DATABASE_URL"])
+    with psycopg2.connect(sync_url) as conn:
+        conn.autocommit = True
+        with conn.cursor() as cur:
+            cur.execute("DROP SCHEMA IF EXISTS public CASCADE")
+            cur.execute("CREATE SCHEMA public")
+            cur.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm")
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _prepare_test_database() -> None:
+    _ensure_test_database()
+    _reset_test_schema()
+
+    env = os.environ.copy()
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+    if result.returncode != 0:
+        details = (result.stderr or result.stdout or "").strip()
+        raise RuntimeError(f"alembic upgrade head failed for test database: {details}")
 
 
 @pytest.fixture

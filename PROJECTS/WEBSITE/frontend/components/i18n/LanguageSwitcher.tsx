@@ -14,7 +14,7 @@ export function LanguageSwitcher() {
 
   return (
     <div
-      className="inline-flex items-center rounded-md border border-zinc-300 bg-white p-0.5 text-xs"
+      className="inline-flex items-center rounded-full border border-[var(--pv-border)] bg-white/75 p-1 text-xs shadow-[0_10px_24px_rgba(15,23,42,0.06)]"
       role="group"
       aria-label={t("a11y.languageSwitcher")}
     >
@@ -24,9 +24,9 @@ export function LanguageSwitcher() {
           type="button"
           data-testid={`lang-switch-${langCode}`}
           onClick={() => setLanguage(langCode)}
-          className={`rounded px-2 py-1 transition ${
+          className={`rounded-full px-2.5 py-1.5 font-semibold transition ${
             language === langCode
-              ? "bg-zinc-900 text-white"
+              ? "bg-[var(--pv-brand)] text-white shadow-[0_8px_16px_rgba(18,55,47,0.16)]"
               : "text-zinc-600 hover:text-zinc-900"
           }`}
           aria-pressed={language === langCode}

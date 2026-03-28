@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { IBM_Plex_Mono, Manrope } from "next/font/google";
 
 import { AnalyticsPageTracker } from "@/components/analytics/AnalyticsPageTracker";
 import { AuthProvider } from "@/components/auth/AuthProvider";
@@ -16,7 +16,16 @@ import { getSiteUrl } from "@/lib/site";
 
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-mono",
+});
 
 const siteUrl = getSiteUrl();
 
@@ -80,28 +89,30 @@ export default async function RootLayout({
   return (
     <html lang={language}>
       <body
-        className={`${inter.className} flex min-h-screen flex-col bg-white text-zinc-900 antialiased`}
+        className={`${manrope.className} ${manrope.variable} ${ibmPlexMono.variable} min-h-screen antialiased`}
       >
-        <LanguageProvider initialLanguage={language}>
-          <AuthProvider initialHasAuthCookie={authState.hasAnyAuthCookie}>
-            <AnalyticsPageTracker />
-            <a href="#main-content" className="skip-link">
-              <T k="a11y.skipToContent" />
-            </a>
-            <OrganizationJsonLd />
-            <WebSiteJsonLd />
-            <OnboardingBanner />
-            <Header />
-            <main
-              id="main-content"
-              className="mx-auto w-full max-w-5xl flex-1 px-4 py-10"
-              tabIndex={-1}
-            >
-              {children}
-            </main>
-            <Footer />
-          </AuthProvider>
-        </LanguageProvider>
+        <div className="relative isolate flex min-h-screen flex-col">
+          <LanguageProvider initialLanguage={language}>
+            <AuthProvider initialHasAuthCookie={authState.hasAnyAuthCookie}>
+              <AnalyticsPageTracker />
+              <a href="#main-content" className="skip-link">
+                <T k="a11y.skipToContent" />
+              </a>
+              <OrganizationJsonLd />
+              <WebSiteJsonLd />
+              <OnboardingBanner />
+              <Header />
+              <main
+                id="main-content"
+                className="mx-auto w-full max-w-[1280px] flex-1 px-4 pb-16 pt-8 sm:px-6 sm:pb-20 lg:px-8"
+                tabIndex={-1}
+              >
+                {children}
+              </main>
+              <Footer />
+            </AuthProvider>
+          </LanguageProvider>
+        </div>
       </body>
     </html>
   );

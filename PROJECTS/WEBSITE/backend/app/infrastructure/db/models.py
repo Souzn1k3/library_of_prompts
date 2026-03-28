@@ -98,6 +98,11 @@ class MissionActionType(str, enum.Enum):
     lesson_completed = "lesson_completed"
     onboarding_first_win = "onboarding_first_win"
     manual_confirmation = "manual_confirmation"
+    daily_checkin = "daily_checkin"
+    streak_activity = "streak_activity"
+    challenge_submission = "challenge_submission"
+    multi_step = "multi_step"
+    apply_prompt = "apply_prompt"
 
 
 class MissionProgressStatus(str, enum.Enum):
@@ -110,6 +115,43 @@ class MissionRewardType(str, enum.Enum):
     badge = "badge"
     credits = "credits"
     premium_unlock = "premium_unlock"
+
+
+class MissionDifficulty(str, enum.Enum):
+    easy = "easy"
+    standard = "standard"
+    advanced = "advanced"
+    expert = "expert"
+
+
+class MissionType(str, enum.Enum):
+    learning = "learning"
+    action = "action"
+    streak = "streak"
+    challenge = "challenge"
+    progression = "progression"
+
+
+class CurrencyTransactionType(str, enum.Enum):
+    mission_reward = "mission_reward"
+    store_purchase = "store_purchase"
+    streak_bonus = "streak_bonus"
+    manual_adjustment = "manual_adjustment"
+    refund = "refund"
+
+
+class StoreItemKind(str, enum.Enum):
+    subscription_discount = "subscription_discount"
+    premium_pass = "premium_pass"
+    premium_prompt_unlock = "premium_prompt_unlock"
+    prompt_bundle = "prompt_bundle"
+    future = "future"
+
+
+class PurchaseStatus(str, enum.Enum):
+    pending = "pending"
+    completed = "completed"
+    refunded = "refunded"
 
 
 class ContributorTier(str, enum.Enum):
@@ -169,6 +211,19 @@ class User(Base):
         cascade="all, delete-orphan",
     )
     mission_reward_grants: Mapped[list["UserMissionRewardGrant"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    currency_balance: Mapped["UserCurrencyBalance | None"] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
+    currency_transactions: Mapped[list["CurrencyTransaction"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    purchases: Mapped[list["UserPurchase"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
     )
@@ -866,7 +921,21 @@ class LessonMission(Base):
         Enum(MissionActionType, native_enum=False, length=40),
         nullable=False,
     )
+    difficulty: Mapped[MissionDifficulty] = mapped_column(
+        Enum(MissionDifficulty, native_enum=False, length=24),
+        nullable=False,
+        default=MissionDifficulty.standard,
+        index=True,
+    )
+    mission_type: Mapped[MissionType] = mapped_column(
+        Enum(MissionType, native_enum=False, length=24),
+        nullable=False,
+        default=MissionType.action,
+        index=True,
+    )
     required_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    is_repeatable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
+    repeat_interval_days: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     persona_role: Mapped[OnboardingRole | None] = mapped_column(
         Enum(OnboardingRole, native_enum=False, length=32),
         nullable=True,
@@ -905,6 +974,11 @@ class LessonMission(Base):
         back_populates="mission",
         cascade="all, delete-orphan",
     )
+    steps: Mapped[list["MissionStep"]] = relationship(
+        back_populates="mission",
+        cascade="all, delete-orphan",
+        order_by="MissionStep.sort_order",
+    )
     progress_rows: Mapped[list["UserMissionProgress"]] = relationship(
         back_populates="mission",
         cascade="all, delete-orphan",
@@ -938,6 +1012,97 @@ class LessonMissionPrompt(Base):
     prompt: Mapped["Prompt"] = relationship(back_populates="mission_links")
 
 
+class MissionStep(Base):
+    __tablename__ = "mission_steps"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    mission_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("lesson_missions.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    action_type: Mapped[MissionActionType] = mapped_column(
+        Enum(MissionActionType, native_enum=False, length=40),
+        nullable=False,
+    )
+    required_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    target_prompt_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("prompts.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    target_lesson_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("lessons.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    reward_credits: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    mission: Mapped["LessonMission"] = relationship(back_populates="steps")
+    target_prompt: Mapped["Prompt | None"] = relationship()
+    target_lesson: Mapped["Lesson | None"] = relationship()
+    progress_rows: Mapped[list["UserMissionStepProgress"]] = relationship(
+        back_populates="step",
+        cascade="all, delete-orphan",
+    )
+
+
+class UserMissionStepProgress(Base):
+    __tablename__ = "user_mission_step_progress"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    mission_step_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("mission_steps.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    status: Mapped[MissionProgressStatus] = mapped_column(
+        Enum(MissionProgressStatus, native_enum=False, length=24),
+        nullable=False,
+        default=MissionProgressStatus.not_started,
+        index=True,
+    )
+    progress_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    required_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    last_event_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "mission_step_id", name="uq_user_mission_step_progress"),
+    )
+
+    user: Mapped["User"] = relationship()
+    step: Mapped["MissionStep"] = relationship(back_populates="progress_rows")
+
+
 class UserMissionProgress(Base):
     __tablename__ = "user_mission_progress"
 
@@ -960,6 +1125,7 @@ class UserMissionProgress(Base):
         default=MissionProgressStatus.not_started,
         index=True,
     )
+    completion_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     progress_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     required_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -1024,6 +1190,12 @@ class MissionCompletionEvent(Base):
         ForeignKey("lessons.id", ondelete="SET NULL"),
         nullable=True,
     )
+    mission_step_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("mission_steps.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     payload: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -1034,6 +1206,7 @@ class MissionCompletionEvent(Base):
     progress: Mapped["UserMissionProgress"] = relationship(back_populates="completion_events")
     user: Mapped["User"] = relationship(back_populates="mission_completion_events")
     mission: Mapped["LessonMission"] = relationship(back_populates="completion_events")
+    mission_step: Mapped["MissionStep | None"] = relationship()
     prompt: Mapped["Prompt | None"] = relationship()
     lesson: Mapped["Lesson | None"] = relationship()
 
@@ -1059,6 +1232,7 @@ class UserMissionRewardGrant(Base):
         nullable=False,
         index=True,
     )
+    reward_cycle: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     badge_code: Mapped[str | None] = mapped_column(String(120), nullable=True)
     credits: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     premium_access_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -1069,8 +1243,136 @@ class UserMissionRewardGrant(Base):
     )
 
     __table_args__ = (
-        UniqueConstraint("user_id", "mission_id", "reward_type", name="uq_user_mission_reward_grants_key"),
+        UniqueConstraint(
+            "user_id",
+            "mission_id",
+            "reward_type",
+            "reward_cycle",
+            name="uq_user_mission_reward_grants_key",
+        ),
     )
 
     user: Mapped["User"] = relationship(back_populates="mission_reward_grants")
     mission: Mapped["LessonMission"] = relationship(back_populates="reward_grants")
+
+
+class UserCurrencyBalance(Base):
+    __tablename__ = "user_currency_balances"
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    balance: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    total_earned: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    total_spent: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    current_streak: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    best_streak: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    last_check_in_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    user: Mapped["User"] = relationship(back_populates="currency_balance")
+
+
+class CurrencyTransaction(Base):
+    __tablename__ = "currency_transactions"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    balance_after: Mapped[int] = mapped_column(Integer, nullable=False)
+    reason: Mapped[CurrencyTransactionType] = mapped_column(
+        Enum(CurrencyTransactionType, native_enum=False, length=40),
+        nullable=False,
+        index=True,
+    )
+    context: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    source_id: Mapped[uuid.UUID | None] = mapped_column(Uuid(as_uuid=True), nullable=True, index=True)
+    meta: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    user: Mapped["User"] = relationship(back_populates="currency_transactions")
+
+
+class StoreItem(Base):
+    __tablename__ = "store_items"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    slug: Mapped[str] = mapped_column(String(160), nullable=False, unique=True, index=True)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    price: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    kind: Mapped[StoreItemKind] = mapped_column(
+        Enum(StoreItemKind, native_enum=False, length=40),
+        nullable=False,
+        default=StoreItemKind.premium_pass,
+    )
+    availability: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    meta: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    purchases: Mapped[list["UserPurchase"]] = relationship(
+        back_populates="item",
+        cascade="all, delete-orphan",
+    )
+
+
+class UserPurchase(Base):
+    __tablename__ = "user_purchases"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    store_item_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("store_items.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    price_paid: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    status: Mapped[PurchaseStatus] = mapped_column(
+        Enum(PurchaseStatus, native_enum=False, length=32),
+        nullable=False,
+        default=PurchaseStatus.completed,
+        index=True,
+    )
+    client_token: Mapped[str | None] = mapped_column(String(80), nullable=True, unique=True, index=True)
+    meta: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    user: Mapped["User"] = relationship(back_populates="purchases")
+    item: Mapped["StoreItem"] = relationship(back_populates="purchases")

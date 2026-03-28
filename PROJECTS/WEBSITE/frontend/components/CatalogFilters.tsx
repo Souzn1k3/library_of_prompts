@@ -118,10 +118,10 @@ export function CatalogFilters({
   }
 
   return (
-    <div className="space-y-4 rounded-lg border border-zinc-200 bg-zinc-50/60 p-4">
+    <div className="pv-panel space-y-4 px-5 py-5 sm:px-6">
       <form onSubmit={onSearchSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="min-w-[220px] flex-1 space-y-1">
-          <label htmlFor="q" className="text-xs font-medium text-zinc-700">
+          <label htmlFor="q" className="pv-label">
             {t("catalogFilters.search")}
           </label>
           <input
@@ -130,19 +130,19 @@ export function CatalogFilters({
             value={filters.q ?? ""}
             onChange={(e) => setFilters((prev) => ({ ...prev, q: e.target.value }))}
             placeholder={t("catalogFilters.searchPlaceholder")}
-            className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none ring-zinc-900 focus:ring-2"
+            className="pv-input"
           />
         </div>
         <button
           type="submit"
           disabled={isPending}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:opacity-60"
+          className="pv-button-primary disabled:opacity-60"
         >
           {isPending ? t("catalogFilters.updating") : t("catalogFilters.apply")}
         </button>
         <Link
           href="/catalog"
-          className="inline-flex items-center rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-800 transition hover:border-zinc-400"
+          className="pv-button-secondary"
         >
           {t("catalogFilters.reset")}
         </Link>
@@ -178,47 +178,52 @@ export function CatalogFilters({
         />
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
-        <SelectField
-          label={t("catalogFilters.difficulty")}
-          value={filters.difficulty ?? ""}
-          options={[
-            { value: "", label: t("catalogFilters.allLevels") },
-            ...difficultyOptions,
-          ]}
-          onChange={(value) => pushFilters({ ...filters, difficulty: value || undefined })}
-        />
-        <SelectField
-          label={t("catalogFilters.output")}
-          value={filters.output_type ?? ""}
-          options={[
-            { value: "", label: t("catalogFilters.allOutputs") },
-            ...outputOptions,
-          ]}
-          onChange={(value) => pushFilters({ ...filters, output_type: value || undefined })}
-        />
-      </div>
+      <details className="pv-details">
+        <summary>{t("catalogFilters.advanced")}</summary>
+        <p className="mt-2 text-sm text-zinc-600">{t("catalogFilters.advancedHint")}</p>
 
-      <div className="grid gap-3 md:grid-cols-3">
-        <MultiSelectField
-          label={t("catalogFilters.useCase")}
-          options={discoveryFilters.use_cases}
-          selected={filters.use_case ?? []}
-          onChange={(values) => pushFilters({ ...filters, use_case: parseMultiSelected(values) })}
-        />
-        <MultiSelectField
-          label={t("catalogFilters.model")}
-          options={discoveryFilters.model_compatibility}
-          selected={filters.model ?? []}
-          onChange={(values) => pushFilters({ ...filters, model: parseMultiSelected(values) })}
-        />
-        <MultiSelectField
-          label={t("catalogFilters.tags")}
-          options={discoveryFilters.tags}
-          selected={filters.tag ?? []}
-          onChange={(values) => pushFilters({ ...filters, tag: parseMultiSelected(values) })}
-        />
-      </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <SelectField
+            label={t("catalogFilters.difficulty")}
+            value={filters.difficulty ?? ""}
+            options={[
+              { value: "", label: t("catalogFilters.allLevels") },
+              ...difficultyOptions,
+            ]}
+            onChange={(value) => pushFilters({ ...filters, difficulty: value || undefined })}
+          />
+          <SelectField
+            label={t("catalogFilters.output")}
+            value={filters.output_type ?? ""}
+            options={[
+              { value: "", label: t("catalogFilters.allOutputs") },
+              ...outputOptions,
+            ]}
+            onChange={(value) => pushFilters({ ...filters, output_type: value || undefined })}
+          />
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <MultiSelectField
+            label={t("catalogFilters.useCase")}
+            options={discoveryFilters.use_cases}
+            selected={filters.use_case ?? []}
+            onChange={(values) => pushFilters({ ...filters, use_case: parseMultiSelected(values) })}
+          />
+          <MultiSelectField
+            label={t("catalogFilters.model")}
+            options={discoveryFilters.model_compatibility}
+            selected={filters.model ?? []}
+            onChange={(values) => pushFilters({ ...filters, model: parseMultiSelected(values) })}
+          />
+          <MultiSelectField
+            label={t("catalogFilters.tags")}
+            options={discoveryFilters.tags}
+            selected={filters.tag ?? []}
+            onChange={(values) => pushFilters({ ...filters, tag: parseMultiSelected(values) })}
+          />
+        </div>
+      </details>
     </div>
   );
 }
@@ -236,11 +241,11 @@ function SelectField({
 }) {
   return (
     <div className="space-y-1">
-      <label className="text-xs font-medium text-zinc-700">{label}</label>
+      <label className="pv-label">{label}</label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none ring-zinc-900 focus:ring-2"
+        className="pv-select"
       >
         {options.map((opt) => (
           <option key={`${label}-${opt.value || "all"}`} value={opt.value}>
@@ -265,7 +270,7 @@ function MultiSelectField({
 }) {
   return (
     <div className="space-y-1">
-      <label className="text-xs font-medium text-zinc-700">{label}</label>
+      <label className="pv-label">{label}</label>
       <select
         multiple
         value={selected}
@@ -273,7 +278,7 @@ function MultiSelectField({
           const values = Array.from(e.target.selectedOptions).map((item) => item.value);
           onChange(values);
         }}
-        className="h-28 w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none ring-zinc-900 focus:ring-2"
+        className="pv-select h-32"
       >
         {options.map((opt) => (
           <option key={`${label}-${opt.slug}`} value={opt.slug}>

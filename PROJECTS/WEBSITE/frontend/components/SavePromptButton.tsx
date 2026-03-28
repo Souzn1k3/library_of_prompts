@@ -139,13 +139,13 @@ export function SavePromptButton({
         type="button"
         onClick={toggle}
         disabled={pending}
-        className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 transition hover:border-zinc-400 disabled:opacity-60"
+        className="pv-button-secondary disabled:opacity-60"
       >
         {pending ? t("save.pending") : saved ? t("save.savedRemove") : t("save.saveToDashboard")}
       </button>
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
       {recommendations.length > 0 ? (
-        <section className="space-y-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+        <section className="pv-card space-y-3 p-4">
           <p className="text-sm font-medium text-zinc-900">{t("save.keepMomentum")}</p>
           <div className="grid gap-3 sm:grid-cols-2">
             {recommendations.map((prompt) => (

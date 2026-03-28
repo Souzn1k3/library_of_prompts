@@ -50,6 +50,7 @@ export type PromptListItem = {
 export type PromptDetail = PromptListItem & {
   body: string;
   body_locked?: boolean;
+  unlock_offer?: StoreUnlockOffer | null;
 };
 
 export type AuthorSubmission = {
@@ -231,7 +232,14 @@ export type MissionActionType =
   | "copy_or_save_prompt"
   | "lesson_completed"
   | "onboarding_first_win"
-  | "manual_confirmation";
+  | "manual_confirmation"
+  | "daily_checkin"
+  | "streak_activity"
+  | "challenge_submission"
+  | "multi_step"
+  | "apply_prompt";
+
+export type MissionType = "learning" | "action" | "streak" | "challenge" | "progression";
 
 export type MissionProgressStatus = "not_started" | "in_progress" | "completed";
 
@@ -270,17 +278,37 @@ export type MissionRead = {
   description: string | null;
   objective: string;
   completion_condition: string;
+  difficulty: "easy" | "standard" | "advanced" | "expert";
+  mission_type: MissionType;
   action_type: MissionActionType;
+  is_repeatable: boolean;
+  repeat_interval_days: number;
   status: MissionProgressStatus;
+  completion_count: number;
   progress_count: number;
   required_count: number;
   started_at: string | null;
   last_event_at: string | null;
   completed_at: string | null;
+  available_again_at: string | null;
   prompts: MissionPromptRef[];
   lesson: MissionLessonRef | null;
+  steps: MissionStepRead[];
   reward: MissionRewardView;
   next_step: MissionNextStep | null;
+};
+
+export type MissionStepRead = {
+  id: string;
+  title: string;
+  description: string | null;
+  action_type: MissionActionType;
+  status: MissionProgressStatus;
+  progress_count: number;
+  required_count: number;
+  reward_credits: number;
+  prompt: MissionPromptRef | null;
+  lesson: MissionLessonRef | null;
 };
 
 export type MissionRewardSummary = {
@@ -304,6 +332,103 @@ export type MissionCurrentRead = {
   completed_count: number;
   total_count: number;
   rewards: MissionRewardSummary;
+};
+
+export type CurrencyTransactionType =
+  | "mission_reward"
+  | "store_purchase"
+  | "streak_bonus"
+  | "manual_adjustment"
+  | "refund";
+
+export type CurrencyTransaction = {
+  id: string;
+  amount: number;
+  balance_after: number;
+  reason: CurrencyTransactionType;
+  context: string | null;
+  metadata?: Record<string, unknown> | null;
+  created_at: string;
+};
+
+export type WalletBenefit = {
+  key: string;
+  kind: string;
+  metadata?: Record<string, unknown> | null;
+  expires_at: string | null;
+};
+
+export type WalletPurchase = {
+  id: string;
+  item_slug: string;
+  item_title: string;
+  kind: StoreItemKind;
+  price_paid: number;
+  status: PurchaseStatus;
+  metadata?: Record<string, unknown> | null;
+  created_at: string;
+};
+
+export type WalletRead = {
+  balance: number;
+  currency: string;
+  currency_name: string;
+  currency_symbol: string;
+  total_earned: number;
+  total_spent: number;
+  current_streak: number;
+  best_streak: number;
+  last_check_in_at: string | null;
+  check_in_available: boolean;
+  premium_unlock_until: string | null;
+  active_benefits: WalletBenefit[];
+  recent_purchases: WalletPurchase[];
+  recent: CurrencyTransaction[];
+};
+
+export type StoreItemKind =
+  | "subscription_discount"
+  | "premium_pass"
+  | "premium_prompt_unlock"
+  | "prompt_bundle"
+  | "future";
+
+export type StoreItem = {
+  id: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  price: number;
+  kind: StoreItemKind;
+  availability: number | null;
+  metadata?: Record<string, unknown> | null;
+  is_active: boolean;
+  owned: boolean;
+};
+
+export type PurchaseStatus = "pending" | "completed" | "refunded";
+
+export type PurchaseRead = {
+  id: string;
+  status: PurchaseStatus;
+  price_paid: number;
+  metadata?: Record<string, unknown> | null;
+  client_token?: string | null;
+  item: StoreItem;
+  created_at: string;
+};
+
+export type PurchaseResult = {
+  purchase: PurchaseRead;
+  wallet: WalletRead;
+};
+
+export type StoreUnlockOffer = {
+  item_slug: string;
+  item_title: string;
+  price: number;
+  currency: string;
+  kind: StoreItemKind;
 };
 
 export type LessonListItem = {

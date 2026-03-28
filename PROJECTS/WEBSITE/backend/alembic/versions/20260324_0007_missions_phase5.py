@@ -45,6 +45,7 @@ def upgrade() -> None:
             sa.Column("objective", sa.String(length=320), nullable=False),
             sa.Column("completion_condition", sa.String(length=320), nullable=False),
             sa.Column("action_type", sa.String(length=40), nullable=False),
+            sa.Column("difficulty", sa.String(length=24), nullable=False),
             sa.Column("required_count", sa.Integer(), nullable=False, server_default="1"),
             sa.Column("persona_role", sa.String(length=32), nullable=True),
             sa.Column("persona_goal", sa.String(length=32), nullable=True),
@@ -67,6 +68,7 @@ def upgrade() -> None:
         op.create_index("ix_lesson_missions_persona_role", "lesson_missions", ["persona_role"], unique=False)
         op.create_index("ix_lesson_missions_persona_goal", "lesson_missions", ["persona_goal"], unique=False)
         op.create_index("ix_lesson_missions_is_active", "lesson_missions", ["is_active"], unique=False)
+        op.create_index("ix_lesson_missions_difficulty", "lesson_missions", ["difficulty"], unique=False)
 
     if "lesson_mission_prompts" not in tables:
         op.create_table(
@@ -251,6 +253,7 @@ def upgrade() -> None:
         sa.column("objective", sa.String(length=320)),
         sa.column("completion_condition", sa.String(length=320)),
         sa.column("action_type", sa.String(length=40)),
+        sa.column("difficulty", sa.String(length=24)),
         sa.column("required_count", sa.Integer()),
         sa.column("persona_role", sa.String(length=32)),
         sa.column("persona_goal", sa.String(length=32)),
@@ -275,6 +278,7 @@ def upgrade() -> None:
             "objective": "Get your first practical AI result.",
             "completion_condition": "Complete onboarding first win action.",
             "action_type": "onboarding_first_win",
+            "difficulty": "easy",
             "required_count": 1,
             "persona_role": None,
             "persona_goal": None,
@@ -292,6 +296,7 @@ def upgrade() -> None:
             "objective": "Turn learning into a real result in under 2 minutes.",
             "completion_condition": "Copy one linked prompt.",
             "action_type": "copy_prompt",
+            "difficulty": "standard",
             "required_count": 1,
             "persona_role": None,
             "persona_goal": "solving_tasks",
@@ -309,6 +314,7 @@ def upgrade() -> None:
             "objective": "Create a reusable set of prompts for future tasks.",
             "completion_condition": "Save one linked prompt.",
             "action_type": "save_prompt",
+            "difficulty": "standard",
             "required_count": 1,
             "persona_role": None,
             "persona_goal": "productivity",
@@ -326,6 +332,7 @@ def upgrade() -> None:
             "objective": "Convert a lesson into practical output.",
             "completion_condition": "Mark linked lesson as completed.",
             "action_type": "lesson_completed",
+            "difficulty": "standard",
             "required_count": 1,
             "persona_role": "student",
             "persona_goal": "learning",
@@ -351,6 +358,7 @@ def upgrade() -> None:
                 "objective": item["objective"],
                 "completion_condition": item["completion_condition"],
                 "action_type": item["action_type"],
+                "difficulty": item["difficulty"],
                 "required_count": item["required_count"],
                 "persona_role": item["persona_role"],
                 "persona_goal": item["persona_goal"],
@@ -471,6 +479,7 @@ def downgrade() -> None:
         op.drop_table("lesson_mission_prompts")
 
     if "lesson_missions" in tables:
+        op.execute("DROP INDEX IF EXISTS ix_lesson_missions_difficulty")
         op.drop_index("ix_lesson_missions_is_active", table_name="lesson_missions")
         op.drop_index("ix_lesson_missions_persona_goal", table_name="lesson_missions")
         op.drop_index("ix_lesson_missions_persona_role", table_name="lesson_missions")

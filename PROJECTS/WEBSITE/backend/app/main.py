@@ -16,6 +16,8 @@ from app.core.cache import get_cache
 from app.core.errors import AppError
 from app.core.i18n import resolve_language_from_header, translate
 from app.core.logging import configure_logging, get_logger
+from app.core.runtime_guard import verify_runtime_database
+from app.infrastructure.db.session import engine
 
 configure_logging(get_settings().debug)
 log = get_logger(__name__)
@@ -23,7 +25,9 @@ log = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    log.info("starting", app=get_settings().app_name)
+    settings = get_settings()
+    log.info("starting", app=settings.app_name, app_env=settings.app_env)
+    await verify_runtime_database(engine, settings)
     yield
     await get_cache().close()
     log.info("shutting_down")

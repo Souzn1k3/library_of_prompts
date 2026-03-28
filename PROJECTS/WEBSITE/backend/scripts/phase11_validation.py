@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from time import perf_counter
 from typing import Any
+from urllib.parse import urlsplit
 
 # Configure env before importing app modules.
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -25,6 +26,10 @@ def _env_flag(name: str, *, default: bool) -> bool:
     return raw.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _database_name(database_url: str) -> str:
+    return urlsplit(database_url.replace("+asyncpg", "")).path.lstrip("/")
+
+
 VALIDATION_MODE = (os.getenv("PHASE11_VALIDATION_MODE") or "local").strip().lower()
 if VALIDATION_MODE not in {"local", "real"}:
     raise RuntimeError("PHASE11_VALIDATION_MODE must be either 'local' or 'real'")
@@ -33,6 +38,7 @@ REQUIRE_STRIPE_WEBHOOK = _env_flag(
     "PHASE11_REQUIRE_STRIPE_WEBHOOK",
     default=VALIDATION_MODE == "real",
 )
+ALLOW_PRIMARY_DB_RESET = _env_flag("PHASE11_ALLOW_PRIMARY_DB_RESET", default=False)
 
 if VALIDATION_MODE == "local":
     db_path = PROJECT_ROOT / "phase11_validation.db"
@@ -41,11 +47,22 @@ if VALIDATION_MODE == "local":
     os.environ.setdefault("DATABASE_URL", f"sqlite+aiosqlite:///{db_path.as_posix()}")
     os.environ.setdefault("BILLING_MOCK_MODE", "true")
 else:
-    os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/prompts_vault")
+    os.environ.setdefault(
+        "DATABASE_URL",
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/prompts_vault_phase11",
+    )
     os.environ.setdefault("REDIS_URL", "redis://localhost:6379/0")
     os.environ.setdefault("BILLING_MOCK_MODE", "false")
 
+    if _database_name(os.environ["DATABASE_URL"]) == "prompts_vault" and not ALLOW_PRIMARY_DB_RESET:
+        raise RuntimeError(
+            "PHASE11 real mode refuses to use the primary prompts_vault database. "
+            "Point DATABASE_URL to a dedicated validation database or set "
+            "PHASE11_ALLOW_PRIMARY_DB_RESET=true to override intentionally."
+        )
+
 os.environ.setdefault("DEBUG", "false")
+os.environ.setdefault("APP_ENV", "validation")
 os.environ.setdefault("CACHE_ENABLED", "true")
 os.environ.setdefault("JWT_SECRET_KEY", "phase11-validation-secret-key-min-32chars!!")
 os.environ.setdefault("AUTH_COOKIE_ALLOW_INSECURE", "true")
@@ -301,9 +318,9 @@ async def _seed_data() -> SeedState:
         session.add_all([use_case_debug, use_case_study, model_gpt4o, model_claude, tag_react, tag_api])
 
         author = User(
-            email="seed.author@promptsvault.com",
-            hashed_password=hash_password("SeedAuthorPass123!"),
-            display_name="Seed Author",
+            email="validation.curated@promptsvault.local",
+            hashed_password=hash_password("ValidationCuratorPass123!"),
+            display_name="Prompts Vault Curated",
             role=UserRole.user,
         )
         moderator = User(
@@ -323,7 +340,7 @@ async def _seed_data() -> SeedState:
 
         author_profile = ContributorProfile(
             user_id=author.id,
-            slug="seed-author",
+            slug="validation-curated",
             reputation_score=72,
             reputation_tier=ContributorTier.verified,
             total_submissions=3,

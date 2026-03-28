@@ -70,7 +70,7 @@ export function CopyPromptButton({
         type="button"
         onClick={copy}
         disabled={pending}
-        className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 transition hover:border-zinc-400 disabled:opacity-60"
+        className="pv-button-primary disabled:opacity-60"
       >
         {pending ? t("copy.copying") : done ? t("copy.copied") : t("copy.copyPrompt")}
       </button>

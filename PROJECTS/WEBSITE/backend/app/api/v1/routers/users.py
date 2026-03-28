@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,6 +15,7 @@ from app.modules.catalog.model.prompt import AuthorPromptRow, PromptListItem
 from app.modules.catalog.repository.prompt_repository import PromptRepository
 from app.modules.contributors.repository.contributor_repository import ContributorRepository
 from app.modules.contributors.service.contributor_service import ContributorService
+from app.modules.economy.repository.wallet_repository import WalletRepository
 from app.modules.identity.model.user import UserRead
 from app.modules.identity.model.user_update import UserUpdateMe
 from app.modules.identity.repository.saved_prompt_repository import SavedPromptRepository
@@ -43,6 +45,7 @@ def mission_service(session: AsyncSession = Depends(get_db)) -> MissionService:
         MissionRepository(session),
         OnboardingRepository(session),
         PromptRepository(session),
+        wallet_repo=WalletRepository(session),
         analytics=AnalyticsService(AnalyticsRepository(session)),
     )
 
@@ -107,11 +110,19 @@ async def save_prompt(
     contributors: ContributorService = Depends(contributor_service),
 ) -> Response:
     await svc.save(current_user.id, prompt_id)
+    today_key = datetime.now(timezone.utc).date().isoformat()
     await missions.record_event(
         user=current_user,
         event_type="prompt_saved",
         prompt_id=prompt_id,
         source_event_key=f"prompt_saved:{current_user.id}:{prompt_id}",
+    )
+    await missions.record_event(
+        user=current_user,
+        event_type="streak_activity",
+        prompt_id=prompt_id,
+        source_event_key=f"streak_activity:{current_user.id}:{today_key}",
+        payload={"source": "prompt_saved"},
     )
     await contributors.refresh_prompt_quality(prompt_id)
     await get_cache().bump_many(("prompts", "contributors", "recommendations"))

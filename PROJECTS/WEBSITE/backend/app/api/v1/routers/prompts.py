@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 from urllib.parse import quote_plus
 
 from fastapi import APIRouter, Depends, Query, Response
@@ -29,7 +30,9 @@ from app.modules.catalog.service.recommendation_service import RecommendationSer
 from app.modules.contributors.repository.contributor_repository import ContributorRepository
 from app.modules.contributors.service.contributor_service import ContributorService
 from app.modules.education.repository.lesson_repository import LessonRepository
+from app.modules.economy.repository.store_repository import StoreRepository
 from app.modules.identity.repository.saved_prompt_repository import SavedPromptRepository
+from app.modules.economy.repository.wallet_repository import WalletRepository
 from app.modules.identity.repository.user_repository import UserRepository
 from app.modules.missions.repository.mission_repository import MissionRepository
 from app.modules.missions.service.mission_service import MissionService
@@ -61,7 +64,7 @@ def _catalog_visibility(viewer: User | None) -> str:
 
 
 def prompt_service(session: AsyncSession = Depends(get_db)) -> PromptService:
-    return PromptService(PromptRepository(session))
+    return PromptService(PromptRepository(session), StoreRepository(session))
 
 
 def recommendation_service(session: AsyncSession = Depends(get_db)) -> RecommendationService:
@@ -80,6 +83,7 @@ def mission_service(session: AsyncSession = Depends(get_db)) -> MissionService:
         MissionRepository(session),
         OnboardingRepository(session),
         PromptRepository(session),
+        wallet_repo=WalletRepository(session),
         analytics=AnalyticsService(AnalyticsRepository(session)),
     )
 
@@ -245,13 +249,45 @@ async def track_copy(
 ) -> Response:
     await svc.track_copy(prompt_id, viewer)
     if viewer is not None:
+        today_key = datetime.now(timezone.utc).date().isoformat()
         await missions.record_event(
             user=viewer,
             event_type="prompt_copied",
             prompt_id=prompt_id,
         )
+        await missions.record_event(
+            user=viewer,
+            event_type="streak_activity",
+            prompt_id=prompt_id,
+            source_event_key=f"streak_activity:{viewer.id}:{today_key}",
+            payload={"source": "prompt_copied"},
+        )
     await contributors.refresh_prompt_quality(prompt_id)
     await get_cache().bump_many(("prompts", "contributors", "recommendations"))
+    return Response(status_code=204)
+
+
+@router.post("/{prompt_id}/events/apply", status_code=204)
+async def track_apply(
+    prompt_id: uuid.UUID,
+    viewer: User | None = Depends(get_optional_user),
+    missions: MissionService = Depends(mission_service),
+) -> Response:
+    if viewer is not None:
+        today_key = datetime.now(timezone.utc).date().isoformat()
+        await missions.record_event(
+            user=viewer,
+            event_type="prompt_applied",
+            prompt_id=prompt_id,
+            source_event_key=f"prompt_applied:{viewer.id}:{prompt_id}",
+        )
+        await missions.record_event(
+            user=viewer,
+            event_type="streak_activity",
+            prompt_id=prompt_id,
+            source_event_key=f"streak_activity:{viewer.id}:{today_key}",
+            payload={"source": "prompt_applied"},
+        )
     return Response(status_code=204)
 
 

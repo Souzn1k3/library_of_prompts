@@ -36,7 +36,7 @@ export default async function LearnIndexPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="pv-page">
       <JsonLd
         id="ld-learn-index"
         data={{
@@ -57,17 +57,53 @@ export default async function LearnIndexPage() {
         }}
       />
 
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
-          <T k="learn.title" />
-        </h1>
-        <p className="max-w-2xl text-sm text-zinc-600">
-          <T k="learn.subtitle" />
-        </p>
-      </header>
+      <section className="pv-panel px-6 py-7 sm:px-8 sm:py-8">
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
+          <div className="space-y-5">
+            <p className="pv-kicker">
+              <T k="learn.title" />
+            </p>
+            <h1 className="pv-title text-zinc-950">
+              <T k="learn.title" />
+            </h1>
+            <p className="max-w-3xl text-base leading-relaxed text-[var(--pv-muted)]">
+              <T k="learn.subtitle" />
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/catalog" className="pv-button-primary">
+                <T k="home.explorePrompts" />
+              </Link>
+              <Link href="/missions" className="pv-button-secondary">
+                <T k="nav.missions" />
+              </Link>
+            </div>
+          </div>
+
+          <div className="grid gap-3">
+            {popular.slice(0, 3).map((lesson, index) => (
+              <Link
+                key={`hero-popular-${lesson.id}`}
+                href={`/learn/${encodeURIComponent(lesson.slug)}`}
+                className="pv-card block p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-950">{lesson.title}</p>
+                    <p className="mt-2 text-xs text-zinc-500">
+                      {lesson.completion_count} <T k="learn.completions" /> ·{" "}
+                      {lesson.locked ? <T k="learn.locked" /> : <T k="learn.open" />}
+                    </p>
+                  </div>
+                  <span className="text-sm font-semibold text-zinc-400">0{index + 1}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {error ? (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+        <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           {error}
         </div>
       ) : null}
@@ -77,48 +113,77 @@ export default async function LearnIndexPage() {
           <T k="learn.noLessons" />
         </p>
       ) : (
-        <>
-          <ul className="space-y-3">
-            {lessons.map((l) => (
-              <li key={l.id}>
-                <Link
-                  href={`/learn/${encodeURIComponent(l.slug)}`}
-                  className="flex items-center justify-between rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm shadow-card transition hover:border-zinc-300"
-                >
-                  <span className="font-medium text-zinc-900">{l.title}</span>
-                  <span className="text-xs text-zinc-500">
-                    {l.locked ? <T k="learn.locked" /> : <T k="learn.open" />} ·{" "}
-                    {getTranslation(language, getTierTranslationKey(l.min_tier))}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+        <section className="pv-panel px-6 py-6 sm:px-7">
+          <div className="pv-section-head">
+            <div className="pv-section-copy">
+              <p className="pv-kicker">
+                <T k="learn.title" />
+              </p>
+              <h2 className="mt-3 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
+                <T k="learn.title" />
+              </h2>
+            </div>
+          </div>
 
-          {popular.length > 0 ? (
-            <section className="space-y-3">
-              <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            {lessons.map((lesson) => (
+              <Link
+                key={lesson.id}
+                href={`/learn/${encodeURIComponent(lesson.slug)}`}
+                className="pv-card block p-5"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-semibold tracking-[-0.04em] text-zinc-950">{lesson.title}</h3>
+                    <p className="mt-3 text-sm text-zinc-600">
+                      {getTranslation(language, "learn.minimumTier")}:{" "}
+                      {getTranslation(language, getTierTranslationKey(lesson.min_tier))}
+                    </p>
+                  </div>
+                  <span className="pv-chip">
+                    {lesson.locked ? <T k="learn.locked" /> : <T k="learn.open" />}
+                  </span>
+                </div>
+                <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[var(--pv-brand)]">
+                  <T k="home.startLearning" />
+                  <span aria-hidden="true">↗</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {popular.length > 3 ? (
+        <section className="pv-panel px-6 py-6 sm:px-7">
+          <div className="pv-section-head">
+            <div className="pv-section-copy">
+              <p className="pv-kicker">
+                <T k="learn.popularLessons" />
+              </p>
+              <h2 className="mt-3 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
                 <T k="learn.popularLessons" />
               </h2>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {popular.slice(0, 6).map((lesson) => (
-                  <Link
-                    key={`popular-${lesson.id}`}
-                    href={`/learn/${encodeURIComponent(lesson.slug)}`}
-                    className="rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-sm transition hover:border-zinc-300"
-                  >
-                    <p className="font-medium text-zinc-900">{lesson.title}</p>
-                    <p className="mt-1 text-xs text-zinc-500">
-                      {lesson.completion_count} <T k="learn.completions" /> ·{" "}
-                      {lesson.locked ? <T k="learn.locked" /> : <T k="learn.open" />}
-                    </p>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          ) : null}
-        </>
-      )}
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            {popular.slice(3, 7).map((lesson) => (
+              <Link
+                key={`popular-${lesson.id}`}
+                href={`/learn/${encodeURIComponent(lesson.slug)}`}
+                className="pv-card block p-4"
+              >
+                <p className="text-sm font-semibold text-zinc-950">{lesson.title}</p>
+                <p className="mt-2 text-xs text-zinc-500">
+                  {lesson.completion_count} <T k="learn.completions" /> ·{" "}
+                  {lesson.locked ? <T k="learn.locked" /> : <T k="learn.open" />}
+                </p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

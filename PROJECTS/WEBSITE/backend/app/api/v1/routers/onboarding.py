@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +14,7 @@ from app.modules.catalog.repository.prompt_repository import PromptRepository
 from app.modules.contributors.repository.contributor_repository import ContributorRepository
 from app.modules.contributors.service.contributor_service import ContributorService
 from app.modules.education.repository.lesson_repository import LessonRepository
+from app.modules.economy.repository.wallet_repository import WalletRepository
 from app.modules.identity.repository.user_repository import UserRepository
 from app.modules.missions.repository.mission_repository import MissionRepository
 from app.modules.missions.service.mission_service import MissionService
@@ -40,6 +43,7 @@ def mission_service(session: AsyncSession = Depends(get_db)) -> MissionService:
         MissionRepository(session),
         OnboardingRepository(session),
         PromptRepository(session),
+        wallet_repo=WalletRepository(session),
         analytics=AnalyticsService(AnalyticsRepository(session)),
     )
 
@@ -100,12 +104,20 @@ async def complete_first_win(
     contributors: ContributorService = Depends(contributor_service),
 ) -> OnboardingProfileRead:
     profile = await svc.complete_first_win(current_user, body)
+    today_key = datetime.now(timezone.utc).date().isoformat()
     await missions.record_event(
         user=current_user,
         event_type="onboarding_first_win_completed",
         prompt_id=body.prompt_id,
         source_event_key=f"onboarding_first_win_completed:{current_user.id}:{body.prompt_id}",
         payload={"action": body.action},
+    )
+    await missions.record_event(
+        user=current_user,
+        event_type="streak_activity",
+        prompt_id=body.prompt_id,
+        source_event_key=f"streak_activity:{current_user.id}:{today_key}",
+        payload={"source": "onboarding_first_win_completed", "action": body.action},
     )
     await contributors.refresh_prompt_quality(body.prompt_id)
     await get_cache().bump_many(("prompts", "recommendations"))
