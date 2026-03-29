@@ -78,7 +78,7 @@ class BillingService:
                 "features": ["Restricted categories", "Full lesson library", "Priority moderation"],
             },
             PlanTier.enterprise: {
-                "name": "Enterprise",
+                "name": "MAX",
                 "features": ["Team seats", "SSO (roadmap)", "Custom agreements"],
             },
         },
@@ -96,7 +96,7 @@ class BillingService:
                 "features": ["Ограниченные категории", "Полная библиотека уроков", "Приоритетная модерация"],
             },
             PlanTier.enterprise: {
-                "name": "Enterprise",
+                "name": "MAX",
                 "features": ["Командные места", "SSO (в планах)", "Кастомные договоры"],
             },
         },
@@ -114,7 +114,7 @@ class BillingService:
                 "features": ["Чикләнгән категорияләр", "Дәресләрнең тулы китапханәсе", "Өстен модерация"],
             },
             PlanTier.enterprise: {
-                "name": "Enterprise",
+                "name": "MAX",
                 "features": ["Команда урыннары", "SSO (планда)", "Махсус килешүләр"],
             },
         },

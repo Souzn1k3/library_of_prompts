@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
+import { PageIntro } from "@/components/navigation/PageIntro";
+import { LmnAmount } from "@/components/ui/LmnAmount";
 import type { TranslationKey } from "@/lib/i18n";
 import { ApiRequestError } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
@@ -52,12 +54,12 @@ export function MissionDetailClient({ slug }: { slug: string }) {
 
   if (error) {
     return (
-      <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+      <div className="pv-alert pv-alert-warning space-y-3">
         <p>{error}</p>
         <button
           type="button"
           onClick={() => setReloadToken((value) => value + 1)}
-          className="rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-900 transition hover:border-amber-400"
+          className="pv-button-secondary !w-auto"
         >
           {t("dashboard.retry")}
         </button>
@@ -94,48 +96,43 @@ export function MissionDetailClient({ slug }: { slug: string }) {
 
   return (
     <article className="space-y-5">
-      <section className="pv-panel px-6 py-6 sm:px-7">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-600">
-                {t(`missions.type.${mission.mission_type}` as TranslationKey)}
-              </span>
-              <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700">
-                {t(`missions.difficulty.${mission.difficulty}` as TranslationKey)}
-              </span>
-              <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700">
-                {t(getMissionStatusTranslationKey(mission.status))}
-              </span>
-              {mission.is_repeatable ? (
-                <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700">
-                  {t("missions.repeatable")}
-                </span>
-              ) : null}
-            </div>
-            <h1 className="text-3xl font-semibold tracking-[-0.05em] text-zinc-950">{mission.title}</h1>
-            {mission.description ? <p className="max-w-3xl text-sm leading-relaxed text-zinc-600">{mission.description}</p> : null}
-            <p className="max-w-3xl text-sm text-zinc-800">
-              <span className="font-medium">{t("missionDetail.objective")}:</span> {mission.objective}
-            </p>
-            <p className="max-w-3xl text-sm text-zinc-600">
-              {t("missionDetail.completionCondition")}: {mission.completion_condition}
-            </p>
-          </div>
-
-          <div className="min-w-[240px] rounded-[1.25rem] border border-[var(--pv-border)] bg-zinc-50/70 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">{t("missions.progress")}</p>
+      <PageIntro
+        breadcrumbs={[
+          { label: t("nav.missions"), href: "/missions" },
+          { label: mission.title },
+        ]}
+        eyebrow={t(`missions.type.${mission.mission_type}` as TranslationKey)}
+        title={mission.title}
+        description={mission.description ?? mission.objective}
+        hint={nextStep ? `${t("dashboard.recommendedNextAction")}: ${nextStep.label}` : t("missionDetail.completionCondition")}
+        actions={
+          <>
+            {nextStep ? (
+              <Link href={nextStep.href} onClick={trackNextStep} className="pv-button-primary">
+                {nextStep.label}
+              </Link>
+            ) : null}
+            <Link href="/wallet" className="pv-button-secondary">
+              {t("nav.wallet")}
+            </Link>
+            <Link href="/store" className="pv-inline-link">
+              {t("nav.store")}
+              <span aria-hidden="true">↗</span>
+            </Link>
+          </>
+        }
+        aside={
+          <div className="pv-stat-card">
+            <p className="pv-stat-label">{t("missions.progress")}</p>
             <p className="mt-3 text-2xl font-semibold text-zinc-950">
               {mission.progress_count}/{mission.required_count}
             </p>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-200">
-              <div className="h-full rounded-full bg-[var(--pv-brand)]" style={{ width: `${pct}%` }} />
+            <div className="mt-3 pv-progress">
+              <div className="pv-progress-fill" style={{ width: `${pct}%` }} />
             </div>
             <div className="mt-4 space-y-2 text-sm text-zinc-600">
               {mission.reward.credits > 0 ? (
-                <p>
-                  {t("missions.credits")}: +{mission.reward.credits}
-                </p>
+                <LmnAmount amount={`+${mission.reward.credits}`} symbol="LMN" />
               ) : null}
               {mission.reward.badge ? (
                 <p>
@@ -159,26 +156,28 @@ export function MissionDetailClient({ slug }: { slug: string }) {
               ) : null}
             </div>
           </div>
-        </div>
-
-        <div className="mt-5 flex flex-wrap gap-3">
-          {nextStep ? (
-            <Link
-              href={nextStep.href}
-              onClick={trackNextStep}
-              className="inline-flex items-center rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-zinc-800"
-            >
-              {nextStep.label}
-            </Link>
+        }
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="pv-badge">
+            {t(`missions.difficulty.${mission.difficulty}` as TranslationKey)}
+          </span>
+          <span className="pv-badge">
+            {t(getMissionStatusTranslationKey(mission.status))}
+          </span>
+          {mission.is_repeatable ? (
+            <span className="pv-badge">
+              {t("missions.repeatable")}
+            </span>
           ) : null}
-          <Link href="/wallet" className="pv-button-secondary">
-            {t("nav.wallet")}
-          </Link>
-          <Link href="/store" className="pv-button-secondary">
-            {t("nav.store")}
-          </Link>
         </div>
-      </section>
+        <p className="max-w-3xl text-sm text-zinc-800">
+          <span className="font-medium">{t("missionDetail.objective")}:</span> {mission.objective}
+        </p>
+        <p className="max-w-3xl text-sm text-zinc-600">
+          {t("missionDetail.completionCondition")}: {mission.completion_condition}
+        </p>
+      </PageIntro>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         {mission.steps?.length ? (
@@ -186,7 +185,7 @@ export function MissionDetailClient({ slug }: { slug: string }) {
             <p className="pv-kicker">{t("missions.steps")}</p>
             <div className="mt-4 space-y-3">
               {mission.steps.map((step, index) => (
-                <div key={step.id} className="rounded-[1.25rem] border border-[var(--pv-border)] bg-white/80 p-4">
+                <div key={step.id} className="pv-card-muted p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
@@ -199,7 +198,7 @@ export function MissionDetailClient({ slug }: { slug: string }) {
                       <p>
                         {step.progress_count}/{step.required_count}
                       </p>
-                      {step.reward_credits > 0 ? <p>+{step.reward_credits} LMN</p> : null}
+                      {step.reward_credits > 0 ? <LmnAmount amount={`+${step.reward_credits}`} symbol="LMN" /> : null}
                     </div>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-3">
@@ -231,7 +230,7 @@ export function MissionDetailClient({ slug }: { slug: string }) {
               <p className="pv-kicker">{t("missionDetail.linkedPrompts")}</p>
               <ul className="mt-4 space-y-3 text-sm text-zinc-700">
                 {mission.prompts.map((prompt) => (
-                  <li key={prompt.id}>
+                  <li key={prompt.id} className="pv-card-muted p-3">
                     <Link href={`/prompt/${prompt.slug}`} className="font-medium text-zinc-900 underline">
                       {prompt.title}
                     </Link>
@@ -246,8 +245,9 @@ export function MissionDetailClient({ slug }: { slug: string }) {
             <section className="pv-panel px-5 py-5">
               <p className="pv-kicker">{t("missionDetail.linkedLesson")}</p>
               <p className="mt-4 text-sm font-medium text-zinc-950">{mission.lesson.title}</p>
-              <Link href={`/learn/${mission.lesson.slug}`} className="mt-3 inline-flex text-sm font-medium text-[var(--pv-brand)]">
+              <Link href={`/learn/${mission.lesson.slug}`} className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--pv-brand-strong)]">
                 {mission.lesson.locked ? `${t("missionDetail.locked")} · ${t("nav.plans")}` : t("learn.open")}
+                <span aria-hidden="true">↗</span>
               </Link>
             </section>
           ) : null}

@@ -38,6 +38,8 @@ class Settings(BaseSettings):
     cache_default_ttl_seconds: int = 120
     redis_url: str | None = None
     slow_request_threshold_ms: int = 700
+    telegram_bot_api_key: str | None = None
+    legacy_bot_database_url: str | None = None
 
     jwt_secret_key: str = Field(
         default=_DEFAULT_JWT_PLACEHOLDER,

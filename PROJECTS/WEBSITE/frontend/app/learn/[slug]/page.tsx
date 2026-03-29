@@ -5,6 +5,7 @@ import { cache } from "react";
 
 import { CompleteLessonButton } from "@/components/CompleteLessonButton";
 import { T } from "@/components/i18n/T";
+import { PageIntro } from "@/components/navigation/PageIntro";
 import { PromptCard } from "@/components/PromptCard";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { ApiRequestError, fetchLessonBySlug, fetchPrompts } from "@/lib/api";
@@ -72,32 +73,24 @@ export default async function LessonPage(props: Props) {
           }}
         />
 
-        <section className="pv-panel px-6 py-6 sm:px-7">
-          <Link href="/learn" className="pv-inline-link">
-            <span aria-hidden="true">←</span>
-            {getTranslation(language, "learn.backToAll")}
-          </Link>
-
-          <div className="mt-5 space-y-4">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-              <span className="font-medium text-zinc-700">
-                {getTranslation(language, "learn.minimumTier")}:{" "}
-                {getTranslation(language, getTierTranslationKey(lesson.min_tier))}
-              </span>
-              <span>
-                ·{" "}
-                {lesson.body_locked
-                  ? getTranslation(language, "learn.previewOnly")
-                  : getTranslation(language, "learn.open")}
-              </span>
-            </div>
-            <h1 className="pv-title text-zinc-950">{lesson.title}</h1>
-          </div>
-        </section>
+        <PageIntro
+          breadcrumbs={[
+            { label: getTranslation(language, "nav.learn"), href: "/learn" },
+            { label: lesson.title },
+          ]}
+          eyebrow={getTranslation(language, "learn.title")}
+          title={lesson.title}
+          description={`${getTranslation(language, "learn.minimumTier")}: ${getTranslation(language, getTierTranslationKey(lesson.min_tier))}`}
+          hint={
+            lesson.body_locked
+              ? getTranslation(language, "learn.previewOnly")
+              : getTranslation(language, "learn.open")
+          }
+        />
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
           <section className="pv-panel px-6 py-6 sm:px-7">
-            <pre className="overflow-x-auto whitespace-pre-wrap rounded-[1.25rem] bg-zinc-50 p-5 text-sm leading-relaxed text-zinc-900">
+            <pre className="overflow-x-auto whitespace-pre-wrap rounded-[1.25rem] border border-[var(--pv-border)] bg-white/80 p-5 text-sm leading-relaxed text-zinc-900">
               {lesson.body}
             </pre>
           </section>
@@ -125,9 +118,10 @@ export default async function LessonPage(props: Props) {
                   <p className="text-sm font-medium text-zinc-950">{primaryPrompt.title}</p>
                   <Link
                     href={`/prompt/${encodeURIComponent(primaryPrompt.slug)}`}
-                    className="mt-3 inline-flex text-sm font-medium text-[var(--pv-brand)]"
+                    className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--pv-brand-strong)]"
                   >
                     {getTranslation(language, "learn.tryThisPrompt")}
+                    <span aria-hidden="true">↗</span>
                   </Link>
                 </div>
               ) : null}
@@ -162,7 +156,7 @@ export default async function LessonPage(props: Props) {
       notFound();
     }
     return (
-      <div className="rounded-[1.25rem] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+      <div className="pv-alert pv-alert-warning text-sm">
         {getTranslation(language, "learn.lessonLoadFailed")}
       </div>
     );

@@ -1,14 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/LanguageProvider";
+import { EconomyLoop } from "@/components/navigation/EconomyLoop";
+import { PageIntro } from "@/components/navigation/PageIntro";
+import { LmnAmount } from "@/components/ui/LmnAmount";
+import { LmnMark } from "@/components/ui/LmnMark";
 import { ApiRequestError } from "@/lib/api";
 import { fetchWallet, walletCheckIn } from "@/lib/client-api";
-import type { CurrencyTransaction, WalletBenefit, WalletPurchase, WalletRead } from "@/lib/types";
 import type { TranslationKey } from "@/lib/i18n";
+import type { CurrencyTransaction, WalletBenefit, WalletPurchase, WalletRead } from "@/lib/types";
 
 function formatAmount(amount: number): string {
   const sign = amount > 0 ? "+" : "";
@@ -81,40 +85,91 @@ export function WalletClient() {
   }
 
   if (status === "loading" || loading) {
-    return <p className="text-sm text-zinc-500">{t("missions.loading")}</p>;
+    return (
+      <div className="space-y-6">
+        <PageIntro
+          breadcrumbs={[
+            { label: t("nav.dashboard"), href: "/dashboard" },
+            { label: t("nav.economy") },
+            { label: t("nav.wallet") },
+          ]}
+          eyebrow={t("nav.wallet")}
+          title={t("wallet.title")}
+          description={t("wallet.subtitle")}
+          hint={t("economy.loopBody")}
+        />
+        <p className="text-sm text-zinc-500">{t("missions.loading")}</p>
+      </div>
+    );
   }
 
   if (status === "unauthenticated") {
     return (
-      <p className="text-sm text-zinc-600">
-        {t("missions.signInPrefix")}{" "}
-        <Link href="/login" className="font-medium text-zinc-900 underline">
-          {t("missions.signInLink")}
-        </Link>{" "}
-        {t("missions.signInSuffix")}
-      </p>
+      <div className="space-y-6">
+        <PageIntro
+          breadcrumbs={[
+            { label: t("nav.dashboard"), href: "/dashboard" },
+            { label: t("nav.economy") },
+            { label: t("nav.wallet") },
+          ]}
+          eyebrow={t("nav.wallet")}
+          title={t("wallet.title")}
+          description={t("wallet.subtitle")}
+          hint={t("economy.loopBody")}
+          actions={
+            <>
+              <Link href="/login" className="pv-button-primary">
+                {t("nav.login")}
+              </Link>
+              <Link href="/signup" className="pv-button-secondary">
+                {t("nav.signup")}
+              </Link>
+            </>
+          }
+        />
+        <div className="pv-empty-state text-sm text-zinc-600">
+          {t("missions.signInPrefix")}{" "}
+          <Link href="/login" className="font-medium text-zinc-900 underline">
+            {t("missions.signInLink")}
+          </Link>{" "}
+          {t("missions.signInSuffix")}
+        </div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        <p>{error}</p>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setReloadToken((v) => v + 1)}
-            className="rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-900 transition hover:border-amber-400"
-          >
-            {t("wallet.refresh")}
-          </button>
-          <button
-            type="button"
-            onClick={handleCheckIn}
-            className="rounded-md bg-amber-900 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-amber-800"
-          >
-            {t("wallet.checkinCta")}
-          </button>
+      <div className="space-y-6">
+        <PageIntro
+          breadcrumbs={[
+            { label: t("nav.dashboard"), href: "/dashboard" },
+            { label: t("nav.economy") },
+            { label: t("nav.wallet") },
+          ]}
+          eyebrow={t("nav.wallet")}
+          title={t("wallet.title")}
+          description={t("wallet.subtitle")}
+          hint={t("economy.loopBody")}
+        />
+        <div className="pv-alert pv-alert-warning space-y-3">
+          <p>{error}</p>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setReloadToken((v) => v + 1)}
+              className="pv-button-secondary !w-auto"
+            >
+              {t("wallet.refresh")}
+            </button>
+            <button
+              type="button"
+              onClick={handleCheckIn}
+              className="pv-button-primary !w-auto"
+            >
+              {t("wallet.checkinCta")}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -122,68 +177,104 @@ export function WalletClient() {
 
   if (!wallet) return null;
 
+  const checkInMessage = wallet.check_in_available
+    ? t("wallet.checkinReady")
+    : `${t("wallet.checkinLocked")}${wallet.last_check_in_at ? ` · ${new Date(wallet.last_check_in_at).toLocaleString()}` : ""}`;
+
   return (
     <div className="space-y-6">
-      <section className="pv-panel px-6 py-6 sm:px-7">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="pv-kicker">{t("wallet.title")}</p>
-            <p className="mt-2 text-4xl font-semibold tracking-[-0.05em] text-zinc-950">
-              {wallet.balance} <span className="text-base font-medium text-zinc-500">{wallet.currency_symbol}</span>
-            </p>
-            <p className="mt-2 max-w-2xl text-sm text-zinc-600">{t("wallet.subtitle")}</p>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
+      <PageIntro
+        breadcrumbs={[
+          { label: t("nav.dashboard"), href: "/dashboard" },
+          { label: t("nav.economy") },
+          { label: t("nav.wallet") },
+        ]}
+        eyebrow={t("nav.wallet")}
+        title={t("wallet.title")}
+        description={t("wallet.subtitle")}
+        hint={checkInMessage}
+        actions={
+          <>
             <button
               type="button"
               onClick={handleCheckIn}
               disabled={checkinPending || !wallet.check_in_available}
-              className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="pv-button-primary disabled:cursor-not-allowed disabled:opacity-60"
             >
               {checkinPending ? t("missions.loading") : t("wallet.checkinCta")}
             </button>
             <Link href="/store" className="pv-button-secondary">
               {t("nav.store")}
             </Link>
-            <Link href="/missions" className="pv-button-secondary">
-              {t("nav.missions")}
+            <Link href="/dashboard" className="pv-inline-link">
+              {t("nav.dashboard")}
+              <span aria-hidden="true">↗</span>
             </Link>
+          </>
+        }
+        aside={
+          <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+            <div className="pv-stat-card">
+              <p className="pv-stat-label">{t("wallet.balance")}</p>
+              <div className="mt-3 flex items-center gap-3">
+                <LmnMark size={40} label={wallet.currency_symbol} />
+                <div>
+                  <p className="text-2xl font-extrabold tracking-[-0.05em] text-zinc-950">{wallet.balance}</p>
+                  <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
+                    {wallet.currency_name || wallet.currency_symbol}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="pv-stat-card">
+              <p className="pv-stat-label">{t("wallet.currentStreak")}</p>
+              <p className="mt-3 text-2xl font-extrabold tracking-[-0.05em] text-zinc-950">{wallet.current_streak}</p>
+            </div>
+            <div className="pv-stat-card">
+              <p className="pv-stat-label">{t("wallet.bestStreak")}</p>
+              <p className="mt-3 text-2xl font-extrabold tracking-[-0.05em] text-zinc-950">{wallet.best_streak}</p>
+            </div>
           </div>
-        </div>
+        }
+      />
 
-        <p className="mt-4 text-sm text-zinc-600">
-          {wallet.check_in_available
-            ? t("wallet.checkinReady")
-            : `${t("wallet.checkinLocked")}${wallet.last_check_in_at ? ` · ${new Date(wallet.last_check_in_at).toLocaleString()}` : ""}`}
-        </p>
+      <section className="pv-panel px-6 py-6 sm:px-7">
+        <EconomyLoop activeStep="wallet" />
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label={t("wallet.earned")} value={`${wallet.total_earned} ${wallet.currency_symbol}`} />
-        <StatCard label={t("wallet.spent")} value={`${wallet.total_spent} ${wallet.currency_symbol}`} />
-        <StatCard label={t("wallet.currentStreak")} value={String(wallet.current_streak)} tone="positive" />
-        <StatCard label={t("wallet.bestStreak")} value={String(wallet.best_streak)} tone="neutral" />
+        <StatCard label={t("wallet.earned")} value={<LmnAmount amount={wallet.total_earned} symbol={wallet.currency_symbol} />} />
+        <StatCard label={t("wallet.spent")} value={<LmnAmount amount={wallet.total_spent} symbol={wallet.currency_symbol} />} />
+        <StatCard label={t("wallet.currentStreak")} value={<span className="pv-metric-value">{wallet.current_streak}</span>} tone="positive" />
+        <StatCard label={t("wallet.bestStreak")} value={<span className="pv-metric-value">{wallet.best_streak}</span>} />
       </section>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <section className="pv-panel px-5 py-5">
-          <div className="flex items-center justify-between gap-3">
-            <p className="pv-kicker">{t("wallet.activeBenefits")}</p>
-            <p className="text-xs text-zinc-500">{t("wallet.balance")}: {wallet.balance} {wallet.currency_symbol}</p>
+          <div className="pv-section-head">
+            <div className="pv-section-copy">
+              <p className="pv-kicker">{t("wallet.activeBenefits")}</p>
+              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("wallet.activeBenefits")}</h2>
+            </div>
+            <LmnAmount amount={wallet.balance} symbol={wallet.currency_symbol} strong />
           </div>
           {wallet.active_benefits.length === 0 ? (
-            <p className="mt-4 text-sm text-zinc-600">{t("wallet.noBenefits")}</p>
+            <div className="pv-empty-state mt-5 text-sm text-zinc-600">{t("wallet.noBenefits")}</div>
           ) : (
-            <div className="mt-4 space-y-3">
+            <div className="mt-5 space-y-3">
               {wallet.active_benefits.map((benefit) => (
-                <div key={benefit.key} className="rounded-[1.25rem] border border-[var(--pv-border)] bg-zinc-50/70 p-4">
-                  <p className="text-sm font-semibold text-zinc-900">{benefitLabel(benefit, t)}</p>
-                  {benefit.expires_at ? (
-                    <p className="mt-1 text-xs text-zinc-500">
-                      {t("wallet.premiumUntil")}: {new Date(benefit.expires_at).toLocaleString()}
-                    </p>
-                  ) : null}
+                <div key={benefit.key} className="pv-card-muted p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-zinc-900">{benefitLabel(benefit, t)}</p>
+                      {benefit.expires_at ? (
+                        <p className="mt-1 text-xs text-zinc-500">
+                          {t("wallet.premiumUntil")}: {new Date(benefit.expires_at).toLocaleString()}
+                        </p>
+                      ) : null}
+                    </div>
+                    <span className="pv-badge-brand">{benefit.kind}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -191,24 +282,28 @@ export function WalletClient() {
         </section>
 
         <section className="pv-panel px-5 py-5">
-          <div className="flex items-center justify-between gap-3">
-            <p className="pv-kicker">{t("wallet.purchaseHistory")}</p>
+          <div className="pv-section-head">
+            <div className="pv-section-copy">
+              <p className="pv-kicker">{t("wallet.purchaseHistory")}</p>
+              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("wallet.purchaseHistory")}</h2>
+            </div>
             <Link href="/store" className="pv-inline-link">
               {t("nav.store")}
+              <span aria-hidden="true">↗</span>
             </Link>
           </div>
           {wallet.recent_purchases.length === 0 ? (
-            <p className="mt-4 text-sm text-zinc-600">{t("wallet.noPurchases")}</p>
+            <div className="pv-empty-state mt-5 text-sm text-zinc-600">{t("wallet.noPurchases")}</div>
           ) : (
-            <div className="mt-4 space-y-3">
+            <div className="mt-5 space-y-3">
               {wallet.recent_purchases.map((purchase: WalletPurchase) => (
-                <div key={purchase.id} className="rounded-[1.25rem] border border-[var(--pv-border)] bg-zinc-50/70 p-4">
+                <div key={purchase.id} className="pv-card-muted p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-zinc-900">{purchase.item_title}</p>
                       <p className="mt-1 text-xs text-zinc-500">{new Date(purchase.created_at).toLocaleString()}</p>
                     </div>
-                    <p className="text-sm font-medium text-zinc-700">-{purchase.price_paid} {wallet.currency_symbol}</p>
+                    <LmnAmount amount={`-${purchase.price_paid}`} symbol={wallet.currency_symbol} />
                   </div>
                 </div>
               ))}
@@ -217,33 +312,46 @@ export function WalletClient() {
         </section>
       </div>
 
-      <section className="space-y-2 rounded-lg border border-zinc-200 bg-white p-4 shadow-card">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">{t("wallet.recentActivity")}</p>
-          <p className="text-xs text-zinc-500">
-            {t("wallet.balance")}: {wallet.balance} {wallet.currency_symbol}
-          </p>
+      <section className="pv-panel px-5 py-5">
+        <div className="pv-section-head">
+          <div className="pv-section-copy">
+            <p className="pv-kicker">{t("wallet.recentActivity")}</p>
+            <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("wallet.recentActivity")}</h2>
+          </div>
+          <LmnAmount amount={wallet.balance} symbol={wallet.currency_symbol} />
         </div>
+
         {wallet.recent.length === 0 ? (
-          <p className="text-sm text-zinc-600">{t("wallet.empty")}</p>
+          <div className="pv-empty-state mt-5 text-sm text-zinc-600">{t("wallet.empty")}</div>
         ) : (
-          <div className="divide-y divide-zinc-100">
+          <div className="mt-5 space-y-3">
             {wallet.recent.map((tx: CurrencyTransaction) => (
-              <div key={tx.id} className="flex items-center justify-between py-2 text-sm text-zinc-800">
-                <div>
-                  <p className="font-medium text-zinc-900">{reasonLabel(tx.reason, t)}</p>
-                  <p className="text-xs text-zinc-500">
-                    {new Date(tx.created_at).toLocaleString()}
-                    {tx.context ? ` · ${tx.context}` : ""}
-                  </p>
-                </div>
-                <div className={`text-right ${tx.amount > 0 ? "text-emerald-700" : "text-zinc-700"}`}>
-                  <p className="font-semibold">
-                    {formatAmount(tx.amount)} {wallet.currency_symbol}
-                  </p>
-                  <p className="text-xs text-zinc-500">
-                    {t("wallet.balance")}: {tx.balance_after}
-                  </p>
+              <div key={tx.id} className="pv-card-muted p-4">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <span
+                      className={`mt-1 h-2.5 w-2.5 rounded-full ${
+                        tx.amount > 0 ? "bg-[var(--pv-success)]" : "bg-slate-400"
+                      }`}
+                    />
+                    <div>
+                      <p className="font-semibold text-zinc-900">{reasonLabel(tx.reason, t)}</p>
+                      <p className="text-xs text-zinc-500">
+                        {new Date(tx.created_at).toLocaleString()}
+                        {tx.context ? ` · ${tx.context}` : ""}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <LmnAmount
+                      amount={formatAmount(tx.amount)}
+                      symbol={wallet.currency_symbol}
+                      className={tx.amount > 0 ? "border-emerald-200 bg-emerald-50/90" : ""}
+                    />
+                    <p className="mt-2 text-xs text-zinc-500">
+                      {t("wallet.balance")}: {tx.balance_after}
+                    </p>
+                  </div>
                 </div>
               </div>
             ))}
@@ -254,13 +362,19 @@ export function WalletClient() {
   );
 }
 
-function StatCard({ label, value, tone = "neutral" }: { label: string; value: string; tone?: "neutral" | "positive" }) {
-  const styles =
-    tone === "positive" ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-zinc-200 bg-zinc-50 text-zinc-900";
+function StatCard({
+  label,
+  value,
+  tone = "neutral",
+}: {
+  label: string;
+  value: ReactNode;
+  tone?: "neutral" | "positive";
+}) {
   return (
-    <div className={`rounded-lg border ${styles} p-4`}>
-      <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">{label}</p>
-      <p className="mt-2 text-lg font-semibold">{value}</p>
+    <div className={`pv-stat-card ${tone === "positive" ? "border-emerald-200/70 bg-emerald-50/60" : ""}`}>
+      <p className="pv-stat-label">{label}</p>
+      <div className="mt-3">{value}</div>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime, timezone
 
 from sqlalchemy import (
+    BigInteger,
     JSON,
     Boolean,
     DateTime,
@@ -180,6 +181,14 @@ class User(Base):
         nullable=False,
         default=lambda: datetime.now(timezone.utc),
     )
+    telegram_user_id: Mapped[int | None] = mapped_column(BigInteger, unique=True, index=True, nullable=True)
+    telegram_username: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    telegram_first_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    telegram_last_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    telegram_language: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    telegram_is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    telegram_joined_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    telegram_last_active: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     prompts: Mapped[list["Prompt"]] = relationship(back_populates="author", foreign_keys="Prompt.author_id")
     saved_prompt_links: Mapped[list["SavedPrompt"]] = relationship(
@@ -728,6 +737,10 @@ class Prompt(Base):
         nullable=False,
         default=lambda: datetime.now(timezone.utc),
     )
+    legacy_bot_prompt_id: Mapped[int | None] = mapped_column(Integer, nullable=True, unique=True, index=True)
+    legacy_bot_category: Mapped[str | None] = mapped_column(String(80), nullable=True, index=True)
+    legacy_bot_subcategory: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    content_language: Mapped[str | None] = mapped_column(String(10), nullable=True, index=True)
 
     category: Mapped["Category"] = relationship(back_populates="prompts")
     author: Mapped["User | None"] = relationship(back_populates="prompts", foreign_keys=[author_id])

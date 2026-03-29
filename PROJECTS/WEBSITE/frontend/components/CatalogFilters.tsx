@@ -118,9 +118,9 @@ export function CatalogFilters({
   }
 
   return (
-    <div className="pv-panel space-y-4 px-5 py-5 sm:px-6">
-      <form onSubmit={onSearchSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="min-w-[220px] flex-1 space-y-1">
+    <div className="pv-panel space-y-5 px-5 py-5 sm:px-6">
+      <form onSubmit={onSearchSubmit} className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto_auto] xl:items-end">
+        <div className="min-w-[220px] space-y-1">
           <label htmlFor="q" className="pv-label">
             {t("catalogFilters.search")}
           </label>
@@ -240,7 +240,7 @@ function SelectField({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="space-y-1">
+    <div className="pv-card-muted space-y-2 p-3">
       <label className="pv-label">{label}</label>
       <select
         value={value}
@@ -269,7 +269,7 @@ function MultiSelectField({
   onChange: (values: string[]) => void;
 }) {
   return (
-    <div className="space-y-1">
+    <div className="pv-card-muted space-y-2 p-3">
       <label className="pv-label">{label}</label>
       <select
         multiple

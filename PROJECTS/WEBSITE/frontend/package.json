@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "postbuild": "node scripts/prepare-standalone.mjs",
+    "start": "node .next/standalone/server.js",
     "lint": "next lint",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install --with-deps chromium"

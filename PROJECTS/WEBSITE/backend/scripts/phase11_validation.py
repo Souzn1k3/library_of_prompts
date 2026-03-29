@@ -295,8 +295,8 @@ async def _seed_data() -> SeedState:
         )
         enterprise = Plan(
             tier=PlanTier.enterprise,
-            name="Enterprise",
-            description="Enterprise tier",
+            name="MAX",
+            description="MAX tier",
             price_usd_month=99,
             is_active=True,
             sort_order=3,

@@ -9,7 +9,7 @@ import {
   fetchPopularLessons,
   fetchPromptRecommendations,
 } from "@/lib/api";
-import { getTranslation } from "@/lib/i18n";
+import { getTechniqueTranslationKey, getTranslation, type Language } from "@/lib/i18n";
 import { absoluteUrl } from "@/lib/seo";
 import { getServerAccessToken } from "@/lib/server-auth";
 import { getServerLanguage } from "@/lib/server-i18n";
@@ -69,29 +69,25 @@ export default async function HomePage() {
         }}
       />
 
-      <section className="pv-panel px-6 py-8 sm:px-8 sm:py-10">
-        <div className="max-w-4xl space-y-5">
-          <p className="pv-kicker">
-            <T k="home.kicker" />
-          </p>
-          <h1 className="pv-display max-w-3xl text-zinc-950">
-            <T k="home.title" />
-          </h1>
-          <p className="max-w-2xl text-base leading-relaxed text-[var(--pv-muted)]">
-            <T k="home.subtitle" />
-          </p>
-          <HomeHeroActions />
-          <div className="flex flex-wrap gap-4 text-sm text-zinc-600">
-            <span>
-              1. <T k="home.explorePrompts" />
-            </span>
-            <span>
-              2. <T k="home.startLearning" />
-            </span>
-            <span>
-              3. <T k="nav.missions" />
-            </span>
+      <section className="pv-hero px-6 py-8 sm:px-8 sm:py-12">
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(280px,360px)] lg:items-center xl:gap-12">
+          <div className="pv-hero-copy space-y-7">
+            <div className="max-w-[40rem] space-y-4">
+              <p className="pv-kicker">
+                <T k="home.kicker" />
+              </p>
+              <h1 className="pv-display max-w-[15ch] text-zinc-950">
+                <T k="home.title" />
+              </h1>
+              <p className="pv-lead max-w-[35rem]">
+                <T k="home.subtitle" />
+              </p>
+            </div>
+
+            <HomeHeroActions initialAuthenticated={Boolean(accessToken)} />
           </div>
+
+          <HeroPreview prompt={featuredPrompts[0]} language={language} />
         </div>
       </section>
 
@@ -123,25 +119,64 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
             {popularLessons.map((lesson) => (
               <Link
                 key={`home-lesson-${lesson.id}`}
                 href={`/learn/${encodeURIComponent(lesson.slug)}`}
                 className="pv-card block p-5"
               >
-                <p className="text-base font-semibold tracking-[-0.03em] text-zinc-950">{lesson.title}</p>
-                <p className="mt-2 text-sm text-zinc-600">
-                  {lesson.completion_count} <T k="learn.completions" />
-                </p>
-                <span className="mt-4 inline-flex text-sm font-medium text-[var(--pv-brand)]">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-base font-semibold tracking-[-0.03em] text-zinc-950">{lesson.title}</p>
+                    <p className="mt-2 text-sm text-zinc-600">
+                      {lesson.completion_count} <T k="learn.completions" />
+                    </p>
+                  </div>
+                  <span className="pv-chip-brand">
+                    <T k={lesson.locked ? "learn.locked" : "learn.open"} />
+                  </span>
+                </div>
+                <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[var(--pv-brand-strong)]">
                   <T k="home.startLearning" />
+                  <span aria-hidden="true">↗</span>
                 </span>
               </Link>
             ))}
           </div>
         </section>
       ) : null}
+    </div>
+  );
+}
+
+function HeroPreview({
+  prompt,
+  language,
+}: {
+  prompt: PromptListItem | undefined;
+  language: Language;
+}) {
+  const techniqueLabel = prompt
+    ? getTranslation(language, getTechniqueTranslationKey(prompt.technique))
+    : getTranslation(language, "catalog.prompts");
+  const previewTitle = prompt?.title ?? getTranslation(language, "home.previewEmptyTitle");
+  const previewBody = prompt?.summary ?? getTranslation(language, "home.previewEmptyBody");
+
+  return (
+    <div className="pv-hero-visual">
+      <div className="pv-hero-preview-shell">
+        <p className="pv-hero-preview-label">{getTranslation(language, "home.previewLabel")}</p>
+
+        <div className="pv-hero-preview-card">
+          <span className="pv-chip-brand w-fit">{techniqueLabel}</span>
+          <div className="space-y-3">
+            <h2 className="pv-hero-preview-title">{previewTitle}</h2>
+            <p className="pv-hero-preview-body line-clamp-4">{previewBody}</p>
+          </div>
+          <p className="pv-hero-preview-foot">{getTranslation(language, "home.previewFooter")}</p>
+        </div>
+      </div>
     </div>
   );
 }

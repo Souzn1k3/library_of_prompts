@@ -35,6 +35,7 @@ os.environ.setdefault("BILLING_CHECKOUT_CANCEL_URL", "http://127.0.0.1:3000/plan
 os.environ.setdefault("BILLING_PORTAL_RETURN_URL", "http://127.0.0.1:3000/dashboard")
 os.environ.setdefault("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
 os.environ.setdefault("CACHE_ENABLED", "true")
+os.environ.setdefault("TELEGRAM_BOT_API_KEY", "pytest-telegram-bot-sync-key")
 
 
 def _sync_database_url(async_url: str) -> str:

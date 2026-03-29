@@ -6,9 +6,11 @@ import { cache } from "react";
 import { PromptViewTracker } from "@/components/analytics/PromptViewTracker";
 import { TrackedUpgradeButton } from "@/components/analytics/TrackedUpgradeButton";
 import { CopyPromptButton } from "@/components/CopyPromptButton";
+import { PageIntro } from "@/components/navigation/PageIntro";
 import { PromptCard } from "@/components/PromptCard";
 import { SavePromptButton } from "@/components/SavePromptButton";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { LmnAmount } from "@/components/ui/LmnAmount";
 import {
   ApiRequestError,
   fetchCategories,
@@ -99,72 +101,74 @@ export default async function PromptPage(props: Props) {
           }}
         />
 
-        <section className="pv-panel px-6 py-6 sm:px-7">
-          <Link href="/catalog" className="pv-inline-link">
-            <span aria-hidden="true">←</span>
-            {getTranslation(language, "prompt.backToCatalog")}
-          </Link>
-
-          <div className="mt-5 space-y-4">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
-              <span className="font-medium text-zinc-700">
-                {getTranslation(language, getTechniqueTranslationKey(prompt.technique))}
+        <PageIntro
+          breadcrumbs={[
+            { label: getTranslation(language, "nav.catalog"), href: "/catalog" },
+            ...(category
+              ? [
+                  {
+                    label: category.name,
+                    href: `/category/${encodeURIComponent(category.slug)}`,
+                  },
+                ]
+              : []),
+            { label: prompt.title },
+          ]}
+          eyebrow={getTranslation(language, "prompt.sectionTitle")}
+          title={prompt.title}
+          description={prompt.summary ?? undefined}
+        >
+          <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-500">
+            <span className="font-medium text-zinc-700">
+              {getTranslation(language, getTechniqueTranslationKey(prompt.technique))}
+            </span>
+            {prompt.difficulty ? (
+              <span>
+                · {getTranslation(language, getDifficultyTranslationKey(prompt.difficulty))}
               </span>
-              {prompt.difficulty ? (
-                <span>
-                  · {getTranslation(language, getDifficultyTranslationKey(prompt.difficulty))}
-                </span>
-              ) : null}
-              {prompt.output_type ? (
-                <span>
-                  · {getTranslation(language, getOutputTypeTranslationKey(prompt.output_type))}
-                </span>
-              ) : null}
-              {category ? <span>· {category.name}</span> : null}
-            </div>
+            ) : null}
+            {prompt.output_type ? (
+              <span>
+                · {getTranslation(language, getOutputTypeTranslationKey(prompt.output_type))}
+              </span>
+            ) : null}
+            {category ? <span>· {category.name}</span> : null}
+          </div>
 
-            <div className="space-y-3">
-              <h1 className="pv-title text-zinc-950">{prompt.title}</h1>
-              {prompt.summary ? (
-                <p className="max-w-3xl text-base leading-relaxed text-zinc-600">{prompt.summary}</p>
-              ) : null}
-            </div>
-
-            {prompt.body_locked ? (
-              <div className="rounded-[1.25rem] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                <p>{getTranslation(language, "prompt.previewOnlyMessage")}</p>
-                <div className="mt-4 flex flex-wrap gap-3">
-                  <TrackedUpgradeButton
-                    href="/pricing?tier=starter"
-                    page={`/prompt/${prompt.slug}`}
-                    feature="locked_prompt_cta"
-                    metadata={{
-                      prompt_id: prompt.id,
-                      prompt_slug: prompt.slug,
-                      target_tier: "starter",
-                    }}
-                    className="inline-flex pv-button-primary"
-                    label={getTranslation(language, "prompt.upgradeToUnlock")}
-                  />
-                  {prompt.unlock_offer ? (
-                    <Link href="/store" className="pv-button-secondary">
-                      {`${getTranslation(language, "prompt.unlockWithLumens")} · ${prompt.unlock_offer.price} ${prompt.unlock_offer.currency}`}
-                    </Link>
-                  ) : null}
-                </div>
+          {prompt.body_locked ? (
+            <div className="pv-alert pv-alert-warning text-sm">
+              <p>{getTranslation(language, "prompt.previewOnlyMessage")}</p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <TrackedUpgradeButton
+                  href="/pricing?tier=starter"
+                  page={`/prompt/${prompt.slug}`}
+                  feature="locked_prompt_cta"
+                  metadata={{
+                    prompt_id: prompt.id,
+                    prompt_slug: prompt.slug,
+                    target_tier: "starter",
+                  }}
+                  className="inline-flex pv-button-primary"
+                  label={getTranslation(language, "prompt.upgradeToUnlock")}
+                />
                 {prompt.unlock_offer ? (
-                  <p className="mt-3 text-xs text-amber-900/80">
-                    {prompt.unlock_offer.item_title}
-                  </p>
+                  <Link href="/store" className="pv-button-secondary">
+                    {`${getTranslation(language, "prompt.unlockWithLumens")} · ${prompt.unlock_offer.price} ${prompt.unlock_offer.currency}`}
+                  </Link>
                 ) : null}
               </div>
-            ) : null}
-          </div>
-        </section>
+              {prompt.unlock_offer ? (
+                <p className="mt-3 text-xs text-amber-900/80">
+                  {prompt.unlock_offer.item_title}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+        </PageIntro>
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
           <section className="pv-panel px-6 py-6 sm:px-7">
-            <pre className="overflow-x-auto whitespace-pre-wrap rounded-[1.25rem] bg-zinc-50 p-5 font-mono text-sm leading-relaxed text-zinc-900">
+            <pre className="overflow-x-auto whitespace-pre-wrap rounded-[1.25rem] border border-[var(--pv-border)] bg-white/80 p-5 font-mono text-sm leading-relaxed text-zinc-900">
               {prompt.body}
             </pre>
           </section>
@@ -184,7 +188,8 @@ export default async function PromptPage(props: Props) {
                 ) : null}
                 {prompt.body_locked && prompt.unlock_offer ? (
                   <Link href="/store" className="pv-button-primary">
-                    {`${getTranslation(language, "prompt.unlockWithLumens")} · ${prompt.unlock_offer.price} ${prompt.unlock_offer.currency}`}
+                    <span>{getTranslation(language, "prompt.unlockWithLumens")}</span>
+                    <LmnAmount amount={prompt.unlock_offer.price} symbol={prompt.unlock_offer.currency} />
                   </Link>
                 ) : null}
                 <SavePromptButton promptId={prompt.id} promptSlug={prompt.slug} metadata={interactionMetadata} />
@@ -195,9 +200,10 @@ export default async function PromptPage(props: Props) {
                   <p className="text-sm font-medium text-zinc-950">{primaryLesson.title}</p>
                   <Link
                     href={`/learn/${encodeURIComponent(primaryLesson.slug)}`}
-                    className="mt-3 inline-flex text-sm font-medium text-[var(--pv-brand)]"
+                    className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--pv-brand-strong)]"
                   >
                     {getTranslation(language, "prompt.learnHowItWorks")}
+                    <span aria-hidden="true">↗</span>
                   </Link>
                 </div>
               ) : null}
@@ -229,7 +235,7 @@ export default async function PromptPage(props: Props) {
       notFound();
     }
     return (
-      <div className="rounded-[1.25rem] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+      <div className="pv-alert pv-alert-warning text-sm">
         <p className="font-medium">{getTranslation(language, "prompt.loadFailedTitle")}</p>
         <p className="mt-1 text-amber-800">
           {e instanceof ApiRequestError ? e.message : getTranslation(language, "prompt.unexpectedError")}

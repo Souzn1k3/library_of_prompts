@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { CatalogFilters } from "@/components/CatalogFilters";
 import { T } from "@/components/i18n/T";
+import { PageIntro } from "@/components/navigation/PageIntro";
 import { PromptCard } from "@/components/PromptCard";
 import { JsonLd } from "@/components/seo/JsonLd";
 import {
@@ -145,34 +146,44 @@ export default async function CatalogPage({ searchParams }: PageProps) {
         }}
       />
 
-      <section className="pv-panel px-6 py-7 sm:px-8">
-        <div className="max-w-4xl space-y-4">
-          <p className="pv-kicker">
-            <T k="catalog.title" />
-          </p>
-          <h1 className="pv-title text-zinc-950">
-            <T k="catalog.title" />
-          </h1>
-          <p className="max-w-3xl text-base leading-relaxed text-[var(--pv-muted)]">
-            <T k="catalog.subtitle" />
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {categories.slice(0, 6).map((category) => (
-              <Link
-                key={`category-link-${category.id}`}
-                href={`/category/${encodeURIComponent(category.slug)}`}
-                className="pv-chip"
-              >
-                {category.name}
-              </Link>
-            ))}
+      <PageIntro
+        breadcrumbs={[
+          { label: getTranslation(language, "brand.name"), href: "/" },
+          { label: getTranslation(language, "nav.catalog") },
+        ]}
+        eyebrow={<T k="catalog.title" />}
+        title={<T k="catalog.title" />}
+        description={<T k="catalog.subtitle" />}
+        hint={<T k="catalog.browseCategoryPages" />}
+        aside={
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+            <div className="pv-stat-card">
+              <p className="pv-stat-label">
+                <T k="catalog.categories" />
+              </p>
+              <p className="mt-3 text-2xl font-extrabold tracking-[-0.05em] text-zinc-950">{categories.length}</p>
+            </div>
+            <div className="pv-stat-card">
+              <p className="pv-stat-label">
+                <T k="catalog.prompts" />
+              </p>
+              <p className="mt-3 text-2xl font-extrabold tracking-[-0.05em] text-zinc-950">{prompts.length}</p>
+            </div>
           </div>
-          <Link href="/learn" className="pv-inline-link">
-            <T k="home.startLearning" />
-            <span aria-hidden="true">↗</span>
-          </Link>
+        }
+      >
+        <div className="flex flex-wrap gap-2">
+          {categories.slice(0, 6).map((category) => (
+            <Link
+              key={`category-link-${category.id}`}
+              href={`/category/${encodeURIComponent(category.slug)}`}
+              className="pv-chip"
+            >
+              {category.name}
+            </Link>
+          ))}
         </div>
-      </section>
+      </PageIntro>
 
       {error ? (
         <div className="rounded-[1.25rem] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
@@ -204,10 +215,7 @@ export default async function CatalogPage({ searchParams }: PageProps) {
       <section className="pv-panel px-6 py-6 sm:px-7">
         <div className="pv-section-head">
           <div className="pv-section-copy">
-            <p className="pv-kicker">
-              <T k="catalog.prompts" />
-            </p>
-            <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
+            <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">
               <T k="catalog.prompts" />
             </h2>
           </div>
@@ -230,12 +238,7 @@ export default async function CatalogPage({ searchParams }: PageProps) {
         <section className="pv-panel px-6 py-6 sm:px-7">
           <div className="pv-section-head">
             <div className="pv-section-copy">
-              <p className="pv-kicker">
-                {sections.for_you?.length
-                  ? getTranslation(language, "catalog.discoveryForYou")
-                  : getTranslation(language, "catalog.discoveryTrending")}
-              </p>
-              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
+              <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">
                 {sections.for_you?.length
                   ? getTranslation(language, "catalog.discoveryForYou")
                   : getTranslation(language, "catalog.discoveryTrending")}

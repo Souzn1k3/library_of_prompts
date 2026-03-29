@@ -16,6 +16,7 @@ from app.api.v1.routers import (
     moderation,
     onboarding,
     prompts,
+    telegram,
     users,
 )
 
@@ -36,3 +37,4 @@ api_router.include_router(onboarding.router)
 api_router.include_router(contributions.router)
 api_router.include_router(moderation.router)
 api_router.include_router(users.router)
+api_router.include_router(telegram.router)

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Manrope } from "next/font/google";
+import localFont from "next/font/local";
 
 import { AnalyticsPageTracker } from "@/components/analytics/AnalyticsPageTracker";
 import { AuthProvider } from "@/components/auth/AuthProvider";
@@ -16,15 +16,33 @@ import { getSiteUrl } from "@/lib/site";
 
 import "./globals.css";
 
-const manrope = Manrope({
-  subsets: ["latin"],
+const manrope = localFont({
+  src: "./fonts/manrope/Manrope[wght].ttf",
   variable: "--font-sans",
+  display: "swap",
+  weight: "200 800",
 });
 
-const ibmPlexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+const ibmPlexMono = localFont({
+  src: [
+    {
+      path: "./fonts/ibm-plex-mono/IBMPlexMono-Regular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "./fonts/ibm-plex-mono/IBMPlexMono-Medium.ttf",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "./fonts/ibm-plex-mono/IBMPlexMono-SemiBold.ttf",
+      weight: "600",
+      style: "normal",
+    },
+  ],
   variable: "--font-mono",
+  display: "swap",
 });
 
 const siteUrl = getSiteUrl();
@@ -88,9 +106,7 @@ export default async function RootLayout({
 
   return (
     <html lang={language}>
-      <body
-        className={`${manrope.className} ${manrope.variable} ${ibmPlexMono.variable} min-h-screen antialiased`}
-      >
+      <body className={`${manrope.variable} ${ibmPlexMono.variable} min-h-screen antialiased`}>
         <div className="relative isolate flex min-h-screen flex-col">
           <LanguageProvider initialLanguage={language}>
             <AuthProvider initialHasAuthCookie={authState.hasAnyAuthCookie}>
@@ -104,7 +120,7 @@ export default async function RootLayout({
               <Header />
               <main
                 id="main-content"
-                className="mx-auto w-full max-w-[1280px] flex-1 px-4 pb-16 pt-8 sm:px-6 sm:pb-20 lg:px-8"
+                className="pv-main-shell mx-auto w-full max-w-[1280px] flex-1 px-4 pb-16 pt-8 sm:px-6 sm:pb-20 lg:px-8"
                 tabIndex={-1}
               >
                 {children}

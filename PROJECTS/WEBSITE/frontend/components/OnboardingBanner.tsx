@@ -36,30 +36,39 @@ export function OnboardingBanner() {
 
   return (
     <div className="px-4 pt-4 sm:px-6 lg:px-8">
-      <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-3 rounded-[1.5rem] border border-[var(--pv-border)] bg-white/75 px-4 py-3 text-sm text-zinc-800 shadow-[0_16px_36px_rgba(15,23,42,0.06)] sm:flex-row sm:items-center sm:justify-between">
-        <p className="leading-relaxed">
-          <span className="font-medium text-zinc-900">{t("onboarding.welcome")}</span>{" "}
-          {t("onboarding.prefix")}{" "}
-          <Link href="/catalog" className="underline">
-            {t("onboarding.catalog")}
-          </Link>
-          {t("onboarding.learnPrefix")}{" "}
-          <Link href="/learn" className="underline">
-            {t("onboarding.learnLink")}
-          </Link>
-          {" "}{t("onboarding.or")}{" "}
-          <Link href="/signup" className="underline">
-            {t("onboarding.signup")}
-          </Link>{" "}
-          {t("onboarding.suffix")}
-        </p>
-        <button
-          type="button"
-          onClick={dismiss}
-          className="shrink-0 rounded-full border border-[var(--pv-border)] bg-white px-3 py-1.5 text-xs font-semibold text-zinc-900 transition hover:border-[var(--pv-border-strong)]"
-        >
-          {t("onboarding.dismiss")}
-        </button>
+      <div className="mx-auto w-full max-w-[1280px]">
+        <div className="pv-alert pv-alert-info flex flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-[var(--pv-text)]">{t("onboarding.welcome")}</p>
+            <p className="text-sm leading-relaxed text-slate-700">
+              {t("onboarding.prefix")}{" "}
+              <Link href="/catalog" className="font-semibold text-[var(--pv-brand-strong)]">
+                {t("onboarding.catalog")}
+              </Link>
+              {t("onboarding.learnPrefix")}{" "}
+              <Link href="/learn" className="font-semibold text-[var(--pv-brand-strong)]">
+                {t("onboarding.learnLink")}
+              </Link>{" "}
+              {t("onboarding.or")}{" "}
+              <Link href="/signup" className="font-semibold text-[var(--pv-brand-strong)]">
+                {t("onboarding.signup")}
+              </Link>{" "}
+              {t("onboarding.suffix")}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/catalog" className="pv-button-secondary !w-auto">
+              {t("home.explorePrompts")}
+            </Link>
+            <button
+              type="button"
+              onClick={dismiss}
+              className="pv-button-ghost !w-auto px-3 py-2 text-xs font-semibold text-slate-600"
+            >
+              {t("onboarding.dismiss")}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

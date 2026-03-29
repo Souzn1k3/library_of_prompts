@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { T } from "@/components/i18n/T";
+import { PageIntro } from "@/components/navigation/PageIntro";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { ApiRequestError, fetchLessons, fetchPopularLessons } from "@/lib/api";
 import { getTierTranslationKey, getTranslation } from "@/lib/i18n";
@@ -57,28 +58,30 @@ export default async function LearnIndexPage() {
         }}
       />
 
-      <section className="pv-panel px-6 py-7 sm:px-8 sm:py-8">
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
-          <div className="space-y-5">
-            <p className="pv-kicker">
-              <T k="learn.title" />
-            </p>
-            <h1 className="pv-title text-zinc-950">
-              <T k="learn.title" />
-            </h1>
-            <p className="max-w-3xl text-base leading-relaxed text-[var(--pv-muted)]">
-              <T k="learn.subtitle" />
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/catalog" className="pv-button-primary">
-                <T k="home.explorePrompts" />
-              </Link>
-              <Link href="/missions" className="pv-button-secondary">
-                <T k="nav.missions" />
-              </Link>
-            </div>
-          </div>
-
+      <PageIntro
+        breadcrumbs={[
+          { label: getTranslation(language, "brand.name"), href: "/" },
+          { label: getTranslation(language, "nav.learn") },
+        ]}
+        eyebrow={<T k="learn.title" />}
+        title={<T k="learn.title" />}
+        description={<T k="learn.subtitle" />}
+        hint={<T k="learn.nextPromptsBody" />}
+        actions={
+          <>
+            <Link href="/catalog" className="pv-button-primary">
+              <T k="home.explorePrompts" />
+            </Link>
+            <Link href={accessToken ? "/dashboard" : "/signup"} className="pv-button-secondary">
+              <T k={accessToken ? "nav.dashboard" : "nav.signup"} />
+            </Link>
+            <Link href="/missions" className="pv-inline-link">
+              <T k="nav.missions" />
+              <span aria-hidden="true">↗</span>
+            </Link>
+          </>
+        }
+        aside={
           <div className="grid gap-3">
             {popular.slice(0, 3).map((lesson, index) => (
               <Link
@@ -94,13 +97,13 @@ export default async function LearnIndexPage() {
                       {lesson.locked ? <T k="learn.locked" /> : <T k="learn.open" />}
                     </p>
                   </div>
-                  <span className="text-sm font-semibold text-zinc-400">0{index + 1}</span>
+                  <span className="text-sm font-semibold text-[var(--pv-brand)]">0{index + 1}</span>
                 </div>
               </Link>
             ))}
           </div>
-        </div>
-      </section>
+        }
+      />
 
       {error ? (
         <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">

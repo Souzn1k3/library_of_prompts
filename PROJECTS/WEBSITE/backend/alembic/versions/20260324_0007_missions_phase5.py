@@ -28,6 +28,7 @@ def upgrade() -> None:
     insp = sa.inspect(bind)
     tables = set(insp.get_table_names())
     user_cols = {c["name"] for c in insp.get_columns("users")}
+    lesson_mission_cols = {c["name"] for c in insp.get_columns("lesson_missions")} if "lesson_missions" in tables else set()
 
     if "mission_credits" not in user_cols:
         op.add_column("users", sa.Column("mission_credits", sa.Integer(), nullable=False, server_default="0"))
@@ -265,6 +266,15 @@ def upgrade() -> None:
         sa.column("sort_order", sa.Integer()),
         sa.column("created_at", sa.DateTime(timezone=True)),
         sa.column("updated_at", sa.DateTime(timezone=True)),
+        *((
+            sa.column("mission_type", sa.String(length=24)),
+        ) if "mission_type" in lesson_mission_cols else ()),
+        *((
+            sa.column("is_repeatable", sa.Boolean()),
+        ) if "is_repeatable" in lesson_mission_cols else ()),
+        *((
+            sa.column("repeat_interval_days", sa.Integer()),
+        ) if "repeat_interval_days" in lesson_mission_cols else ()),
     )
     existing_slugs = {row[0] for row in bind.execute(sa.text("SELECT slug FROM lesson_missions")).fetchall()}
     first_lesson_id = bind.execute(sa.text("SELECT id FROM lessons ORDER BY sort_order, title LIMIT 1")).scalar()
@@ -370,6 +380,9 @@ def upgrade() -> None:
                 "sort_order": item["sort_order"],
                 "created_at": now,
                 "updated_at": now,
+                **({"mission_type": "action"} if "mission_type" in lesson_mission_cols else {}),
+                **({"is_repeatable": False} if "is_repeatable" in lesson_mission_cols else {}),
+                **({"repeat_interval_days": 0} if "repeat_interval_days" in lesson_mission_cols else {}),
             }
         )
     if rows:
