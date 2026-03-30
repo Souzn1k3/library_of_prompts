@@ -1,7 +1,7 @@
 import { ApiRequestError, getApiBaseUrl } from "./api";
-import { emitAuthStateChange, getToken, setToken } from "./auth";
+import { emitAuthStateChange } from "./auth";
 import { getClientLanguage, getTranslation, type Language } from "./i18n";
-import { extractApiErrorMessage, parseJson } from "./http";
+import { extractApiErrorMessage, parseJson, withQuery } from "./http";
 import type {
   AuthorSubmission,
   BillingStatus,
@@ -21,7 +21,6 @@ import type {
   PromptListItem,
   PromptRecommendationContext,
   PromptRecommendationResponse,
-  TokenResponse,
   UserProfile,
 } from "./types";
 
@@ -35,13 +34,19 @@ function networkError(language: Language): ApiRequestError {
   );
 }
 
-function authHeaders(language: string, initHeaders?: HeadersInit): HeadersInit {
-  const token = getToken();
+function requestHeaders(language: string, initHeaders?: HeadersInit): HeadersInit {
   return {
     Accept: "application/json",
     "Accept-Language": language,
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(initHeaders ?? {}),
+  };
+}
+
+function jsonInit(method: "POST" | "PUT" | "DELETE", body?: unknown): RequestInit {
+  return {
+    method,
+    headers: { "Content-Type": "application/json" },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   };
 }
 
@@ -61,19 +66,10 @@ async function refreshSession(language: string): Promise<boolean> {
         cache: "no-store",
       });
       if (!res.ok) {
-        setToken(null);
-        emitAuthStateChange({ state: "unauthenticated", reason: "refresh" });
+        emitAuthStateChange({ reason: "refresh" });
         return false;
       }
-      const data = await parseJson<unknown>(res);
-      if (
-        data &&
-        typeof data === "object" &&
-        "access_token" in data &&
-        typeof (data as { access_token: unknown }).access_token === "string"
-      ) {
-        setToken((data as { access_token: string }).access_token);
-      }
+      await parseJson<unknown>(res);
       return true;
     } catch {
       return false;
@@ -91,7 +87,7 @@ async function authFetchRaw(path: string, init?: RequestInit, canRetry = true): 
   try {
     response = await fetch(url, {
       ...init,
-      headers: authHeaders(language, init?.headers),
+      headers: requestHeaders(language, init?.headers),
       credentials: "include",
       cache: "no-store",
     });
@@ -107,7 +103,7 @@ async function authFetchRaw(path: string, init?: RequestInit, canRetry = true): 
   }
 
   if (response.status === 401) {
-    emitAuthStateChange({ state: "unauthenticated", reason: "expired" });
+    emitAuthStateChange({ reason: "expired" });
   }
 
   return response;
@@ -150,7 +146,7 @@ async function optionalAuthJsonFetch<T>(path: string, init?: RequestInit): Promi
   try {
     res = await fetch(`${getApiBaseUrl()}${path}`, {
       ...init,
-      headers: authHeaders(language, init?.headers),
+      headers: requestHeaders(language, init?.headers),
       credentials: "include",
       cache: "no-store",
     });
@@ -170,82 +166,26 @@ async function optionalAuthJsonFetch<T>(path: string, init?: RequestInit): Promi
   return data as T;
 }
 
-export async function loginRequest(email: string, password: string): Promise<TokenResponse> {
-  const language = getClientLanguage();
-  let res: Response;
-  try {
-    res = await fetch(`${getApiBaseUrl()}/api/v1/auth/login`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "Accept-Language": language,
-      },
-      body: JSON.stringify({ email, password }),
-      credentials: "include",
-      cache: "no-store",
-    });
-  } catch {
-    throw networkError(language);
-  }
-  const data = await parseJson<unknown>(res);
-  if (!res.ok) {
-    const message = extractApiErrorMessage(
-      data,
-      res.status,
-      getTranslation(language, "api.requestFailed"),
-      language,
-    );
-    throw new ApiRequestError(message, res.status, data);
-  }
-  return data as TokenResponse;
+export async function loginRequest(email: string, password: string): Promise<void> {
+  await optionalAuthJsonFetch<unknown>("/api/v1/auth/login", jsonInit("POST", { email, password }));
 }
 
 export async function registerRequest(
   email: string,
   password: string,
   displayName: string,
-): Promise<TokenResponse> {
-  const language = getClientLanguage();
-  let res: Response;
-  try {
-    res = await fetch(`${getApiBaseUrl()}/api/v1/auth/register`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "Accept-Language": language,
-      },
-      body: JSON.stringify({ email, password, display_name: displayName }),
-      credentials: "include",
-      cache: "no-store",
-    });
-  } catch {
-    throw networkError(language);
-  }
-  const data = await parseJson<unknown>(res);
-  if (!res.ok) {
-    const message = extractApiErrorMessage(
-      data,
-      res.status,
-      getTranslation(language, "api.requestFailed"),
-      language,
-    );
-    throw new ApiRequestError(message, res.status, data);
-  }
-  return data as TokenResponse;
+): Promise<void> {
+  await optionalAuthJsonFetch<unknown>(
+    "/api/v1/auth/register",
+    jsonInit("POST", { email, password, display_name: displayName }),
+  );
 }
 
 export async function logoutRequest(): Promise<void> {
   try {
-    await authFetchNoContent("/api/v1/auth/logout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: "{}",
-    });
+    await authFetchNoContent("/api/v1/auth/logout", jsonInit("POST", {}));
   } finally {
-    setToken(null);
-    emitAuthStateChange({ state: "unauthenticated", reason: "logout" });
+    emitAuthStateChange({ reason: "logout" });
   }
 }
 
@@ -266,19 +206,11 @@ export async function updateOnboardingProfile(body: {
   goal: OnboardingGoal;
   ai_context: string;
 }): Promise<OnboardingProfile> {
-  return authFetch<OnboardingProfile>("/api/v1/onboarding/profile", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  return authFetch<OnboardingProfile>("/api/v1/onboarding/profile", jsonInit("PUT", body));
 }
 
 export async function skipOnboarding(): Promise<OnboardingProfile> {
-  return authFetch<OnboardingProfile>("/api/v1/onboarding/skip", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: "{}",
-  });
+  return authFetch<OnboardingProfile>("/api/v1/onboarding/skip", jsonInit("POST", {}));
 }
 
 export async function fetchOnboardingStarterPack(): Promise<OnboardingStarterPack> {
@@ -289,11 +221,7 @@ export async function completeOnboardingFirstWin(body: {
   prompt_id: string;
   action: string;
 }): Promise<OnboardingProfile> {
-  return authFetch<OnboardingProfile>("/api/v1/onboarding/first-win", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  return authFetch<OnboardingProfile>("/api/v1/onboarding/first-win", jsonInit("POST", body));
 }
 
 export async function fetchCurrentMission(): Promise<MissionCurrentRead> {
@@ -323,11 +251,10 @@ export async function fetchStoreItems(): Promise<StoreItem[]> {
 }
 
 export async function purchaseStoreItem(slug: string, clientToken?: string): Promise<PurchaseResult> {
-  return authFetch<PurchaseResult>(`/api/v1/store/${encodeURIComponent(slug)}/purchase`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ client_token: clientToken ?? null }),
-  });
+  return authFetch<PurchaseResult>(
+    `/api/v1/store/${encodeURIComponent(slug)}/purchase`,
+    jsonInit("POST", { client_token: clientToken ?? null }),
+  );
 }
 
 export async function completeLesson(slug: string): Promise<void> {
@@ -337,19 +264,11 @@ export async function completeLesson(slug: string): Promise<void> {
 }
 
 export async function createCheckoutSession(tier: string): Promise<CheckoutSessionResult> {
-  return authFetch<CheckoutSessionResult>("/api/v1/billing/checkout/session", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tier }),
-  });
+  return authFetch<CheckoutSessionResult>("/api/v1/billing/checkout/session", jsonInit("POST", { tier }));
 }
 
 export async function createBillingPortalSession(): Promise<{ url: string }> {
-  return authFetch<{ url: string }>("/api/v1/billing/portal", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({}),
-  });
+  return authFetch<{ url: string }>("/api/v1/billing/portal", jsonInit("POST", {}));
 }
 
 export async function fetchSavedPrompts(): Promise<PromptListItem[]> {
@@ -361,9 +280,7 @@ export async function fetchMySubmissions(): Promise<AuthorSubmission[]> {
 }
 
 export async function fetchTopContributors(limit = 12): Promise<ContributorTopItem[]> {
-  return optionalAuthJsonFetch<ContributorTopItem[]>(
-    `/api/v1/contributors/top?limit=${encodeURIComponent(String(limit))}`,
-  );
+  return optionalAuthJsonFetch<ContributorTopItem[]>(withQuery("/api/v1/contributors/top", { limit }));
 }
 
 export async function fetchPromptRecommendations(params?: {
@@ -372,13 +289,12 @@ export async function fetchPromptRecommendations(params?: {
   prompt_slug?: string | null;
   lesson_slug?: string | null;
 }): Promise<PromptRecommendationResponse> {
-  const sp = new URLSearchParams();
-  if (params?.context) sp.set("context", params.context);
-  if (params?.limit != null) sp.set("limit", String(params.limit));
-  if (params?.prompt_slug) sp.set("prompt_slug", params.prompt_slug);
-  if (params?.lesson_slug) sp.set("lesson_slug", params.lesson_slug);
-  const q = sp.toString();
-  return authFetch<PromptRecommendationResponse>(`/api/v1/prompts/recommendations${q ? `?${q}` : ""}`);
+  return authFetch<PromptRecommendationResponse>(withQuery("/api/v1/prompts/recommendations", {
+    context: params?.context,
+    limit: params?.limit,
+    prompt_slug: params?.prompt_slug,
+    lesson_slug: params?.lesson_slug,
+  }));
 }
 
 export async function fetchContributorProfile(slug: string): Promise<ContributorProfile> {
@@ -406,11 +322,7 @@ export async function submitPrompt(body: {
   model_compatibility?: string[];
   tags?: string[];
 }): Promise<{ id: string; slug: string; status: string; moderation_state: string; auto_approved?: boolean }> {
-  return authFetch("/api/v1/contributions/submit", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  return authFetch("/api/v1/contributions/submit", jsonInit("POST", body));
 }
 
 export async function unsavePrompt(promptId: string): Promise<void> {

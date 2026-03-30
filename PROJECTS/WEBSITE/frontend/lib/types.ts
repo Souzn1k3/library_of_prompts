@@ -138,11 +138,6 @@ export type ApiErrorBody = {
   details?: Record<string, unknown>;
 };
 
-export type TokenResponse = {
-  access_token: string;
-  token_type: string;
-};
-
 export type UserProfile = {
   id: string;
   email: string;

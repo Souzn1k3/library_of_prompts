@@ -1,47 +1,17 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Depends, Request, status
 
 from app.api.deps import get_current_user
+from app.api.service_deps import get_mission_service, get_submission_service
 from app.core.cache import get_cache
-from app.config import get_settings
+from app.core.rate_limit import enforce_rate_limit, resolve_rate_limit_ip
 from app.infrastructure.db.models import User
-from app.infrastructure.db.session import get_db
-from app.modules.analytics.repository.analytics_repository import AnalyticsRepository
-from app.modules.analytics.service.analytics_service import AnalyticsService
 from app.modules.catalog.model.prompt import PromptSubmissionResult, PromptSubmit
-from app.modules.catalog.repository.category_repository import CategoryRepository
-from app.modules.catalog.repository.prompt_repository import PromptRepository
-from app.modules.contributors.repository.contributor_repository import ContributorRepository
-from app.modules.contributors.service.contributor_service import ContributorService
 from app.modules.contributions.service.submission_service import SubmissionService
-from app.modules.economy.repository.wallet_repository import WalletRepository
-from app.modules.identity.repository.user_repository import UserRepository
-from app.modules.missions.repository.mission_repository import MissionRepository
 from app.modules.missions.service.mission_service import MissionService
-from app.modules.onboarding.repository.onboarding_repository import OnboardingRepository
 
 router = APIRouter(prefix="/contributions", tags=["contributions"])
-
-
-def submission_service(session: AsyncSession = Depends(get_db)) -> SubmissionService:
-    return SubmissionService(
-        PromptRepository(session),
-        CategoryRepository(session),
-        ContributorService(ContributorRepository(session), UserRepository(session)),
-        analytics=AnalyticsService(AnalyticsRepository(session)),
-    )
-
-
-def mission_service(session: AsyncSession = Depends(get_db)) -> MissionService:
-    return MissionService(
-        MissionRepository(session),
-        OnboardingRepository(session),
-        PromptRepository(session),
-        wallet_repo=WalletRepository(session),
-        analytics=AnalyticsService(AnalyticsRepository(session)),
-    )
 
 
 @router.post(
@@ -50,11 +20,23 @@ def mission_service(session: AsyncSession = Depends(get_db)) -> MissionService:
     status_code=status.HTTP_201_CREATED,
 )
 async def submit_prompt(
+    request: Request,
     body: PromptSubmit,
     current_user: User = Depends(get_current_user),
-    svc: SubmissionService = Depends(submission_service),
-    missions: MissionService = Depends(mission_service),
+    svc: SubmissionService = Depends(get_submission_service),
+    missions: MissionService = Depends(get_mission_service),
 ) -> PromptSubmissionResult:
+    ip = resolve_rate_limit_ip(request)
+    await enforce_rate_limit(
+        key=f"contributions:submit:user:{current_user.id}",
+        limit=20,
+        window_seconds=60 * 60,
+    )
+    await enforce_rate_limit(
+        key=f"contributions:submit:ip:{ip}",
+        limit=30,
+        window_seconds=60 * 60,
+    )
     result = await svc.submit(current_user, body)
     today_key = datetime.now(timezone.utc).date().isoformat()
     await missions.record_event(

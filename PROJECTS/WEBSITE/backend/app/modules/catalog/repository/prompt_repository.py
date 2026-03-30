@@ -38,6 +38,19 @@ class PromptRepository:
         bind = self._session.bind
         return bool(bind and bind.dialect.name == "postgresql")
 
+    def _search_tokens(self, normalized: str) -> list[str]:
+        tokens: list[str] = []
+        seen: set[str] = set()
+        for raw_token in normalized.split():
+            token = raw_token.strip()
+            if len(token) < 2 or token in seen:
+                continue
+            seen.add(token)
+            tokens.append(token)
+            if len(tokens) >= 6:
+                break
+        return tokens
+
     def _insert(self, model):
         return pg_insert(model) if self._is_postgresql() else sqlite_insert(model)
 
@@ -45,6 +58,66 @@ class PromptRepository:
         if self._is_postgresql():
             return func.greatest(left, right)
         return case((left >= right, left), else_=right)
+
+    def _prompt_relation_load_options(self):
+        return (
+            selectinload(Prompt.use_case_links).selectinload(PromptUseCase.use_case),
+            selectinload(Prompt.model_links).selectinload(PromptModelCompatibility.model),
+            selectinload(Prompt.tag_links).selectinload(PromptTag.tag),
+        )
+
+    def _prompt_detail_load_options(self):
+        return (
+            joinedload(Prompt.category),
+            joinedload(Prompt.stats),
+            joinedload(Prompt.quality_metrics),
+            *self._prompt_relation_load_options(),
+            joinedload(Prompt.author).joinedload(User.contributor_profile),
+        )
+
+    def _list_load_options(self):
+        return (
+            contains_eager(Prompt.category),
+            contains_eager(Prompt.stats),
+            contains_eager(Prompt.quality_metrics),
+            *self._prompt_relation_load_options(),
+        )
+
+    def _author_load_option(self, *, eager: bool):
+        if eager:
+            return contains_eager(Prompt.author).contains_eager(User.contributor_profile)
+        return selectinload(Prompt.author).selectinload(User.contributor_profile)
+
+    def _published_query(self, selection, *, include_stats: bool, include_contributor: bool):
+        stmt = select(selection).select_from(Prompt).join(Category, Prompt.category_id == Category.id)
+        if include_stats:
+            stmt = stmt.outerjoin(PromptStats, PromptStats.prompt_id == Prompt.id).outerjoin(
+                PromptQualityMetric, PromptQualityMetric.prompt_id == Prompt.id
+            )
+        if include_contributor:
+            stmt = stmt.outerjoin(User, User.id == Prompt.author_id).outerjoin(
+                ContributorProfile, ContributorProfile.user_id == User.id
+            )
+        return stmt
+
+    async def _get_prompt(self, *conditions) -> Prompt | None:
+        stmt = select(Prompt).options(*self._prompt_detail_load_options()).where(*conditions)
+        result = await self._session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def _replace_prompt_links(
+        self,
+        model,
+        *,
+        prompt_id: uuid.UUID,
+        related_key: str,
+        related_ids: Sequence[uuid.UUID],
+    ) -> None:
+        await self._session.execute(delete(model).where(model.prompt_id == prompt_id))
+        if not related_ids:
+            return
+        rows = [{"prompt_id": prompt_id, related_key: related_id} for related_id in related_ids]
+        await self._session.execute(self._insert(model).values(rows))
 
     def _search_document(self):
         return func.to_tsvector(
@@ -105,16 +178,7 @@ class PromptRepository:
 
                 # SQLite fallback for typo-tolerant intent search:
                 # if the full phrase does not match, score token-level matches.
-                tokens: list[str] = []
-                seen: set[str] = set()
-                for raw_token in normalized.split():
-                    token = raw_token.strip()
-                    if len(token) < 2 or token in seen:
-                        continue
-                    seen.add(token)
-                    tokens.append(token)
-                    if len(tokens) >= 6:
-                        break
+                tokens = self._search_tokens(normalized)
 
                 token_score = literal(0.0)
                 for token in tokens:
@@ -217,16 +281,7 @@ class PromptRepository:
                     func.lower(func.coalesce(Prompt.summary, "")).like(like_pattern),
                     func.lower(Prompt.body).like(like_pattern),
                 )
-                tokens: list[str] = []
-                seen: set[str] = set()
-                for raw_token in normalized.split():
-                    token = raw_token.strip()
-                    if len(token) < 2 or token in seen:
-                        continue
-                    seen.add(token)
-                    tokens.append(token)
-                    if len(tokens) >= 6:
-                        break
+                tokens = self._search_tokens(normalized)
 
                 if not tokens:
                     parts.append(phrase_match)
@@ -287,46 +342,28 @@ class PromptRepository:
             include_text_score=include_text_score,
             include_contributor_score=include_contributor_score,
         )
-
-        stmt = (
-            select(Prompt)
-            .join(Category, Prompt.category_id == Category.id)
-            .outerjoin(PromptStats, PromptStats.prompt_id == Prompt.id)
-            .outerjoin(PromptQualityMetric, PromptQualityMetric.prompt_id == Prompt.id)
-            .where(
-                self._search_filters(
-                    q=q,
-                    contributor_slug=contributor_slug,
-                    category_id=category_id,
-                    technique=technique,
-                    difficulty=difficulty,
-                    output_type=output_type,
-                    use_cases=use_cases,
-                    model_compatibility=model_compatibility,
-                    tags=tags,
-                    restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
-                    only_free=only_free,
-                )
-            )
+        filters = self._search_filters(
+            q=q,
+            contributor_slug=contributor_slug,
+            category_id=category_id,
+            technique=technique,
+            difficulty=difficulty,
+            output_type=output_type,
+            use_cases=use_cases,
+            model_compatibility=model_compatibility,
+            tags=tags,
+            restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
+            only_free=only_free,
         )
 
-        if include_contributor_score:
-            stmt = stmt.outerjoin(User, User.id == Prompt.author_id).outerjoin(
-                ContributorProfile, ContributorProfile.user_id == User.id
-            )
-            stmt = stmt.options(
-                contains_eager(Prompt.author).contains_eager(User.contributor_profile)
-            )
-        else:
-            stmt = stmt.options(selectinload(Prompt.author).selectinload(User.contributor_profile))
-
+        stmt = self._published_query(
+            Prompt,
+            include_stats=True,
+            include_contributor=include_contributor_score,
+        ).where(filters)
         stmt = stmt.options(
-            contains_eager(Prompt.category),
-            contains_eager(Prompt.stats),
-            contains_eager(Prompt.quality_metrics),
-            selectinload(Prompt.use_case_links).selectinload(PromptUseCase.use_case),
-            selectinload(Prompt.model_links).selectinload(PromptModelCompatibility.model),
-            selectinload(Prompt.tag_links).selectinload(PromptTag.tag),
+            self._author_load_option(eager=include_contributor_score),
+            *self._list_load_options(),
         )
 
         stmt = self._apply_sort(stmt, sort=sort, ranking=ranking).offset(skip).limit(limit)
@@ -348,30 +385,24 @@ class PromptRepository:
         restrict_to_unrestricted_categories: bool = False,
         only_free: bool = False,
     ) -> int:
-        stmt = (
-            select(func.count())
-            .select_from(Prompt)
-            .join(Category, Prompt.category_id == Category.id)
-            .where(
-                self._search_filters(
-                    q=q,
-                    contributor_slug=contributor_slug,
-                    category_id=category_id,
-                    technique=technique,
-                    difficulty=difficulty,
-                    output_type=output_type,
-                    use_cases=use_cases,
-                    model_compatibility=model_compatibility,
-                    tags=tags,
-                    restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
-                    only_free=only_free,
-                )
-            )
+        filters = self._search_filters(
+            q=q,
+            contributor_slug=contributor_slug,
+            category_id=category_id,
+            technique=technique,
+            difficulty=difficulty,
+            output_type=output_type,
+            use_cases=use_cases,
+            model_compatibility=model_compatibility,
+            tags=tags,
+            restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
+            only_free=only_free,
         )
-        if contributor_slug:
-            stmt = stmt.outerjoin(User, User.id == Prompt.author_id).outerjoin(
-                ContributorProfile, ContributorProfile.user_id == User.id
-            )
+        stmt = self._published_query(
+            func.count(),
+            include_stats=False,
+            include_contributor=bool(contributor_slug),
+        ).where(filters)
         result = await self._session.execute(stmt)
         return int(result.scalar_one() or 0)
 
@@ -414,38 +445,10 @@ class PromptRepository:
         )
 
     async def get_by_slug(self, slug: str) -> Prompt | None:
-        stmt = (
-            select(Prompt)
-            .options(
-                joinedload(Prompt.category),
-                joinedload(Prompt.stats),
-                joinedload(Prompt.quality_metrics),
-                selectinload(Prompt.use_case_links).selectinload(PromptUseCase.use_case),
-                selectinload(Prompt.model_links).selectinload(PromptModelCompatibility.model),
-                selectinload(Prompt.tag_links).selectinload(PromptTag.tag),
-                joinedload(Prompt.author).joinedload(User.contributor_profile),
-            )
-            .where(Prompt.slug == slug)
-        )
-        result = await self._session.execute(stmt)
-        return result.scalar_one_or_none()
+        return await self._get_prompt(Prompt.slug == slug)
 
     async def get_by_id(self, prompt_id: uuid.UUID) -> Prompt | None:
-        stmt = (
-            select(Prompt)
-            .options(
-                joinedload(Prompt.category),
-                joinedload(Prompt.stats),
-                joinedload(Prompt.quality_metrics),
-                selectinload(Prompt.use_case_links).selectinload(PromptUseCase.use_case),
-                selectinload(Prompt.model_links).selectinload(PromptModelCompatibility.model),
-                selectinload(Prompt.tag_links).selectinload(PromptTag.tag),
-                joinedload(Prompt.author).joinedload(User.contributor_profile),
-            )
-            .where(Prompt.id == prompt_id)
-        )
-        result = await self._session.execute(stmt)
-        return result.scalar_one_or_none()
+        return await self._get_prompt(Prompt.id == prompt_id)
 
     async def list_published_by_ids(
         self,
@@ -459,15 +462,7 @@ class PromptRepository:
 
         stmt = (
             select(Prompt)
-            .options(
-                joinedload(Prompt.category),
-                joinedload(Prompt.stats),
-                joinedload(Prompt.quality_metrics),
-                selectinload(Prompt.use_case_links).selectinload(PromptUseCase.use_case),
-                selectinload(Prompt.model_links).selectinload(PromptModelCompatibility.model),
-                selectinload(Prompt.tag_links).selectinload(PromptTag.tag),
-                joinedload(Prompt.author).joinedload(User.contributor_profile),
-            )
+            .options(*self._prompt_detail_load_options())
             .where(
                 Prompt.id.in_(ids),
                 Prompt.status == PromptStatus.published,
@@ -516,10 +511,8 @@ class PromptRepository:
             .options(
                 contains_eager(Prompt.stats),
                 contains_eager(Prompt.quality_metrics),
-                selectinload(Prompt.use_case_links).selectinload(PromptUseCase.use_case),
-                selectinload(Prompt.model_links).selectinload(PromptModelCompatibility.model),
-                selectinload(Prompt.tag_links).selectinload(PromptTag.tag),
-                contains_eager(Prompt.author).contains_eager(User.contributor_profile),
+                *self._prompt_relation_load_options(),
+                self._author_load_option(eager=True),
             )
             .where(
                 Prompt.status == PromptStatus.published,
@@ -647,27 +640,28 @@ class PromptRepository:
         )
 
     async def set_prompt_use_cases(self, prompt_id: uuid.UUID, use_case_ids: Sequence[uuid.UUID]) -> None:
-        await self._session.execute(delete(PromptUseCase).where(PromptUseCase.prompt_id == prompt_id))
-        if not use_case_ids:
-            return
-        rows = [{"prompt_id": prompt_id, "use_case_id": use_case_id} for use_case_id in use_case_ids]
-        await self._session.execute(self._insert(PromptUseCase).values(rows))
+        await self._replace_prompt_links(
+            PromptUseCase,
+            prompt_id=prompt_id,
+            related_key="use_case_id",
+            related_ids=use_case_ids,
+        )
 
     async def set_prompt_models(self, prompt_id: uuid.UUID, model_ids: Sequence[uuid.UUID]) -> None:
-        await self._session.execute(
-            delete(PromptModelCompatibility).where(PromptModelCompatibility.prompt_id == prompt_id)
+        await self._replace_prompt_links(
+            PromptModelCompatibility,
+            prompt_id=prompt_id,
+            related_key="model_id",
+            related_ids=model_ids,
         )
-        if not model_ids:
-            return
-        rows = [{"prompt_id": prompt_id, "model_id": model_id} for model_id in model_ids]
-        await self._session.execute(self._insert(PromptModelCompatibility).values(rows))
 
     async def set_prompt_tags(self, prompt_id: uuid.UUID, tag_ids: Sequence[uuid.UUID]) -> None:
-        await self._session.execute(delete(PromptTag).where(PromptTag.prompt_id == prompt_id))
-        if not tag_ids:
-            return
-        rows = [{"prompt_id": prompt_id, "tag_id": tag_id} for tag_id in tag_ids]
-        await self._session.execute(self._insert(PromptTag).values(rows))
+        await self._replace_prompt_links(
+            PromptTag,
+            prompt_id=prompt_id,
+            related_key="tag_id",
+            related_ids=tag_ids,
+        )
 
     async def list_moderation_queue(self, *, skip: int = 0, limit: int = 50) -> Sequence[Prompt]:
         stmt = (
@@ -676,7 +670,7 @@ class PromptRepository:
             .outerjoin(ContributorProfile, ContributorProfile.user_id == User.id)
             .options(
                 joinedload(Prompt.category),
-                contains_eager(Prompt.author).contains_eager(User.contributor_profile),
+                self._author_load_option(eager=True),
             )
             .where(
                 Prompt.status == PromptStatus.draft,

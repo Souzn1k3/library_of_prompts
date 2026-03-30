@@ -4,18 +4,13 @@ from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_moderator
+from app.api.service_deps import build_analytics_service, build_contributor_service
 from app.core.cache import get_cache
-from app.config import get_settings
 from app.infrastructure.db.models import User
 from app.infrastructure.db.session import get_db
-from app.modules.analytics.repository.analytics_repository import AnalyticsRepository
-from app.modules.analytics.service.analytics_service import AnalyticsService
 from app.modules.catalog.model.prompt import ModerationDecision, ModerationQueueItem
 from app.modules.catalog.repository.prompt_repository import PromptRepository
-from app.modules.contributors.repository.contributor_repository import ContributorRepository
-from app.modules.contributors.service.contributor_service import ContributorService
 from app.modules.contributions.service.moderation_service import ModerationService
-from app.modules.identity.repository.user_repository import UserRepository
 
 router = APIRouter(prefix="/moderation", tags=["moderation"])
 
@@ -23,8 +18,8 @@ router = APIRouter(prefix="/moderation", tags=["moderation"])
 def moderation_service(session: AsyncSession = Depends(get_db)) -> ModerationService:
     return ModerationService(
         PromptRepository(session),
-        ContributorService(ContributorRepository(session), UserRepository(session)),
-        analytics=AnalyticsService(AnalyticsRepository(session)),
+        build_contributor_service(session),
+        analytics=build_analytics_service(session),
     )
 
 

@@ -3,16 +3,17 @@ from datetime import datetime, timezone
 from urllib.parse import quote_plus
 
 from fastapi import APIRouter, Depends, Query, Response
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_optional_user
+from app.api.service_deps import (
+    get_contributor_service,
+    get_mission_service,
+    get_prompt_service,
+    get_recommendation_service,
+)
 from app.core.cache import get_cache
 from app.core.tiers import can_view_restricted_category
-from app.config import get_settings
 from app.infrastructure.db.models import PromptDifficulty, PromptOutputType, PromptTechnique, User
-from app.infrastructure.db.session import get_db
-from app.modules.analytics.repository.analytics_repository import AnalyticsRepository
-from app.modules.analytics.service.analytics_service import AnalyticsService
 from app.modules.catalog.model.prompt import (
     DiscoverySections,
     PromptDiscoveryFilters,
@@ -24,19 +25,10 @@ from app.modules.catalog.model.recommendation import (
     PromptRecommendationResponse,
     RecommendationContext,
 )
-from app.modules.catalog.repository.prompt_repository import PromptRepository
 from app.modules.catalog.service.prompt_service import PromptService
 from app.modules.catalog.service.recommendation_service import RecommendationService
-from app.modules.contributors.repository.contributor_repository import ContributorRepository
 from app.modules.contributors.service.contributor_service import ContributorService
-from app.modules.education.repository.lesson_repository import LessonRepository
-from app.modules.economy.repository.store_repository import StoreRepository
-from app.modules.identity.repository.saved_prompt_repository import SavedPromptRepository
-from app.modules.economy.repository.wallet_repository import WalletRepository
-from app.modules.identity.repository.user_repository import UserRepository
-from app.modules.missions.repository.mission_repository import MissionRepository
 from app.modules.missions.service.mission_service import MissionService
-from app.modules.onboarding.repository.onboarding_repository import OnboardingRepository
 
 router = APIRouter(prefix="/prompts", tags=["prompts"])
 _PROMPT_CACHE_TTL = 75
@@ -63,35 +55,6 @@ def _catalog_visibility(viewer: User | None) -> str:
     return "all" if can_view_restricted_category(viewer) else "public"
 
 
-def prompt_service(session: AsyncSession = Depends(get_db)) -> PromptService:
-    return PromptService(PromptRepository(session), StoreRepository(session))
-
-
-def recommendation_service(session: AsyncSession = Depends(get_db)) -> RecommendationService:
-    return RecommendationService(
-        PromptRepository(session),
-        SavedPromptRepository(session),
-        AnalyticsRepository(session),
-        OnboardingRepository(session),
-        LessonRepository(session),
-        MissionRepository(session),
-    )
-
-
-def mission_service(session: AsyncSession = Depends(get_db)) -> MissionService:
-    return MissionService(
-        MissionRepository(session),
-        OnboardingRepository(session),
-        PromptRepository(session),
-        wallet_repo=WalletRepository(session),
-        analytics=AnalyticsService(AnalyticsRepository(session)),
-    )
-
-
-def contributor_service(session: AsyncSession = Depends(get_db)) -> ContributorService:
-    return ContributorService(ContributorRepository(session), UserRepository(session))
-
-
 def _normalize_multi(value: list[str] | None) -> list[str] | None:
     if not value:
         return None
@@ -108,7 +71,7 @@ def _viewer_segment(viewer: User | None) -> str:
 
 @router.get("/discovery-filters", response_model=PromptDiscoveryFilters)
 async def discovery_filters(
-    svc: PromptService = Depends(prompt_service),
+    svc: PromptService = Depends(get_prompt_service),
 ) -> PromptDiscoveryFilters:
     cache = get_cache()
     return await cache.get_or_set_json(
@@ -123,7 +86,7 @@ async def discovery_filters(
 async def discovery_sections(
     limit: int = Query(default=8, ge=1, le=24),
     viewer: User | None = Depends(get_optional_user),
-    svc: RecommendationService = Depends(recommendation_service),
+    svc: RecommendationService = Depends(get_recommendation_service),
 ) -> DiscoverySections:
     cache = get_cache()
     return await cache.get_or_set_json(
@@ -149,7 +112,7 @@ async def list_prompts(
     tag: list[str] | None = Query(default=None),
     sort: PromptSort = Query(default=PromptSort.relevance),
     viewer: User | None = Depends(get_optional_user),
-    svc: PromptService = Depends(prompt_service),
+    svc: PromptService = Depends(get_prompt_service),
 ) -> list[PromptListItem]:
     normalized_use_case = _normalize_multi(use_case)
     normalized_models = _normalize_multi(model)
@@ -197,7 +160,7 @@ async def related_prompts(
     slug: str,
     limit: int = Query(default=6, ge=1, le=24),
     viewer: User | None = Depends(get_optional_user),
-    svc: RecommendationService = Depends(recommendation_service),
+    svc: RecommendationService = Depends(get_recommendation_service),
 ) -> list[PromptListItem]:
     cache = get_cache()
     return await cache.get_or_set_json(
@@ -218,7 +181,7 @@ async def prompt_recommendations(
     prompt_slug: str | None = Query(default=None),
     lesson_slug: str | None = Query(default=None),
     viewer: User | None = Depends(get_optional_user),
-    svc: RecommendationService = Depends(recommendation_service),
+    svc: RecommendationService = Depends(get_recommendation_service),
 ) -> PromptRecommendationResponse:
     cache = get_cache()
     return await cache.get_or_set_json(
@@ -243,9 +206,9 @@ async def prompt_recommendations(
 async def track_copy(
     prompt_id: uuid.UUID,
     viewer: User | None = Depends(get_optional_user),
-    svc: PromptService = Depends(prompt_service),
-    missions: MissionService = Depends(mission_service),
-    contributors: ContributorService = Depends(contributor_service),
+    svc: PromptService = Depends(get_prompt_service),
+    missions: MissionService = Depends(get_mission_service),
+    contributors: ContributorService = Depends(get_contributor_service),
 ) -> Response:
     await svc.track_copy(prompt_id, viewer)
     if viewer is not None:
@@ -271,7 +234,7 @@ async def track_copy(
 async def track_apply(
     prompt_id: uuid.UUID,
     viewer: User | None = Depends(get_optional_user),
-    missions: MissionService = Depends(mission_service),
+    missions: MissionService = Depends(get_mission_service),
 ) -> Response:
     if viewer is not None:
         today_key = datetime.now(timezone.utc).date().isoformat()
@@ -295,7 +258,7 @@ async def track_apply(
 async def get_prompt_by_slug(
     slug: str,
     viewer: User | None = Depends(get_optional_user),
-    svc: PromptService = Depends(prompt_service),
+    svc: PromptService = Depends(get_prompt_service),
 ) -> PromptRead:
     return await svc.get_by_slug(slug, viewer)
 
@@ -304,6 +267,6 @@ async def get_prompt_by_slug(
 async def get_prompt(
     prompt_id: uuid.UUID,
     viewer: User | None = Depends(get_optional_user),
-    svc: PromptService = Depends(prompt_service),
+    svc: PromptService = Depends(get_prompt_service),
 ) -> PromptRead:
     return await svc.get_by_id(prompt_id, viewer)

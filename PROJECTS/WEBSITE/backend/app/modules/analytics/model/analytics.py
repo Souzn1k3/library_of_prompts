@@ -1,4 +1,5 @@
 import enum
+import json
 import re
 import uuid
 from datetime import datetime, timezone
@@ -7,6 +8,7 @@ from typing import Any
 from pydantic import BaseModel, Field, model_validator
 
 _META_KEY_RE = re.compile(r"^[a-z0-9_]{1,64}$")
+_MAX_METADATA_JSON_CHARS = 4096
 
 
 class AnalyticsEventName(str, enum.Enum):
@@ -80,6 +82,9 @@ class AnalyticsEventIn(BaseModel):
     @model_validator(mode="after")
     def validate_payload(self) -> "AnalyticsEventIn":
         _validate_json(self.metadata)
+        serialized_metadata = json.dumps(self.metadata, ensure_ascii=False, separators=(",", ":"))
+        if len(serialized_metadata) > _MAX_METADATA_JSON_CHARS:
+            raise ValueError("metadata payload is too large")
         if self.timestamp.tzinfo is None:
             self.timestamp = self.timestamp.replace(tzinfo=timezone.utc)
         else:

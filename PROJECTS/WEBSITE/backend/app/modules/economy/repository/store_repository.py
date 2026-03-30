@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -33,6 +33,12 @@ def _item_unlocks_prompt(item: StoreItem, prompt_id: uuid.UUID) -> bool:
 class StoreRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
+
+    def add_item(self, item: StoreItem) -> None:
+        self._session.add(item)
+
+    async def flush(self) -> None:
+        await self._session.flush()
 
     async def list_active_items(self) -> list[StoreItem]:
         stmt = (
@@ -90,6 +96,52 @@ class StoreRepository:
         rows = await self._session.execute(stmt)
         return rows.scalars().all()
 
+    async def list_owned_one_time_item_ids(self, user_id: uuid.UUID) -> set[uuid.UUID]:
+        stmt = (
+            select(UserPurchase.store_item_id)
+            .join(StoreItem, StoreItem.id == UserPurchase.store_item_id)
+            .where(
+                UserPurchase.user_id == user_id,
+                UserPurchase.status == PurchaseStatus.completed,
+                StoreItem.kind.in_(
+                    [
+                        StoreItemKind.subscription_discount,
+                        StoreItemKind.premium_prompt_unlock,
+                        StoreItemKind.prompt_bundle,
+                    ]
+                ),
+            )
+        )
+        rows = await self._session.execute(stmt)
+        return {row[0] for row in rows.all()}
+
+    async def list_completed_unlock_purchases(self, user_id: uuid.UUID) -> list[UserPurchase]:
+        stmt = (
+            select(UserPurchase)
+            .join(StoreItem, StoreItem.id == UserPurchase.store_item_id)
+            .where(
+                UserPurchase.user_id == user_id,
+                UserPurchase.status == PurchaseStatus.completed,
+                StoreItem.kind.in_([StoreItemKind.premium_prompt_unlock, StoreItemKind.prompt_bundle]),
+            )
+            .options(selectinload(UserPurchase.item))
+            .order_by(UserPurchase.created_at.desc())
+        )
+        rows = await self._session.execute(stmt)
+        return rows.scalars().all()
+
+    async def list_active_unlock_items(self) -> list[StoreItem]:
+        stmt = (
+            select(StoreItem)
+            .where(
+                StoreItem.is_active.is_(True),
+                StoreItem.kind.in_([StoreItemKind.premium_prompt_unlock, StoreItemKind.prompt_bundle]),
+            )
+            .order_by(StoreItem.sort_order.asc(), StoreItem.created_at.asc())
+        )
+        rows = await self._session.execute(stmt)
+        return rows.scalars().all()
+
     async def get_purchase_by_client_token(self, *, user_id: uuid.UUID, client_token: str) -> UserPurchase | None:
         stmt = (
             select(UserPurchase)
@@ -119,15 +171,27 @@ class StoreRepository:
         return row.scalar_one_or_none()
 
     async def user_has_prompt_access(self, *, user_id: uuid.UUID, prompt_id: uuid.UUID) -> bool:
-        purchases = await self.list_all_completed_purchases(user_id)
+        purchases = await self.list_completed_unlock_purchases(user_id)
         return any(purchase.item is not None and _item_unlocks_prompt(purchase.item, prompt_id) for purchase in purchases)
 
     async def find_active_unlock_offer_for_prompt(self, prompt_id: uuid.UUID) -> StoreItem | None:
-        items = await self.list_active_items()
+        items = await self.list_active_unlock_items()
         for item in items:
             if _item_unlocks_prompt(item, prompt_id):
                 return item
         return None
+
+    async def decrement_availability_if_available(self, item_id: uuid.UUID) -> bool:
+        result = await self._session.execute(
+            update(StoreItem)
+            .where(
+                StoreItem.id == item_id,
+                StoreItem.availability.is_not(None),
+                StoreItem.availability > 0,
+            )
+            .values(availability=StoreItem.availability - 1)
+        )
+        return int(result.rowcount or 0) > 0
 
     async def create_purchase(
         self,

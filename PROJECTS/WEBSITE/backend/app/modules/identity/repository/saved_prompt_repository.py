@@ -3,8 +3,17 @@ from collections.abc import Sequence
 
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload, selectinload
 
-from app.infrastructure.db.models import Prompt, PromptStatus, SavedPrompt
+from app.infrastructure.db.models import (
+    Prompt,
+    PromptModelCompatibility,
+    PromptStatus,
+    PromptTag,
+    PromptUseCase,
+    SavedPrompt,
+    User,
+)
 
 
 class SavedPromptRepository:
@@ -27,10 +36,19 @@ class SavedPromptRepository:
     async def list_saved_published_prompts(self, user_id: uuid.UUID) -> Sequence[Prompt]:
         q = (
             select(Prompt)
+            .options(
+                joinedload(Prompt.category),
+                joinedload(Prompt.stats),
+                joinedload(Prompt.quality_metrics),
+                selectinload(Prompt.use_case_links).selectinload(PromptUseCase.use_case),
+                selectinload(Prompt.model_links).selectinload(PromptModelCompatibility.model),
+                selectinload(Prompt.tag_links).selectinload(PromptTag.tag),
+                joinedload(Prompt.author).joinedload(User.contributor_profile),
+            )
             .join(SavedPrompt, SavedPrompt.prompt_id == Prompt.id)
             .where(SavedPrompt.user_id == user_id)
             .where(Prompt.status == PromptStatus.published)
             .order_by(SavedPrompt.created_at.desc())
         )
         result = await self._session.execute(q)
-        return result.scalars().all()
+        return result.unique().scalars().all()

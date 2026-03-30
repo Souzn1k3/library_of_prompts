@@ -96,3 +96,34 @@ async def test_analytics_ingest_accepts_event(async_client, unique_email: str):
     assert r.status_code == 202
     body = r.json()
     assert body.get("ingested", 0) >= 0
+
+
+@pytest.mark.asyncio
+async def test_analytics_ingest_rejects_oversized_metadata(async_client, unique_email: str):
+    reg = await async_client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": unique_email,
+            "password": "password123",
+            "display_name": "A",
+        },
+    )
+    assert reg.status_code == 201
+    token = reg.json()["access_token"]
+    payload = {
+        "event": {
+            "event_id": f"pytest_evt_large_{unique_email[:8]}",
+            "event_name": "page_viewed",
+            "session_id": "pytest_session",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "context": {"page": "/test", "feature": "pytest"},
+            "metadata": {"payload": "x" * 5000},
+            "source": "pytest",
+        }
+    }
+    r = await async_client.post(
+        "/api/v1/analytics/events",
+        headers={"Authorization": f"Bearer {token}"},
+        json=payload,
+    )
+    assert r.status_code == 422

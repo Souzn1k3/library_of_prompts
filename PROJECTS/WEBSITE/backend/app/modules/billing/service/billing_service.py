@@ -2,7 +2,7 @@ import hashlib
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
-from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
+from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse
 
 from app.config import Settings
 from app.core.errors import AppError
@@ -219,6 +219,57 @@ class BillingService:
             return base_url
         return _append_query(base_url, session_id="{CHECKOUT_SESSION_ID}")
 
+    def _redirect_origin(self, url: str) -> str | None:
+        parsed = urlparse(url)
+        if parsed.scheme.lower() not in {"http", "https"}:
+            return None
+        if not parsed.hostname or parsed.username or parsed.password:
+            return None
+        port = parsed.port
+        if port is None:
+            port = 443 if parsed.scheme.lower() == "https" else 80
+        return f"{parsed.scheme.lower()}://{parsed.hostname.lower()}:{port}"
+
+    def _allowed_redirect_origins(self) -> set[str]:
+        urls = list(self._settings.cors_origin_list)
+        urls.extend(
+            [
+                self._settings.billing_checkout_success_url,
+                self._settings.billing_checkout_cancel_url,
+                self._settings.billing_portal_return_url,
+            ]
+        )
+        origins: set[str] = set()
+        for url in urls:
+            origin = self._redirect_origin(url)
+            if origin:
+                origins.add(origin)
+        return origins
+
+    def _resolve_redirect_url(self, candidate: str | None, *, default_url: str) -> str:
+        raw = (candidate or "").strip()
+        if not raw:
+            return default_url
+
+        parsed = urlparse(raw)
+        if not parsed.scheme and not parsed.netloc:
+            if not raw.startswith("/") or raw.startswith("//"):
+                raise AppError(
+                    code="invalid_redirect_url",
+                    status_code=400,
+                    message="This redirect URL is not allowed.",
+                )
+            raw = urljoin(default_url, raw)
+
+        origin = self._redirect_origin(raw)
+        if origin is None or origin not in self._allowed_redirect_origins():
+            raise AppError(
+                code="invalid_redirect_url",
+                status_code=400,
+                message="This redirect URL is not allowed.",
+            )
+        return raw
+
     async def _create_mock_checkout_session(
         self,
         *,
@@ -275,7 +326,10 @@ class BillingService:
                 event_id=f"mock_subscription_activated:{provider_subscription_id}",
             )
 
-        success_url = payload.success_url or self._settings.billing_checkout_success_url
+        success_url = self._resolve_redirect_url(
+            payload.success_url,
+            default_url=self._settings.billing_checkout_success_url,
+        )
         return CheckoutSessionResponse(
             url=_append_query(success_url, billing="success", tier=plan.tier.value, mock="1"),
             session_id=provider_subscription_id,
@@ -307,8 +361,16 @@ class BillingService:
             assert stripe is not None
             stripe.api_key = self._settings.stripe_secret_key
             customer_id = await self._get_or_create_stripe_customer(user)
-            success_url = self._ensure_success_url(payload.success_url or self._settings.billing_checkout_success_url)
-            cancel_url = payload.cancel_url or self._settings.billing_checkout_cancel_url
+            success_url = self._ensure_success_url(
+                self._resolve_redirect_url(
+                    payload.success_url,
+                    default_url=self._settings.billing_checkout_success_url,
+                )
+            )
+            cancel_url = self._resolve_redirect_url(
+                payload.cancel_url,
+                default_url=self._settings.billing_checkout_cancel_url,
+            )
             session = stripe.checkout.Session.create(
                 mode="subscription",
                 customer=customer_id,
@@ -365,12 +427,20 @@ class BillingService:
                 )
             session = stripe.billing_portal.Session.create(
                 customer=customer.provider_customer_id,
-                return_url=payload.return_url or self._settings.billing_portal_return_url,
+                return_url=self._resolve_redirect_url(
+                    payload.return_url,
+                    default_url=self._settings.billing_portal_return_url,
+                ),
             )
             return BillingPortalResponse(url=str(getattr(session, "url", None) or session.get("url")))
 
         if self._settings.billing_mock_mode:
-            return BillingPortalResponse(url=payload.return_url or self._settings.billing_portal_return_url)
+            return BillingPortalResponse(
+                url=self._resolve_redirect_url(
+                    payload.return_url,
+                    default_url=self._settings.billing_portal_return_url,
+                )
+            )
 
         raise AppError(
             code="billing_not_configured",

@@ -3,7 +3,10 @@ import time
 from collections import defaultdict, deque
 from typing import Protocol, runtime_checkable
 
+from fastapi import Request
+
 from app.config import get_settings
+from app.core.errors import AppError
 from app.core.logging import get_logger
 
 log = get_logger(__name__)
@@ -79,3 +82,24 @@ def get_rate_limiter() -> RateLimiterProtocol:
     _limiter = MemoryRateLimiter()
     log.info("rate_limit_backend", backend="memory")
     return _limiter
+
+
+def resolve_rate_limit_ip(request: Request) -> str:
+    settings = get_settings()
+    if settings.rate_limit_trust_forwarded_for:
+        forwarded = request.headers.get("x-forwarded-for")
+        if forwarded:
+            return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+async def enforce_rate_limit(*, key: str, limit: int, window_seconds: int) -> None:
+    allowed = await get_rate_limiter().allow(key=key, limit=limit, window_seconds=window_seconds)
+    if allowed:
+        return
+    raise AppError(
+        code="rate_limited",
+        message="Too many requests. Please try again later.",
+        status_code=429,
+        message_key="errors.rate_limited",
+    )

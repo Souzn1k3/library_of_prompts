@@ -6,7 +6,11 @@ import { type FormEvent, useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/LanguageProvider";
-import { ApiRequestError, getApiBaseUrl } from "@/lib/api";
+import {
+  ApiRequestError,
+  fetchCategories,
+  fetchPromptDiscoveryFilters,
+} from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
 import { submitPrompt } from "@/lib/client-api";
 import {
@@ -42,23 +46,12 @@ export function SubmitPromptForm() {
       setBootstrapLoading(true);
       setBootstrapError(null);
       try {
-        const [categoriesRes, filtersRes] = await Promise.all([
-          fetch(`${getApiBaseUrl()}/api/v1/categories`, {
-            headers: {
-              Accept: "application/json",
-              "Accept-Language": language,
-            },
-          }),
-          fetch(`${getApiBaseUrl()}/api/v1/prompts/discovery-filters`, {
-            headers: {
-              Accept: "application/json",
-              "Accept-Language": language,
-            },
-          }),
+        const [categoryRows, filterRows] = await Promise.all([
+          fetchCategories(null, language),
+          fetchPromptDiscoveryFilters(null, language),
         ]);
-        if (!categoriesRes.ok || !filtersRes.ok) throw new Error("Could not load form options");
-        setCategories((await categoriesRes.json()) as Category[]);
-        setDiscoveryFilters((await filtersRes.json()) as PromptDiscoveryFilters);
+        setCategories(categoryRows as Category[]);
+        setDiscoveryFilters(filterRows as PromptDiscoveryFilters);
       } catch {
         setCategories([]);
         setDiscoveryFilters({

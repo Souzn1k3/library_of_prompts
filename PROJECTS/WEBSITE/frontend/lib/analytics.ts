@@ -1,5 +1,4 @@
 import { getApiBaseUrl } from "@/lib/api";
-import { getToken } from "@/lib/auth";
 
 export type AnalyticsEventName =
   | "signup_completed"
@@ -171,13 +170,11 @@ async function flushAnalyticsQueue() {
   queue = queue.slice(100);
 
   try {
-    const token = getToken();
     const res = await fetch(`${getApiBaseUrl()}/api/v1/analytics/events`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({ events: batch }),
       credentials: "include",

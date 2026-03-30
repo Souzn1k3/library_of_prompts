@@ -5,10 +5,10 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
+import { useBillingPortal } from "@/components/billing/useBillingPortal";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { trackEvent } from "@/lib/analytics";
 import {
-  createBillingPortalSession,
   createCheckoutSession,
   fetchBillingStatus,
 } from "@/lib/client-api";
@@ -39,8 +39,8 @@ export function PlansClient({ plans, error }: PlansClientProps) {
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [pendingTier, setPendingTier] = useState<string | null>(null);
-  const [portalPending, setPortalPending] = useState(false);
   const currentTier = billing?.plan_tier ?? user?.plan_tier ?? "free";
+  const { portalError, portalPending, openPortal, clearPortalError } = useBillingPortal();
 
   useEffect(() => {
     if (status !== "authenticated" || !user) {
@@ -58,7 +58,7 @@ export function PlansClient({ plans, error }: PlansClientProps) {
         if (billingState === "success" && (billingStatus.status === "active" || billingStatus.status === "trialing")) {
           trackEvent({
             eventName: "subscription_activated",
-            page: "/plans",
+            page: "/pricing",
             feature: "billing_return",
             onceKey: `subscription_activated:${billingSessionId ?? billingStatus.updated_at ?? user.id}`,
             metadata: {
@@ -93,11 +93,12 @@ export function PlansClient({ plans, error }: PlansClientProps) {
   );
 
   async function upgrade(tier: string) {
+    clearPortalError();
     setActionError(null);
     setPendingTier(tier);
     trackEvent({
       eventName: "upgrade_clicked",
-      page: "/plans",
+      page: "/pricing",
       feature: "plan_upgrade_cta",
       metadata: {
         current_tier: currentTier,
@@ -111,19 +112,6 @@ export function PlansClient({ plans, error }: PlansClientProps) {
       setActionError(e instanceof Error ? e.message : t("plans.checkoutFailed"));
     } finally {
       setPendingTier(null);
-    }
-  }
-
-  async function openPortal() {
-    setActionError(null);
-    setPortalPending(true);
-    try {
-      const session = await createBillingPortalSession();
-      window.location.href = session.url;
-    } catch (e) {
-      setActionError(e instanceof Error ? e.message : t("plans.portalFailed"));
-    } finally {
-      setPortalPending(false);
     }
   }
 
@@ -153,7 +141,10 @@ export function PlansClient({ plans, error }: PlansClientProps) {
           <div className="mt-3">
             <button
               type="button"
-              onClick={openPortal}
+              onClick={() => {
+                setActionError(null);
+                void openPortal();
+              }}
               disabled={portalPending}
               className="pv-button-secondary disabled:opacity-60"
             >
@@ -170,9 +161,9 @@ export function PlansClient({ plans, error }: PlansClientProps) {
         </p>
       )}
 
-      {actionError ? (
+      {actionError ?? portalError ? (
         <div className="rounded-[1.5rem] border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-          {actionError}
+          {actionError ?? portalError}
         </div>
       ) : null}
 

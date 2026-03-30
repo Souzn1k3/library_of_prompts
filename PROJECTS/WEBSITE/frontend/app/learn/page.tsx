@@ -75,10 +75,6 @@ export default async function LearnIndexPage() {
             <Link href={accessToken ? "/dashboard" : "/signup"} className="pv-button-secondary">
               <T k={accessToken ? "nav.dashboard" : "nav.signup"} />
             </Link>
-            <Link href="/missions" className="pv-inline-link">
-              <T k="nav.missions" />
-              <span aria-hidden="true">↗</span>
-            </Link>
           </>
         }
         aside={
@@ -119,11 +115,8 @@ export default async function LearnIndexPage() {
         <section className="pv-panel px-6 py-6 sm:px-7">
           <div className="pv-section-head">
             <div className="pv-section-copy">
-              <p className="pv-kicker">
-                <T k="learn.title" />
-              </p>
               <h2 className="mt-3 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
-                <T k="learn.title" />
+                <T k="learn.modulesTitle" />
               </h2>
             </div>
           </div>

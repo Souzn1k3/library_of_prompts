@@ -153,7 +153,8 @@ export default async function PromptPage(props: Props) {
                 />
                 {prompt.unlock_offer ? (
                   <Link href="/store" className="pv-button-secondary">
-                    {`${getTranslation(language, "prompt.unlockWithLumens")} · ${prompt.unlock_offer.price} ${prompt.unlock_offer.currency}`}
+                    <span>{getTranslation(language, "prompt.unlockWithLumens")}</span>
+                    <LmnAmount amount={prompt.unlock_offer.price} symbol={prompt.unlock_offer.currency} state="spent" />
                   </Link>
                 ) : null}
               </div>
@@ -189,7 +190,7 @@ export default async function PromptPage(props: Props) {
                 {prompt.body_locked && prompt.unlock_offer ? (
                   <Link href="/store" className="pv-button-primary">
                     <span>{getTranslation(language, "prompt.unlockWithLumens")}</span>
-                    <LmnAmount amount={prompt.unlock_offer.price} symbol={prompt.unlock_offer.currency} />
+                    <LmnAmount amount={prompt.unlock_offer.price} symbol={prompt.unlock_offer.currency} state="spent" />
                   </Link>
                 ) : null}
                 <SavePromptButton promptId={prompt.id} promptSlug={prompt.slug} metadata={interactionMetadata} />

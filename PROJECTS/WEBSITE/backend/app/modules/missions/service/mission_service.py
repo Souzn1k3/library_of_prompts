@@ -35,18 +35,7 @@ from app.modules.missions.model.mission import (
 )
 from app.modules.missions.repository.mission_repository import MissionRepository
 from app.modules.onboarding.repository.onboarding_repository import OnboardingRepository
-
-_ROLE_HINTS: dict[str, list[str]] = {
-    "student": ["study", "exam", "summary", "explain"],
-    "developer": ["debug", "code", "api", "refactor"],
-    "other": ["planning", "email", "workflow", "research"],
-}
-
-_GOAL_HINTS: dict[str, list[str]] = {
-    "learning": ["learn", "tutorial", "practice"],
-    "solving_tasks": ["solve", "task", "step-by-step", "analysis"],
-    "productivity": ["productivity", "time", "organize", "checklist"],
-}
+from app.modules.onboarding.service.persona_hints import build_persona_hint_query
 
 
 class MissionService:
@@ -187,11 +176,32 @@ class MissionService:
         available_again_at = self._available_again_at(mission, progress)
         return bool(available_again_at is not None and available_again_at <= now)
 
+    def _required_step_count(self, step: MissionStep) -> int:
+        return max(1, step.required_count)
+
+    def _required_mission_count(self, mission: LessonMission) -> int:
+        return max(1, mission.required_count) if not mission.steps else sum(
+            self._required_step_count(step) for step in mission.steps
+        )
+
+    def _step_progress_totals(self, mission: LessonMission, step_progress: dict[uuid.UUID, UserMissionStepProgress]) -> tuple[int, int]:
+        total_required = total_progress = 0
+        for step in mission.steps:
+            required = self._required_step_count(step)
+            row = step_progress.get(step.id)
+            total_required += required
+            total_progress += min(row.progress_count if row else 0, required)
+        return total_required, min(total_required, total_progress)
+
+    async def _reset_progress_cycle_if_needed(self, mission: LessonMission, progress: UserMissionProgress | None, *, step_progress: dict[uuid.UUID, UserMissionStepProgress], now: datetime) -> None:
+        if progress is None or not self._can_reset_cycle(mission, progress, now=now):
+            return
+        await self._repo.reset_progress_cycle(progress=progress, step_progress_rows=[step_progress[step.id] for step in mission.steps if step.id in step_progress])
+
     async def _fallback_prompts(self, user: User, profile: OnboardingProfile | None) -> list[MissionPromptRef]:
         role = profile.role.value if profile and profile.role else "other"
         goal = profile.goal.value if profile and profile.goal else "learning"
-        hints = [*_ROLE_HINTS.get(role, []), *_GOAL_HINTS.get(goal, [])]
-        query = " ".join(dict.fromkeys(hints)).strip() or None
+        query = build_persona_hint_query(role=role, goal=goal)
         rows = await self._prompts.list_published(
             skip=0,
             limit=3,
@@ -242,7 +252,7 @@ class MissionService:
         progress = step_progress.get(step.id)
         status = progress.status if progress else MissionProgressStatus.not_started
         progress_count = progress.progress_count if progress else 0
-        required_count = progress.required_count if progress else max(1, step.required_count)
+        required_count = progress.required_count if progress else self._required_step_count(step)
 
         prompt = None
         if step.target_prompt:
@@ -258,13 +268,7 @@ class MissionService:
         lesson = None
         if step.target_lesson:
             target_lesson = step.target_lesson
-            lesson = MissionLessonRef(
-                id=target_lesson.id,
-                slug=target_lesson.slug,
-                title=target_lesson.title,
-                min_tier=target_lesson.min_tier,
-                locked=not can_view_lesson(user, target_lesson.min_tier),
-            )
+            lesson = MissionLessonRef(id=target_lesson.id, slug=target_lesson.slug, title=target_lesson.title, min_tier=target_lesson.min_tier, locked=not can_view_lesson(user, target_lesson.min_tier))
 
         return MissionStepRead(
             id=step.id,
@@ -293,7 +297,7 @@ class MissionService:
         available_again_at = self._available_again_at(mission, progress)
         status = progress.status if progress else MissionProgressStatus.not_started
         progress_count = progress.progress_count if progress else 0
-        required_count = progress.required_count if progress else max(1, mission.required_count)
+        required_count = progress.required_count if progress else self._required_mission_count(mission)
 
         steps: list[MissionStepRead] = []
         if mission.steps:
@@ -301,14 +305,7 @@ class MissionService:
                 self._step_read(step, step_progress=step_progress, user=user, can_view_premium=can_view_premium)
                 for step in mission.steps
             ]
-            required_count = sum(max(1, step.required_count) for step in mission.steps)
-            progress_count = sum(
-                min(
-                    step_progress.get(step.id).progress_count if step_progress.get(step.id) else 0,
-                    max(1, step.required_count),
-                )
-                for step in mission.steps
-            )
+            required_count, progress_count = self._step_progress_totals(mission, step_progress)
             if progress_count >= required_count and required_count > 0:
                 status = MissionProgressStatus.completed
         reward = MissionRewardView(
@@ -365,11 +362,12 @@ class MissionService:
         step_progress_map = {row.mission_step_id: row for row in step_progress_rows}
 
         for mission in eligible:
-            progress = progress_map.get(mission.id)
-            if progress is None or not self._can_reset_cycle(mission, progress, now=now):
-                continue
-            rows = [step_progress_map[step.id] for step in mission.steps if step.id in step_progress_map]
-            await self._repo.reset_progress_cycle(progress=progress, step_progress_rows=rows)
+            await self._reset_progress_cycle_if_needed(
+                mission,
+                progress_map.get(mission.id),
+                step_progress=step_progress_map,
+                now=now,
+            )
 
         def sort_key(mission: LessonMission) -> tuple[int, int, int, str]:
             progress = progress_map.get(mission.id)
@@ -392,31 +390,11 @@ class MissionService:
         mission_views: list[MissionRead] = []
         for mission in ordered:
             progress = progress_map.get(mission.id)
-            prompts = self._mission_prompts(
-                mission,
-                can_view_premium=can_view_premium,
-                fallback_prompts=fallback_prompts,
-            )
+            prompts = self._mission_prompts(mission, can_view_premium=can_view_premium, fallback_prompts=fallback_prompts)
             lesson_ref: MissionLessonRef | None = None
             if mission.lesson is not None:
-                lesson_ref = MissionLessonRef(
-                    id=mission.lesson.id,
-                    slug=mission.lesson.slug,
-                    title=mission.lesson.title,
-                    min_tier=mission.lesson.min_tier,
-                    locked=not can_view_lesson(user, mission.lesson.min_tier),
-                )
-            mission_views.append(
-                self._mission_read(
-                    mission,
-                    progress,
-                    user=user,
-                    prompts=prompts,
-                    lesson=lesson_ref,
-                    step_progress=step_progress_map,
-                    can_view_premium=can_view_premium,
-                )
-            )
+                lesson_ref = MissionLessonRef(id=mission.lesson.id, slug=mission.lesson.slug, title=mission.lesson.title, min_tier=mission.lesson.min_tier, locked=not can_view_lesson(user, mission.lesson.min_tier))
+            mission_views.append(self._mission_read(mission, progress, user=user, prompts=prompts, lesson=lesson_ref, step_progress=step_progress_map, can_view_premium=can_view_premium))
 
         credits, badges, premium_unlock_until = await self._repo.get_reward_summary(user.id)
         if self._wallet_repo is not None:
@@ -543,6 +521,68 @@ class MissionService:
             return event_type in {"mission_manual_confirmed", "mission_step_completed"}
         return False
 
+    def _matching_target_steps(self, mission: LessonMission, *, event_type: str, prompt_id: uuid.UUID | None, lesson_id: uuid.UUID | None) -> list[MissionStep | None]:
+        if mission.steps:
+            return [
+                step
+                for step in mission.steps
+                if self._matches_event(
+                    mission,
+                    event_type=event_type,
+                    prompt_id=prompt_id,
+                    lesson_id=lesson_id,
+                    step=step,
+                )
+            ]
+        if self._matches_event(
+            mission,
+            event_type=event_type,
+            prompt_id=prompt_id,
+            lesson_id=lesson_id,
+        ):
+            return [None]
+        return []
+
+    async def _ensure_progress(self, *, user_id: uuid.UUID, mission: LessonMission, progress_map: dict[uuid.UUID, UserMissionProgress]) -> UserMissionProgress:
+        progress = progress_map.get(mission.id)
+        if progress is not None:
+            return progress
+        progress = await self._repo.create_progress(UserMissionProgress(user_id=user_id, mission_id=mission.id, required_count=self._required_mission_count(mission), status=MissionProgressStatus.not_started, progress_count=0))
+        progress_map[mission.id] = progress
+        return progress
+
+    async def _ensure_step_progress(self, *, user_id: uuid.UUID, step: MissionStep | None, step_progress_map: dict[uuid.UUID, UserMissionStepProgress]) -> UserMissionStepProgress | None:
+        if step is None:
+            return None
+        step_progress = step_progress_map.get(step.id)
+        if step_progress is not None:
+            return step_progress
+        step_progress = await self._repo.create_step_progress(UserMissionStepProgress(user_id=user_id, mission_step_id=step.id, required_count=self._required_step_count(step), status=MissionProgressStatus.not_started, progress_count=0))
+        step_progress_map[step.id] = step_progress
+        return step_progress
+
+    async def _apply_step_progress(self, *, user: User, mission: LessonMission, step: MissionStep, step_progress: UserMissionStepProgress, cycle_number: int, now: datetime) -> None:
+        if step_progress.started_at is None:
+            step_progress.started_at = now
+        step_progress.last_event_at = now
+        step_progress.progress_count = min(step_progress.required_count, step_progress.progress_count + 1)
+        step_progress.status = MissionProgressStatus.in_progress
+        if step_progress.progress_count >= step_progress.required_count and step_progress.completed_at is None:
+            step_progress.status = MissionProgressStatus.completed
+            step_progress.completed_at = now
+            if step.reward_credits > 0 and self._wallet_repo is not None:
+                await self._wallet_repo.adjust_balance(user_id=user.id, amount=step.reward_credits, reason=CurrencyTransactionType.mission_reward, context=f"mission_step:{mission.slug}:cycle:{cycle_number}:{step.id}", source_id=step.id, metadata={"mission_id": str(mission.id), "step_id": str(step.id), "reward_cycle": cycle_number}, now=now)
+        await self._repo.save_step_progress(step_progress)
+
+    async def _finalize_progress_completion(self, *, user: User, mission: LessonMission, progress: UserMissionProgress, cycle_number: int, now: datetime) -> bool:
+        if progress.progress_count < progress.required_count or progress.completed_at is not None:
+            return False
+        progress.status = MissionProgressStatus.completed
+        progress.completed_at = now
+        progress.completion_count = cycle_number
+        progress.reward_granted_at = await self._repo.grant_rewards(user_id=user.id, mission=mission, reward_cycle=cycle_number, now=now, wallet_repo=self._wallet_repo)
+        return True
+
     async def record_event(
         self,
         *,
@@ -566,75 +606,21 @@ class MissionService:
         completed_slugs: list[str] = []
 
         for mission in eligible:
-            progress = progress_map.get(mission.id)
-            if progress is not None and self._can_reset_cycle(mission, progress, now=now):
-                rows = [step_progress_map[step.id] for step in mission.steps if step.id in step_progress_map]
-                await self._repo.reset_progress_cycle(progress=progress, step_progress_rows=rows)
+            await self._reset_progress_cycle_if_needed(mission, progress_map.get(mission.id), step_progress=step_progress_map, now=now)
+            target_steps = self._matching_target_steps(mission, event_type=event_type, prompt_id=prompt_id, lesson_id=lesson_id)
+            if not target_steps:
+                continue
 
-            if mission.steps:
-                target_steps = [
-                    step
-                    for step in mission.steps
-                    if self._matches_event(
-                        mission,
-                        event_type=event_type,
-                        prompt_id=prompt_id,
-                        lesson_id=lesson_id,
-                        step=step,
-                    )
-                ]
-                if not target_steps:
-                    continue
-            else:
-                if not self._matches_event(
-                    mission,
-                    event_type=event_type,
-                    prompt_id=prompt_id,
-                    lesson_id=lesson_id,
-                ):
-                    continue
-                target_steps = [None]
-
-            progress = progress_map.get(mission.id)
-            if progress is None:
-                required_total = (
-                    sum(max(1, step.required_count) for step in mission.steps)
-                    if mission.steps
-                    else max(1, mission.required_count)
-                )
-                progress = await self._repo.create_progress(
-                    UserMissionProgress(
-                        user_id=user.id,
-                        mission_id=mission.id,
-                        required_count=required_total,
-                        status=MissionProgressStatus.not_started,
-                        progress_count=0,
-                    )
-                )
-                progress_map[mission.id] = progress
-
+            progress = await self._ensure_progress(user_id=user.id, mission=mission, progress_map=progress_map)
             if progress.completed_at is not None:
                 continue
 
             current_cycle = max(1, progress.completion_count + 1)
 
             for step in target_steps:
-                step_progress = None
-                if step is not None:
-                    step_progress = step_progress_map.get(step.id)
-                    if step_progress is None:
-                        step_progress = await self._repo.create_step_progress(
-                            UserMissionStepProgress(
-                                user_id=user.id,
-                                mission_step_id=step.id,
-                                required_count=max(1, step.required_count),
-                                status=MissionProgressStatus.not_started,
-                                progress_count=0,
-                            )
-                        )
-                        step_progress_map[step.id] = step_progress
-                    if step_progress.completed_at is not None:
-                        continue
+                step_progress = await self._ensure_step_progress(user_id=user.id, step=step, step_progress_map=step_progress_map)
+                if step_progress is not None and step_progress.completed_at is not None:
+                    continue
 
                 scoped_key = source_event_key or f"{event_type}:{uuid.uuid4()}"
                 completion_event = await self._repo.add_completion_event(
@@ -658,66 +644,17 @@ class MissionService:
                 progress.last_event_at = now
                 progress.status = MissionProgressStatus.in_progress
 
-                step_completed_now = False
                 if step_progress is not None:
-                    if step_progress.started_at is None:
-                        step_progress.started_at = now
-                    step_progress.last_event_at = now
-                    step_progress.progress_count = min(
-                        step_progress.required_count,
-                        step_progress.progress_count + 1,
-                    )
-                    step_progress.status = MissionProgressStatus.in_progress
-                    if step_progress.progress_count >= step_progress.required_count and step_progress.completed_at is None:
-                        step_progress.status = MissionProgressStatus.completed
-                        step_progress.completed_at = now
-                        step_completed_now = True
-                        if step.reward_credits > 0 and self._wallet_repo is not None:
-                            await self._wallet_repo.adjust_balance(
-                                user_id=user.id,
-                                amount=step.reward_credits,
-                                reason=CurrencyTransactionType.mission_reward,
-                                context=f"mission_step:{mission.slug}:cycle:{current_cycle}:{step.id}",
-                                source_id=step.id,
-                                metadata={
-                                    "mission_id": str(mission.id),
-                                    "step_id": str(step.id),
-                                    "reward_cycle": current_cycle,
-                                },
-                                now=now,
-                            )
-                    await self._repo.save_step_progress(step_progress)
-                    step_progress_map[step.id] = step_progress
+                    await self._apply_step_progress(user=user, mission=mission, step=step, step_progress=step_progress, cycle_number=current_cycle, now=now)
                 else:
                     progress.progress_count = min(progress.required_count, progress.progress_count + 1)
 
                 if mission.steps:
-                    total_required = sum(max(1, s.required_count) for s in mission.steps)
-                    total_progress = sum(
-                        min(
-                            step_progress_map.get(s.id).progress_count if step_progress_map.get(s.id) else 0,
-                            max(1, s.required_count),
-                        )
-                        for s in mission.steps
-                    )
-                    progress.required_count = total_required
-                    progress.progress_count = min(total_required, total_progress)
+                    progress.required_count, progress.progress_count = self._step_progress_totals(mission, step_progress_map)
 
-                completed_now = False
-                if progress.progress_count >= progress.required_count and progress.completed_at is None:
-                    progress.status = MissionProgressStatus.completed
-                    progress.completed_at = now
-                    progress.completion_count = current_cycle
-                    reward_granted_at = await self._repo.grant_rewards(
-                        user_id=user.id,
-                        mission=mission,
-                        reward_cycle=current_cycle,
-                        now=now,
-                        wallet_repo=self._wallet_repo,
-                    )
-                    progress.reward_granted_at = reward_granted_at
+                completed_now = await self._finalize_progress_completion(user=user, mission=mission, progress=progress, cycle_number=current_cycle, now=now)
+                if completed_now:
                     completed_slugs.append(mission.slug)
-                    completed_now = True
 
                 await self._repo.save_progress(progress)
                 await self._emit_mission_analytics(

@@ -15,6 +15,12 @@ import { getServerLanguage } from "@/lib/server-i18n";
 import { getSiteUrl } from "@/lib/site";
 
 import "./globals.css";
+import "./styles/base.css";
+import "./styles/surfaces.css";
+import "./styles/navigation.css";
+import "./styles/components.css";
+import "./styles/economy.css";
+import "./styles/utility.css";
 
 const manrope = localFont({
   src: "./fonts/manrope/Manrope[wght].ttf",

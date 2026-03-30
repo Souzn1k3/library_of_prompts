@@ -17,7 +17,10 @@ from app.core.errors import AppError
 from app.core.i18n import resolve_language_from_header, translate
 from app.core.logging import configure_logging, get_logger
 from app.core.runtime_guard import verify_runtime_database
-from app.infrastructure.db.session import engine
+from app.infrastructure.db.session import async_session_maker, engine
+from app.modules.economy.repository.store_repository import StoreRepository
+from app.modules.economy.repository.wallet_repository import WalletRepository
+from app.modules.economy.service.store_service import sync_default_store_catalog
 
 configure_logging(get_settings().debug)
 log = get_logger(__name__)
@@ -28,6 +31,12 @@ async def lifespan(_app: FastAPI):
     settings = get_settings()
     log.info("starting", app=settings.app_name, app_env=settings.app_env)
     await verify_runtime_database(engine, settings)
+    try:
+        async with async_session_maker() as session:
+            await sync_default_store_catalog(StoreRepository(session), WalletRepository(session))
+            await session.commit()
+    except Exception:
+        log.exception("store_catalog_sync_failed")
     yield
     await get_cache().close()
     log.info("shutting_down")

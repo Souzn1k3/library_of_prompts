@@ -11,7 +11,7 @@ import {
 } from "react";
 
 import { ApiRequestError } from "@/lib/api";
-import { subscribeAuthStateChange } from "@/lib/auth";
+import { clearLegacyAccessToken, subscribeAuthStateChange } from "@/lib/auth";
 import { fetchMe, logoutRequest } from "@/lib/client-api";
 import type { UserProfile } from "@/lib/types";
 
@@ -103,6 +103,7 @@ export function AuthProvider({
 
   useEffect(() => {
     mountedRef.current = true;
+    clearLegacyAccessToken();
     return () => {
       mountedRef.current = false;
     };
@@ -116,14 +117,8 @@ export function AuthProvider({
   }, [initialHasAuthCookie, refreshAuth]);
 
   useEffect(() => {
-    return subscribeAuthStateChange((detail) => {
-      if (detail.state === "unauthenticated") {
-        applyUnauthenticated();
-        return;
-      }
-      void refreshAuth({ background: true });
-    });
-  }, [applyUnauthenticated, refreshAuth]);
+    return subscribeAuthStateChange(() => applyUnauthenticated());
+  }, [applyUnauthenticated]);
 
   useEffect(() => {
     const revalidate = () => {

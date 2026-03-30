@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.infrastructure.db.models import PurchaseStatus, StoreItemKind
 from app.modules.economy.model.wallet import WalletRead
@@ -24,7 +24,7 @@ class StoreItemRead(BaseModel):
 
 
 class StorePurchaseRequest(BaseModel):
-    client_token: str | None = None
+    client_token: str | None = Field(default=None, min_length=8, max_length=80)
 
 
 class PurchaseRead(BaseModel):

@@ -8,7 +8,8 @@ import { useI18n } from "@/components/i18n/LanguageProvider";
 import { EconomyLoop } from "@/components/navigation/EconomyLoop";
 import { PageIntro } from "@/components/navigation/PageIntro";
 import { LmnAmount } from "@/components/ui/LmnAmount";
-import { LmnMark } from "@/components/ui/LmnMark";
+import { LmnBalanceCard } from "@/components/ui/LmnBalanceCard";
+import { useLmnBalanceFeedback } from "@/components/ui/useLmnBalanceFeedback";
 import { ApiRequestError } from "@/lib/api";
 import { fetchWallet, walletCheckIn } from "@/lib/client-api";
 import type { TranslationKey } from "@/lib/i18n";
@@ -54,7 +55,9 @@ export function WalletClient() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkinPending, setCheckinPending] = useState(false);
+  const [successDelta, setSuccessDelta] = useState<number | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const { change: balanceChange, delta: balanceDelta } = useLmnBalanceFeedback(wallet?.balance);
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -71,14 +74,24 @@ export function WalletClient() {
       .finally(() => setLoading(false));
   }, [status, reloadToken, t]);
 
+  useEffect(() => {
+    if (!successDelta) return;
+    const timeoutId = window.setTimeout(() => setSuccessDelta(null), 3200);
+    return () => window.clearTimeout(timeoutId);
+  }, [successDelta]);
+
   async function handleCheckIn() {
     setCheckinPending(true);
     try {
+      const previousBalance = wallet?.balance ?? null;
       const data = await walletCheckIn();
       setWallet(data);
       setError(null);
+      const delta = previousBalance !== null ? data.balance - previousBalance : null;
+      setSuccessDelta(delta !== null && delta > 0 ? delta : null);
     } catch (e) {
       setError(e instanceof ApiRequestError ? e.message : t("wallet.checkInError"));
+      setSuccessDelta(null);
     } finally {
       setCheckinPending(false);
     }
@@ -183,6 +196,15 @@ export function WalletClient() {
 
   return (
     <div className="space-y-6">
+      {successDelta ? (
+        <section className="pv-alert pv-alert-success flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="font-medium">{t("wallet.checkedIn")}</p>
+          </div>
+          <LmnAmount amount={`+${successDelta}`} symbol={wallet.currency_symbol} strong state="earned" />
+        </section>
+      ) : null}
+
       <PageIntro
         breadcrumbs={[
           { label: t("nav.dashboard"), href: "/dashboard" },
@@ -206,25 +228,20 @@ export function WalletClient() {
             <Link href="/store" className="pv-button-secondary">
               {t("nav.store")}
             </Link>
-            <Link href="/dashboard" className="pv-inline-link">
-              {t("nav.dashboard")}
-              <span aria-hidden="true">↗</span>
-            </Link>
           </>
         }
         aside={
           <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-            <div className="pv-stat-card">
-              <p className="pv-stat-label">{t("wallet.balance")}</p>
-              <div className="mt-3 flex items-center gap-3">
-                <LmnMark size={40} label={wallet.currency_symbol} />
-                <div>
-                  <p className="text-2xl font-extrabold tracking-[-0.05em] text-zinc-950">{wallet.balance}</p>
-                  <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
-                    {wallet.currency_name || wallet.currency_symbol}
-                  </p>
-                </div>
-              </div>
+            <div className="sm:col-span-3 xl:col-span-1">
+              <LmnBalanceCard
+                label={t("wallet.balance")}
+                amount={wallet.balance}
+                symbol={wallet.currency_symbol}
+                caption={wallet.currency_name || wallet.currency_symbol}
+                detail={wallet.check_in_available ? t("wallet.checkinReady") : t("wallet.checkinLocked")}
+                delta={balanceDelta}
+                change={balanceChange}
+              />
             </div>
             <div className="pv-stat-card">
               <p className="pv-stat-label">{t("wallet.currentStreak")}</p>
@@ -243,10 +260,24 @@ export function WalletClient() {
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label={t("wallet.earned")} value={<LmnAmount amount={wallet.total_earned} symbol={wallet.currency_symbol} />} />
-        <StatCard label={t("wallet.spent")} value={<LmnAmount amount={wallet.total_spent} symbol={wallet.currency_symbol} />} />
-        <StatCard label={t("wallet.currentStreak")} value={<span className="pv-metric-value">{wallet.current_streak}</span>} tone="positive" />
-        <StatCard label={t("wallet.bestStreak")} value={<span className="pv-metric-value">{wallet.best_streak}</span>} />
+        <StatCard
+          label={t("wallet.earned")}
+          value={<LmnAmount amount={wallet.total_earned} symbol={wallet.currency_symbol} state="earned" />}
+          tone="positive"
+        />
+        <StatCard
+          label={t("wallet.spent")}
+          value={<LmnAmount amount={wallet.total_spent} symbol={wallet.currency_symbol} state="spent" />}
+        />
+        <StatCard
+          label={t("wallet.activeBenefits")}
+          value={<span className="pv-metric-value">{wallet.active_benefits.length}</span>}
+          tone="positive"
+        />
+        <StatCard
+          label={t("wallet.purchaseHistory")}
+          value={<span className="pv-metric-value">{wallet.recent_purchases.length}</span>}
+        />
       </section>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -256,7 +287,7 @@ export function WalletClient() {
               <p className="pv-kicker">{t("wallet.activeBenefits")}</p>
               <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("wallet.activeBenefits")}</h2>
             </div>
-            <LmnAmount amount={wallet.balance} symbol={wallet.currency_symbol} strong />
+            <LmnAmount amount={wallet.balance} symbol={wallet.currency_symbol} strong state="balance" />
           </div>
           {wallet.active_benefits.length === 0 ? (
             <div className="pv-empty-state mt-5 text-sm text-zinc-600">{t("wallet.noBenefits")}</div>
@@ -303,7 +334,7 @@ export function WalletClient() {
                       <p className="text-sm font-semibold text-zinc-900">{purchase.item_title}</p>
                       <p className="mt-1 text-xs text-zinc-500">{new Date(purchase.created_at).toLocaleString()}</p>
                     </div>
-                    <LmnAmount amount={`-${purchase.price_paid}`} symbol={wallet.currency_symbol} />
+                    <LmnAmount amount={`-${purchase.price_paid}`} symbol={wallet.currency_symbol} state="spent" />
                   </div>
                 </div>
               ))}
@@ -315,11 +346,11 @@ export function WalletClient() {
       <section className="pv-panel px-5 py-5">
         <div className="pv-section-head">
           <div className="pv-section-copy">
-            <p className="pv-kicker">{t("wallet.recentActivity")}</p>
-            <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("wallet.recentActivity")}</h2>
+              <p className="pv-kicker">{t("wallet.recentActivity")}</p>
+              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("wallet.recentActivity")}</h2>
+            </div>
+            <LmnAmount amount={wallet.balance} symbol={wallet.currency_symbol} state="balance" />
           </div>
-          <LmnAmount amount={wallet.balance} symbol={wallet.currency_symbol} />
-        </div>
 
         {wallet.recent.length === 0 ? (
           <div className="pv-empty-state mt-5 text-sm text-zinc-600">{t("wallet.empty")}</div>
@@ -346,7 +377,7 @@ export function WalletClient() {
                     <LmnAmount
                       amount={formatAmount(tx.amount)}
                       symbol={wallet.currency_symbol}
-                      className={tx.amount > 0 ? "border-emerald-200 bg-emerald-50/90" : ""}
+                      state={tx.amount > 0 ? "earned" : "spent"}
                     />
                     <p className="mt-2 text-xs text-zinc-500">
                       {t("wallet.balance")}: {tx.balance_after}

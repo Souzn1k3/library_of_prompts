@@ -1,0 +1,298 @@
+.pv-page {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.pv-page-sm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.pv-main-shell {
+  overflow-x: clip;
+}
+
+.pv-main-shell:focus-visible {
+  box-shadow: none;
+}
+
+.pv-panel,
+.pv-hero,
+.pv-card,
+.pv-card-muted {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.pv-panel {
+  border: 1px solid var(--pv-border);
+  border-radius: 1.75rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 249, 255, 0.86)),
+    var(--pv-surface-strong);
+  box-shadow: var(--pv-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.pv-panel::before,
+.pv-hero::before,
+.pv-card::before,
+.pv-card-muted::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.92), transparent);
+  pointer-events: none;
+}
+
+.pv-hero {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 2rem;
+  background:
+    radial-gradient(circle at top right, rgba(37, 92, 255, 0.08), transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 255, 0.94));
+  box-shadow:
+    0 24px 64px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.pv-hero::after {
+  display: none;
+}
+
+.pv-card {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 1.35rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 249, 255, 0.92)),
+    var(--pv-surface-strong);
+  box-shadow: var(--pv-card-shadow);
+}
+
+.pv-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(37, 92, 255, 0.18);
+  box-shadow: var(--pv-card-shadow-hover);
+}
+
+.pv-card-muted {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 1.35rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(244, 247, 253, 0.9)),
+    var(--pv-surface-muted);
+  box-shadow: none;
+}
+
+.pv-route-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+.pv-route-card:hover,
+.pv-route-card[data-active="true"] {
+  transform: translateY(-3px);
+  border-color: rgba(37, 92, 255, 0.14);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+}
+
+.pv-route-card::after {
+  content: "";
+  position: absolute;
+  right: -1.5rem;
+  bottom: -1.75rem;
+  width: 7rem;
+  height: 7rem;
+  border-radius: 999px;
+  background: rgba(37, 92, 255, 0.1);
+  filter: blur(24px);
+  opacity: 0;
+  transition: opacity 180ms ease;
+  pointer-events: none;
+}
+
+.pv-route-card:hover::after,
+.pv-route-card[data-active="true"]::after {
+  opacity: 1;
+}
+
+.pv-route-card[data-tone="earn"]::after {
+  background: var(--pv-lmn-earned-soft);
+}
+
+.pv-route-card[data-tone="balance"]::after {
+  background: var(--pv-lmn-glow);
+}
+
+.pv-route-card[data-tone="spend"]::after {
+  background: var(--pv-lmn-spent-soft);
+}
+
+.pv-route-card-media {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.15rem;
+  height: 3.15rem;
+  border-radius: 1.1rem;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 247, 253, 0.92)),
+    rgba(255, 255, 255, 0.86);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 10px 24px rgba(15, 23, 42, 0.06);
+  position: relative;
+  z-index: 1;
+}
+
+.pv-route-card[data-tone="earn"] .pv-route-card-media {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(236, 255, 247, 0.96)),
+    rgba(236, 255, 247, 0.86);
+}
+
+.pv-route-card[data-tone="balance"] .pv-route-card-media {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(255, 247, 224, 0.96)),
+    rgba(255, 247, 224, 0.86);
+}
+
+.pv-route-card[data-tone="spend"] .pv-route-card-media {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(255, 239, 229, 0.96)),
+    rgba(255, 239, 229, 0.86);
+}
+
+.pv-route-card-action {
+  width: 100%;
+  justify-content: space-between;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(15, 23, 42, 0.07);
+}
+
+.pv-kicker {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--pv-brand) 62%, white);
+}
+
+.pv-display {
+  font-size: clamp(2.15rem, 4.5vw, 2.9rem);
+  line-height: 1.02;
+  font-weight: 780;
+  letter-spacing: -0.058em;
+}
+
+.pv-title {
+  font-size: clamp(1.8rem, 2.7vw, 2.7rem);
+  line-height: 0.98;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+}
+
+.pv-lead {
+  color: var(--pv-muted);
+  font-size: 1.02rem;
+  line-height: 1.68;
+}
+
+.pv-hero-copy,
+.pv-hero-visual {
+  position: relative;
+  z-index: 1;
+}
+
+.pv-hero-visual {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pv-hero-preview-shell {
+  width: min(100%, 22.75rem);
+  margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.pv-hero-preview-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #64748b;
+  padding-left: 0.15rem;
+}
+
+.pv-hero-preview-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 1.45rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(247, 250, 255, 0.95)),
+    white;
+  padding: 1.2rem;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+}
+
+.pv-hero-preview-title {
+  font-size: clamp(1.3rem, 2.7vw, 1.6rem);
+  line-height: 1.14;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  color: #0f172a;
+}
+
+.pv-hero-preview-body {
+  font-size: 0.94rem;
+  line-height: 1.64;
+  color: #5d6a7f;
+}
+
+.pv-hero-preview-foot {
+  display: flex;
+  align-items: center;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+  padding-top: 0.9rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #56657a;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .pv-hero-copy {
+    animation: pv-hero-rise 440ms ease-out;
+  }
+
+  .pv-hero-visual {
+    animation: pv-hero-rise 520ms ease-out 70ms both;
+  }
+}
+
+@keyframes pv-hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

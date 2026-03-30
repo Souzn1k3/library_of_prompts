@@ -1,0 +1,122 @@
+.pv-cta-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.pv-floating-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 1.4rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 248, 255, 0.94)),
+    white;
+  padding: 1rem;
+  box-shadow: 0 28px 64px rgba(15, 23, 42, 0.14);
+  backdrop-filter: blur(20px);
+}
+
+.pv-menu-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.pv-menu-link,
+.pv-menu-logout {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 1rem;
+  padding: 0.78rem 0.9rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.pv-menu-link:hover,
+.pv-menu-logout:hover {
+  background: rgba(37, 92, 255, 0.08);
+  color: var(--pv-brand-strong);
+}
+
+.pv-menu-link-active {
+  background: linear-gradient(135deg, rgba(37, 92, 255, 0.1), rgba(17, 184, 164, 0.08));
+  color: var(--pv-brand-strong);
+}
+
+.pv-menu-logout {
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  margin-top: 0.25rem;
+  padding-top: 1rem;
+  text-align: left;
+}
+
+.pv-section-anchor {
+  scroll-margin-top: 9rem;
+}
+
+@media (max-width: 640px) {
+  .pv-panel,
+  .pv-card,
+  .pv-card-muted,
+  .pv-form-card,
+  .pv-details,
+  .pv-alert,
+  .pv-empty-state,
+  .pv-hero {
+    border-radius: 1.2rem;
+  }
+
+  .pv-page {
+    gap: 1.5rem;
+  }
+
+  .pv-header-shell {
+    border-radius: 1.25rem;
+  }
+
+  .pv-header-brand {
+    font-size: 1.26rem;
+  }
+
+  .pv-display {
+    font-size: 2.05rem;
+  }
+
+  .pv-lead {
+    font-size: 0.96rem;
+    line-height: 1.58;
+  }
+
+  .pv-hero-preview-shell {
+    width: 100%;
+  }
+
+  .pv-hero-preview-card {
+    border-radius: 1.2rem;
+    padding: 1.05rem;
+  }
+
+  .pv-button-primary,
+  .pv-button-secondary,
+  .pv-button-ghost {
+    width: 100%;
+  }
+
+  .pv-lmn-token[data-strong="true"] {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pv-lmn-balance-card {
+    border-radius: 1.25rem;
+    padding: 1rem;
+  }
+}

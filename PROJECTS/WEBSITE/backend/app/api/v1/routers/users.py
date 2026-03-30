@@ -5,53 +5,25 @@ from fastapi import APIRouter, Depends, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, require_admin
+from app.api.service_deps import (
+    get_contributor_service,
+    get_mission_service,
+    get_saved_prompt_service,
+    get_user_service,
+)
 from app.core.cache import get_cache
-from app.config import get_settings
 from app.infrastructure.db.models import User
 from app.infrastructure.db.session import get_db
-from app.modules.analytics.repository.analytics_repository import AnalyticsRepository
-from app.modules.analytics.service.analytics_service import AnalyticsService
 from app.modules.catalog.model.prompt import AuthorPromptRow, PromptListItem
 from app.modules.catalog.repository.prompt_repository import PromptRepository
-from app.modules.contributors.repository.contributor_repository import ContributorRepository
 from app.modules.contributors.service.contributor_service import ContributorService
-from app.modules.economy.repository.wallet_repository import WalletRepository
 from app.modules.identity.model.user import UserRead
 from app.modules.identity.model.user_update import UserUpdateMe
-from app.modules.identity.repository.saved_prompt_repository import SavedPromptRepository
-from app.modules.identity.repository.user_repository import UserRepository
 from app.modules.identity.service.saved_prompt_service import SavedPromptService
 from app.modules.identity.service.user_service import UserService
-from app.modules.missions.repository.mission_repository import MissionRepository
 from app.modules.missions.service.mission_service import MissionService
-from app.modules.onboarding.repository.onboarding_repository import OnboardingRepository
 
 router = APIRouter(prefix="/users", tags=["users"])
-
-
-def user_service(session: AsyncSession = Depends(get_db)) -> UserService:
-    return UserService(UserRepository(session))
-
-
-def saved_prompt_service(session: AsyncSession = Depends(get_db)) -> SavedPromptService:
-    return SavedPromptService(
-        SavedPromptRepository(session),
-        PromptRepository(session),
-    )
-
-
-def mission_service(session: AsyncSession = Depends(get_db)) -> MissionService:
-    return MissionService(
-        MissionRepository(session),
-        OnboardingRepository(session),
-        PromptRepository(session),
-        wallet_repo=WalletRepository(session),
-        analytics=AnalyticsService(AnalyticsRepository(session)),
-    )
-
-
-def contributor_service(session: AsyncSession = Depends(get_db)) -> ContributorService:
-    return ContributorService(ContributorRepository(session), UserRepository(session))
 
 
 @router.get("/me", response_model=UserRead)
@@ -63,7 +35,7 @@ async def get_me(current_user: User = Depends(get_current_user)) -> UserRead:
 async def update_me(
     body: UserUpdateMe,
     current_user: User = Depends(get_current_user),
-    svc: UserService = Depends(user_service),
+    svc: UserService = Depends(get_user_service),
 ) -> UserRead:
     return await svc.update_me(current_user.id, body)
 
@@ -72,7 +44,7 @@ async def update_me(
 async def my_submissions(
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_db),
-    contributors: ContributorService = Depends(contributor_service),
+    contributors: ContributorService = Depends(get_contributor_service),
 ) -> list[AuthorPromptRow]:
     repo = PromptRepository(session)
     rows = await repo.list_by_author(current_user.id, skip=0, limit=100)
@@ -96,7 +68,7 @@ async def my_submissions(
 @router.get("/me/saved-prompts", response_model=list[PromptListItem])
 async def list_saved_prompts(
     current_user: User = Depends(get_current_user),
-    svc: SavedPromptService = Depends(saved_prompt_service),
+    svc: SavedPromptService = Depends(get_saved_prompt_service),
 ) -> list[PromptListItem]:
     return await svc.list_saved(current_user.id)
 
@@ -105,9 +77,9 @@ async def list_saved_prompts(
 async def save_prompt(
     prompt_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
-    svc: SavedPromptService = Depends(saved_prompt_service),
-    missions: MissionService = Depends(mission_service),
-    contributors: ContributorService = Depends(contributor_service),
+    svc: SavedPromptService = Depends(get_saved_prompt_service),
+    missions: MissionService = Depends(get_mission_service),
+    contributors: ContributorService = Depends(get_contributor_service),
 ) -> Response:
     await svc.save(current_user.id, prompt_id)
     today_key = datetime.now(timezone.utc).date().isoformat()
@@ -133,8 +105,8 @@ async def save_prompt(
 async def unsave_prompt(
     prompt_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
-    svc: SavedPromptService = Depends(saved_prompt_service),
-    contributors: ContributorService = Depends(contributor_service),
+    svc: SavedPromptService = Depends(get_saved_prompt_service),
+    contributors: ContributorService = Depends(get_contributor_service),
 ) -> Response:
     await svc.unsave(current_user.id, prompt_id)
     await contributors.refresh_prompt_quality(prompt_id)
@@ -146,6 +118,6 @@ async def unsave_prompt(
 async def get_user(
     user_id: uuid.UUID,
     _admin: User = Depends(require_admin),
-    svc: UserService = Depends(user_service),
+    svc: UserService = Depends(get_user_service),
 ) -> UserRead:
     return await svc.get_by_id(user_id)

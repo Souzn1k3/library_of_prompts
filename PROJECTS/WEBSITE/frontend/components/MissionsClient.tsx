@@ -4,6 +4,10 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
+import {
+  MissionsHero,
+  type MissionCollectionView,
+} from "@/components/missions/MissionsHero";
 import { EconomyLoop } from "@/components/navigation/EconomyLoop";
 import { PageIntro } from "@/components/navigation/PageIntro";
 import { LmnAmount } from "@/components/ui/LmnAmount";
@@ -11,7 +15,12 @@ import { trackEvent } from "@/lib/analytics";
 import { ApiRequestError } from "@/lib/api";
 import { fetchMissions } from "@/lib/client-api";
 import { getMissionStatusTranslationKey, type TranslationKey } from "@/lib/i18n";
-import type { MissionListRead, MissionRead, MissionType } from "@/lib/types";
+import {
+  formatMissionDateTime,
+  getMissionPresentation,
+  type MissionPresentation,
+} from "@/lib/missionPresentation";
+import type { MissionListRead, MissionType } from "@/lib/types";
 
 const SECTION_ORDER: MissionType[] = ["progression", "learning", "action", "streak", "challenge"];
 
@@ -21,6 +30,7 @@ export function MissionsClient() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [reloadToken, setReloadToken] = useState(0);
+  const [selectedView, setSelectedView] = useState<MissionCollectionView>("active");
 
   useEffect(() => {
     setLoading(true);
@@ -42,20 +52,74 @@ export function MissionsClient() {
       });
   }, [language, reloadToken, t]);
 
+  const localizedMissions = useMemo(
+    () => data?.missions.map((mission) => getMissionPresentation(language, mission)) ?? [],
+    [data, language],
+  );
+
   const currentMission = useMemo(() => {
-    if (!data?.current_mission_slug) {
-      return data?.missions.find((mission) => mission.status === "in_progress") ?? null;
+    if (!data) {
+      return null;
     }
-    return data.missions.find((mission) => mission.slug === data.current_mission_slug) ?? null;
-  }, [data]);
+
+    if (!data.current_mission_slug) {
+      return localizedMissions.find((mission) => mission.mission.status === "in_progress") ?? null;
+    }
+
+    return (
+      localizedMissions.find((mission) => mission.mission.slug === data.current_mission_slug) ?? null
+    );
+  }, [data, localizedMissions]);
+
+  const nextMission = useMemo(
+    () =>
+      localizedMissions.find(
+        (mission) =>
+          mission.mission.slug !== currentMission?.mission.slug &&
+          mission.mission.status !== "completed",
+      ) ?? null,
+    [currentMission, localizedMissions],
+  );
+
+  const latestCompleted = useMemo(() => {
+    const completed = localizedMissions
+      .filter((mission) => mission.mission.completed_at)
+      .sort((left, right) => {
+        const leftTime = left.mission.completed_at ? new Date(left.mission.completed_at).getTime() : 0;
+        const rightTime = right.mission.completed_at ? new Date(right.mission.completed_at).getTime() : 0;
+        return rightTime - leftTime;
+      });
+
+    return completed[0] ?? null;
+  }, [localizedMissions]);
+
+  const filterCounts = useMemo(
+    () => ({
+      active: localizedMissions.filter((mission) => mission.mission.status !== "completed").length,
+      in_progress: localizedMissions.filter((mission) => mission.mission.status === "in_progress").length,
+      repeatable: localizedMissions.filter((mission) => mission.mission.is_repeatable).length,
+    }),
+    [localizedMissions],
+  );
+
+  const filteredMissions = useMemo(() => {
+    if (selectedView === "in_progress") {
+      return localizedMissions.filter((mission) => mission.mission.status === "in_progress");
+    }
+    if (selectedView === "repeatable") {
+      return localizedMissions.filter((mission) => mission.mission.is_repeatable);
+    }
+    return localizedMissions.filter((mission) => mission.mission.status !== "completed");
+  }, [localizedMissions, selectedView]);
 
   const sections = useMemo(() => {
     if (!data) return [];
+
     return SECTION_ORDER.map((type) => ({
       type,
-      items: data.missions.filter((mission) => mission.mission_type === type),
+      items: filteredMissions.filter((mission) => mission.mission.mission_type === type),
     })).filter((section) => section.items.length > 0);
-  }, [data]);
+  }, [data, filteredMissions]);
 
   if (error === "signed_out") {
     return (
@@ -149,78 +213,36 @@ export function MissionsClient() {
     );
   }
 
-  const percent = data.total_count > 0 ? Math.round((data.completed_count / data.total_count) * 100) : 0;
-  const missionHint = currentMission?.next_step
-    ? `${t("dashboard.recommendedNextAction")}: ${currentMission.next_step.label}`
-    : t("economy.loopBody");
-
   return (
     <div className="space-y-6">
-      <PageIntro
-        eyebrow={t("nav.missions")}
-        title={currentMission?.title ?? t("missions.title")}
-        description={currentMission?.objective ?? t("missions.subtitle")}
-        hint={missionHint}
-        actions={
-          <>
-            {currentMission?.next_step ? (
-              <Link href={currentMission.next_step.href} className="pv-button-primary">
-                {currentMission.next_step.label}
-              </Link>
-            ) : (
-              <Link href="/catalog" className="pv-button-primary">
-                {t("home.explorePrompts")}
-              </Link>
-            )}
-            <Link href="/dashboard" className="pv-button-secondary">
-              {t("nav.dashboard")}
-            </Link>
-            <Link href="/wallet" className="pv-inline-link">
-              {t("nav.wallet")}
-              <span aria-hidden="true">↗</span>
-            </Link>
-          </>
-        }
-        aside={
-          <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-            <div className="pv-stat-card">
-              <p className="pv-stat-label">{t("missions.progress")}</p>
-              <p className="mt-3 text-2xl font-extrabold tracking-[-0.05em] text-zinc-950">
-                {data.completed_count}/{data.total_count}
-              </p>
-            </div>
-            <div className="pv-stat-card">
-              <p className="pv-stat-label">{t("missions.credits")}</p>
-              <div className="mt-3">
-                <LmnAmount amount={data.rewards.credits} symbol="LMN" />
-              </div>
-            </div>
-            <div className="pv-stat-card">
-              <p className="pv-stat-label">{t("missions.badges")}</p>
-              <p className="mt-3 text-2xl font-extrabold tracking-[-0.05em] text-zinc-950">
-                {data.rewards.badges.length}
-              </p>
-            </div>
-          </div>
-        }
-      >
-        <div className="space-y-4">
-          <div className="pv-progress">
-            <div className="pv-progress-fill" style={{ width: `${percent}%` }} />
-          </div>
-          {currentMission ? (
-            <div className="pv-note flex flex-wrap items-center gap-2">
-              <span className="pv-badge-brand">{t(`missions.type.${currentMission.mission_type}` as TranslationKey)}</span>
-              <span className="pv-badge">{t(getMissionStatusTranslationKey(currentMission.status))}</span>
-              {currentMission.is_repeatable ? <span className="pv-badge">{t("missions.repeatable")}</span> : null}
-            </div>
-          ) : null}
-        </div>
-      </PageIntro>
+      <MissionsHero
+        currentMission={currentMission}
+        nextMission={nextMission}
+        latestCompleted={latestCompleted}
+        selectedView={selectedView}
+        onSelectView={setSelectedView}
+        filterCounts={filterCounts}
+        completedCount={data.completed_count}
+        totalCount={data.total_count}
+        rewardCredits={data.rewards.credits}
+        rewardBadgeCount={data.rewards.badges.length}
+      />
 
       <section className="pv-panel px-6 py-6 sm:px-7">
         <EconomyLoop activeStep="missions" />
       </section>
+
+      {sections.length === 0 ? (
+        <section className="pv-panel px-6 py-6 sm:px-7">
+          <div className="space-y-2">
+            <p className="pv-kicker">{t("nav.missions")}</p>
+            <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">
+              {t("missions.filteredEmptyTitle")}
+            </h2>
+            <p className="text-sm leading-relaxed text-zinc-600">{t("missions.filteredEmptyBody")}</p>
+          </div>
+        </section>
+      ) : null}
 
       {sections.map((section) => (
         <section key={section.type} className="pv-panel px-6 py-6 sm:px-7">
@@ -235,7 +257,7 @@ export function MissionsClient() {
           </div>
           <div className="mt-6 grid gap-4 xl:grid-cols-2">
             {section.items.map((mission) => (
-              <MissionCard key={mission.id} mission={mission} />
+              <MissionCard key={mission.mission.id} mission={mission} />
             ))}
           </div>
         </section>
@@ -244,25 +266,27 @@ export function MissionsClient() {
   );
 }
 
-function MissionCard({ mission }: { mission: MissionRead }) {
-  const { t } = useI18n();
-  const pct = Math.round((mission.progress_count / Math.max(1, mission.required_count)) * 100);
-  const tone = getMissionTone(mission.mission_type);
+function MissionCard({ mission }: { mission: MissionPresentation }) {
+  const { t, language } = useI18n();
+  const pct = Math.round(
+    (mission.mission.progress_count / Math.max(1, mission.mission.required_count)) * 100,
+  );
+  const tone = getMissionTone(mission.mission.mission_type);
 
   function trackNextStep() {
-    if (!mission.next_step) return;
+    if (!mission.nextStep) return;
     trackEvent({
       eventName: "mission_next_step_clicked",
       page: "/missions",
       feature: "mission_loop",
       metadata: {
-        mission_id: mission.id,
-        mission_slug: mission.slug,
-        status: mission.status,
-        progress_count: mission.progress_count,
-        required_count: mission.required_count,
-        action: mission.next_step.action,
-        href: mission.next_step.href,
+        mission_id: mission.mission.id,
+        mission_slug: mission.mission.slug,
+        status: mission.mission.status,
+        progress_count: mission.mission.progress_count,
+        required_count: mission.mission.required_count,
+        action: mission.nextStep.action,
+        href: mission.nextStep.href,
       },
     });
   }
@@ -275,26 +299,28 @@ function MissionCard({ mission }: { mission: MissionRead }) {
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${tone.badge}`}>
-                {t(`missions.type.${mission.mission_type}` as TranslationKey)}
+                {t(`missions.type.${mission.mission.mission_type}` as TranslationKey)}
               </span>
               <span
                 className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                  mission.status === "completed"
+                  mission.mission.status === "completed"
                     ? "bg-emerald-100 text-emerald-900"
-                    : mission.status === "in_progress"
+                    : mission.mission.status === "in_progress"
                       ? "bg-blue-100 text-blue-900"
                       : "bg-zinc-100 text-zinc-700"
                 }`}
               >
-                {t(getMissionStatusTranslationKey(mission.status))}
+                {t(getMissionStatusTranslationKey(mission.mission.status))}
               </span>
-              {mission.is_repeatable ? <span className="pv-badge">{t("missions.repeatable")}</span> : null}
+              {mission.mission.is_repeatable ? <span className="pv-badge">{t("missions.repeatable")}</span> : null}
             </div>
             <h3 className="text-lg font-semibold tracking-[-0.03em] text-zinc-950">{mission.title}</h3>
             <p className="text-sm leading-relaxed text-zinc-600">{mission.objective}</p>
           </div>
 
-          {mission.reward.credits > 0 ? <LmnAmount amount={`+${mission.reward.credits}`} symbol="LMN" /> : null}
+          {mission.mission.reward.credits > 0 ? (
+            <LmnAmount amount={`+${mission.mission.reward.credits}`} symbol="LMN" state="earned" strong />
+          ) : null}
         </div>
 
         <div className="pv-progress">
@@ -303,34 +329,34 @@ function MissionCard({ mission }: { mission: MissionRead }) {
 
         <div className="flex flex-wrap gap-3 text-xs text-zinc-500">
           <span>
-            {t("missions.progress")}: {mission.progress_count}/{mission.required_count}
+            {t("missions.progress")}: {mission.mission.progress_count}/{mission.mission.required_count}
           </span>
-          {mission.reward.badge ? (
+          {mission.badgeLabel ? (
             <span>
-              {t("missions.badge")}: {mission.reward.badge}
+              {t("missions.badge")}: {mission.badgeLabel}
             </span>
           ) : null}
-          {mission.completion_count > 0 ? (
+          {mission.mission.completion_count > 0 ? (
             <span>
-              {t("missions.completedTimes")}: {mission.completion_count}
+              {t("missions.completedTimes")}: {mission.mission.completion_count}
             </span>
           ) : null}
         </div>
 
         <div className="mt-auto flex flex-wrap gap-2">
-          {mission.next_step ? (
-            <Link href={mission.next_step.href} onClick={trackNextStep} className="pv-button-primary">
-              {mission.next_step.label}
+          {mission.nextStep ? (
+            <Link href={mission.nextStep.href} onClick={trackNextStep} className="pv-button-primary">
+              {mission.nextStep.label}
             </Link>
           ) : null}
-          <Link href={`/missions/${mission.slug}`} className="pv-button-secondary">
-            {t("dashboard.openMissionDetails")}
+          <Link href={`/missions/${mission.mission.slug}`} className="pv-button-secondary">
+            {t("missions.openMissionDetails")}
           </Link>
         </div>
 
-        {mission.available_again_at ? (
+        {mission.mission.available_again_at ? (
           <p className="text-xs text-zinc-500">
-            {t("missions.availableAgain")}: {new Date(mission.available_again_at).toLocaleString()}
+            {t("missions.availableAgain")}: {formatMissionDateTime(language, mission.mission.available_again_at)}
           </p>
         ) : null}
       </div>

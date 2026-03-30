@@ -8,6 +8,8 @@ import { useI18n } from "@/components/i18n/LanguageProvider";
 import { EconomyLoop } from "@/components/navigation/EconomyLoop";
 import { PageIntro } from "@/components/navigation/PageIntro";
 import { LmnAmount } from "@/components/ui/LmnAmount";
+import { LmnBalanceCard } from "@/components/ui/LmnBalanceCard";
+import { useLmnBalanceFeedback } from "@/components/ui/useLmnBalanceFeedback";
 import { ApiRequestError } from "@/lib/api";
 import { fetchStoreItems, fetchWallet, purchaseStoreItem } from "@/lib/client-api";
 import type { TranslationKey } from "@/lib/i18n";
@@ -41,7 +43,12 @@ export function StoreClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [purchasing, setPurchasing] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const [success, setSuccess] = useState<{
+    title: string;
+    pricePaid: number;
+    balanceAfter: number;
+  } | null>(null);
+  const { change: balanceChange, delta: balanceDelta } = useLmnBalanceFeedback(wallet?.balance);
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -64,6 +71,12 @@ export function StoreClient() {
       })
       .finally(() => setLoading(false));
   }, [status, t]);
+
+  useEffect(() => {
+    if (!success) return;
+    const timeoutId = window.setTimeout(() => setSuccess(null), 3600);
+    return () => window.clearTimeout(timeoutId);
+  }, [success]);
 
   const sections = useMemo(() => {
     return SECTION_ORDER.map((kind) => ({
@@ -92,7 +105,11 @@ export function StoreClient() {
         ),
       );
       setError(null);
-      setSuccess(result.purchase.item.title);
+      setSuccess({
+        title: result.purchase.item.title,
+        pricePaid: result.purchase.price_paid,
+        balanceAfter: result.wallet.balance,
+      });
     } catch (e) {
       setError(e instanceof ApiRequestError ? e.message : t("store.purchaseFailed"));
     } finally {
@@ -171,7 +188,16 @@ export function StoreClient() {
         eyebrow={t("nav.store")}
         title={t("store.title")}
         description={t("store.subtitle")}
-        hint={affordableCount > 0 ? `${t("wallet.balance")}: ${wallet?.balance ?? "—"}` : t("economy.loopBody")}
+        hint={
+          affordableCount > 0 && wallet ? (
+            <span className="flex flex-wrap items-center gap-2">
+              <span>{t("wallet.balance")}</span>
+              <LmnAmount amount={wallet.balance} symbol={wallet.currency_symbol} state="balance" />
+            </span>
+          ) : (
+            t("economy.loopBody")
+          )
+        }
         actions={
           <>
             <Link href={affordableCount > 0 ? "/wallet" : "/missions"} className="pv-button-primary">
@@ -184,11 +210,15 @@ export function StoreClient() {
         }
         aside={
           <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-            <div className="pv-stat-card">
-              <p className="pv-stat-label">{t("wallet.balance")}</p>
-              <div className="mt-3">
-                <LmnAmount amount={wallet?.balance ?? "—"} symbol={wallet?.currency_symbol ?? "LMN"} strong />
-              </div>
+            <div className="sm:col-span-3 xl:col-span-1">
+              <LmnBalanceCard
+                label={t("wallet.balance")}
+                amount={wallet?.balance ?? "—"}
+                symbol={wallet?.currency_symbol ?? "LMN"}
+                caption={wallet?.currency_name ?? wallet?.currency_symbol ?? "LMN"}
+                delta={balanceDelta}
+                change={balanceChange}
+              />
             </div>
             <div className="pv-stat-card">
               <p className="pv-stat-label">{t("store.purchased")}</p>
@@ -209,8 +239,20 @@ export function StoreClient() {
       </section>
 
       {success ? (
-        <div className="pv-alert pv-alert-success">
-          {t("store.purchased")}: {success}
+        <div className="pv-alert pv-alert-success flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="font-medium">
+              {t("store.purchased")}: {success.title}
+            </p>
+            <p className="mt-1 text-sm text-emerald-900/80">{t("store.balanceAfter")}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <LmnAmount amount={`-${success.pricePaid}`} symbol={wallet?.currency_symbol ?? "LMN"} state="spent" />
+            <span aria-hidden="true" className="text-sm font-semibold text-emerald-900/70">
+              →
+            </span>
+            <LmnAmount amount={success.balanceAfter} symbol={wallet?.currency_symbol ?? "LMN"} strong state="balance" />
+          </div>
         </div>
       ) : null}
 
@@ -251,7 +293,7 @@ export function StoreClient() {
                           <h3 className="text-lg font-semibold tracking-[-0.03em] text-zinc-900">{item.title}</h3>
                           {item.description ? <p className="text-sm leading-relaxed text-zinc-600">{item.description}</p> : null}
                         </div>
-                        <LmnAmount amount={item.price} symbol={wallet?.currency_symbol ?? "LMN"} strong />
+                        <LmnAmount amount={item.price} symbol={wallet?.currency_symbol ?? "LMN"} strong state="spent" />
                       </div>
 
                       <div className="flex flex-wrap gap-2">
@@ -267,6 +309,23 @@ export function StoreClient() {
 
                       {promptTitles.length > 0 ? (
                         <div className="pv-card-muted p-3 text-sm text-zinc-600">{promptTitles.join(" · ")}</div>
+                      ) : null}
+
+                      {wallet && !soldOut && !item.owned && !insufficient ? (
+                        <div className="pv-card-muted p-3">
+                          <p className="pv-stat-label">{t("store.balanceAfter")}</p>
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <LmnAmount amount={wallet.balance} symbol={wallet.currency_symbol} state="balance" />
+                            <span aria-hidden="true" className="text-sm font-semibold text-zinc-400">
+                              →
+                            </span>
+                            <LmnAmount
+                              amount={wallet.balance - item.price}
+                              symbol={wallet.currency_symbol}
+                              state="balance"
+                            />
+                          </div>
+                        </div>
                       ) : null}
 
                       <button

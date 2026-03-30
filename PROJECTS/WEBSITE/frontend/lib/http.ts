@@ -12,6 +12,38 @@ export async function parseJson<T>(res: Response): Promise<T> {
   }
 }
 
+type QueryPrimitive = string | number | boolean | null | undefined;
+type QueryValue = QueryPrimitive | QueryPrimitive[];
+
+function appendQueryParam(params: URLSearchParams, key: string, value: QueryValue): void {
+  if (value == null) {
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      appendQueryParam(params, key, entry);
+    }
+    return;
+  }
+  const normalized = String(value);
+  if (!normalized) {
+    return;
+  }
+  params.append(key, normalized);
+}
+
+export function withQuery(path: string, query?: Record<string, QueryValue>): string {
+  if (!query) {
+    return path;
+  }
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    appendQueryParam(params, key, value);
+  }
+  const suffix = params.toString();
+  return suffix ? `${path}?${suffix}` : path;
+}
+
 function fallbackMessageForStatus(
   status: number,
   fallbackMessage?: string,

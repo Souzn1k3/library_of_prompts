@@ -17,7 +17,7 @@ import type {
   PromptRecommendationResponse,
 } from "./types";
 import { getClientLanguage, getTranslation, normalizeLanguage, type Language } from "./i18n";
-import { extractApiErrorMessage, parseJson } from "./http";
+import { extractApiErrorMessage, parseJson, withQuery } from "./http";
 
 type NextFetchInit = RequestInit & {
   next?: { revalidate?: number; tags?: string[] };
@@ -136,24 +136,26 @@ export async function fetchPrompts(params?: {
   accessToken?: string | null;
   language?: Language | string | null;
 }): Promise<PromptListItem[]> {
-  const sp = new URLSearchParams();
-  if (params?.skip != null) sp.set("skip", String(params.skip));
-  if (params?.limit != null) sp.set("limit", String(params.limit));
-  if (params?.q) sp.set("q", params.q);
-  if (params?.contributor) sp.set("contributor", params.contributor);
-  if (params?.category_id) sp.set("category_id", params.category_id);
-  if (params?.technique) sp.set("technique", params.technique);
-  if (params?.difficulty) sp.set("difficulty", params.difficulty);
-  if (params?.output_type) sp.set("output_type", params.output_type);
-  if (params?.sort) sp.set("sort", params.sort);
-  for (const value of params?.use_case ?? []) sp.append("use_case", value);
-  for (const value of params?.model ?? []) sp.append("model", value);
-  for (const value of params?.tag ?? []) sp.append("tag", value);
-  const q = sp.toString();
-  return apiFetch<PromptListItem[]>(`/api/v1/prompts${q ? `?${q}` : ""}`, {
-    accessToken: params?.accessToken,
-    language: params?.language,
-  });
+  return apiFetch<PromptListItem[]>(
+    withQuery("/api/v1/prompts", {
+      skip: params?.skip,
+      limit: params?.limit,
+      q: params?.q,
+      contributor: params?.contributor,
+      category_id: params?.category_id,
+      technique: params?.technique,
+      difficulty: params?.difficulty,
+      output_type: params?.output_type,
+      use_case: params?.use_case,
+      model: params?.model,
+      tag: params?.tag,
+      sort: params?.sort,
+    }),
+    {
+      accessToken: params?.accessToken,
+      language: params?.language,
+    },
+  );
 }
 
 export async function fetchPromptDiscoveryFilters(
@@ -173,10 +175,7 @@ export async function fetchDiscoverySections(
     language?: Language | string | null;
   },
 ): Promise<DiscoverySections> {
-  const sp = new URLSearchParams();
-  if (params?.limit) sp.set("limit", String(params.limit));
-  const q = sp.toString();
-  return apiFetch<DiscoverySections>(`/api/v1/prompts/discovery-sections${q ? `?${q}` : ""}`, {
+  return apiFetch<DiscoverySections>(withQuery("/api/v1/prompts/discovery-sections", { limit: params?.limit }), {
     accessToken: params?.accessToken,
     language: params?.language,
   });
@@ -190,11 +189,10 @@ export async function fetchRelatedPromptsBySlug(
     language?: Language | string | null;
   },
 ): Promise<PromptListItem[]> {
-  const sp = new URLSearchParams();
-  if (params?.limit) sp.set("limit", String(params.limit));
-  const q = sp.toString();
   return apiFetch<PromptListItem[]>(
-    `/api/v1/prompts/by-slug/${encodeURIComponent(slug)}/related${q ? `?${q}` : ""}`,
+    withQuery(`/api/v1/prompts/by-slug/${encodeURIComponent(slug)}/related`, {
+      limit: params?.limit,
+    }),
     {
       accessToken: params?.accessToken,
       language: params?.language,
@@ -212,13 +210,12 @@ export async function fetchPromptRecommendations(
     language?: Language | string | null;
   },
 ): Promise<PromptRecommendationResponse> {
-  const sp = new URLSearchParams();
-  if (params?.context) sp.set("context", params.context);
-  if (params?.limit != null) sp.set("limit", String(params.limit));
-  if (params?.prompt_slug) sp.set("prompt_slug", params.prompt_slug);
-  if (params?.lesson_slug) sp.set("lesson_slug", params.lesson_slug);
-  const q = sp.toString();
-  return apiFetch<PromptRecommendationResponse>(`/api/v1/prompts/recommendations${q ? `?${q}` : ""}`, {
+  return apiFetch<PromptRecommendationResponse>(withQuery("/api/v1/prompts/recommendations", {
+    context: params?.context,
+    limit: params?.limit,
+    prompt_slug: params?.prompt_slug,
+    lesson_slug: params?.lesson_slug,
+  }), {
     accessToken: params?.accessToken,
     language: params?.language,
   });
@@ -242,10 +239,7 @@ export async function fetchTopContributors(
     language?: Language | string | null;
   },
 ): Promise<ContributorTopItem[]> {
-  const sp = new URLSearchParams();
-  if (params?.limit != null) sp.set("limit", String(params.limit));
-  const q = sp.toString();
-  return apiFetch<ContributorTopItem[]>(`/api/v1/contributors/top${q ? `?${q}` : ""}`, {
+  return apiFetch<ContributorTopItem[]>(withQuery("/api/v1/contributors/top", { limit: params?.limit }), {
     accessToken: params?.accessToken,
     language: params?.language,
   });
@@ -291,10 +285,7 @@ export async function fetchPopularLessons(
     language?: Language | string | null;
   },
 ): Promise<PopularLessonItem[]> {
-  const sp = new URLSearchParams();
-  if (params?.limit != null) sp.set("limit", String(params.limit));
-  const q = sp.toString();
-  return apiFetch<PopularLessonItem[]>(`/api/v1/lessons/popular${q ? `?${q}` : ""}`, {
+  return apiFetch<PopularLessonItem[]>(withQuery("/api/v1/lessons/popular", { limit: params?.limit }), {
     accessToken: params?.accessToken,
     language: params?.language,
   });

@@ -22,58 +22,60 @@ export async function listCategoryIntentLandings(params?: {
     fetchPromptDiscoveryFilters(params?.accessToken, params?.language),
   ]);
   const intentMap = new Map(filters.use_cases.map((item) => [item.slug, item.name]));
-  const result: CategoryIntentLanding[] = [];
+  const groups = await Promise.all(
+    categories.map(async (category) => {
+      const prompts = await fetchPrompts({
+        category_id: category.id,
+        sort: "most_used",
+        limit: 100,
+        accessToken: params?.accessToken,
+        language: params?.language,
+      });
 
-  for (const category of categories) {
-    const prompts = await fetchPrompts({
-      category_id: category.id,
-      sort: "most_used",
-      limit: 100,
-      accessToken: params?.accessToken,
-      language: params?.language,
-    });
+      if (prompts.length < minPromptCount) {
+        return [] as CategoryIntentLanding[];
+      }
 
-    if (prompts.length < minPromptCount) continue;
-
-    const bucket = new Map<
-      string,
-      { count: number; latestPromptAt: string | null }
-    >();
-    for (const prompt of prompts) {
-      const promptDate = prompt.created_at ?? null;
-      for (const slug of prompt.use_cases ?? []) {
-        if (!intentMap.has(slug)) continue;
-        const current = bucket.get(slug);
-        if (!current) {
-          bucket.set(slug, { count: 1, latestPromptAt: promptDate });
-          continue;
-        }
-        current.count += 1;
-        if (!current.latestPromptAt || (promptDate && promptDate > current.latestPromptAt)) {
-          current.latestPromptAt = promptDate;
+      const bucket = new Map<string, { count: number; latestPromptAt: string | null }>();
+      for (const prompt of prompts) {
+        const promptDate = prompt.created_at ?? null;
+        for (const slug of prompt.use_cases ?? []) {
+          if (!intentMap.has(slug)) continue;
+          const current = bucket.get(slug);
+          if (!current) {
+            bucket.set(slug, { count: 1, latestPromptAt: promptDate });
+            continue;
+          }
+          current.count += 1;
+          if (!current.latestPromptAt || (promptDate && promptDate > current.latestPromptAt)) {
+            current.latestPromptAt = promptDate;
+          }
         }
       }
-    }
 
-    const topIntents = Array.from(bucket.entries())
-      .filter(([, value]) => value.count >= minPromptCount)
-      .sort((a, b) => b[1].count - a[1].count)
-      .slice(0, 4);
+      return Array.from(bucket.entries())
+        .filter(([, value]) => value.count >= minPromptCount)
+        .sort((a, b) => b[1].count - a[1].count)
+        .slice(0, 4)
+        .flatMap(([intentSlug, value]) => {
+          const intentName = intentMap.get(intentSlug);
+          if (!intentName) {
+            return [];
+          }
+          return [
+            {
+              category_id: category.id,
+              category_slug: category.slug,
+              category_name: category.name,
+              intent_slug: intentSlug,
+              intent_name: intentName,
+              prompt_count: value.count,
+              latest_prompt_at: value.latestPromptAt,
+            },
+          ];
+        });
+    }),
+  );
 
-    for (const [intentSlug, value] of topIntents) {
-      const intentName = intentMap.get(intentSlug);
-      if (!intentName) continue;
-      result.push({
-        category_id: category.id,
-        category_slug: category.slug,
-        category_name: category.name,
-        intent_slug: intentSlug,
-        intent_name: intentName,
-        prompt_count: value.count,
-        latest_prompt_at: value.latestPromptAt,
-      });
-    }
-  }
-
-  return result;
+  return groups.flat();
 }

@@ -18,25 +18,7 @@ from app.modules.onboarding.model.onboarding import (
     OnboardingStarterPrompt,
 )
 from app.modules.onboarding.repository.onboarding_repository import OnboardingRepository
-
-_ROLE_HINTS: dict[str, list[str]] = {
-    "student": ["study", "exam", "summary", "explain"],
-    "developer": ["debug", "code", "api", "refactor"],
-    "other": ["planning", "email", "workflow", "research"],
-}
-
-_GOAL_HINTS: dict[str, list[str]] = {
-    "learning": ["learn", "tutorial", "explain", "practice"],
-    "solving_tasks": ["solve", "task", "step-by-step", "analysis"],
-    "productivity": ["productivity", "time", "organize", "checklist"],
-}
-
-_CONTEXT_HINTS: dict[str, list[str]] = {
-    "chatgpt": ["chat", "assistant"],
-    "code_assistant": ["code", "debug", "test"],
-    "school": ["study", "exam", "notes"],
-    "work": ["email", "meeting", "planning"],
-}
+from app.modules.onboarding.service.persona_hints import build_persona_hint_query
 
 
 def _to_profile_read(profile: OnboardingProfile | None) -> OnboardingProfileRead:
@@ -137,9 +119,12 @@ class OnboardingService:
         role = profile.role.value if profile and profile.role else "other"
         goal = profile.goal.value if profile and profile.goal else "learning"
         context = profile.ai_context if profile and profile.ai_context else "chatgpt"
-
-        hints = [*_ROLE_HINTS.get(role, []), *_GOAL_HINTS.get(goal, []), *_CONTEXT_HINTS.get(context, [])]
-        q = " ".join(dict.fromkeys(hints)).strip() or None
+        q = build_persona_hint_query(
+            role=role,
+            goal=goal,
+            context=context,
+            extra_hints=["explain"] if goal == "learning" else None,
+        )
 
         prompt_rows = await self._prompts.list_published(
             skip=0,

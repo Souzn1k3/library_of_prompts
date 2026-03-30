@@ -1,4 +1,5 @@
 import secrets
+import uuid
 from datetime import datetime, timezone
 from typing import Any
 
@@ -53,13 +54,11 @@ class StoreService:
         )
 
     async def list_items(self, user: User) -> list[StoreItemRead]:
-        items = await self._ensure_default_items()
-        purchases = await self._store.list_all_completed_purchases(user.id)
-        owned_item_ids = {
-            purchase.store_item_id
-            for purchase in purchases
-            if purchase.item is not None and self._is_one_time_item(purchase.item)
-        }
+        items = await self._store.list_active_items()
+        if not items:
+            premium_prompts = await self._store.list_featured_premium_prompts(limit=3)
+            items = self._build_default_items(premium_prompts, stable_ids=True)
+        owned_item_ids = await self._store.list_owned_one_time_item_ids(user.id)
         return [await self._serialize_item(item, owned=item.id in owned_item_ids) for item in items]
 
     async def purchase(self, *, user: User, item_slug: str, client_token: str | None = None) -> PurchaseResult:
@@ -73,7 +72,7 @@ class StoreService:
 
         item = await self._store.get_item_by_slug(item_slug)
         if item is None:
-            await self._ensure_default_items()
+            await self.sync_default_items()
             item = await self._store.get_item_by_slug(item_slug)
         if item is None or not item.is_active:
             raise AppError(code="store_item_not_found", message="Item is not available right now.", status_code=404)
@@ -83,6 +82,11 @@ class StoreService:
             owned = await self._store.get_completed_purchase_for_item(user_id=user.id, item_id=item.id)
             if owned is not None:
                 raise AppError(code="store_item_owned", message="You already own this unlock.", status_code=409)
+        if item.availability is not None:
+            reserved = await self._store.decrement_availability_if_available(item.id)
+            if not reserved:
+                raise AppError(code="store_item_unavailable", message="This item is sold out.", status_code=409)
+            item.availability = max(item.availability - 1, 0)
 
         await self._wallet_repo.ensure_balance_row(user.id)
         now = datetime.now(timezone.utc)
@@ -117,9 +121,6 @@ class StoreService:
             purchase_metadata["prompt_titles"] = list(item.meta.get("prompt_titles", []) if item.meta else [])
             purchase_metadata["bundle_size"] = len(purchase_metadata["prompt_ids"])
 
-        if item.availability is not None:
-            item.availability = max(0, item.availability - 1)
-
         purchase = await self._store.create_purchase(
             user_id=user.id,
             item=item,
@@ -137,10 +138,15 @@ class StoreService:
     async def wallet(self, user: User) -> WalletRead:
         return await self._wallet.get_wallet(user, limit=25)
 
-    async def _ensure_default_items(self) -> list[StoreItem]:
-        premium_prompts = await self._store.list_featured_premium_prompts(limit=3)
+    def _build_default_items(self, premium_prompts: list[Any], *, stable_ids: bool = False) -> list[StoreItem]:
+        def make_item(*, slug: str, **kwargs: Any) -> StoreItem:
+            item_kwargs = {"slug": slug, "is_active": True, **kwargs}
+            if stable_ids:
+                item_kwargs["id"] = uuid.uuid5(uuid.NAMESPACE_URL, f"store:{slug}")
+            return StoreItem(**item_kwargs)
+
         defaults: list[StoreItem] = [
-            StoreItem(
+            make_item(
                 slug="pro-trial-pass",
                 title="Pro Pass — 7 days",
                 description="Unlock premium prompts for a full week without changing your subscription yet.",
@@ -149,7 +155,7 @@ class StoreService:
                 meta={"premium_days": 7},
                 sort_order=1,
             ),
-            StoreItem(
+            make_item(
                 slug="first-month-discount",
                 title="40% off first paid month",
                 description="Trade Lumens for a personal discount code you can use on your next checkout.",
@@ -162,7 +168,7 @@ class StoreService:
 
         for index, prompt in enumerate(premium_prompts[:2], start=3):
             defaults.append(
-                StoreItem(
+                make_item(
                     slug=f"unlock-{prompt.slug}",
                     title=f"Unlock: {prompt.title}",
                     description="Permanent access to this premium prompt from your personal library.",
@@ -179,7 +185,7 @@ class StoreService:
 
         if premium_prompts:
             defaults.append(
-                StoreItem(
+                make_item(
                     slug="prompt-power-pack",
                     title="Premium Prompt Pack",
                     description="Unlock a curated pack of premium prompts and keep them in your workflow forever.",
@@ -193,11 +199,16 @@ class StoreService:
                     sort_order=6,
                 )
             )
+        return defaults
+
+    async def sync_default_items(self) -> list[StoreItem]:
+        premium_prompts = await self._store.list_featured_premium_prompts(limit=3)
+        defaults = self._build_default_items(premium_prompts)
 
         for item in defaults:
             existing = await self._store.get_item_by_slug(item.slug)
             if existing is None:
-                self._wallet_repo._session.add(item)
+                self._store.add_item(item)
                 continue
             existing.title = item.title
             existing.description = item.description
@@ -206,5 +217,10 @@ class StoreService:
             existing.meta = item.meta
             existing.sort_order = item.sort_order
             existing.is_active = True
-        await self._wallet_repo._session.flush()
+        await self._store.flush()
         return await self._store.list_active_items()
+
+
+async def sync_default_store_catalog(store_repo: StoreRepository, wallet_repo: WalletRepository) -> list[StoreItem]:
+    service = StoreService(store_repo, wallet_repo)
+    return await service.sync_default_items()

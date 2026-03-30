@@ -1,24 +1,15 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Query, Response, status
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user, get_optional_user
+from app.api.service_deps import get_lesson_service, get_mission_service
 from app.core.cache import get_cache
-from app.config import get_settings
 from app.core.errors import AppError
 from app.infrastructure.db.models import User
-from app.infrastructure.db.session import get_db
-from app.modules.analytics.repository.analytics_repository import AnalyticsRepository
-from app.modules.analytics.service.analytics_service import AnalyticsService
 from app.modules.education.model.lesson import LessonListItem, LessonRead, PopularLessonItem
-from app.modules.education.repository.lesson_repository import LessonRepository
 from app.modules.education.service.lesson_service import LessonService
-from app.modules.economy.repository.wallet_repository import WalletRepository
-from app.modules.missions.repository.mission_repository import MissionRepository
 from app.modules.missions.service.mission_service import MissionService
-from app.modules.onboarding.repository.onboarding_repository import OnboardingRepository
-from app.modules.catalog.repository.prompt_repository import PromptRepository
 
 router = APIRouter(prefix="/lessons", tags=["lessons"])
 _LESSON_CACHE_TTL = 120
@@ -30,24 +21,10 @@ def _lesson_visibility(viewer: User | None) -> str:
     return f"{viewer.role.value}:{viewer.plan_tier.value}"
 
 
-def lesson_service(session: AsyncSession = Depends(get_db)) -> LessonService:
-    return LessonService(LessonRepository(session))
-
-
-def mission_service(session: AsyncSession = Depends(get_db)) -> MissionService:
-    return MissionService(
-        MissionRepository(session),
-        OnboardingRepository(session),
-        PromptRepository(session),
-        wallet_repo=WalletRepository(session),
-        analytics=AnalyticsService(AnalyticsRepository(session)),
-    )
-
-
 @router.get("", response_model=list[LessonListItem])
 async def list_lessons(
     viewer: User | None = Depends(get_optional_user),
-    svc: LessonService = Depends(lesson_service),
+    svc: LessonService = Depends(get_lesson_service),
 ) -> list[LessonListItem]:
     cache = get_cache()
     visibility = _lesson_visibility(viewer)
@@ -63,7 +40,7 @@ async def list_lessons(
 async def popular_lessons(
     limit: int = Query(default=8, ge=1, le=24),
     viewer: User | None = Depends(get_optional_user),
-    svc: LessonService = Depends(lesson_service),
+    svc: LessonService = Depends(get_lesson_service),
 ) -> list[PopularLessonItem]:
     cache = get_cache()
     visibility = _lesson_visibility(viewer)
@@ -79,8 +56,8 @@ async def popular_lessons(
 async def get_lesson(
     slug: str,
     viewer: User | None = Depends(get_optional_user),
-    svc: LessonService = Depends(lesson_service),
-    missions: MissionService = Depends(mission_service),
+    svc: LessonService = Depends(get_lesson_service),
+    missions: MissionService = Depends(get_mission_service),
 ) -> LessonRead:
     lesson = await svc.get_by_slug(slug, viewer)
     if viewer is not None and not lesson.body_locked:
@@ -97,8 +74,8 @@ async def get_lesson(
 async def complete_lesson(
     slug: str,
     current_user: User = Depends(get_current_user),
-    svc: LessonService = Depends(lesson_service),
-    missions: MissionService = Depends(mission_service),
+    svc: LessonService = Depends(get_lesson_service),
+    missions: MissionService = Depends(get_mission_service),
 ) -> Response:
     lesson = await svc.get_by_slug(slug, current_user)
     if lesson.body_locked:

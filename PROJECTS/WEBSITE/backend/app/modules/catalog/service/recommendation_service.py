@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 import math
 import re
 import uuid
@@ -59,6 +58,23 @@ _ANALYTICS_WEIGHTS = {
     AnalyticsEventName.prompt_saved: 3.0,
     AnalyticsEventName.prompt_copied: 2.25,
     AnalyticsEventName.prompt_viewed: 0.9,
+}
+_CONTEXTUAL_STRATEGY_CONTEXTS = {
+    RecommendationContext.prompt_detail,
+    RecommendationContext.after_save,
+    RecommendationContext.after_lesson_complete,
+}
+_BEGINNER_CANDIDATE_CONTEXTS = {
+    RecommendationContext.dashboard,
+    RecommendationContext.after_save,
+    RecommendationContext.after_lesson_complete,
+}
+_CONTEXT_SCORE_WEIGHTS: dict[RecommendationContext, tuple[float, float, float, float, float]] = {
+    RecommendationContext.prompt_detail: (0.58, 0.12, 0.08, 0.22, 0.0),
+    RecommendationContext.after_save: (0.42, 0.28, 0.1, 0.2, 0.0),
+    RecommendationContext.after_lesson_complete: (0.44, 0.22, 0.1, 0.24, 0.0),
+    RecommendationContext.dashboard: (0.0, 0.44, 0.14, 0.26, 0.16),
+    RecommendationContext.home: (0.0, 0.34, 0.16, 0.34, 0.16),
 }
 
 
@@ -198,19 +214,9 @@ class RecommendationService:
             limit=limit,
         )
 
-        strategy = RecommendationStrategy.cold_start
-        if context in {
-            RecommendationContext.prompt_detail,
-            RecommendationContext.after_save,
-            RecommendationContext.after_lesson_complete,
-        }:
-            strategy = RecommendationStrategy.contextual
-        elif profile.has_behavioral_history or profile.has_profile_hints:
-            strategy = RecommendationStrategy.personalized
-
         return PromptRecommendationResponse(
             context=context,
-            strategy=strategy,
+            strategy=self._recommendation_strategy(context, profile),
             items=selected,
         )
 
@@ -218,16 +224,12 @@ class RecommendationService:
         profile = UserSignalProfile()
         if viewer is None:
             return profile
+        restrict_to_unrestricted_categories = not can_view_restricted_category(viewer)
 
         saved_rows = await self._saved_prompts.list_saved_published_prompts(viewer.id)
-        saved_ids = [row.id for row in saved_rows]
-        loaded_saved_rows = await self._prompts.list_published_by_ids(
-            saved_ids,
-            restrict_to_unrestricted_categories=not can_view_restricted_category(viewer),
-        )
-        if loaded_saved_rows:
+        if saved_rows:
             profile.has_behavioral_history = True
-        for row in loaded_saved_rows:
+        for row in saved_rows:
             profile.saved_prompt_ids.add(row.id)
             self._append_recent_prompt(profile, row.id)
             self._add_prompt_signal(profile, row, weight=3.2)
@@ -260,7 +262,7 @@ class RecommendationService:
             profile.has_behavioral_history = True
         event_rows = await self._prompts.list_published_by_ids(
             prompt_event_ids,
-            restrict_to_unrestricted_categories=not can_view_restricted_category(viewer),
+            restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
         )
         for row in event_rows:
             self._append_recent_prompt(profile, row.id)
@@ -296,7 +298,7 @@ class RecommendationService:
             if onboarding_profile.first_win_prompt_id is not None:
                 first_win_rows = await self._prompts.list_published_by_ids(
                     [onboarding_profile.first_win_prompt_id],
-                    restrict_to_unrestricted_categories=not can_view_restricted_category(viewer),
+                    restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
                 )
                 for row in first_win_rows:
                     self._append_recent_prompt(profile, row.id)
@@ -333,11 +335,7 @@ class RecommendationService:
                 restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
             ),
         ]
-        if context in {
-            RecommendationContext.dashboard,
-            RecommendationContext.after_save,
-            RecommendationContext.after_lesson_complete,
-        } or viewer is None:
+        if context in _BEGINNER_CANDIDATE_CONTEXTS or viewer is None:
             tasks.append(
                 self._prompts.list_best_for_beginners(
                     limit=fetch_limit,
@@ -345,72 +343,44 @@ class RecommendationService:
                 )
             )
 
-        if query:
+        candidate_query = query
+        if candidate_query is None and viewer is None:
+            candidate_query = generic_query
+        if candidate_query:
             tasks.append(
-                self._prompts.list_published(
-                    skip=0,
-                    limit=fetch_limit,
-                    q=query,
-                    sort=PromptSort.relevance,
+                self._candidate_query_task(
+                    fetch_limit=fetch_limit,
                     restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
                     only_free=only_free,
-                )
-            )
-        elif viewer is None:
-            tasks.append(
-                self._prompts.list_published(
-                    skip=0,
-                    limit=fetch_limit,
-                    q=generic_query,
+                    q=candidate_query,
                     sort=PromptSort.relevance,
-                    restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
-                    only_free=only_free,
                 )
             )
         for category_id in top_categories:
             tasks.append(
-                self._prompts.list_published(
-                    skip=0,
-                    limit=fetch_limit,
+                self._candidate_query_task(
+                    fetch_limit=fetch_limit,
+                    restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
+                    only_free=only_free,
                     category_id=category_id,
                     sort=PromptSort.trending,
-                    restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
-                    only_free=only_free,
                 )
             )
-        if top_tags:
-            tasks.append(
-                self._prompts.list_published(
-                    skip=0,
-                    limit=fetch_limit,
-                    tags=top_tags,
-                    sort=PromptSort.trending,
-                    restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
-                    only_free=only_free,
+        for filter_key, values in (
+            ("tags", top_tags),
+            ("use_cases", top_use_cases),
+            ("model_compatibility", top_models),
+        ):
+            if values:
+                tasks.append(
+                    self._candidate_query_task(
+                        fetch_limit=fetch_limit,
+                        restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
+                        only_free=only_free,
+                        sort=PromptSort.trending,
+                        **{filter_key: values},
+                    )
                 )
-            )
-        if top_use_cases:
-            tasks.append(
-                self._prompts.list_published(
-                    skip=0,
-                    limit=fetch_limit,
-                    use_cases=top_use_cases,
-                    sort=PromptSort.trending,
-                    restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
-                    only_free=only_free,
-                )
-            )
-        if top_models:
-            tasks.append(
-                self._prompts.list_published(
-                    skip=0,
-                    limit=fetch_limit,
-                    model_compatibility=top_models,
-                    sort=PromptSort.trending,
-                    restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
-                    only_free=only_free,
-                )
-            )
         if seed_prompt is not None:
             self._append_seed_tasks(
                 tasks,
@@ -421,19 +391,22 @@ class RecommendationService:
             )
         if seed_lesson is not None:
             tasks.append(
-                self._prompts.list_published(
-                    skip=0,
-                    limit=fetch_limit,
-                    q=seed_lesson.title,
-                    sort=PromptSort.relevance,
+                self._candidate_query_task(
+                    fetch_limit=fetch_limit,
                     restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
                     only_free=only_free,
+                    q=seed_lesson.title,
+                    sort=PromptSort.relevance,
                 )
             )
 
-        batches: list[Sequence[Prompt]] = []
-        for task in tasks:
-            batches.append(await task)
+        batches: list[list[Prompt]] = []
+        try:
+            for task in tasks:
+                batches.append(await task)
+        finally:
+            for pending in tasks[len(batches) :]:
+                pending.close()
         excluded_ids = set(profile.saved_prompt_ids)
         if seed_prompt is not None:
             excluded_ids.add(seed_prompt.id)
@@ -462,59 +435,57 @@ class RecommendationService:
         seed_use_cases = [link.use_case.slug for link in seed_prompt.use_case_links if link.use_case is not None][:3]
         seed_models = [link.model.slug for link in seed_prompt.model_links if link.model is not None][:2]
         tasks.append(
-            self._prompts.list_published(
-                skip=0,
-                limit=fetch_limit,
-                category_id=seed_prompt.category_id,
-                sort=PromptSort.trending,
+            self._candidate_query_task(
+                fetch_limit=fetch_limit,
                 restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
                 only_free=only_free,
+                category_id=seed_prompt.category_id,
+                sort=PromptSort.trending,
             )
         )
-        if seed_tags:
-            tasks.append(
-                self._prompts.list_published(
-                    skip=0,
-                    limit=fetch_limit,
-                    tags=seed_tags,
-                    sort=PromptSort.trending,
-                    restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
-                    only_free=only_free,
+        for filter_key, values in (
+            ("tags", seed_tags),
+            ("use_cases", seed_use_cases),
+            ("model_compatibility", seed_models),
+        ):
+            if values:
+                tasks.append(
+                    self._candidate_query_task(
+                        fetch_limit=fetch_limit,
+                        restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
+                        only_free=only_free,
+                        sort=PromptSort.trending,
+                        **{filter_key: values},
+                    )
                 )
-            )
-        if seed_use_cases:
-            tasks.append(
-                self._prompts.list_published(
-                    skip=0,
-                    limit=fetch_limit,
-                    use_cases=seed_use_cases,
-                    sort=PromptSort.trending,
-                    restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
-                    only_free=only_free,
-                )
-            )
-        if seed_models:
-            tasks.append(
-                self._prompts.list_published(
-                    skip=0,
-                    limit=fetch_limit,
-                    model_compatibility=seed_models,
-                    sort=PromptSort.trending,
-                    restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
-                    only_free=only_free,
-                )
-            )
         if seed_query:
             tasks.append(
-                self._prompts.list_published(
-                    skip=0,
-                    limit=fetch_limit,
-                    q=seed_query,
-                    sort=PromptSort.relevance,
+                self._candidate_query_task(
+                    fetch_limit=fetch_limit,
                     restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
                     only_free=only_free,
+                    q=seed_query,
+                    sort=PromptSort.relevance,
                 )
             )
+
+    def _candidate_query_task(
+        self,
+        *,
+        fetch_limit: int,
+        restrict_to_unrestricted_categories: bool,
+        only_free: bool,
+        sort: PromptSort,
+        **filters,
+    ):
+        return self._prompts.list_published(
+            skip=0,
+            limit=fetch_limit,
+            sort=sort,
+            restrict_to_unrestricted_categories=restrict_to_unrestricted_categories,
+            only_free=only_free,
+            **filters,
+        )
 
     def _select_diverse_candidates(
         self,
@@ -582,16 +553,16 @@ class RecommendationService:
         elif getattr(row.difficulty, "value", None) == "beginner":
             level_bonus = 0.12 if not profile.has_behavioral_history else 0.05
 
-        if context == RecommendationContext.prompt_detail:
-            total = contextual_score * 0.58 + behavior_score * 0.12 + text_score * 0.08 + global_score * 0.22
-        elif context == RecommendationContext.after_save:
-            total = contextual_score * 0.42 + behavior_score * 0.28 + text_score * 0.1 + global_score * 0.2
-        elif context == RecommendationContext.after_lesson_complete:
-            total = contextual_score * 0.44 + behavior_score * 0.22 + text_score * 0.1 + global_score * 0.24
-        elif context == RecommendationContext.dashboard:
-            total = behavior_score * 0.44 + text_score * 0.14 + global_score * 0.26 + level_bonus * 0.16
-        else:
-            total = behavior_score * 0.34 + text_score * 0.16 + global_score * 0.34 + level_bonus * 0.16
+        contextual_weight, behavior_weight, text_weight, global_weight, level_weight = _CONTEXT_SCORE_WEIGHTS[
+            context
+        ]
+        total = (
+            contextual_score * contextual_weight
+            + behavior_score * behavior_weight
+            + text_score * text_weight
+            + global_score * global_weight
+            + level_bonus * level_weight
+        )
 
         return ScoreBreakdown(
             total=total,
@@ -812,6 +783,17 @@ class RecommendationService:
         if not union:
             return 0.0
         return len(left & right) / len(union)
+
+    def _recommendation_strategy(
+        self,
+        context: RecommendationContext,
+        profile: UserSignalProfile,
+    ) -> RecommendationStrategy:
+        if context in _CONTEXTUAL_STRATEGY_CONTEXTS:
+            return RecommendationStrategy.contextual
+        if profile.has_behavioral_history or profile.has_profile_hints:
+            return RecommendationStrategy.personalized
+        return RecommendationStrategy.cold_start
 
     def _should_only_show_free(self, viewer: User | None, context: RecommendationContext) -> bool:
         if viewer is None or can_view_premium_content(viewer):

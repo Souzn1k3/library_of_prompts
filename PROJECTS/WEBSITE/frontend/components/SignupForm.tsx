@@ -7,7 +7,6 @@ import { type FormEvent, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { ApiRequestError } from "@/lib/api";
-import { setToken } from "@/lib/auth";
 import { fetchOnboardingProfile, registerRequest } from "@/lib/client-api";
 
 export function SignupForm() {
@@ -26,8 +25,7 @@ export function SignupForm() {
     const password = String(fd.get("password") ?? "");
     const displayName = String(fd.get("name") ?? "");
     try {
-      const token = await registerRequest(email, password, displayName);
-      setToken(token.access_token);
+      await registerRequest(email, password, displayName);
       await refreshAuth().catch(() => null);
       try {
         const onboarding = await fetchOnboardingProfile();

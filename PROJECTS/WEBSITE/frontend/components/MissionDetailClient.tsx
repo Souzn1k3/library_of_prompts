@@ -6,11 +6,16 @@ import { useEffect, useState } from "react";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { PageIntro } from "@/components/navigation/PageIntro";
 import { LmnAmount } from "@/components/ui/LmnAmount";
+import { LmnBalanceCard } from "@/components/ui/LmnBalanceCard";
 import type { TranslationKey } from "@/lib/i18n";
 import { ApiRequestError } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
 import { fetchMissionBySlug } from "@/lib/client-api";
 import { getMissionStatusTranslationKey } from "@/lib/i18n";
+import {
+  formatMissionDateTime,
+  getMissionPresentation,
+} from "@/lib/missionPresentation";
 import type { MissionRead } from "@/lib/types";
 
 export function MissionDetailClient({ slug }: { slug: string }) {
@@ -67,14 +72,16 @@ export function MissionDetailClient({ slug }: { slug: string }) {
     );
   }
 
-  if (loading || !mission) {
+  const missionView = mission ? getMissionPresentation(language, mission) : null;
+
+  if (loading || !missionView) {
     return <p className="text-sm text-zinc-500">{t("missionDetail.loading")}</p>;
   }
 
-  const currentMission = mission;
+  const currentMission = missionView.mission;
   const pct = Math.round((currentMission.progress_count / Math.max(1, currentMission.required_count)) * 100);
   const nextStep =
-    currentMission.next_step?.href === `/missions/${currentMission.slug}` ? null : currentMission.next_step;
+    missionView.nextStep?.href === `/missions/${currentMission.slug}` ? null : missionView.nextStep;
 
   function trackNextStep() {
     if (!nextStep) return;
@@ -99,12 +106,16 @@ export function MissionDetailClient({ slug }: { slug: string }) {
       <PageIntro
         breadcrumbs={[
           { label: t("nav.missions"), href: "/missions" },
-          { label: mission.title },
+          { label: missionView.title },
         ]}
-        eyebrow={t(`missions.type.${mission.mission_type}` as TranslationKey)}
-        title={mission.title}
-        description={mission.description ?? mission.objective}
-        hint={nextStep ? `${t("dashboard.recommendedNextAction")}: ${nextStep.label}` : t("missionDetail.completionCondition")}
+        eyebrow={t(`missions.type.${currentMission.mission_type}` as TranslationKey)}
+        title={missionView.title}
+        description={missionView.description ?? missionView.objective}
+        hint={
+          nextStep
+            ? `${t("dashboard.recommendedNextAction")}: ${nextStep.label}`
+            : t("missionDetail.completionCondition")
+        }
         actions={
           <>
             {nextStep ? (
@@ -122,69 +133,73 @@ export function MissionDetailClient({ slug }: { slug: string }) {
           </>
         }
         aside={
-          <div className="pv-stat-card">
-            <p className="pv-stat-label">{t("missions.progress")}</p>
-            <p className="mt-3 text-2xl font-semibold text-zinc-950">
-              {mission.progress_count}/{mission.required_count}
-            </p>
-            <div className="mt-3 pv-progress">
-              <div className="pv-progress-fill" style={{ width: `${pct}%` }} />
+          <div className="grid gap-3">
+            <div className="pv-stat-card">
+              <p className="pv-stat-label">{t("missions.progress")}</p>
+              <p className="mt-3 text-2xl font-semibold text-zinc-950">
+                {currentMission.progress_count}/{currentMission.required_count}
+              </p>
+              <div className="mt-3 pv-progress">
+                <div className="pv-progress-fill" style={{ width: `${pct}%` }} />
+              </div>
+              <div className="mt-4 space-y-2 text-sm text-zinc-600">
+                {missionView.badgeLabel ? (
+                  <p>
+                    {t("missions.badge")}: {missionView.badgeLabel}
+                  </p>
+                ) : null}
+                {currentMission.reward.premium_days ? (
+                  <p>
+                    {t("missions.premiumUnlockDays")}: {currentMission.reward.premium_days}
+                  </p>
+                ) : null}
+                {currentMission.completion_count > 0 ? (
+                  <p>
+                    {t("missions.completedTimes")}: {currentMission.completion_count}
+                  </p>
+                ) : null}
+                {currentMission.available_again_at ? (
+                  <p>
+                    {t("missions.availableAgain")}: {formatMissionDateTime(language, currentMission.available_again_at)}
+                  </p>
+                ) : null}
+              </div>
             </div>
-            <div className="mt-4 space-y-2 text-sm text-zinc-600">
-              {mission.reward.credits > 0 ? (
-                <LmnAmount amount={`+${mission.reward.credits}`} symbol="LMN" />
-              ) : null}
-              {mission.reward.badge ? (
-                <p>
-                  {t("missions.badge")}: {mission.reward.badge}
-                </p>
-              ) : null}
-              {mission.reward.premium_days ? (
-                <p>
-                  {t("missions.premiumUnlockDays")}: {mission.reward.premium_days}
-                </p>
-              ) : null}
-              {mission.completion_count > 0 ? (
-                <p>
-                  {t("missions.completedTimes")}: {mission.completion_count}
-                </p>
-              ) : null}
-              {mission.available_again_at ? (
-                <p>
-                  {t("missions.availableAgain")}: {new Date(mission.available_again_at).toLocaleString()}
-                </p>
-              ) : null}
-            </div>
+            {currentMission.reward.credits > 0 ? (
+              <LmnBalanceCard
+                label={t("missionDetail.reward")}
+                amount={`+${currentMission.reward.credits}`}
+                symbol="LMN"
+                caption={t("missions.credits")}
+                tone="earned"
+              />
+            ) : null}
           </div>
         }
       >
         <div className="flex flex-wrap items-center gap-2">
           <span className="pv-badge">
-            {t(`missions.difficulty.${mission.difficulty}` as TranslationKey)}
+            {t(`missions.difficulty.${currentMission.difficulty}` as TranslationKey)}
           </span>
           <span className="pv-badge">
-            {t(getMissionStatusTranslationKey(mission.status))}
+            {t(getMissionStatusTranslationKey(currentMission.status))}
           </span>
-          {mission.is_repeatable ? (
-            <span className="pv-badge">
-              {t("missions.repeatable")}
-            </span>
-          ) : null}
+          {currentMission.is_repeatable ? <span className="pv-badge">{t("missions.repeatable")}</span> : null}
         </div>
         <p className="max-w-3xl text-sm text-zinc-800">
-          <span className="font-medium">{t("missionDetail.objective")}:</span> {mission.objective}
+          <span className="font-medium">{t("missionDetail.objective")}:</span> {missionView.objective}
         </p>
         <p className="max-w-3xl text-sm text-zinc-600">
-          {t("missionDetail.completionCondition")}: {mission.completion_condition}
+          {t("missionDetail.completionCondition")}: {missionView.completionCondition}
         </p>
       </PageIntro>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-        {mission.steps?.length ? (
+        {missionView.steps.length ? (
           <section className="pv-panel px-6 py-6 sm:px-7">
             <p className="pv-kicker">{t("missions.steps")}</p>
             <div className="mt-4 space-y-3">
-              {mission.steps.map((step, index) => (
+              {missionView.steps.map((step, index) => (
                 <div key={step.id} className="pv-card-muted p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
@@ -198,7 +213,9 @@ export function MissionDetailClient({ slug }: { slug: string }) {
                       <p>
                         {step.progress_count}/{step.required_count}
                       </p>
-                      {step.reward_credits > 0 ? <LmnAmount amount={`+${step.reward_credits}`} symbol="LMN" /> : null}
+                      {step.reward_credits > 0 ? (
+                        <LmnAmount amount={`+${step.reward_credits}`} symbol="LMN" state="earned" />
+                      ) : null}
                     </div>
                   </div>
                   <div className="mt-3 flex flex-wrap gap-3">
@@ -220,16 +237,16 @@ export function MissionDetailClient({ slug }: { slug: string }) {
         ) : (
           <section className="pv-panel px-6 py-6 sm:px-7">
             <p className="pv-kicker">{t("missions.objective")}</p>
-            <p className="mt-4 text-sm leading-relaxed text-zinc-700">{mission.objective}</p>
+            <p className="mt-4 text-sm leading-relaxed text-zinc-700">{missionView.objective}</p>
           </section>
         )}
 
         <aside className="space-y-4">
-          {mission.prompts.length ? (
+          {currentMission.prompts.length ? (
             <section className="pv-panel px-5 py-5">
               <p className="pv-kicker">{t("missionDetail.linkedPrompts")}</p>
               <ul className="mt-4 space-y-3 text-sm text-zinc-700">
-                {mission.prompts.map((prompt) => (
+                {currentMission.prompts.map((prompt) => (
                   <li key={prompt.id} className="pv-card-muted p-3">
                     <Link href={`/prompt/${prompt.slug}`} className="font-medium text-zinc-900 underline">
                       {prompt.title}
@@ -241,12 +258,12 @@ export function MissionDetailClient({ slug }: { slug: string }) {
             </section>
           ) : null}
 
-          {mission.lesson ? (
+          {currentMission.lesson ? (
             <section className="pv-panel px-5 py-5">
               <p className="pv-kicker">{t("missionDetail.linkedLesson")}</p>
-              <p className="mt-4 text-sm font-medium text-zinc-950">{mission.lesson.title}</p>
-              <Link href={`/learn/${mission.lesson.slug}`} className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--pv-brand-strong)]">
-                {mission.lesson.locked ? `${t("missionDetail.locked")} · ${t("nav.plans")}` : t("learn.open")}
+              <p className="mt-4 text-sm font-medium text-zinc-950">{currentMission.lesson.title}</p>
+              <Link href={`/learn/${currentMission.lesson.slug}`} className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--pv-brand-strong)]">
+                {currentMission.lesson.locked ? `${t("missionDetail.locked")} · ${t("nav.plans")}` : t("learn.open")}
                 <span aria-hidden="true">↗</span>
               </Link>
             </section>
