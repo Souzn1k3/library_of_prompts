@@ -157,7 +157,10 @@ class AuthService:
         user_agent: str | None,
     ) -> SessionTokens:
         now = datetime.now(timezone.utc)
-        row = await self._refresh_tokens.get_by_token_hash(_hash_refresh_token(refresh_token))
+        row = await self._refresh_tokens.get_by_token_hash(
+            _hash_refresh_token(refresh_token),
+            for_update=True,
+        )
         if row is None:
             log.warning(
                 "auth_refresh_failed",

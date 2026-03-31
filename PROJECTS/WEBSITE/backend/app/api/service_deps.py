@@ -20,7 +20,11 @@ from app.modules.contributions.service.submission_service import SubmissionServi
 from app.modules.contributors.repository.contributor_repository import ContributorRepository
 from app.modules.contributors.service.contributor_service import ContributorService
 from app.modules.economy.repository.store_repository import StoreRepository
+from app.modules.economy.repository.insights_repository import EconomyInsightsRepository
+from app.modules.economy.repository.kpi_repository import EconomyKpiRepository
 from app.modules.economy.repository.wallet_repository import WalletRepository
+from app.modules.economy.service.insights_service import EconomyInsightsService
+from app.modules.economy.service.kpi_service import EconomyKpiService
 from app.modules.economy.service.store_service import StoreService
 from app.modules.economy.service.wallet_service import WalletService
 from app.modules.education.repository.lesson_repository import LessonRepository
@@ -33,6 +37,8 @@ from app.modules.identity.service.saved_prompt_service import SavedPromptService
 from app.modules.identity.service.user_service import UserService
 from app.modules.missions.repository.mission_repository import MissionRepository
 from app.modules.missions.service.mission_service import MissionService
+from app.modules.marketplace.repository.marketplace_repository import MarketplaceRepository
+from app.modules.marketplace.service.marketplace_service import MarketplaceService
 from app.modules.onboarding.repository.onboarding_repository import OnboardingRepository
 from app.modules.onboarding.service.onboarding_service import OnboardingService
 
@@ -53,7 +59,11 @@ get_analytics_service = _db_service(build_analytics_service)
 
 
 def build_contributor_service(session: AsyncSession) -> ContributorService:
-    return ContributorService(ContributorRepository(session), UserRepository(session))
+    return ContributorService(
+        ContributorRepository(session),
+        UserRepository(session),
+        marketplace=build_marketplace_service(session),
+    )
 
 get_contributor_service = _db_service(build_contributor_service)
 
@@ -77,16 +87,47 @@ get_mission_service = _db_service(build_mission_service)
 
 
 def build_wallet_service(session: AsyncSession) -> WalletService:
-    return WalletService(WalletRepository(session), StoreRepository(session))
+    return WalletService(
+        WalletRepository(session),
+        StoreRepository(session),
+        analytics=build_analytics_service(session),
+    )
 
 get_wallet_service = _db_service(build_wallet_service)
 
 
 def build_store_service(session: AsyncSession) -> StoreService:
     wallet_repo = WalletRepository(session)
-    return StoreService(StoreRepository(session), wallet_repo)
+    return StoreService(StoreRepository(session), wallet_repo, analytics=build_analytics_service(session))
 
 get_store_service = _db_service(build_store_service)
+
+
+def build_economy_insights_service(session: AsyncSession) -> EconomyInsightsService:
+    return EconomyInsightsService(EconomyInsightsRepository(session))
+
+
+get_economy_insights_service = _db_service(build_economy_insights_service)
+
+
+def build_economy_kpi_service(session: AsyncSession) -> EconomyKpiService:
+    return EconomyKpiService(EconomyKpiRepository(session))
+
+
+get_economy_kpi_service = _db_service(build_economy_kpi_service)
+
+
+def build_marketplace_service(session: AsyncSession) -> MarketplaceService:
+    return MarketplaceService(
+        MarketplaceRepository(session),
+        BillingRepository(session),
+        WalletRepository(session),
+        StoreRepository(session),
+        get_settings(),
+    )
+
+
+get_marketplace_service = _db_service(build_marketplace_service)
 
 
 def build_onboarding_service(session: AsyncSession) -> OnboardingService:
@@ -100,7 +141,11 @@ get_onboarding_service = _db_service(build_onboarding_service)
 
 
 def build_prompt_service(session: AsyncSession) -> PromptService:
-    return PromptService(PromptRepository(session), StoreRepository(session))
+    return PromptService(
+        PromptRepository(session),
+        StoreRepository(session),
+        marketplace=build_marketplace_service(session),
+    )
 
 get_prompt_service = _db_service(build_prompt_service)
 
@@ -129,6 +174,7 @@ def build_submission_service(session: AsyncSession) -> SubmissionService:
         PromptRepository(session),
         CategoryRepository(session),
         build_contributor_service(session),
+        marketplace=build_marketplace_service(session),
         analytics=build_analytics_service(session),
     )
 
@@ -147,7 +193,11 @@ get_auth_service = _db_service(build_auth_service)
 
 
 def build_user_service(session: AsyncSession) -> UserService:
-    return UserService(UserRepository(session))
+    return UserService(
+        UserRepository(session),
+        contributors=build_contributor_service(session),
+        marketplace=build_marketplace_service(session),
+    )
 
 get_user_service = _db_service(build_user_service)
 
@@ -171,6 +221,7 @@ def build_billing_service(session: AsyncSession) -> BillingService:
         user_repo,
         get_settings(),
         analytics=build_analytics_service(session),
+        marketplace=build_marketplace_service(session),
     )
 
 get_billing_service = _db_service(build_billing_service)

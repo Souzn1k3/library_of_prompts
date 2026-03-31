@@ -6,10 +6,11 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { PromptCard } from "@/components/PromptCard";
+import { EconomyActionBanner } from "@/components/ui/EconomyActionBanner";
 import { ApiRequestError } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
 import { fetchPromptRecommendations, fetchSavedPrompts, savePrompt, unsavePrompt } from "@/lib/client-api";
-import type { PromptListItem } from "@/lib/types";
+import type { EconomyAction, PromptListItem } from "@/lib/types";
 
 export function SavePromptButton({
   promptId,
@@ -24,6 +25,7 @@ export function SavePromptButton({
   const { status } = useAuth();
   const [saved, setSaved] = useState(false);
   const [recommendations, setRecommendations] = useState<PromptListItem[]>([]);
+  const [economy, setEconomy] = useState<EconomyAction | null>(null);
   const [savedLoading, setSavedLoading] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,9 +76,11 @@ export function SavePromptButton({
         await unsavePrompt(promptId);
         setSaved(false);
         setRecommendations([]);
+        setEconomy(null);
       } else {
-        await savePrompt(promptId);
+        const action = await savePrompt(promptId);
         setSaved(true);
+        setEconomy(action);
         if (promptSlug) {
           try {
             const response = await fetchPromptRecommendations({
@@ -144,6 +148,7 @@ export function SavePromptButton({
         {pending ? t("save.pending") : saved ? t("save.savedRemove") : t("save.saveToDashboard")}
       </button>
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
+      <EconomyActionBanner summary={economy} />
       {recommendations.length > 0 ? (
         <section className="pv-card space-y-3 p-4">
           <p className="text-sm font-medium text-zinc-900">{t("save.keepMomentum")}</p>

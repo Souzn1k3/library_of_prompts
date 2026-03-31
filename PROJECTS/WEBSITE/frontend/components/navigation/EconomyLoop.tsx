@@ -40,8 +40,8 @@ export function EconomyLoop({ activeStep, missionCard, walletCard, storeCard }: 
           actionLabel={missionCard?.actionLabel ?? t("nav.missions")}
           badge={missionCard?.badge}
           active={activeStep === "missions"}
-          tone="earn"
-          visual={<LmnMark size={30} tone="earned" />}
+          tone="neutral"
+          visual={<LmnMark size={30} tone="balance" />}
         />
         <RouteCard
           eyebrow={t("nav.wallet")}
@@ -51,7 +51,7 @@ export function EconomyLoop({ activeStep, missionCard, walletCard, storeCard }: 
           actionLabel={walletCard?.actionLabel ?? t("nav.wallet")}
           badge={walletCard?.badge}
           active={activeStep === "wallet"}
-          tone="balance"
+          tone="neutral"
           visual={<LmnMark size={30} tone="balance" />}
         />
         <RouteCard
@@ -62,8 +62,8 @@ export function EconomyLoop({ activeStep, missionCard, walletCard, storeCard }: 
           actionLabel={storeCard?.actionLabel ?? t("nav.store")}
           badge={storeCard?.badge}
           active={activeStep === "store"}
-          tone="spend"
-          visual={<LmnMark size={30} tone="spent" />}
+          tone="neutral"
+          visual={<LmnMark size={30} tone="balance" />}
         />
       </div>
     </div>

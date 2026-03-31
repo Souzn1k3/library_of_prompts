@@ -1,0 +1,57 @@
+export const API_V1_PREFIX = "/api/v1";
+
+export const API_ENDPOINTS = {
+  analyticsEvents: `${API_V1_PREFIX}/analytics/events`,
+  auth: {
+    refresh: `${API_V1_PREFIX}/auth/refresh`,
+    login: `${API_V1_PREFIX}/auth/login`,
+    register: `${API_V1_PREFIX}/auth/register`,
+    logout: `${API_V1_PREFIX}/auth/logout`,
+  },
+  categories: `${API_V1_PREFIX}/categories`,
+  prompts: `${API_V1_PREFIX}/prompts`,
+  promptDiscoveryFilters: `${API_V1_PREFIX}/prompts/discovery-filters`,
+  promptDiscoverySections: `${API_V1_PREFIX}/prompts/discovery-sections`,
+  promptRecommendations: `${API_V1_PREFIX}/prompts/recommendations`,
+  contributorsTop: `${API_V1_PREFIX}/contributors/top`,
+  billingPlans: `${API_V1_PREFIX}/billing/plans`,
+  billingSubscription: `${API_V1_PREFIX}/billing/subscription`,
+  billingCheckoutSession: `${API_V1_PREFIX}/billing/checkout/session`,
+  billingPortal: `${API_V1_PREFIX}/billing/portal`,
+  marketplaceMe: `${API_V1_PREFIX}/marketplace/me`,
+  marketplacePromptCheckoutSession: `${API_V1_PREFIX}/marketplace/prompts/checkout-session`,
+  onboardingProfile: `${API_V1_PREFIX}/onboarding/profile`,
+  onboardingSkip: `${API_V1_PREFIX}/onboarding/skip`,
+  onboardingStarterPack: `${API_V1_PREFIX}/onboarding/starter-pack`,
+  onboardingFirstWin: `${API_V1_PREFIX}/onboarding/first-win`,
+  missions: `${API_V1_PREFIX}/missions`,
+  missionsCurrent: `${API_V1_PREFIX}/missions/current`,
+  wallet: `${API_V1_PREFIX}/wallet`,
+  walletCheckIn: `${API_V1_PREFIX}/wallet/check-in`,
+  store: `${API_V1_PREFIX}/store`,
+  lessons: `${API_V1_PREFIX}/lessons`,
+  lessonsPopular: `${API_V1_PREFIX}/lessons/popular`,
+  usersMe: `${API_V1_PREFIX}/users/me`,
+  usersSavedPrompts: `${API_V1_PREFIX}/users/me/saved-prompts`,
+  usersSubmissions: `${API_V1_PREFIX}/users/me/submissions`,
+  contributionsSubmit: `${API_V1_PREFIX}/contributions/submit`,
+} as const;
+
+export const apiPath = {
+  missionBySlug: (slug: string) => `${API_ENDPOINTS.missions}/${encodeURIComponent(slug)}`,
+  storePurchaseBySlug: (slug: string) => `${API_ENDPOINTS.store}/${encodeURIComponent(slug)}/purchase`,
+  lessonBySlug: (slug: string) => `${API_ENDPOINTS.lessons}/by-slug/${encodeURIComponent(slug)}`,
+  lessonCompleteBySlug: (slug: string) =>
+    `${API_ENDPOINTS.lessons}/by-slug/${encodeURIComponent(slug)}/complete`,
+  promptBySlug: (slug: string) => `${API_ENDPOINTS.prompts}/by-slug/${encodeURIComponent(slug)}`,
+  promptRelatedBySlug: (slug: string) =>
+    `${API_ENDPOINTS.prompts}/by-slug/${encodeURIComponent(slug)}/related`,
+  contributorBySlug: (slug: string) => `${API_V1_PREFIX}/contributors/${encodeURIComponent(slug)}`,
+  marketplacePromptBuyWithLumens: (promptId: string) =>
+    `${API_V1_PREFIX}/marketplace/prompts/${promptId}/buy-with-lumens`,
+  marketplacePromptReview: (promptId: string) =>
+    `${API_V1_PREFIX}/marketplace/prompts/${promptId}/review`,
+  userSavedPromptById: (promptId: string) => `${API_ENDPOINTS.usersSavedPrompts}/${promptId}`,
+  promptEventCopy: (promptId: string) => `${API_ENDPOINTS.prompts}/${promptId}/events/copy`,
+  promptEventApply: (promptId: string) => `${API_ENDPOINTS.prompts}/${promptId}/events/apply`,
+} as const;

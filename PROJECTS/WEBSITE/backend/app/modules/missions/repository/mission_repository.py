@@ -237,6 +237,8 @@ class MissionRepository:
         reward_cycle: int,
         now: datetime,
         wallet_repo=None,
+        credit_override: int | None = None,
+        credit_metadata: dict[str, Any] | None = None,
     ) -> datetime | None:
         granted_any = False
 
@@ -255,14 +257,15 @@ class MissionRepository:
                 or granted_any
             )
 
-        if mission.reward_credits > 0:
+        reward_credits = mission.reward_credits if credit_override is None else max(0, int(credit_override))
+        if reward_credits > 0:
             credit_granted = await self._grant_reward(
                 user_id=user_id,
                 mission_id=mission.id,
                 reward_type=MissionRewardType.credits,
                 reward_cycle=reward_cycle,
                 badge_code=None,
-                credits=mission.reward_credits,
+                credits=reward_credits,
                 premium_access_until=None,
                 created_at=now,
             )
@@ -271,18 +274,22 @@ class MissionRepository:
                 if wallet_repo is not None:
                     await wallet_repo.adjust_balance(
                         user_id=user_id,
-                        amount=mission.reward_credits,
+                        amount=reward_credits,
                         reason=CurrencyTransactionType.mission_reward,
                         context=f"mission:{mission.slug}:cycle:{reward_cycle}",
                         source_id=mission.id,
-                        metadata={"mission_slug": mission.slug, "reward_cycle": reward_cycle},
+                        metadata={
+                            "mission_slug": mission.slug,
+                            "reward_cycle": reward_cycle,
+                            **(credit_metadata or {}),
+                        },
                         now=now,
                     )
                 else:
                     await self._session.execute(
                         update(User)
                         .where(User.id == user_id)
-                        .values(mission_credits=User.mission_credits + mission.reward_credits)
+                        .values(mission_credits=User.mission_credits + reward_credits)
                     )
 
         if mission.reward_premium_days > 0:

@@ -1,4 +1,4 @@
-FROM node:20-alpine AS builder
+FROM node:20-alpine AS base
 WORKDIR /app
 
 ARG HTTP_PROXY
@@ -17,6 +17,16 @@ RUN npm config set fetch-retries 5 \
  && npm config set fetch-retry-maxtimeout 120000 \
  && npm config set fetch-timeout 300000 \
  && npm ci --no-audit --no-fund
+
+FROM base AS dev
+COPY . .
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev", "--", "--hostname", "0.0.0.0", "--port", "3000"]
+
+FROM base AS builder
+WORKDIR /app
 
 COPY . .
 RUN npm run build

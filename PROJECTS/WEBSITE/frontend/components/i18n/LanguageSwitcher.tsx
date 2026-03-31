@@ -61,7 +61,7 @@ export function LanguageSwitcher({ mobile = false }: LanguageSwitcherProps) {
               type="button"
               data-testid={`lang-switch-${langCode}`}
               onClick={() => setLanguage(langCode)}
-              className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
+              className={`min-h-[2.5rem] rounded-full px-3.5 text-sm font-semibold transition ${
                 language === langCode
                   ? "bg-[var(--pv-brand)] text-white shadow-[0_10px_20px_rgba(37,92,255,0.18)]"
                   : "text-zinc-500 hover:text-zinc-950"

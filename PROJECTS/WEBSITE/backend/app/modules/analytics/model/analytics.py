@@ -35,6 +35,15 @@ class AnalyticsEventName(str, enum.Enum):
     subscription_activated = "subscription_activated"
     catalog_search_used = "catalog_search_used"
     catalog_filter_used = "catalog_filter_used"
+    economy_experiment_assigned = "economy_experiment_assigned"
+    store_offer_viewed = "store_offer_viewed"
+    store_purchase_completed = "store_purchase_completed"
+    second_purchase_challenge_started = "second_purchase_challenge_started"
+    second_purchase_challenge_completed = "second_purchase_challenge_completed"
+    locked_cashback_unlocked = "locked_cashback_unlocked"
+    streak_recovery_offered = "streak_recovery_offered"
+    streak_recovery_completed = "streak_recovery_completed"
+    goal_completed = "goal_completed"
 
 
 class AnalyticsContext(BaseModel):

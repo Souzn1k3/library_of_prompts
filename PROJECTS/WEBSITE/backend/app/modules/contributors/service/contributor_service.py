@@ -11,6 +11,8 @@ from app.modules.contributors.model.contributor import (
 )
 from app.modules.contributors.repository.contributor_repository import ContributorRepository
 from app.modules.identity.repository.user_repository import UserRepository
+from app.modules.marketplace.model.marketplace import ReviewSort
+from app.modules.marketplace.service.marketplace_service import MarketplaceService
 
 
 def _slugify(value: str) -> str:
@@ -49,9 +51,15 @@ def _to_profile_read(profile: ContributorProfile) -> ContributorProfileRead:
 
 
 class ContributorService:
-    def __init__(self, repo: ContributorRepository, users: UserRepository) -> None:
+    def __init__(
+        self,
+        repo: ContributorRepository,
+        users: UserRepository,
+        marketplace: MarketplaceService | None = None,
+    ) -> None:
         self._repo = repo
         self._users = users
+        self._marketplace = marketplace
 
     async def ensure_profile(self, user: User) -> ContributorProfile:
         existing = await self._repo.get_profile_by_user_id(user.id)
@@ -145,11 +153,26 @@ class ContributorService:
         if author_id is not None:
             await self.recompute_profile_for_user_id(author_id)
 
-    async def get_public_profile(self, slug: str) -> ContributorProfileRead:
+    async def get_public_profile(
+        self,
+        slug: str,
+        *,
+        review_sort: ReviewSort = ReviewSort.new,
+        review_limit: int = 6,
+    ) -> ContributorProfileRead:
         profile = await self._repo.get_profile_by_slug(slug)
         if profile is None:
             raise NotFoundError("contributor", slug)
-        return _to_profile_read(profile)
+        base = _to_profile_read(profile)
+        if self._marketplace is None:
+            return base
+        summary = await self._marketplace.seller_summary(
+            seller_user_id=profile.user_id,
+            reputation_tier=profile.reputation_tier.value,
+            review_sort=review_sort,
+            review_limit=review_limit,
+        )
+        return ContributorProfileRead(**base.model_dump(), **summary.model_dump())
 
     async def list_top(self, *, limit: int = 12) -> list[ContributorTopItem]:
         rows = await self._repo.list_top_profiles(limit=limit)

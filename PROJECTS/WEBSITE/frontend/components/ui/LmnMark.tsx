@@ -53,14 +53,21 @@ export function LmnMark({
   const outerGradientId = useId();
   const coreGradientId = useId();
   const seamGradientId = useId();
-  const palette = LMN_TONE_PALETTES[tone === "neutral" ? "balance" : tone];
+  const resolvedTone = tone === "neutral" ? "balance" : tone;
+  const palette = LMN_TONE_PALETTES[resolvedTone];
+  const topFacetOpacity = resolvedTone === "earned" ? 0.14 : resolvedTone === "spent" ? 0.18 : 0.22;
+  const bottomFacetOpacity = resolvedTone === "earned" ? 0.1 : resolvedTone === "spent" ? 0.12 : 0.15;
+  const leftFacetOpacity = resolvedTone === "earned" ? 0.05 : resolvedTone === "spent" ? 0.06 : 0.08;
+  const rightFacetOpacity = resolvedTone === "earned" ? 0.07 : resolvedTone === "spent" ? 0.08 : 0.1;
+  const accentStrongOpacity = resolvedTone === "earned" ? 0.72 : resolvedTone === "spent" ? 0.8 : 0.88;
+  const accentSoftOpacity = resolvedTone === "earned" ? 0.44 : resolvedTone === "spent" ? 0.5 : 0.58;
   const style = { "--lmn-size": `${size}px` } as CSSProperties;
 
   return (
     <span
       className={`pv-lmn-mark ${className ?? ""}`.trim()}
       style={style}
-      data-tone={tone}
+      data-tone={resolvedTone}
       aria-hidden={label ? undefined : true}
       role={label ? "img" : undefined}
       aria-label={label}
@@ -88,10 +95,10 @@ export function LmnMark({
           d="M24 8.6 33.2 13.8 35.4 24 33.2 34.2 24 39.4 14.8 34.2 12.6 24 14.8 13.8Z"
           fill={`url(#${coreGradientId})`}
         />
-        <path d="M24 8.6 33.2 13.8 24 24 14.8 13.8Z" fill="white" opacity="0.22" />
-        <path d="M24 39.4 33.2 34.2 24 24 14.8 34.2Z" fill="#8A5A12" opacity="0.15" />
-        <path d="M14.8 13.8 24 24 14.8 34.2 12.6 24Z" fill="white" opacity="0.08" />
-        <path d="M33.2 13.8 24 24 33.2 34.2 35.4 24Z" fill="#6B460C" opacity="0.1" />
+        <path d="M24 8.6 33.2 13.8 24 24 14.8 13.8Z" fill="white" opacity={topFacetOpacity} />
+        <path d="M24 39.4 33.2 34.2 24 24 14.8 34.2Z" fill="#8A5A12" opacity={bottomFacetOpacity} />
+        <path d="M14.8 13.8 24 24 14.8 34.2 12.6 24Z" fill="white" opacity={leftFacetOpacity} />
+        <path d="M33.2 13.8 24 24 33.2 34.2 35.4 24Z" fill="#6B460C" opacity={rightFacetOpacity} />
         <path
           d="M24 11.8v24.4"
           stroke={`url(#${seamGradientId})`}
@@ -104,7 +111,7 @@ export function LmnMark({
           strokeLinecap="round"
           strokeLinejoin="round"
           strokeWidth="2.2"
-          opacity="0.88"
+          opacity={accentStrongOpacity}
         />
         <path
           d="M18.6 28.9 24 24l5.4 4.9"
@@ -112,7 +119,7 @@ export function LmnMark({
           strokeLinecap="round"
           strokeLinejoin="round"
           strokeWidth="2.2"
-          opacity="0.58"
+          opacity={accentSoftOpacity}
         />
       </svg>
     </span>

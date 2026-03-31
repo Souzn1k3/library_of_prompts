@@ -92,86 +92,67 @@
   position: relative;
   isolation: isolate;
   overflow: hidden;
+  border-color: rgba(15, 23, 42, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(245, 248, 255, 0.9)),
+    var(--pv-surface-muted);
   transition:
     transform 180ms ease,
     border-color 180ms ease,
     box-shadow 180ms ease,
-    background-color 180ms ease;
+    background 180ms ease;
 }
 
-.pv-route-card:hover,
-.pv-route-card[data-active="true"] {
+.pv-route-card:hover {
   transform: translateY(-3px);
-  border-color: rgba(37, 92, 255, 0.14);
-  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+  border-color: rgba(51, 65, 85, 0.14);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+}
+
+.pv-route-card[data-active="true"] {
+  border-color: rgba(37, 92, 255, 0.24);
+  transform: translateY(-3px);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.1);
+  animation: pv-route-card-active 1.9s ease-in-out infinite;
 }
 
 .pv-route-card::after {
   content: "";
   position: absolute;
-  right: -1.5rem;
-  bottom: -1.75rem;
-  width: 7rem;
-  height: 7rem;
+  right: -2rem;
+  bottom: -2rem;
+  width: 6.4rem;
+  height: 6.4rem;
   border-radius: 999px;
-  background: rgba(37, 92, 255, 0.1);
-  filter: blur(24px);
+  background: rgba(37, 92, 255, 0.08);
+  filter: blur(28px);
   opacity: 0;
   transition: opacity 180ms ease;
   pointer-events: none;
 }
 
-.pv-route-card:hover::after,
+.pv-route-card:hover::after {
+  opacity: 0.36;
+}
+
 .pv-route-card[data-active="true"]::after {
-  opacity: 1;
-}
-
-.pv-route-card[data-tone="earn"]::after {
-  background: var(--pv-lmn-earned-soft);
-}
-
-.pv-route-card[data-tone="balance"]::after {
-  background: var(--pv-lmn-glow);
-}
-
-.pv-route-card[data-tone="spend"]::after {
-  background: var(--pv-lmn-spent-soft);
+  opacity: 0.5;
+  animation: pv-route-card-glow 1.9s ease-in-out infinite;
 }
 
 .pv-route-card-media {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 3.15rem;
-  height: 3.15rem;
-  border-radius: 1.1rem;
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 247, 253, 0.92)),
-    rgba(255, 255, 255, 0.86);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.92),
-    0 10px 24px rgba(15, 23, 42, 0.06);
+  width: auto;
+  height: auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  line-height: 0;
   position: relative;
   z-index: 1;
-}
-
-.pv-route-card[data-tone="earn"] .pv-route-card-media {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(236, 255, 247, 0.96)),
-    rgba(236, 255, 247, 0.86);
-}
-
-.pv-route-card[data-tone="balance"] .pv-route-card-media {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(255, 247, 224, 0.96)),
-    rgba(255, 247, 224, 0.86);
-}
-
-.pv-route-card[data-tone="spend"] .pv-route-card-media {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(255, 239, 229, 0.96)),
-    rgba(255, 239, 229, 0.86);
 }
 
 .pv-route-card-action {
@@ -179,6 +160,51 @@
   justify-content: space-between;
   padding-top: 1rem;
   border-top: 1px solid rgba(15, 23, 42, 0.07);
+}
+
+.pv-route-card[data-active="true"] .pv-route-card-media {
+  animation: pv-route-card-media 1.9s ease-in-out infinite;
+}
+
+@keyframes pv-route-card-active {
+  0%,
+  100% {
+    transform: translateY(-3px);
+    border-color: rgba(37, 92, 255, 0.24);
+    box-shadow: 0 18px 36px rgba(15, 23, 42, 0.1);
+  }
+
+  50% {
+    transform: translateY(-8px);
+    border-color: rgba(37, 92, 255, 0.48);
+    box-shadow:
+      0 26px 48px rgba(15, 23, 42, 0.13),
+      0 0 0 1px rgba(37, 92, 255, 0.18);
+  }
+}
+
+@keyframes pv-route-card-glow {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.5;
+  }
+
+  50% {
+    transform: translate(-14px, -12px) scale(1.24);
+    opacity: 0.76;
+  }
+}
+
+@keyframes pv-route-card-media {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px) scale(1.05);
+  }
 }
 
 .pv-kicker {

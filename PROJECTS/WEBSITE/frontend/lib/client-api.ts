@@ -1,5 +1,6 @@
 import { ApiRequestError, getApiBaseUrl } from "./api";
 import { emitAuthStateChange } from "./auth";
+import { API_ENDPOINTS, apiPath } from "./constants/api";
 import { getClientLanguage, getTranslation, type Language } from "./i18n";
 import { extractApiErrorMessage, parseJson, withQuery } from "./http";
 import type {
@@ -8,9 +9,15 @@ import type {
   CheckoutSessionResult,
   ContributorProfile,
   ContributorTopItem,
+  EconomyAction,
+  MarketplaceOverview,
+  OnboardingFirstWinResult,
   MissionCurrentRead,
   MissionListRead,
   MissionRead,
+  PromptMarketplacePurchase,
+  PromptReview,
+  PromptActionResult,
   WalletRead,
   StoreItem,
   PurchaseResult,
@@ -18,6 +25,7 @@ import type {
   OnboardingProfile,
   OnboardingRole,
   OnboardingStarterPack,
+  LessonCompletionResult,
   PromptListItem,
   PromptRecommendationContext,
   PromptRecommendationResponse,
@@ -56,7 +64,7 @@ async function refreshSession(language: string): Promise<boolean> {
   }
   refreshInFlight = (async () => {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/api/v1/auth/refresh`, {
+      const res = await fetch(`${getApiBaseUrl()}${API_ENDPOINTS.auth.refresh}`, {
         method: "POST",
         headers: {
           Accept: "application/json",
@@ -167,7 +175,7 @@ async function optionalAuthJsonFetch<T>(path: string, init?: RequestInit): Promi
 }
 
 export async function loginRequest(email: string, password: string): Promise<void> {
-  await optionalAuthJsonFetch<unknown>("/api/v1/auth/login", jsonInit("POST", { email, password }));
+  await optionalAuthJsonFetch<unknown>(API_ENDPOINTS.auth.login, jsonInit("POST", { email, password }));
 }
 
 export async function registerRequest(
@@ -176,29 +184,33 @@ export async function registerRequest(
   displayName: string,
 ): Promise<void> {
   await optionalAuthJsonFetch<unknown>(
-    "/api/v1/auth/register",
+    API_ENDPOINTS.auth.register,
     jsonInit("POST", { email, password, display_name: displayName }),
   );
 }
 
 export async function logoutRequest(): Promise<void> {
   try {
-    await authFetchNoContent("/api/v1/auth/logout", jsonInit("POST", {}));
+    await authFetchNoContent(API_ENDPOINTS.auth.logout, jsonInit("POST", {}));
   } finally {
     emitAuthStateChange({ reason: "logout" });
   }
 }
 
 export async function fetchMe(): Promise<UserProfile> {
-  return authFetch<UserProfile>("/api/v1/users/me");
+  return authFetch<UserProfile>(API_ENDPOINTS.usersMe);
 }
 
 export async function fetchBillingStatus(): Promise<BillingStatus> {
-  return authFetch<BillingStatus>("/api/v1/billing/subscription");
+  return authFetch<BillingStatus>(API_ENDPOINTS.billingSubscription);
+}
+
+export async function fetchMarketplaceOverview(): Promise<MarketplaceOverview> {
+  return authFetch<MarketplaceOverview>(API_ENDPOINTS.marketplaceMe);
 }
 
 export async function fetchOnboardingProfile(): Promise<OnboardingProfile> {
-  return authFetch<OnboardingProfile>("/api/v1/onboarding/profile");
+  return authFetch<OnboardingProfile>(API_ENDPOINTS.onboardingProfile);
 }
 
 export async function updateOnboardingProfile(body: {
@@ -206,81 +218,81 @@ export async function updateOnboardingProfile(body: {
   goal: OnboardingGoal;
   ai_context: string;
 }): Promise<OnboardingProfile> {
-  return authFetch<OnboardingProfile>("/api/v1/onboarding/profile", jsonInit("PUT", body));
+  return authFetch<OnboardingProfile>(API_ENDPOINTS.onboardingProfile, jsonInit("PUT", body));
 }
 
 export async function skipOnboarding(): Promise<OnboardingProfile> {
-  return authFetch<OnboardingProfile>("/api/v1/onboarding/skip", jsonInit("POST", {}));
+  return authFetch<OnboardingProfile>(API_ENDPOINTS.onboardingSkip, jsonInit("POST", {}));
 }
 
 export async function fetchOnboardingStarterPack(): Promise<OnboardingStarterPack> {
-  return authFetch<OnboardingStarterPack>("/api/v1/onboarding/starter-pack");
+  return authFetch<OnboardingStarterPack>(API_ENDPOINTS.onboardingStarterPack);
 }
 
 export async function completeOnboardingFirstWin(body: {
   prompt_id: string;
   action: string;
-}): Promise<OnboardingProfile> {
-  return authFetch<OnboardingProfile>("/api/v1/onboarding/first-win", jsonInit("POST", body));
+}): Promise<OnboardingFirstWinResult> {
+  return authFetch<OnboardingFirstWinResult>(API_ENDPOINTS.onboardingFirstWin, jsonInit("POST", body));
 }
 
 export async function fetchCurrentMission(): Promise<MissionCurrentRead> {
-  return authFetch<MissionCurrentRead>("/api/v1/missions/current");
+  return authFetch<MissionCurrentRead>(API_ENDPOINTS.missionsCurrent);
 }
 
 export async function fetchMissions(): Promise<MissionListRead> {
-  return authFetch<MissionListRead>("/api/v1/missions");
+  return authFetch<MissionListRead>(API_ENDPOINTS.missions);
 }
 
 export async function fetchMissionBySlug(slug: string): Promise<MissionRead> {
-  return authFetch<MissionRead>(`/api/v1/missions/${encodeURIComponent(slug)}`);
+  return authFetch<MissionRead>(apiPath.missionBySlug(slug));
 }
 
 export async function fetchWallet(): Promise<WalletRead> {
-  return authFetch<WalletRead>("/api/v1/wallet");
+  return authFetch<WalletRead>(API_ENDPOINTS.wallet);
 }
 
 export async function walletCheckIn(): Promise<WalletRead> {
-  return authFetch<WalletRead>("/api/v1/wallet/check-in", {
+  return authFetch<WalletRead>(API_ENDPOINTS.walletCheckIn, {
     method: "POST",
   });
 }
 
 export async function fetchStoreItems(): Promise<StoreItem[]> {
-  return authFetch<StoreItem[]>("/api/v1/store");
+  return authFetch<StoreItem[]>(API_ENDPOINTS.store);
 }
 
 export async function purchaseStoreItem(slug: string, clientToken?: string): Promise<PurchaseResult> {
   return authFetch<PurchaseResult>(
-    `/api/v1/store/${encodeURIComponent(slug)}/purchase`,
+    apiPath.storePurchaseBySlug(slug),
     jsonInit("POST", { client_token: clientToken ?? null }),
   );
 }
 
-export async function completeLesson(slug: string): Promise<void> {
-  return authFetchNoContent(`/api/v1/lessons/by-slug/${encodeURIComponent(slug)}/complete`, {
+export async function completeLesson(slug: string): Promise<LessonCompletionResult> {
+  return authFetch<LessonCompletionResult>(apiPath.lessonCompleteBySlug(slug), {
     method: "POST",
   });
 }
 
 export async function createCheckoutSession(tier: string): Promise<CheckoutSessionResult> {
-  return authFetch<CheckoutSessionResult>("/api/v1/billing/checkout/session", jsonInit("POST", { tier }));
+  return authFetch<CheckoutSessionResult>(API_ENDPOINTS.billingCheckoutSession, jsonInit("POST", { tier }));
 }
 
 export async function createBillingPortalSession(): Promise<{ url: string }> {
-  return authFetch<{ url: string }>("/api/v1/billing/portal", jsonInit("POST", {}));
+  return authFetch<{ url: string }>(API_ENDPOINTS.billingPortal, jsonInit("POST", {}));
 }
 
 export async function fetchSavedPrompts(): Promise<PromptListItem[]> {
-  return authFetch<PromptListItem[]>("/api/v1/users/me/saved-prompts");
+  return authFetch<PromptListItem[]>(API_ENDPOINTS.usersSavedPrompts);
 }
 
 export async function fetchMySubmissions(): Promise<AuthorSubmission[]> {
-  return authFetch<AuthorSubmission[]>("/api/v1/users/me/submissions");
+  return authFetch<AuthorSubmission[]>(API_ENDPOINTS.usersSubmissions);
 }
 
 export async function fetchTopContributors(limit = 12): Promise<ContributorTopItem[]> {
-  return optionalAuthJsonFetch<ContributorTopItem[]>(withQuery("/api/v1/contributors/top", { limit }));
+  return optionalAuthJsonFetch<ContributorTopItem[]>(withQuery(API_ENDPOINTS.contributorsTop, { limit }));
 }
 
 export async function fetchPromptRecommendations(params?: {
@@ -289,7 +301,7 @@ export async function fetchPromptRecommendations(params?: {
   prompt_slug?: string | null;
   lesson_slug?: string | null;
 }): Promise<PromptRecommendationResponse> {
-  return authFetch<PromptRecommendationResponse>(withQuery("/api/v1/prompts/recommendations", {
+  return authFetch<PromptRecommendationResponse>(withQuery(API_ENDPOINTS.promptRecommendations, {
     context: params?.context,
     limit: params?.limit,
     prompt_slug: params?.prompt_slug,
@@ -299,12 +311,48 @@ export async function fetchPromptRecommendations(params?: {
 
 export async function fetchContributorProfile(slug: string): Promise<ContributorProfile> {
   return optionalAuthJsonFetch<ContributorProfile>(
-    `/api/v1/contributors/${encodeURIComponent(slug)}`,
+    apiPath.contributorBySlug(slug),
   );
 }
 
-export async function savePrompt(promptId: string): Promise<void> {
-  return authFetchNoContent(`/api/v1/users/me/saved-prompts/${promptId}`, {
+export async function buyPromptWithLumens(
+  promptId: string,
+  clientToken?: string,
+): Promise<{ purchase: PromptMarketplacePurchase }> {
+  return authFetch<{ purchase: PromptMarketplacePurchase }>(
+    apiPath.marketplacePromptBuyWithLumens(promptId),
+    jsonInit("POST", { client_token: clientToken ?? null }),
+  );
+}
+
+export async function createPromptCheckoutSession(
+  promptId: string,
+  clientToken?: string,
+  urls?: { success_url?: string; cancel_url?: string },
+): Promise<CheckoutSessionResult & { purchase_id: string }> {
+  return authFetch<CheckoutSessionResult & { purchase_id: string }>(
+    API_ENDPOINTS.marketplacePromptCheckoutSession,
+    jsonInit("POST", {
+      prompt_id: promptId,
+      client_token: clientToken ?? null,
+      success_url: urls?.success_url ?? null,
+      cancel_url: urls?.cancel_url ?? null,
+    }),
+  );
+}
+
+export async function upsertPromptReview(
+  promptId: string,
+  body: { rating: number; text?: string | null },
+): Promise<PromptReview> {
+  return authFetch<PromptReview>(
+    apiPath.marketplacePromptReview(promptId),
+    jsonInit("PUT", body),
+  );
+}
+
+export async function savePrompt(promptId: string): Promise<EconomyAction> {
+  return authFetch<EconomyAction>(apiPath.userSavedPromptById(promptId), {
     method: "POST",
   });
 }
@@ -321,18 +369,25 @@ export async function submitPrompt(body: {
   use_cases?: string[];
   model_compatibility?: string[];
   tags?: string[];
+  price_rub?: number | null;
 }): Promise<{ id: string; slug: string; status: string; moderation_state: string; auto_approved?: boolean }> {
-  return authFetch("/api/v1/contributions/submit", jsonInit("POST", body));
+  return authFetch(API_ENDPOINTS.contributionsSubmit, jsonInit("POST", body));
 }
 
 export async function unsavePrompt(promptId: string): Promise<void> {
-  return authFetchNoContent(`/api/v1/users/me/saved-prompts/${promptId}`, {
+  return authFetchNoContent(apiPath.userSavedPromptById(promptId), {
     method: "DELETE",
   });
 }
 
-export async function trackPromptCopy(promptId: string): Promise<void> {
-  return authFetchNoContent(`/api/v1/prompts/${promptId}/events/copy`, {
+export async function trackPromptCopy(promptId: string): Promise<PromptActionResult> {
+  return authFetch<PromptActionResult>(apiPath.promptEventCopy(promptId), {
+    method: "POST",
+  });
+}
+
+export async function trackPromptApply(promptId: string): Promise<PromptActionResult> {
+  return authFetch<PromptActionResult>(apiPath.promptEventApply(promptId), {
     method: "POST",
   });
 }

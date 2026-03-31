@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from urllib.parse import quote_plus
 
-from fastapi import APIRouter, Depends, Query, Response
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.api.deps import get_optional_user
 from app.api.service_deps import (
@@ -10,10 +10,13 @@ from app.api.service_deps import (
     get_mission_service,
     get_prompt_service,
     get_recommendation_service,
+    get_store_service,
 )
 from app.core.cache import get_cache
 from app.core.tiers import can_view_restricted_category
 from app.infrastructure.db.models import PromptDifficulty, PromptOutputType, PromptTechnique, User
+from app.modules.economy.model.store import EconomyActionRead
+from app.modules.economy.service.store_service import StoreService
 from app.modules.catalog.model.prompt import (
     DiscoverySections,
     PromptDiscoveryFilters,
@@ -67,6 +70,12 @@ def _normalize_multi(value: list[str] | None) -> list[str] | None:
 
 def _viewer_segment(viewer: User | None) -> str:
     return str(viewer.id) if viewer is not None else "anon"
+
+
+def _allow_auto_plan_unlock(request: Request) -> bool:
+    # Prevent cross-site top-level navigations from consuming included unlock quota via GET.
+    fetch_site = (request.headers.get("sec-fetch-site") or "").strip().lower()
+    return fetch_site != "cross-site"
 
 
 @router.get("/discovery-filters", response_model=PromptDiscoveryFilters)
@@ -202,22 +211,32 @@ async def prompt_recommendations(
     )
 
 
-@router.post("/{prompt_id}/events/copy", status_code=204)
+@router.post("/{prompt_id}/events/copy", response_model=EconomyActionRead)
 async def track_copy(
     prompt_id: uuid.UUID,
     viewer: User | None = Depends(get_optional_user),
     svc: PromptService = Depends(get_prompt_service),
     missions: MissionService = Depends(get_mission_service),
     contributors: ContributorService = Depends(get_contributor_service),
-) -> Response:
+    store: StoreService = Depends(get_store_service),
+) -> EconomyActionRead:
     await svc.track_copy(prompt_id, viewer)
-    if viewer is not None:
-        today_key = datetime.now(timezone.utc).date().isoformat()
+    if viewer is None:
+        await contributors.refresh_prompt_quality(prompt_id)
+        await get_cache().bump_many(("prompts", "contributors", "recommendations"))
+        return EconomyActionRead()
+
+    previous_balance = (await store.wallet(viewer)).balance
+    today_key = datetime.now(timezone.utc).date().isoformat()
+    completed: list[str] = []
+    completed.extend(
         await missions.record_event(
             user=viewer,
             event_type="prompt_copied",
             prompt_id=prompt_id,
         )
+    )
+    completed.extend(
         await missions.record_event(
             user=viewer,
             event_type="streak_activity",
@@ -225,25 +244,35 @@ async def track_copy(
             source_event_key=f"streak_activity:{viewer.id}:{today_key}",
             payload={"source": "prompt_copied"},
         )
+    )
     await contributors.refresh_prompt_quality(prompt_id)
     await get_cache().bump_many(("prompts", "contributors", "recommendations"))
-    return Response(status_code=204)
+    return await store.build_action_feedback(
+        viewer,
+        previous_balance=previous_balance,
+        completed_mission_slugs=list(dict.fromkeys(completed)),
+    )
 
 
-@router.post("/{prompt_id}/events/apply", status_code=204)
+@router.post("/{prompt_id}/events/apply", response_model=EconomyActionRead)
 async def track_apply(
     prompt_id: uuid.UUID,
     viewer: User | None = Depends(get_optional_user),
     missions: MissionService = Depends(get_mission_service),
-) -> Response:
-    if viewer is not None:
-        today_key = datetime.now(timezone.utc).date().isoformat()
-        await missions.record_event(
-            user=viewer,
-            event_type="prompt_applied",
-            prompt_id=prompt_id,
-            source_event_key=f"prompt_applied:{viewer.id}:{prompt_id}",
-        )
+    store: StoreService = Depends(get_store_service),
+) -> EconomyActionRead:
+    if viewer is None:
+        return EconomyActionRead()
+
+    previous_balance = (await store.wallet(viewer)).balance
+    today_key = datetime.now(timezone.utc).date().isoformat()
+    completed = await missions.record_event(
+        user=viewer,
+        event_type="prompt_applied",
+        prompt_id=prompt_id,
+        source_event_key=f"prompt_applied:{viewer.id}:{prompt_id}",
+    )
+    completed.extend(
         await missions.record_event(
             user=viewer,
             event_type="streak_activity",
@@ -251,22 +280,37 @@ async def track_apply(
             source_event_key=f"streak_activity:{viewer.id}:{today_key}",
             payload={"source": "prompt_applied"},
         )
-    return Response(status_code=204)
+    )
+    return await store.build_action_feedback(
+        viewer,
+        previous_balance=previous_balance,
+        completed_mission_slugs=list(dict.fromkeys(completed)),
+    )
 
 
 @router.get("/by-slug/{slug}", response_model=PromptRead)
 async def get_prompt_by_slug(
+    request: Request,
     slug: str,
     viewer: User | None = Depends(get_optional_user),
     svc: PromptService = Depends(get_prompt_service),
 ) -> PromptRead:
-    return await svc.get_by_slug(slug, viewer)
+    return await svc.get_by_slug(
+        slug,
+        viewer,
+        auto_grant_included_unlock=_allow_auto_plan_unlock(request),
+    )
 
 
 @router.get("/{prompt_id}", response_model=PromptRead)
 async def get_prompt(
+    request: Request,
     prompt_id: uuid.UUID,
     viewer: User | None = Depends(get_optional_user),
     svc: PromptService = Depends(get_prompt_service),
 ) -> PromptRead:
-    return await svc.get_by_id(prompt_id, viewer)
+    return await svc.get_by_id(
+        prompt_id,
+        viewer,
+        auto_grant_included_unlock=_allow_auto_plan_unlock(request),
+    )

@@ -1,0 +1,175 @@
+{
+  "generatedAt": "2026-03-31T10:36:44.849Z",
+  "baseUrl": "http://127.0.0.1:3000",
+  "apiBase": "http://127.0.0.1:8000",
+  "captures": [
+    {
+      "locale": "en",
+      "viewport": "desktop",
+      "routeId": "prompt",
+      "path": "/prompt/react-debug-checklist",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\codex-visual-audit\\after-targeted\\en_desktop_prompt.png",
+      "error": null
+    },
+    {
+      "locale": "en",
+      "viewport": "desktop",
+      "routeId": "prompt-premium",
+      "path": "/prompt/enterprise-code-reviewer",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\codex-visual-audit\\after-targeted\\en_desktop_prompt-premium.png",
+      "error": null
+    },
+    {
+      "locale": "en",
+      "viewport": "desktop",
+      "routeId": "lesson",
+      "path": "/learn/prompt-basics",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\codex-visual-audit\\after-targeted\\en_desktop_lesson.png",
+      "error": null
+    },
+    {
+      "locale": "en",
+      "viewport": "desktop",
+      "routeId": "pricing",
+      "path": "/pricing",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\codex-visual-audit\\after-targeted\\en_desktop_pricing.png",
+      "error": null
+    },
+    {
+      "locale": "en",
+      "viewport": "desktop",
+      "routeId": "wallet",
+      "path": "/wallet",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\codex-visual-audit\\after-targeted\\en_desktop_wallet.png",
+      "error": null
+    },
+    {
+      "locale": "en",
+      "viewport": "desktop",
+      "routeId": "missions",
+      "path": "/missions",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\codex-visual-audit\\after-targeted\\en_desktop_missions.png",
+      "error": null
+    },
+    {
+      "locale": "en",
+      "viewport": "mobile",
+      "routeId": "home-header-language",
+      "path": "/",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\codex-visual-audit\\after-targeted\\en_mobile_home-header-language.png",
+      "error": null
+    },
+    {
+      "locale": "ru",
+      "viewport": "desktop",
+      "routeId": "prompt",
+      "path": "/prompt/react-debug-checklist",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\codex-visual-audit\\after-targeted\\ru_desktop_prompt.png",
+      "error": null
+    },
+    {
+      "locale": "ru",
+      "viewport": "desktop",
+      "routeId": "prompt-premium",
+      "path": "/prompt/enterprise-code-reviewer",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\codex-visual-audit\\after-targeted\\ru_desktop_prompt-premium.png",
+      "error": null
+    },
+    {
+      "locale": "ru",
+      "viewport": "desktop",
+      "routeId": "lesson",
+      "path": "/learn/prompt-basics",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\codex-visual-audit\\after-targeted\\ru_desktop_lesson.png",
+      "error": null
+    },
+    {
+      "locale": "ru",
+      "viewport": "desktop",
+      "routeId": "pricing",
+      "path": "/pricing",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\codex-visual-audit\\after-targeted\\ru_desktop_pricing.png",
+      "error": null
+    },
+    {
+      "locale": "ru",
+      "viewport": "desktop",
+      "routeId": "wallet",
+      "path": "/wallet",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\codex-visual-audit\\after-targeted\\ru_desktop_wallet.png",
+      "error": null
+    },
+    {
+      "locale": "ru",
+      "viewport": "desktop",
+      "routeId": "missions",
+      "path": "/missions",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\codex-visual-audit\\after-targeted\\ru_desktop_missions.png",
+      "error": null
+    },
+    {
+      "locale": "ru",
+      "viewport": "mobile",
+      "routeId": "home-header-language",
+      "path": "/",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\codex-visual-audit\\after-targeted\\ru_mobile_home-header-language.png",
+      "error": null
+    },
+    {
+      "locale": "tt",
+      "viewport": "desktop",
+      "routeId": "prompt",
+      "path": "/prompt/react-debug-checklist",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\codex-visual-audit\\after-targeted\\tt_desktop_prompt.png",
+      "error": null
+    },
+    {
+      "locale": "tt",
+      "viewport": "desktop",
+      "routeId": "prompt-premium",
+      "path": "/prompt/enterprise-code-reviewer",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\codex-visual-audit\\after-targeted\\tt_desktop_prompt-premium.png",
+      "error": null
+    },
+    {
+      "locale": "tt",
+      "viewport": "desktop",
+      "routeId": "lesson",
+      "path": "/learn/prompt-basics",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\codex-visual-audit\\after-targeted\\tt_desktop_lesson.png",
+      "error": null
+    },
+    {
+      "locale": "tt",
+      "viewport": "desktop",
+      "routeId": "pricing",
+      "path": "/pricing",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\codex-visual-audit\\after-targeted\\tt_desktop_pricing.png",
+      "error": null
+    },
+    {
+      "locale": "tt",
+      "viewport": "desktop",
+      "routeId": "wallet",
+      "path": "/wallet",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\codex-visual-audit\\after-targeted\\tt_desktop_wallet.png",
+      "error": null
+    },
+    {
+      "locale": "tt",
+      "viewport": "desktop",
+      "routeId": "missions",
+      "path": "/missions",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\codex-visual-audit\\after-targeted\\tt_desktop_missions.png",
+      "error": null
+    },
+    {
+      "locale": "tt",
+      "viewport": "mobile",
+      "routeId": "home-header-language",
+      "path": "/",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\codex-visual-audit\\after-targeted\\tt_mobile_home-header-language.png",
+      "error": null
+    }
+  ]
+}

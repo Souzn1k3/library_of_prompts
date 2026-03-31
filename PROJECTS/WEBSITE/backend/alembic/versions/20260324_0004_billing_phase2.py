@@ -44,6 +44,10 @@ def upgrade() -> None:
         )
         op.create_index("ix_plans_tier", "plans", ["tier"], unique=True)
 
+    plan_columns = set()
+    if "plans" in sa.inspect(bind).get_table_names():
+        plan_columns = {column["name"] for column in sa.inspect(bind).get_columns("plans")}
+
     if "billing_customers" not in tables:
         op.create_table(
             "billing_customers",
@@ -177,6 +181,12 @@ def upgrade() -> None:
         sa.column("name", sa.String(length=80)),
         sa.column("description", sa.String(length=255)),
         sa.column("price_usd_month", sa.Integer()),
+        *((
+            sa.column("price_rub_month", sa.Integer()),
+            sa.column("monthly_paid_prompt_limit", sa.Integer()),
+            sa.column("prompt_purchase_discount_percent", sa.Integer()),
+            sa.column("lumen_purchase_discount_percent", sa.Integer()),
+        ) if "price_rub_month" in plan_columns else ()),
         sa.column("stripe_price_id", sa.String(length=128)),
         sa.column("is_active", sa.Boolean()),
         sa.column("sort_order", sa.Integer()),
@@ -207,6 +217,16 @@ def upgrade() -> None:
                 "name": name,
                 "description": description,
                 "price_usd_month": price,
+                **(
+                    {
+                        "price_rub_month": 0,
+                        "monthly_paid_prompt_limit": 0,
+                        "prompt_purchase_discount_percent": 0,
+                        "lumen_purchase_discount_percent": 0,
+                    }
+                    if "price_rub_month" in plan_columns
+                    else {}
+                ),
                 "stripe_price_id": None,
                 "is_active": True,
                 "sort_order": order,
@@ -247,4 +267,3 @@ def downgrade() -> None:
     if "plans" in tables:
         op.drop_index("ix_plans_tier", table_name="plans")
         op.drop_table("plans")
-

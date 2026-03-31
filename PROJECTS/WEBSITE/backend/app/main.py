@@ -1,4 +1,5 @@
-from contextlib import asynccontextmanager
+import asyncio
+from contextlib import asynccontextmanager, suppress
 from time import perf_counter
 from typing import Any
 from uuid import uuid4
@@ -20,6 +21,7 @@ from app.core.runtime_guard import verify_runtime_database
 from app.infrastructure.db.session import async_session_maker, engine
 from app.modules.economy.repository.store_repository import StoreRepository
 from app.modules.economy.repository.wallet_repository import WalletRepository
+from app.modules.economy.service.kpi_scheduler import run_economy_kpi_scheduler
 from app.modules.economy.service.store_service import sync_default_store_catalog
 
 configure_logging(get_settings().debug)
@@ -29,6 +31,7 @@ log = get_logger(__name__)
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     settings = get_settings()
+    kpi_scheduler_task: asyncio.Task[None] | None = None
     log.info("starting", app=settings.app_name, app_env=settings.app_env)
     await verify_runtime_database(engine, settings)
     try:
@@ -37,7 +40,25 @@ async def lifespan(_app: FastAPI):
             await session.commit()
     except Exception:
         log.exception("store_catalog_sync_failed")
+    if settings.economy_kpi_job_enabled:
+        kpi_scheduler_task = asyncio.create_task(
+            run_economy_kpi_scheduler(
+                session_factory=async_session_maker,
+                interval_minutes=settings.economy_kpi_job_interval_minutes,
+                lookback_days=settings.economy_kpi_job_lookback_days,
+                include_today=True,
+            )
+        )
+        log.info(
+            "economy_kpi_scheduler_started",
+            interval_minutes=settings.economy_kpi_job_interval_minutes,
+            lookback_days=settings.economy_kpi_job_lookback_days,
+        )
     yield
+    if kpi_scheduler_task is not None:
+        kpi_scheduler_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await kpi_scheduler_task
     await get_cache().close()
     log.info("shutting_down")
 

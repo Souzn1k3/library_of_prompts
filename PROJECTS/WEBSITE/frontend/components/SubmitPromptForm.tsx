@@ -93,6 +93,7 @@ export function SubmitPromptForm() {
         use_cases: selectedUseCases,
         model_compatibility: selectedModels,
         tags: selectedTags,
+        price_rub: Number(String(fd.get("price_rub") ?? "")) || null,
       });
       trackEvent({
         eventName: "submission_form_submitted",
@@ -220,6 +221,24 @@ export function SubmitPromptForm() {
               {t("submit.summaryLabel")}
             </label>
             <input id="summary" name="summary" className="pv-input" />
+          </div>
+
+          <div className="pv-field">
+            <label className="pv-label" htmlFor="price_rub">
+              Price in RUB (optional)
+            </label>
+            <input
+              id="price_rub"
+              name="price_rub"
+              type="number"
+              min={0}
+              max={4999}
+              className="pv-input"
+              placeholder="0 for free"
+            />
+            <p className="mt-1 text-xs text-zinc-500">
+              Paid prompts become marketplace items. Buyers can unlock with money or Lumens.
+            </p>
           </div>
         </div>
       </div>

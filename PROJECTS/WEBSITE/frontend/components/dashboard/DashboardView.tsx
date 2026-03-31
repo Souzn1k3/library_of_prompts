@@ -11,7 +11,9 @@ import { RouteCard } from "@/components/navigation/RouteCard";
 import { PromptCard } from "@/components/PromptCard";
 import { LmnMark } from "@/components/ui/LmnMark";
 import { useLmnBalanceFeedback } from "@/components/ui/useLmnBalanceFeedback";
-import { getTierTranslationKey } from "@/lib/i18n";
+import { APP_ROUTES, appRoute } from "@/lib/constants/routes";
+import { formatDateTime } from "@/lib/formatters";
+import { getTierTranslationKey, languageToIntlLocale, type TranslationKey } from "@/lib/i18n";
 import { getMissionPresentation } from "@/lib/missionPresentation";
 import type {
   AuthorSubmission,
@@ -23,6 +25,18 @@ import type {
   PromptTechnique,
   WalletRead,
 } from "@/lib/types";
+
+function billingStatusLabel(
+  status: string | null | undefined,
+  t: (key: TranslationKey, params?: Record<string, string | number | null | undefined>) => string,
+): string | null {
+  if (!status) {
+    return null;
+  }
+  const key = `plans.billingStatus.${status}` as TranslationKey;
+  const translated = t(key);
+  return translated === key ? t("plans.billingStatus.unknown") : translated;
+}
 
 type DashboardViewProps = {
   status: AuthStatus;
@@ -56,9 +70,11 @@ export function DashboardView({
   onReload,
 }: DashboardViewProps) {
   const { t, language } = useI18n();
+  const locale = languageToIntlLocale(language);
   const { change: balanceChange, delta: balanceDelta } = useLmnBalanceFeedback(wallet?.balance);
   const { portalError, portalPending, openPortal } = useBillingPortal();
   const sectionTitle = <span>{t("dashboard.title")}</span>;
+  const localizedBillingStatus = billingStatusLabel(billing?.status, t);
 
   if (status === "loading") {
     return (
@@ -89,13 +105,13 @@ export function DashboardView({
           }
           actions={
             <>
-              <Link href="/login" className="pv-button-primary">
+              <Link href={APP_ROUTES.login} className="pv-button-primary">
                 {t("nav.login")}
               </Link>
-              <Link href="/signup" className="pv-button-secondary">
+              <Link href={APP_ROUTES.signup} className="pv-button-secondary">
                 {t("nav.signup")}
               </Link>
-              <Link href="/catalog" className="pv-inline-link">
+              <Link href={APP_ROUTES.catalog} className="pv-inline-link">
                 {t("home.explorePrompts")}
                 <span aria-hidden="true">↗</span>
               </Link>
@@ -105,7 +121,7 @@ export function DashboardView({
 
         <div className="pv-empty-state text-sm text-zinc-600">
           {t("dashboard.signinPrefix")}{" "}
-          <Link href="/login" className="font-medium text-zinc-900 underline">
+          <Link href={APP_ROUTES.login} className="font-medium text-zinc-900 underline">
             {t("dashboard.signinLink")}
           </Link>{" "}
           {t("dashboard.signinSuffix")}
@@ -158,7 +174,7 @@ export function DashboardView({
   const currentMissionView = currentMission ? getMissionPresentation(language, currentMission) : null;
   const primaryAction = onboardingProfile?.needs_onboarding
     ? {
-        href: "/onboarding",
+        href: APP_ROUTES.onboarding,
         label: t("dashboard.finishOnboardingLink"),
       }
     : currentMissionView?.nextStep
@@ -168,21 +184,21 @@ export function DashboardView({
         }
       : starterPack?.action?.prompt_slug
         ? {
-            href: `/prompt/${encodeURIComponent(starterPack.action.prompt_slug)}`,
+            href: appRoute.promptBySlug(starterPack.action.prompt_slug),
             label: t("dashboard.tryNow"),
           }
         : {
-            href: "/catalog",
+            href: APP_ROUTES.catalog,
             label: t("home.explorePrompts"),
           };
   const secondaryAction = onboardingProfile?.needs_onboarding
     ? null
-    : primaryAction.href === "/missions"
-      ? { href: "/catalog", label: t("home.explorePrompts") }
-      : { href: "/missions", label: t("nav.missions") };
+    : primaryAction.href === APP_ROUTES.missions
+      ? { href: APP_ROUTES.catalog, label: t("home.explorePrompts") }
+      : { href: APP_ROUTES.missions, label: t("nav.missions") };
   const lessonHref = starterPack?.lesson?.slug
-    ? `/learn/${encodeURIComponent(starterPack.lesson.slug)}`
-    : "/learn";
+    ? appRoute.learnBySlug(starterPack.lesson.slug)
+    : APP_ROUTES.learn;
   const lessonLabel = starterPack?.lesson?.title ?? t("nav.learn");
 
   return (
@@ -222,7 +238,7 @@ export function DashboardView({
               eyebrow={t("nav.missions")}
               title={currentMissionView?.title ?? t("economy.stepEarnTitle")}
               description={currentMissionView?.objective ?? t("missions.subtitle")}
-              href={currentMissionView?.nextStep?.href ?? "/missions"}
+              href={currentMissionView?.nextStep?.href ?? APP_ROUTES.missions}
               actionLabel={currentMissionView?.nextStep?.label ?? t("nav.missions")}
               badge={
                 currentMissionView ? (
@@ -241,7 +257,7 @@ export function DashboardView({
               eyebrow={t("nav.wallet")}
               title={t("economy.stepBalanceTitle")}
               description={t("wallet.subtitle")}
-              href="/wallet"
+              href={APP_ROUTES.wallet}
               actionLabel={t("nav.wallet")}
               tone="balance"
               visual={<LmnMark size={30} tone="balance" />}
@@ -253,7 +269,7 @@ export function DashboardView({
               eyebrow={t("nav.store")}
               title={t("economy.stepSpendTitle")}
               description={t("store.subtitle")}
-              href="/store"
+              href={APP_ROUTES.store}
               actionLabel={t("nav.store")}
               tone="spend"
               visual={<LmnMark size={30} tone="spent" />}
@@ -265,7 +281,7 @@ export function DashboardView({
               eyebrow={t("nav.catalog")}
               title={t("dashboard.savedPrompts")}
               description={t("catalog.subtitle")}
-              href={items.length > 0 ? "/dashboard#saved" : "/catalog"}
+              href={items.length > 0 ? `${APP_ROUTES.dashboard}#saved` : APP_ROUTES.catalog}
               actionLabel={items.length > 0 ? t("dashboard.savedPrompts") : t("home.explorePrompts")}
               badge={<span className="pv-chip-brand">{items.length}</span>}
             />
@@ -294,7 +310,7 @@ export function DashboardView({
           <div className="space-y-2 text-sm text-zinc-700">
             <p>
               <span className="font-medium text-zinc-900">{t(getTierTranslationKey(billing?.plan_tier ?? "free"))}</span>
-              {billing?.status ? ` · ${billing.status}` : ""}
+              {localizedBillingStatus ? ` · ${localizedBillingStatus}` : ""}
             </p>
             <p className="text-zinc-600">{t("dashboard.changePlan")}</p>
           </div>
@@ -307,7 +323,7 @@ export function DashboardView({
             >
               {portalPending ? t("plans.openingCheckout") : t("dashboard.manageBilling")}
             </button>
-            <Link href="/pricing" className="pv-inline-link">
+            <Link href={APP_ROUTES.pricing} className="pv-inline-link">
               {t("dashboard.changePlan")}
               <span aria-hidden="true">↗</span>
             </Link>
@@ -328,7 +344,7 @@ export function DashboardView({
         {items.length === 0 ? (
           <div className="pv-empty-state mt-6 text-sm text-zinc-600">
             {t("dashboard.emptyPrefix")}{" "}
-            <Link href="/catalog" className="font-medium text-zinc-900 underline">
+            <Link href={APP_ROUTES.catalog} className="font-medium text-zinc-900 underline">
               {t("dashboard.emptyLink")}
             </Link>{" "}
             {t("dashboard.emptySuffix")}
@@ -360,7 +376,7 @@ export function DashboardView({
               <div className="pv-alert pv-alert-warning">
                 <p className="font-medium">{t("dashboard.finishOnboardingTitle")}</p>
                 <p className="mt-2">
-                  <Link href="/onboarding" className="underline">
+                  <Link href={APP_ROUTES.onboarding} className="underline">
                     {t("dashboard.finishOnboardingLink")}
                   </Link>
                 </p>
@@ -383,7 +399,7 @@ export function DashboardView({
           <div className="pv-section-copy">
             <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("dashboard.mySubmissions")}</h2>
           </div>
-          <Link href="/submit" className="pv-inline-link">
+          <Link href={APP_ROUTES.submit} className="pv-inline-link">
             {t("dashboard.submitAnother")}
             <span aria-hidden="true">↗</span>
           </Link>
@@ -397,7 +413,7 @@ export function DashboardView({
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   {submission.moderation_state === "approved" ? (
                     <Link
-                      href={`/prompt/${encodeURIComponent(submission.slug)}`}
+                      href={appRoute.promptBySlug(submission.slug)}
                       className="text-sm font-semibold text-zinc-900 underline"
                     >
                       {submission.title}
@@ -408,7 +424,7 @@ export function DashboardView({
                   <SubmissionStateBadge state={submission.moderation_state} />
                 </div>
                 <p className="mt-2 text-xs text-zinc-500">
-                  {t("dashboard.createdAt")} {new Date(submission.created_at).toLocaleString()}
+                  {t("dashboard.createdAt")} {formatDateTime(submission.created_at, locale)}
                 </p>
                 {submission.moderation_notes ? (
                   <p className="mt-2 text-sm text-zinc-600">{submission.moderation_notes}</p>

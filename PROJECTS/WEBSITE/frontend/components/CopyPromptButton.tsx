@@ -3,9 +3,11 @@
 import { useState } from "react";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
+import { EconomyActionBanner } from "@/components/ui/EconomyActionBanner";
 import { ApiRequestError } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
 import { trackPromptCopy } from "@/lib/client-api";
+import type { EconomyAction } from "@/lib/types";
 
 export function CopyPromptButton({
   promptId,
@@ -20,6 +22,7 @@ export function CopyPromptButton({
   const [pending, setPending] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [economy, setEconomy] = useState<EconomyAction | null>(null);
 
   function toCopyErrorMessage(err: unknown): string {
     if (err instanceof DOMException && err.name === "NotAllowedError") {
@@ -38,9 +41,11 @@ export function CopyPromptButton({
     try {
       await navigator.clipboard.writeText(body);
       setDone(true);
+      setEconomy(null);
 
       try {
-        await trackPromptCopy(promptId);
+        const action = await trackPromptCopy(promptId);
+        setEconomy(action);
         trackEvent({
           eventName: "prompt_copied",
           page: typeof window !== "undefined" ? window.location.pathname : "/prompt",
@@ -75,6 +80,7 @@ export function CopyPromptButton({
         {pending ? t("copy.copying") : done ? t("copy.copied") : t("copy.copyPrompt")}
       </button>
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
+      <EconomyActionBanner summary={economy} />
     </div>
   );
 }

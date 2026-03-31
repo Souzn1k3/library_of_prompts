@@ -226,6 +226,12 @@ def upgrade() -> None:
         sa.column("sort_order", sa.Integer()),
         sa.column("created_at", sa.DateTime(timezone=True)),
         sa.column("updated_at", sa.DateTime(timezone=True)),
+        *((sa.column("chain_id", sa.String(length=120)),) if "chain_id" in lesson_cols else ()),
+        *((sa.column("chain_step", sa.Integer()),) if "chain_step" in lesson_cols else ()),
+        *((sa.column("chain_total", sa.Integer()),) if "chain_total" in lesson_cols else ()),
+        *((sa.column("chain_bonus_credits", sa.Integer()),) if "chain_bonus_credits" in lesson_cols else ()),
+        *((sa.column("chain_unlock_on_slug", sa.String(length=120)),) if "chain_unlock_on_slug" in lesson_cols else ()),
+        *((sa.column("adaptive_segment", sa.String(length=24)),) if "adaptive_segment" in lesson_cols else ()),
     )
 
     defaults: list[dict[str, object]] = [
@@ -355,6 +361,12 @@ def upgrade() -> None:
                 **item,
                 "created_at": now,
                 "updated_at": now,
+                **({"chain_id": None} if "chain_id" in lesson_cols else {}),
+                **({"chain_step": 0} if "chain_step" in lesson_cols else {}),
+                **({"chain_total": 0} if "chain_total" in lesson_cols else {}),
+                **({"chain_bonus_credits": 0} if "chain_bonus_credits" in lesson_cols else {}),
+                **({"chain_unlock_on_slug": None} if "chain_unlock_on_slug" in lesson_cols else {}),
+                **({"adaptive_segment": None} if "adaptive_segment" in lesson_cols else {}),
             }
         )
 

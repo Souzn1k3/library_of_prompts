@@ -10,7 +10,12 @@ class PlanPublicRead(BaseModel):
     name: str
     description: str | None
     price_usd_month: int
-    features: list[str]
+    price_rub_month: int
+    monthly_paid_prompt_limit: int
+    prompt_purchase_discount_percent: int
+    lumen_purchase_discount_percent: int
+    highlights: list[str]
+    full_features: list[str]
     sort_order: int
     is_active: bool
 
@@ -52,3 +57,7 @@ class BillingStatusRead(BaseModel):
     current_period_end: datetime | None
     cancel_at_period_end: bool
     updated_at: datetime | None
+    paid_prompt_limit_total: int = 0
+    paid_prompt_limit_remaining: int = 0
+    prompt_purchase_discount_percent: int = 0
+    lumen_purchase_discount_percent: int = 0

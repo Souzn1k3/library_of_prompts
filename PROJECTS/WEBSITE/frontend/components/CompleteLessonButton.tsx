@@ -6,8 +6,9 @@ import { useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { PromptCard } from "@/components/PromptCard";
+import { EconomyActionBanner } from "@/components/ui/EconomyActionBanner";
 import { completeLesson, fetchPromptRecommendations } from "@/lib/client-api";
-import type { PromptListItem } from "@/lib/types";
+import type { EconomyAction, PromptListItem } from "@/lib/types";
 
 export function CompleteLessonButton({ slug }: { slug: string }) {
   const { status } = useAuth();
@@ -16,13 +17,15 @@ export function CompleteLessonButton({ slug }: { slug: string }) {
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recommendations, setRecommendations] = useState<PromptListItem[]>([]);
+  const [economy, setEconomy] = useState<EconomyAction | null>(null);
 
   async function markCompleted() {
     setPending(true);
     setError(null);
     try {
-      await completeLesson(slug);
+      const action = await completeLesson(slug);
       setDone(true);
+      setEconomy(action);
       try {
         const response = await fetchPromptRecommendations({
           context: "after_lesson_complete",
@@ -75,6 +78,7 @@ export function CompleteLessonButton({ slug }: { slug: string }) {
             </Link>
             .
           </div>
+          <EconomyActionBanner summary={economy} />
           {recommendations.length > 0 ? (
             <section className="space-y-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
               <p className="text-sm font-medium text-zinc-900">{t("learn.nextPromptsTitle")}</p>

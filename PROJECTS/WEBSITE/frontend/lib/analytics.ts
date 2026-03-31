@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from "@/lib/api";
+import { API_ENDPOINTS } from "@/lib/constants/api";
 
 export type AnalyticsEventName =
   | "signup_completed"
@@ -170,7 +171,7 @@ async function flushAnalyticsQueue() {
   queue = queue.slice(100);
 
   try {
-    const res = await fetch(`${getApiBaseUrl()}/api/v1/analytics/events`, {
+    const res = await fetch(`${getApiBaseUrl()}${API_ENDPOINTS.analyticsEvents}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -53,7 +53,10 @@ async def test_dashboard_recommendations_respect_saved_history(async_client, uni
         f"/api/v1/users/me/saved-prompts/{saved_prompt_id}",
         headers={"Authorization": f"Bearer {token}"},
     )
-    assert save_response.status_code == 204
+    assert save_response.status_code == 200
+    save_payload = save_response.json()
+    assert "balance" in save_payload
+    assert "available_items" in save_payload
 
     recommendation_response = await async_client.get(
         "/api/v1/prompts/recommendations?context=dashboard&limit=4",

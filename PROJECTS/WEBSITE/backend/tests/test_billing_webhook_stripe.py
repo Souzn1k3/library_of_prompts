@@ -12,7 +12,7 @@ from httpx import ASGITransport, AsyncClient
 from app.infrastructure.db.models import BillingCustomer, BillingProvider
 from app.infrastructure.db.session import async_session_maker
 
-from tests.helpers.stripe_webhook import (
+from .helpers.stripe_webhook import (
     event_json_bytes,
     sign_stripe_webhook_payload,
     subscription_updated_event,
@@ -60,7 +60,7 @@ async def _attach_stripe_customer(*, user_id: uuid.UUID, email: str, customer_id
 async def test_webhook_signature_round_trip_matches_stripe_sdk(async_client: AsyncClient) -> None:
     import stripe
 
-    payload_dict = {"id": "evt_sig_test", "type": "ping", "data": {"object": {}}}
+    payload_dict = {"id": "evt_sig_test", "object": "event", "type": "ping", "data": {"object": {}}}
     raw = json.dumps(payload_dict, separators=(",", ":")).encode("utf-8")
     header = sign_stripe_webhook_payload(payload_bytes=raw, secret=WEBHOOK_SECRET)
     event = stripe.Webhook.construct_event(raw, header, WEBHOOK_SECRET)

@@ -1,12 +1,14 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, Query
 
 from app.api.deps import get_current_user, get_optional_user
-from app.api.service_deps import get_lesson_service, get_mission_service
+from app.api.service_deps import get_lesson_service, get_mission_service, get_store_service
 from app.core.cache import get_cache
 from app.core.errors import AppError
 from app.infrastructure.db.models import User
+from app.modules.economy.model.store import EconomyActionRead
+from app.modules.economy.service.store_service import StoreService
 from app.modules.education.model.lesson import LessonListItem, LessonRead, PopularLessonItem
 from app.modules.education.service.lesson_service import LessonService
 from app.modules.missions.service.mission_service import MissionService
@@ -70,13 +72,14 @@ async def get_lesson(
     return lesson
 
 
-@router.post("/by-slug/{slug}/complete", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/by-slug/{slug}/complete", response_model=EconomyActionRead)
 async def complete_lesson(
     slug: str,
     current_user: User = Depends(get_current_user),
     svc: LessonService = Depends(get_lesson_service),
     missions: MissionService = Depends(get_mission_service),
-) -> Response:
+    store: StoreService = Depends(get_store_service),
+) -> EconomyActionRead:
     lesson = await svc.get_by_slug(slug, current_user)
     if lesson.body_locked:
         raise AppError(
@@ -84,19 +87,26 @@ async def complete_lesson(
             message="Upgrade your plan to open this lesson.",
             status_code=403,
         )
+    previous_balance = (await store.wallet(current_user)).balance
     today_key = datetime.now(timezone.utc).date().isoformat()
-    await missions.record_event(
+    completed = await missions.record_event(
         user=current_user,
         event_type="lesson_completed",
         lesson_id=lesson.id,
         source_event_key=f"lesson_completed:{current_user.id}:{lesson.id}",
     )
-    await missions.record_event(
-        user=current_user,
-        event_type="streak_activity",
-        lesson_id=lesson.id,
-        source_event_key=f"streak_activity:{current_user.id}:{today_key}",
-        payload={"source": "lesson_completed"},
+    completed.extend(
+        await missions.record_event(
+            user=current_user,
+            event_type="streak_activity",
+            lesson_id=lesson.id,
+            source_event_key=f"streak_activity:{current_user.id}:{today_key}",
+            payload={"source": "lesson_completed"},
+        )
     )
     await get_cache().bump_many(("lessons", "recommendations"))
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    return await store.build_action_feedback(
+        current_user,
+        previous_balance=previous_balance,
+        completed_mission_slugs=list(dict.fromkeys(completed)),
+    )

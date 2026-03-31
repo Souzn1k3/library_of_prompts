@@ -273,6 +273,44 @@
   color: #64748b;
 }
 
+.pv-daily-ladder-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(4.7rem, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+  gap: 0.5rem;
+}
+
+.pv-daily-ladder-card {
+  display: flex;
+  min-height: 5.35rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0.72rem 0.58rem 0.68rem;
+  text-align: center;
+}
+
+.pv-daily-ladder-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  text-transform: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.pv-daily-ladder-reward {
+  margin-top: auto;
+  padding-top: 0.55rem;
+  font-size: 0.9rem;
+  font-weight: 650;
+  line-height: 1.1;
+  color: #09090b;
+}
+
 .pv-metric-value {
   font-size: 1.5rem;
   font-weight: 800;

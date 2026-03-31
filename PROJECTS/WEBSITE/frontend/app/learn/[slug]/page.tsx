@@ -88,7 +88,7 @@ export default async function LessonPage(props: Props) {
           }
         />
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
           <section className="pv-panel px-6 py-6 sm:px-7">
             <pre className="overflow-x-auto whitespace-pre-wrap rounded-[1.25rem] border border-[var(--pv-border)] bg-white/80 p-5 text-sm leading-relaxed text-zinc-900">
               {lesson.body}

@@ -27,9 +27,7 @@ export function RouteCard({
   return (
     <Link
       href={href}
-      className={`pv-card-muted pv-route-card flex h-full flex-col gap-5 p-5 sm:p-6 ${
-        active ? "border-[var(--pv-border-strong)] bg-white shadow-[0_16px_36px_rgba(37,92,255,0.08)]" : ""
-      }`}
+      className="pv-card-muted pv-route-card flex h-full flex-col gap-5 p-5 sm:p-6"
       data-active={active ? "true" : "false"}
       data-tone={tone}
     >

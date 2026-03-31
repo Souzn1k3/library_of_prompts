@@ -24,9 +24,11 @@ from app.modules.billing.model.billing import (
     CheckoutSessionResponse,
     PlanPublicRead,
 )
+from app.modules.billing.config import BILLING_PLAN_COPY
 from app.modules.billing.repository.billing_repository import BillingRepository
 from app.modules.billing.service.entitlement_service import EntitlementService
 from app.modules.identity.repository.user_repository import UserRepository
+from app.modules.marketplace.service.marketplace_service import MarketplaceService
 
 try:
     import stripe
@@ -62,63 +64,20 @@ def _safe_uuid(value: Any) -> uuid.UUID | None:
         return None
 
 
+def _stripe_object_to_dict(value: Any) -> dict[str, Any]:
+    if isinstance(value, dict):
+        return value
+    if hasattr(value, "to_dict_recursive"):
+        return value.to_dict_recursive()
+    if hasattr(value, "_to_dict_recursive"):
+        return value._to_dict_recursive()
+    if hasattr(value, "to_dict"):
+        return value.to_dict()
+    return dict(value)
+
+
 class BillingService:
-    _PLAN_COPY: dict[str, dict[PlanTier, dict[str, object]]] = {
-        "en": {
-            PlanTier.free: {
-                "name": "Free",
-                "features": ["Browse catalog", "Save prompts", "Community submissions"],
-            },
-            PlanTier.starter: {
-                "name": "Starter",
-                "features": ["Premium prompt bodies", "Email support"],
-            },
-            PlanTier.pro: {
-                "name": "Pro",
-                "features": ["Restricted categories", "Full lesson library", "Priority moderation"],
-            },
-            PlanTier.enterprise: {
-                "name": "MAX",
-                "features": ["Team seats", "SSO (roadmap)", "Custom agreements"],
-            },
-        },
-        "ru": {
-            PlanTier.free: {
-                "name": "Free",
-                "features": ["Просмотр каталога", "Сохранение промптов", "Публикации сообщества"],
-            },
-            PlanTier.starter: {
-                "name": "Starter",
-                "features": ["Премиальные тексты промптов", "Поддержка по email"],
-            },
-            PlanTier.pro: {
-                "name": "Pro",
-                "features": ["Ограниченные категории", "Полная библиотека уроков", "Приоритетная модерация"],
-            },
-            PlanTier.enterprise: {
-                "name": "MAX",
-                "features": ["Командные места", "SSO (в планах)", "Кастомные договоры"],
-            },
-        },
-        "tt": {
-            PlanTier.free: {
-                "name": "Бушлай",
-                "features": ["Каталогны карау", "Промптларны саклау", "Җәмәгать җибәргән материаллар"],
-            },
-            PlanTier.starter: {
-                "name": "Starter",
-                "features": ["Премиум промпт текстлары", "Email аша ярдәм"],
-            },
-            PlanTier.pro: {
-                "name": "Pro",
-                "features": ["Чикләнгән категорияләр", "Дәресләрнең тулы китапханәсе", "Өстен модерация"],
-            },
-            PlanTier.enterprise: {
-                "name": "MAX",
-                "features": ["Команда урыннары", "SSO (планда)", "Махсус килешүләр"],
-            },
-        },
-    }
+    _PLAN_COPY = BILLING_PLAN_COPY
 
     def __init__(
         self,
@@ -127,12 +86,14 @@ class BillingService:
         user_repo: UserRepository,
         settings: Settings,
         analytics: AnalyticsService | None = None,
+        marketplace: MarketplaceService | None = None,
     ) -> None:
         self._repo = repo
         self._entitlements = entitlement_service
         self._users = user_repo
         self._settings = settings
         self._analytics = analytics
+        self._marketplace = marketplace
 
     def _copy_for_language(self, language: str | None) -> dict[PlanTier, dict[str, object]]:
         if language and language in self._PLAN_COPY:
@@ -151,7 +112,12 @@ class BillingService:
                     name=str(localized.get("name") or row.name),
                     description=row.description,
                     price_usd_month=row.price_usd_month,
-                    features=list(localized.get("features") or []),
+                    price_rub_month=row.price_rub_month,
+                    monthly_paid_prompt_limit=row.monthly_paid_prompt_limit,
+                    prompt_purchase_discount_percent=row.prompt_purchase_discount_percent,
+                    lumen_purchase_discount_percent=row.lumen_purchase_discount_percent,
+                    highlights=list(localized.get("highlights") or []),
+                    full_features=list(localized.get("full_features") or []),
                     sort_order=row.sort_order,
                     is_active=row.is_active,
                 )
@@ -160,6 +126,7 @@ class BillingService:
 
     async def get_subscription_status(self, user: User) -> BillingStatusRead:
         latest = await self._repo.get_latest_subscription_for_user(user.id)
+        access = await self._marketplace.get_plan_access_context(user) if self._marketplace is not None else None
         return BillingStatusRead(
             plan_tier=user.plan_tier,
             subscription_tier=latest.plan.tier if latest and latest.plan else None,
@@ -168,6 +135,10 @@ class BillingService:
             current_period_end=latest.current_period_end if latest else None,
             cancel_at_period_end=latest.cancel_at_period_end if latest else False,
             updated_at=latest.updated_at if latest else None,
+            paid_prompt_limit_total=access.total_unlocks if access is not None else 0,
+            paid_prompt_limit_remaining=access.remaining_unlocks if access is not None else 0,
+            prompt_purchase_discount_percent=access.money_discount_percent if access is not None else 0,
+            lumen_purchase_discount_percent=access.lumen_discount_percent if access is not None else 0,
         )
 
     def _resolve_price_id(self, plan: Plan) -> str | None:
@@ -618,6 +589,12 @@ class BillingService:
 
         if event_type == "checkout.session.completed":
             if obj.get("mode") != "subscription":
+                if self._marketplace is not None and (obj.get("metadata") or {}).get("kind") == "prompt_purchase":
+                    await self._marketplace.complete_checkout_purchase(
+                        checkout_id=str(obj.get("id") or ""),
+                        payment_id=str(obj.get("payment_intent") or "") or None,
+                        completed_at=occurred_at,
+                    )
                 return
             fallback_user_id = _safe_uuid(obj.get("client_reference_id"))
             if fallback_user_id is None:
@@ -637,9 +614,7 @@ class BillingService:
                     subscription_id,
                     expand=["items.data.price"],
                 )
-                subscription_payload = (
-                    subscription if isinstance(subscription, dict) else subscription.to_dict_recursive()
-                )
+                subscription_payload = _stripe_object_to_dict(subscription)
                 await self._sync_subscription_from_stripe(
                     stripe_subscription=subscription_payload,
                     provider_event_id=provider_event_id,
@@ -647,6 +622,34 @@ class BillingService:
                     occurred_at=occurred_at,
                     fallback_user_id=fallback_user_id,
                 )
+            return
+
+        if event_type == "checkout.session.expired":
+            if self._marketplace is not None and (obj.get("metadata") or {}).get("kind") == "prompt_purchase":
+                await self._marketplace.fail_checkout_purchase(
+                    checkout_id=str(obj.get("id") or ""),
+                    reason="checkout_expired",
+                )
+            return
+
+        if event_type == "charge.refunded":
+            if self._marketplace is not None and (obj.get("metadata") or {}).get("kind") == "prompt_purchase":
+                payment_id = str(obj.get("payment_intent") or "")
+                if payment_id:
+                    await self._marketplace.refund_checkout_purchase(
+                        payment_id=payment_id,
+                        reason="charge_refunded",
+                    )
+            return
+
+        if event_type == "payment_intent.payment_failed":
+            if self._marketplace is not None and (obj.get("metadata") or {}).get("kind") == "prompt_purchase":
+                purchase_id = _safe_uuid((obj.get("metadata") or {}).get("purchase_id"))
+                if purchase_id is not None:
+                    await self._marketplace.fail_checkout_purchase_by_id(
+                        purchase_id=purchase_id,
+                        reason="payment_failed",
+                    )
 
     async def handle_webhook(
         self,
@@ -696,7 +699,7 @@ class BillingService:
                 message_key="errors.invalid_webhook_signature",
             ) from exc
 
-        event_dict = event if isinstance(event, dict) else event.to_dict_recursive()
+        event_dict = _stripe_object_to_dict(event)
         event_id = str(event_dict.get("id") or "")
         if not event_id:
             log.warning("billing_webhook_failed", reason="missing_event_id")
@@ -737,3 +740,4 @@ class BillingService:
                 message="We couldn't complete this payment update.",
             ) from None
         return {"status": "ok"}
+

@@ -71,6 +71,12 @@ class LessonMission(Base):
     required_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     is_repeatable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
     repeat_interval_days: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    chain_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    chain_step: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    chain_total: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    chain_bonus_credits: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    chain_unlock_on_slug: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    adaptive_segment: Mapped[str | None] = mapped_column(String(24), nullable=True, index=True)
     persona_role: Mapped[OnboardingRole | None] = mapped_column(
         Enum(OnboardingRole, native_enum=False, length=32),
         nullable=True,

@@ -17,6 +17,11 @@ import type { UserProfile } from "@/lib/types";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
+const ACCESS_TOKEN_COOKIE =
+  process.env.NEXT_PUBLIC_ACCESS_TOKEN_COOKIE_NAME ?? "pv_access_token";
+const REFRESH_TOKEN_COOKIE =
+  process.env.NEXT_PUBLIC_REFRESH_TOKEN_COOKIE_NAME ?? "pv_refresh_token";
+
 type AuthContextValue = {
   status: AuthStatus;
   isAuthenticated: boolean;
@@ -26,6 +31,17 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+function hasAuthCookieInBrowser() {
+  if (typeof document === "undefined") {
+    return false;
+  }
+  const pairs = document.cookie.split(";").map((item) => item.trim());
+  return pairs.some((pair) => {
+    const [name] = pair.split("=");
+    return name === ACCESS_TOKEN_COOKIE || name === REFRESH_TOKEN_COOKIE;
+  });
+}
 
 export function AuthProvider({
   children,
@@ -40,6 +56,8 @@ export function AuthProvider({
   const [user, setUser] = useState<UserProfile | null>(null);
   const mountedRef = useRef(true);
   const refreshPromiseRef = useRef<Promise<UserProfile | null> | null>(null);
+  const serverBootstrapDoneRef = useRef(false);
+  const clientBootstrapDoneRef = useRef(false);
 
   const applyUnauthenticated = useCallback(() => {
     if (!mountedRef.current) {
@@ -113,6 +131,25 @@ export function AuthProvider({
     if (!initialHasAuthCookie) {
       return;
     }
+    if (serverBootstrapDoneRef.current) {
+      return;
+    }
+    serverBootstrapDoneRef.current = true;
+    void refreshAuth();
+  }, [initialHasAuthCookie, refreshAuth]);
+
+  useEffect(() => {
+    if (initialHasAuthCookie) {
+      return;
+    }
+    if (clientBootstrapDoneRef.current) {
+      return;
+    }
+    if (!hasAuthCookieInBrowser()) {
+      return;
+    }
+    clientBootstrapDoneRef.current = true;
+    setStatus((current) => (current === "authenticated" ? current : "loading"));
     void refreshAuth();
   }, [initialHasAuthCookie, refreshAuth]);
 

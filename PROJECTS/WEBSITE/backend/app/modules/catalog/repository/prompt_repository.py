@@ -71,6 +71,7 @@ class PromptRepository:
             joinedload(Prompt.category),
             joinedload(Prompt.stats),
             joinedload(Prompt.quality_metrics),
+            joinedload(Prompt.pricing),
             *self._prompt_relation_load_options(),
             joinedload(Prompt.author).joinedload(User.contributor_profile),
         )
@@ -80,6 +81,7 @@ class PromptRepository:
             contains_eager(Prompt.category),
             contains_eager(Prompt.stats),
             contains_eager(Prompt.quality_metrics),
+            selectinload(Prompt.pricing),
             *self._prompt_relation_load_options(),
         )
 

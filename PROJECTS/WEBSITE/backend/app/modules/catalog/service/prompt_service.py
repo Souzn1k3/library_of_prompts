@@ -24,6 +24,8 @@ from app.modules.catalog.model.prompt import (
     StoreUnlockOffer,
 )
 from app.modules.economy.repository.store_repository import StoreRepository
+from app.modules.marketplace.model.marketplace import PromptAccessRead
+from app.modules.marketplace.service.marketplace_service import MarketplaceService
 
 
 class PromptRepositoryProtocol(Protocol):
@@ -96,7 +98,11 @@ class PromptRepositoryProtocol(Protocol):
     async def increment_view_count(self, prompt_id: uuid.UUID, amount: int = 1) -> None: ...
 
 
-def _to_list_item(row: Prompt) -> PromptListItem:
+def _to_list_item(
+    row: Prompt,
+    *,
+    access: PromptAccessRead | None = None,
+) -> PromptListItem:
     contributor = row.author.contributor_profile if row.author and row.author.contributor_profile else None
     quality_score = 0
     if row.quality_metrics is not None:
@@ -115,8 +121,15 @@ def _to_list_item(row: Prompt) -> PromptListItem:
         author_id=row.author_id,
         created_at=row.created_at,
         is_premium=row.is_premium,
+        is_paid=bool(row.pricing and row.pricing.is_active),
         difficulty=row.difficulty,
         output_type=row.output_type,
+        price=None if row.pricing is None or not row.pricing.is_active else {
+            "price_rub": row.pricing.price_rub,
+            "price_lumens": row.pricing.price_lumens,
+            "commission_percent": row.pricing.commission_percent,
+        },
+        access=access,
         use_cases=[link.use_case.slug for link in row.use_case_links if link.use_case is not None],
         model_compatibility=[link.model.slug for link in row.model_links if link.model is not None],
         tags=[link.tag.slug for link in row.tag_links if link.tag is not None],
@@ -126,6 +139,7 @@ def _to_list_item(row: Prompt) -> PromptListItem:
         contributor_slug=contributor.slug if contributor else None,
         contributor_tier=contributor.reputation_tier if contributor else None,
         contributor_reputation_score=contributor.reputation_score if contributor else None,
+        author_display_name=row.author.display_name if row.author is not None else None,
     )
 
 
@@ -135,19 +149,26 @@ def _apply_read_gating(
     viewer: User | None,
     locked: bool,
     unlock_offer: StoreUnlockOffer | None = None,
+    access: PromptAccessRead | None = None,
 ) -> PromptRead:
     if row.category and row.category.is_restricted and not can_view_restricted_category(viewer):
         raise NotFoundError("prompt", row.slug)
 
     body = mask_body_if_needed(body=row.body, locked=locked)
-    base = _to_list_item(row)
+    base = _to_list_item(row, access=access)
     return PromptRead(**base.model_dump(), body=body, body_locked=locked, unlock_offer=unlock_offer)
 
 
 class PromptService:
-    def __init__(self, repo: PromptRepositoryProtocol, store_repo: StoreRepository | None = None) -> None:
+    def __init__(
+        self,
+        repo: PromptRepositoryProtocol,
+        store_repo: StoreRepository | None = None,
+        marketplace: MarketplaceService | None = None,
+    ) -> None:
         self._repo = repo
         self._store_repo = store_repo
+        self._marketplace = marketplace
 
     def _restrict_catalog(self, viewer: User | None) -> bool:
         return not can_view_restricted_category(viewer)
@@ -213,7 +234,8 @@ class PromptService:
             restrict_to_unrestricted_categories=self._restrict_catalog(viewer),
             only_free=only_free,
         )
-        return [_to_list_item(r) for r in rows]
+        access_map = await self._marketplace.build_access_map(list(rows), viewer) if self._marketplace is not None else {}
+        return [_to_list_item(r, access=access_map.get(r.id)) for r in rows]
 
     async def count_published(
         self,
@@ -244,21 +266,83 @@ class PromptService:
             only_free=only_free,
         )
 
-    async def get_by_slug(self, slug: str, viewer: User | None) -> PromptRead:
+    async def get_by_slug(
+        self,
+        slug: str,
+        viewer: User | None,
+        *,
+        auto_grant_included_unlock: bool = True,
+    ) -> PromptRead:
         row = await self._repo.get_by_slug(slug)
         if row is None or row.status != PromptStatus.published:
             raise NotFoundError("prompt", slug)
+        if self._marketplace is not None and row.pricing is not None and row.pricing.is_active:
+            access = await self._marketplace.resolve_prompt_access(
+                row,
+                viewer,
+                auto_grant_included_unlock=auto_grant_included_unlock,
+            )
+            read = _apply_read_gating(row, viewer=viewer, locked=not access.has_access, access=access)
+            if row.author_id is not None:
+                summary = await self._marketplace.seller_summary(
+                    seller_user_id=row.author_id,
+                    reputation_tier=contributor.reputation_tier.value if (contributor := row.author.contributor_profile if row.author and row.author.contributor_profile else None) else None,
+                    review_limit=3,
+                )
+                read.author_rating_average = summary.rating_average
+                read.author_rating_count = summary.review_count
+            await self._repo.increment_view_count(row.id)
+            return read
         locked, unlock_offer = await self._resolve_unlock_offer(row, viewer)
-        read = _apply_read_gating(row, viewer=viewer, locked=locked, unlock_offer=unlock_offer)
+        read = _apply_read_gating(row, viewer=viewer, locked=locked, unlock_offer=unlock_offer, access=None)
+        if self._marketplace is not None and row.author_id is not None:
+            summary = await self._marketplace.seller_summary(
+                seller_user_id=row.author_id,
+                reputation_tier=contributor.reputation_tier.value if (contributor := row.author.contributor_profile if row.author and row.author.contributor_profile else None) else None,
+                review_limit=3,
+            )
+            read.author_rating_average = summary.rating_average
+            read.author_rating_count = summary.review_count
         await self._repo.increment_view_count(row.id)
         return read
 
-    async def get_by_id(self, prompt_id: uuid.UUID, viewer: User | None) -> PromptRead:
+    async def get_by_id(
+        self,
+        prompt_id: uuid.UUID,
+        viewer: User | None,
+        *,
+        auto_grant_included_unlock: bool = True,
+    ) -> PromptRead:
         row = await self._repo.get_by_id(prompt_id)
         if row is None or row.status != PromptStatus.published:
             raise NotFoundError("prompt", str(prompt_id))
+        if self._marketplace is not None and row.pricing is not None and row.pricing.is_active:
+            access = await self._marketplace.resolve_prompt_access(
+                row,
+                viewer,
+                auto_grant_included_unlock=auto_grant_included_unlock,
+            )
+            read = _apply_read_gating(row, viewer=viewer, locked=not access.has_access, access=access)
+            if row.author_id is not None:
+                summary = await self._marketplace.seller_summary(
+                    seller_user_id=row.author_id,
+                    reputation_tier=contributor.reputation_tier.value if (contributor := row.author.contributor_profile if row.author and row.author.contributor_profile else None) else None,
+                    review_limit=3,
+                )
+                read.author_rating_average = summary.rating_average
+                read.author_rating_count = summary.review_count
+            await self._repo.increment_view_count(row.id)
+            return read
         locked, unlock_offer = await self._resolve_unlock_offer(row, viewer)
-        read = _apply_read_gating(row, viewer=viewer, locked=locked, unlock_offer=unlock_offer)
+        read = _apply_read_gating(row, viewer=viewer, locked=locked, unlock_offer=unlock_offer, access=None)
+        if self._marketplace is not None and row.author_id is not None:
+            summary = await self._marketplace.seller_summary(
+                seller_user_id=row.author_id,
+                reputation_tier=contributor.reputation_tier.value if (contributor := row.author.contributor_profile if row.author and row.author.contributor_profile else None) else None,
+                review_limit=3,
+            )
+            read.author_rating_average = summary.rating_average
+            read.author_rating_count = summary.review_count
         await self._repo.increment_view_count(row.id)
         return read
 
@@ -289,10 +373,15 @@ class PromptService:
             restrict_to_unrestricted_categories=restrict,
         )
         most_saved = await self._repo.list_most_saved(limit=limit, restrict_to_unrestricted_categories=restrict)
+        access_map = (
+            await self._marketplace.build_access_map(list(trending) + list(beginner) + list(most_saved), viewer)
+            if self._marketplace is not None
+            else {}
+        )
         return DiscoverySections(
-            trending=[_to_list_item(row) for row in trending],
-            best_for_beginners=[_to_list_item(row) for row in beginner],
-            most_saved=[_to_list_item(row) for row in most_saved],
+            trending=[_to_list_item(row, access=access_map.get(row.id)) for row in trending],
+            best_for_beginners=[_to_list_item(row, access=access_map.get(row.id)) for row in beginner],
+            most_saved=[_to_list_item(row, access=access_map.get(row.id)) for row in most_saved],
         )
 
     async def related_prompts(self, slug: str, viewer: User | None, *, limit: int = 6) -> list[PromptListItem]:
@@ -306,7 +395,8 @@ class PromptService:
             limit=limit,
             restrict_to_unrestricted_categories=self._restrict_catalog(viewer),
         )
-        return [_to_list_item(item) for item in related]
+        access_map = await self._marketplace.build_access_map(list(related), viewer) if self._marketplace is not None else {}
+        return [_to_list_item(item, access=access_map.get(item.id)) for item in related]
 
     async def track_copy(self, prompt_id: uuid.UUID, viewer: User | None) -> None:
         row = await self._repo.get_by_id(prompt_id)

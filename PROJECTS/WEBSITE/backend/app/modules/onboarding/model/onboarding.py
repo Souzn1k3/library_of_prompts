@@ -4,6 +4,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 from app.infrastructure.db.models import OnboardingGoal, OnboardingRole, PlanTier
+from app.modules.economy.model.store import EconomyActionRead
 
 
 class OnboardingProfileRead(BaseModel):
@@ -65,3 +66,8 @@ class FirstWinCompleteRequest(BaseModel):
     action: str = Field(min_length=1, max_length=64)
 
     model_config = {"extra": "forbid"}
+
+
+class OnboardingFirstWinResult(BaseModel):
+    profile: OnboardingProfileRead
+    economy: EconomyActionRead

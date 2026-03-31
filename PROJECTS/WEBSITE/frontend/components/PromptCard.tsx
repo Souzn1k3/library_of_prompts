@@ -7,6 +7,8 @@ import type { PromptListItem } from "@/lib/types";
 
 export function PromptCard({ prompt }: { prompt: PromptListItem }) {
   const tone = getTechniqueTone(prompt.technique);
+  const ctaLabelKey = getPromptCtaLabelKey(prompt);
+  const isPaid = Boolean(prompt.is_paid && prompt.price);
 
   return (
     <Link href={`/prompt/${encodeURIComponent(prompt.slug)}`} className="pv-card group block p-5">
@@ -23,7 +25,11 @@ export function PromptCard({ prompt }: { prompt: PromptListItem }) {
                 <T k={getDifficultyTranslationKey(prompt.difficulty)} />
               </span>
             ) : null}
-            {prompt.is_premium ? (
+            {isPaid ? (
+              <span className="pv-badge-warning">
+                <T k="prompt.paid" />
+              </span>
+            ) : prompt.is_premium ? (
               <span className="pv-badge-warning">
                 <T k="prompt.premium" />
               </span>
@@ -47,18 +53,45 @@ export function PromptCard({ prompt }: { prompt: PromptListItem }) {
 
         {(prompt.save_count || prompt.copy_count || prompt.quality_score) ? (
           <div className="mt-auto flex flex-wrap gap-2 text-xs text-zinc-500">
-            {prompt.save_count ? <span className="pv-chip">{prompt.save_count} save</span> : null}
-            {prompt.copy_count ? <span className="pv-chip">{prompt.copy_count} copy</span> : null}
-            {prompt.quality_score ? <span className="pv-chip">QS {prompt.quality_score}</span> : null}
+            {prompt.save_count ? (
+              <span className="pv-chip">
+                <T k="prompt.metricSaves" params={{ count: prompt.save_count }} />
+              </span>
+            ) : null}
+            {prompt.copy_count ? (
+              <span className="pv-chip">
+                <T k="prompt.metricCopies" params={{ count: prompt.copy_count }} />
+              </span>
+            ) : null}
+            {prompt.quality_score ? (
+              <span className="pv-chip">
+                <T k="prompt.metricQuality" params={{ count: prompt.quality_score }} />
+              </span>
+            ) : null}
+            {prompt.price ? (
+              <span className="pv-chip">
+                <T k="prompt.priceRub" params={{ count: prompt.price.price_rub }} />
+              </span>
+            ) : null}
           </div>
         ) : null}
 
         <div className="flex items-center justify-between gap-3 border-t border-[var(--pv-border)] pt-4">
           <p className="text-xs text-zinc-500">
-            {prompt.recommendation_reason_key ? <T k={prompt.recommendation_reason_key} /> : <T k="prompt.savedLabel" />}
+            {prompt.price
+              ? prompt.access?.catalog_action === "buy"
+                ? <T k="prompt.access.includedQuotaUsed" />
+                : prompt.access?.catalog_action === "signin"
+                  ? <T k="prompt.access.signInToUnlock" />
+                  : prompt.access?.can_unlock_with_plan
+                    ? <T k="prompt.access.unlocksLeft" params={{ count: prompt.access.remaining_plan_unlocks ?? 0 }} />
+                    : <T k="prompt.access.permanentUnlock" />
+              : prompt.recommendation_reason_key
+                ? <T k={prompt.recommendation_reason_key} />
+                : <T k="prompt.savedLabel" />}
           </p>
           <span className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--pv-brand-strong)]">
-            <T k="prompt.openPrompt" />
+            <T k={ctaLabelKey} />
             <span aria-hidden="true">↗</span>
           </span>
         </div>
@@ -93,4 +126,14 @@ function getTechniqueTone(technique: PromptListItem["technique"]) {
     badge: "",
     glow: "bg-[rgba(148,163,184,0.1)]",
   };
+}
+
+function getPromptCtaLabelKey(prompt: PromptListItem) {
+  if (prompt.access?.catalog_action === "buy") {
+    return "prompt.cta.buy";
+  }
+  if (prompt.access?.catalog_action === "signin") {
+    return "prompt.cta.signin";
+  }
+  return "prompt.openPrompt";
 }

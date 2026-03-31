@@ -4,8 +4,10 @@ import Link from "next/link";
 
 import type { AuthStatus } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/LanguageProvider";
+import { EconomyActionBanner } from "@/components/ui/EconomyActionBanner";
 import type { OnboardingOption } from "@/components/onboarding/options";
 import type {
+  EconomyAction,
   OnboardingGoal,
   OnboardingRole,
   OnboardingStarterPack,
@@ -25,6 +27,7 @@ type OnboardingWizardViewProps = {
   skipPending: boolean;
   firstWinDone: boolean;
   firstWinPending: boolean;
+  firstWinEconomy: EconomyAction | null;
   roleOptions: OnboardingOption<OnboardingRole>[];
   goalOptions: OnboardingOption<OnboardingGoal>[];
   contextOptions: OnboardingOption[];
@@ -55,6 +58,7 @@ export function OnboardingWizardView({
   skipPending,
   firstWinDone,
   firstWinPending,
+  firstWinEconomy,
   roleOptions,
   goalOptions,
   contextOptions,
@@ -226,7 +230,10 @@ export function OnboardingWizardView({
                     : t("onboardingWizard.completeFirstWin")}
                 </button>
               ) : (
-                <div className="pv-alert pv-alert-success">{t("onboardingWizard.firstWinDone")}</div>
+                <div className="space-y-3">
+                  <div className="pv-alert pv-alert-success">{t("onboardingWizard.firstWinDone")}</div>
+                  <EconomyActionBanner summary={firstWinEconomy} />
+                </div>
               )}
               <Link
                 href={`/prompt/${encodeURIComponent(starter.action.prompt_slug)}`}

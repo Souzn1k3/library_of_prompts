@@ -15,6 +15,7 @@ import {
 } from "@/lib/client-api";
 import { trackEvent } from "@/lib/analytics";
 import type {
+  EconomyAction,
   OnboardingGoal,
   OnboardingProfile,
   OnboardingRole,
@@ -40,6 +41,7 @@ export function useOnboardingWizard(status: AuthStatus) {
   const [skipPending, setSkipPending] = useState(false);
   const [firstWinDone, setFirstWinDone] = useState(false);
   const [firstWinPending, setFirstWinPending] = useState(false);
+  const [firstWinEconomy, setFirstWinEconomy] = useState<EconomyAction | null>(null);
 
   const roleOptions = useMemo(() => getRoleOptions(t), [t]);
   const goalOptions = useMemo(() => getGoalOptions(t), [t]);
@@ -51,6 +53,7 @@ export function useOnboardingWizard(status: AuthStatus) {
       setLoadError(null);
       setProfile(null);
       setStarter(null);
+      setFirstWinEconomy(null);
       return;
     }
 
@@ -64,6 +67,7 @@ export function useOnboardingWizard(status: AuthStatus) {
         setAiContext(profileData.ai_context);
         setStarter(starterPack);
         setFirstWinDone(Boolean(profileData.first_win_completed_at));
+        setFirstWinEconomy(null);
         setLoadError(null);
         setLoading(false);
       })
@@ -146,7 +150,8 @@ export function useOnboardingWizard(status: AuthStatus) {
         prompt_id: starter.action.prompt_id,
         action: "copy_prompt",
       });
-      setProfile(profileData);
+      setProfile(profileData.profile);
+      setFirstWinEconomy(profileData.economy);
       setFirstWinDone(true);
       trackEvent({
         eventName: "onboarding_first_action",
@@ -179,6 +184,7 @@ export function useOnboardingWizard(status: AuthStatus) {
     skipPending,
     firstWinDone,
     firstWinPending,
+    firstWinEconomy,
     roleOptions,
     goalOptions,
     contextOptions,

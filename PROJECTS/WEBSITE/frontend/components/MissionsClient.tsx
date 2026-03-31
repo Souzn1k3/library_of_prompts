@@ -14,15 +14,15 @@ import { LmnAmount } from "@/components/ui/LmnAmount";
 import { trackEvent } from "@/lib/analytics";
 import { ApiRequestError } from "@/lib/api";
 import { fetchMissions } from "@/lib/client-api";
+import { MISSION_SECTION_ORDER, MISSION_TYPE_TONE } from "@/lib/constants/economy-ui";
+import { APP_ROUTES, appRoute } from "@/lib/constants/routes";
 import { getMissionStatusTranslationKey, type TranslationKey } from "@/lib/i18n";
 import {
   formatMissionDateTime,
   getMissionPresentation,
   type MissionPresentation,
 } from "@/lib/missionPresentation";
-import type { MissionListRead, MissionType } from "@/lib/types";
-
-const SECTION_ORDER: MissionType[] = ["progression", "learning", "action", "streak", "challenge"];
+import type { MissionListRead } from "@/lib/types";
 
 export function MissionsClient() {
   const { t, language } = useI18n();
@@ -115,7 +115,7 @@ export function MissionsClient() {
   const sections = useMemo(() => {
     if (!data) return [];
 
-    return SECTION_ORDER.map((type) => ({
+    return MISSION_SECTION_ORDER.map((type) => ({
       type,
       items: filteredMissions.filter((mission) => mission.mission.mission_type === type),
     })).filter((section) => section.items.length > 0);
@@ -128,13 +128,13 @@ export function MissionsClient() {
           eyebrow={t("nav.missions")}
           title={t("missions.title")}
           description={t("missions.subtitle")}
-          hint={t("economy.loopBody")}
+          hint={t("missions.guestHint")}
           actions={
             <>
-              <Link href="/login" className="pv-button-primary">
+              <Link href={APP_ROUTES.login} className="pv-button-primary">
                 {t("nav.login")}
               </Link>
-              <Link href="/catalog" className="pv-inline-link">
+              <Link href={APP_ROUTES.catalog} className="pv-inline-link">
                 {t("home.explorePrompts")}
                 <span aria-hidden="true">↗</span>
               </Link>
@@ -143,7 +143,7 @@ export function MissionsClient() {
         />
         <div className="pv-empty-state text-sm text-zinc-600">
           {t("missions.signInPrefix")}{" "}
-          <Link href="/login" className="font-medium text-zinc-900 underline">
+          <Link href={APP_ROUTES.login} className="font-medium text-zinc-900 underline">
             {t("missions.signInLink")}
           </Link>{" "}
           {t("missions.signInSuffix")}
@@ -199,10 +199,10 @@ export function MissionsClient() {
           hint={t("economy.loopBody")}
           actions={
             <>
-              <Link href="/catalog" className="pv-button-primary">
+              <Link href={APP_ROUTES.catalog} className="pv-button-primary">
                 {t("home.explorePrompts")}
               </Link>
-              <Link href="/dashboard" className="pv-button-secondary">
+              <Link href={APP_ROUTES.dashboard} className="pv-button-secondary">
                 {t("nav.dashboard")}
               </Link>
             </>
@@ -255,7 +255,7 @@ export function MissionsClient() {
             </div>
             <span className="pv-chip-brand">{section.items.length}</span>
           </div>
-          <div className="mt-6 grid gap-4 xl:grid-cols-2">
+          <div className={`mt-6 grid gap-4 ${section.items.length > 1 ? "xl:grid-cols-2" : ""}`}>
             {section.items.map((mission) => (
               <MissionCard key={mission.mission.id} mission={mission} />
             ))}
@@ -271,13 +271,13 @@ function MissionCard({ mission }: { mission: MissionPresentation }) {
   const pct = Math.round(
     (mission.mission.progress_count / Math.max(1, mission.mission.required_count)) * 100,
   );
-  const tone = getMissionTone(mission.mission.mission_type);
+  const tone = MISSION_TYPE_TONE[mission.mission.mission_type];
 
   function trackNextStep() {
     if (!mission.nextStep) return;
     trackEvent({
       eventName: "mission_next_step_clicked",
-      page: "/missions",
+      page: APP_ROUTES.missions,
       feature: "mission_loop",
       metadata: {
         mission_id: mission.mission.id,
@@ -313,9 +313,22 @@ function MissionCard({ mission }: { mission: MissionPresentation }) {
                 {t(getMissionStatusTranslationKey(mission.mission.status))}
               </span>
               {mission.mission.is_repeatable ? <span className="pv-badge">{t("missions.repeatable")}</span> : null}
+              {mission.mission.chain_id ? (
+                <span className="pv-badge">
+                  {t("missions.chainProgress", {
+                    step: mission.mission.chain_step,
+                    total: mission.mission.chain_total || 1,
+                  })}
+                </span>
+              ) : null}
             </div>
             <h3 className="text-lg font-semibold tracking-[-0.03em] text-zinc-950">{mission.title}</h3>
             <p className="text-sm leading-relaxed text-zinc-600">{mission.objective}</p>
+            {mission.mission.adaptive_reason ? (
+              <p className="text-xs text-zinc-500">
+                {t("missions.adaptiveReason", { reason: mission.mission.adaptive_reason })}
+              </p>
+            ) : null}
           </div>
 
           {mission.mission.reward.credits > 0 ? (
@@ -349,7 +362,7 @@ function MissionCard({ mission }: { mission: MissionPresentation }) {
               {mission.nextStep.label}
             </Link>
           ) : null}
-          <Link href={`/missions/${mission.mission.slug}`} className="pv-button-secondary">
+          <Link href={appRoute.missionBySlug(mission.mission.slug)} className="pv-button-secondary">
             {t("missions.openMissionDetails")}
           </Link>
         </div>
@@ -362,35 +375,4 @@ function MissionCard({ mission }: { mission: MissionPresentation }) {
       </div>
     </article>
   );
-}
-
-function getMissionTone(type: MissionType) {
-  if (type === "progression") {
-    return {
-      badge: "border border-[rgba(37,92,255,0.18)] bg-[rgba(37,92,255,0.1)] text-[var(--pv-brand-strong)]",
-      glow: "bg-[rgba(37,92,255,0.16)]",
-    };
-  }
-  if (type === "learning") {
-    return {
-      badge: "border border-[rgba(17,184,164,0.18)] bg-[rgba(17,184,164,0.12)] text-[var(--pv-accent-strong)]",
-      glow: "bg-[rgba(17,184,164,0.16)]",
-    };
-  }
-  if (type === "action") {
-    return {
-      badge: "border border-[rgba(99,102,241,0.16)] bg-[rgba(99,102,241,0.1)] text-indigo-700",
-      glow: "bg-[rgba(99,102,241,0.16)]",
-    };
-  }
-  if (type === "streak") {
-    return {
-      badge: "border border-[rgba(245,158,11,0.18)] bg-[rgba(245,158,11,0.12)] text-amber-700",
-      glow: "bg-[rgba(245,158,11,0.18)]",
-    };
-  }
-  return {
-    badge: "border border-[rgba(236,72,153,0.16)] bg-[rgba(236,72,153,0.1)] text-pink-700",
-    glow: "bg-[rgba(236,72,153,0.16)]",
-  };
 }

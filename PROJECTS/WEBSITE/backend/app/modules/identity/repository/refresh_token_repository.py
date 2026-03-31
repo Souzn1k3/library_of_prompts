@@ -11,16 +11,21 @@ class RefreshTokenRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
+    def _supports_for_update(self) -> bool:
+        bind = self._session.bind
+        return bool(bind and bind.dialect.name != "sqlite")
+
     async def create(self, row: AuthRefreshToken) -> AuthRefreshToken:
         self._session.add(row)
         await self._session.flush()
         await self._session.refresh(row)
         return row
 
-    async def get_by_token_hash(self, token_hash: str) -> AuthRefreshToken | None:
-        result = await self._session.execute(
-            select(AuthRefreshToken).where(AuthRefreshToken.token_hash == token_hash)
-        )
+    async def get_by_token_hash(self, token_hash: str, *, for_update: bool = False) -> AuthRefreshToken | None:
+        stmt = select(AuthRefreshToken).where(AuthRefreshToken.token_hash == token_hash)
+        if for_update and self._supports_for_update():
+            stmt = stmt.with_for_update()
+        result = await self._session.execute(stmt)
         return result.scalar_one_or_none()
 
     async def get_by_id(self, token_id: uuid.UUID) -> AuthRefreshToken | None:
@@ -90,4 +95,3 @@ class RefreshTokenRepository:
         )
         result = await self._session.execute(stmt)
         return int(result.rowcount or 0)
-

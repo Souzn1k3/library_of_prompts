@@ -275,6 +275,12 @@ def upgrade() -> None:
         *((
             sa.column("repeat_interval_days", sa.Integer()),
         ) if "repeat_interval_days" in lesson_mission_cols else ()),
+        *((sa.column("chain_id", sa.String(length=120)),) if "chain_id" in lesson_mission_cols else ()),
+        *((sa.column("chain_step", sa.Integer()),) if "chain_step" in lesson_mission_cols else ()),
+        *((sa.column("chain_total", sa.Integer()),) if "chain_total" in lesson_mission_cols else ()),
+        *((sa.column("chain_bonus_credits", sa.Integer()),) if "chain_bonus_credits" in lesson_mission_cols else ()),
+        *((sa.column("chain_unlock_on_slug", sa.String(length=120)),) if "chain_unlock_on_slug" in lesson_mission_cols else ()),
+        *((sa.column("adaptive_segment", sa.String(length=24)),) if "adaptive_segment" in lesson_mission_cols else ()),
     )
     existing_slugs = {row[0] for row in bind.execute(sa.text("SELECT slug FROM lesson_missions")).fetchall()}
     first_lesson_id = bind.execute(sa.text("SELECT id FROM lessons ORDER BY sort_order, title LIMIT 1")).scalar()
@@ -383,6 +389,12 @@ def upgrade() -> None:
                 **({"mission_type": "action"} if "mission_type" in lesson_mission_cols else {}),
                 **({"is_repeatable": False} if "is_repeatable" in lesson_mission_cols else {}),
                 **({"repeat_interval_days": 0} if "repeat_interval_days" in lesson_mission_cols else {}),
+                **({"chain_id": None} if "chain_id" in lesson_mission_cols else {}),
+                **({"chain_step": 0} if "chain_step" in lesson_mission_cols else {}),
+                **({"chain_total": 0} if "chain_total" in lesson_mission_cols else {}),
+                **({"chain_bonus_credits": 0} if "chain_bonus_credits" in lesson_mission_cols else {}),
+                **({"chain_unlock_on_slug": None} if "chain_unlock_on_slug" in lesson_mission_cols else {}),
+                **({"adaptive_segment": None} if "adaptive_segment" in lesson_mission_cols else {}),
             }
         )
     if rows:

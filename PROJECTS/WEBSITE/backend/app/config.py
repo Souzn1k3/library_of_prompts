@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     cache_default_ttl_seconds: int = 120
     redis_url: str | None = None
     slow_request_threshold_ms: int = 700
+    economy_kpi_job_enabled: bool = True
+    economy_kpi_job_interval_minutes: int = 60
+    economy_kpi_job_lookback_days: int = 35
     telegram_bot_api_key: str | None = None
     legacy_bot_database_url: str | None = None
 
@@ -120,6 +123,10 @@ class Settings(BaseSettings):
             raise ValueError("EXPECTED_DATABASE_SCHEMA must not be empty.")
         if not self.canonical_compose_project.strip():
             raise ValueError("CANONICAL_COMPOSE_PROJECT must not be empty.")
+        if self.economy_kpi_job_interval_minutes <= 0:
+            raise ValueError("ECONOMY_KPI_JOB_INTERVAL_MINUTES must be greater than 0.")
+        if self.economy_kpi_job_lookback_days <= 0:
+            raise ValueError("ECONOMY_KPI_JOB_LOOKBACK_DAYS must be greater than 0.")
 
         url = self.parsed_database_url
         driver = url.drivername.lower()

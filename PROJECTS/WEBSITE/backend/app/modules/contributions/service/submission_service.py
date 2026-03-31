@@ -11,6 +11,7 @@ from app.modules.catalog.model.prompt import PromptSubmissionResult, PromptSubmi
 from app.modules.catalog.repository.category_repository import CategoryRepository
 from app.modules.catalog.repository.prompt_repository import PromptRepository
 from app.modules.contributors.service.contributor_service import ContributorService
+from app.modules.marketplace.service.marketplace_service import MarketplaceService
 
 
 class SubmissionService:
@@ -19,11 +20,13 @@ class SubmissionService:
         prompts: PromptRepository,
         categories: CategoryRepository,
         contributors: ContributorService,
+        marketplace: MarketplaceService | None = None,
         analytics: AnalyticsService | None = None,
     ) -> None:
         self._prompts = prompts
         self._categories = categories
         self._contributors = contributors
+        self._marketplace = marketplace
         self._analytics = analytics
 
     async def submit(self, user: User, data: PromptSubmit) -> PromptSubmissionResult:
@@ -66,6 +69,8 @@ class SubmissionService:
                 "Slug already taken",
                 message_key="errors.slug_already_taken",
             ) from e
+        if self._marketplace is not None:
+            await self._marketplace.upsert_prompt_price(created, data.price_rub)
 
         if data.use_cases:
             use_case_rows = await self._prompts.get_use_cases_by_slugs(data.use_cases)

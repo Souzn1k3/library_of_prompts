@@ -15,7 +15,9 @@ import type {
   PromptOutputType,
   PromptRecommendationContext,
   PromptRecommendationResponse,
+  ReviewSort,
 } from "./types";
+import { API_ENDPOINTS, apiPath } from "./constants/api";
 import { getClientLanguage, getTranslation, normalizeLanguage, type Language } from "./i18n";
 import { extractApiErrorMessage, parseJson, withQuery } from "./http";
 
@@ -117,7 +119,7 @@ export async function fetchCategories(
   accessToken?: string | null,
   language?: Language | string | null,
 ): Promise<Category[]> {
-  return apiFetch<Category[]>("/api/v1/categories", { accessToken, language });
+  return apiFetch<Category[]>(API_ENDPOINTS.categories, { accessToken, language });
 }
 
 export async function fetchPrompts(params?: {
@@ -137,7 +139,7 @@ export async function fetchPrompts(params?: {
   language?: Language | string | null;
 }): Promise<PromptListItem[]> {
   return apiFetch<PromptListItem[]>(
-    withQuery("/api/v1/prompts", {
+    withQuery(API_ENDPOINTS.prompts, {
       skip: params?.skip,
       limit: params?.limit,
       q: params?.q,
@@ -162,7 +164,7 @@ export async function fetchPromptDiscoveryFilters(
   accessToken?: string | null,
   language?: Language | string | null,
 ): Promise<PromptDiscoveryFilters> {
-  return apiFetch<PromptDiscoveryFilters>("/api/v1/prompts/discovery-filters", {
+  return apiFetch<PromptDiscoveryFilters>(API_ENDPOINTS.promptDiscoveryFilters, {
     accessToken,
     language,
   });
@@ -175,7 +177,7 @@ export async function fetchDiscoverySections(
     language?: Language | string | null;
   },
 ): Promise<DiscoverySections> {
-  return apiFetch<DiscoverySections>(withQuery("/api/v1/prompts/discovery-sections", { limit: params?.limit }), {
+  return apiFetch<DiscoverySections>(withQuery(API_ENDPOINTS.promptDiscoverySections, { limit: params?.limit }), {
     accessToken: params?.accessToken,
     language: params?.language,
   });
@@ -190,7 +192,7 @@ export async function fetchRelatedPromptsBySlug(
   },
 ): Promise<PromptListItem[]> {
   return apiFetch<PromptListItem[]>(
-    withQuery(`/api/v1/prompts/by-slug/${encodeURIComponent(slug)}/related`, {
+    withQuery(apiPath.promptRelatedBySlug(slug), {
       limit: params?.limit,
     }),
     {
@@ -210,7 +212,7 @@ export async function fetchPromptRecommendations(
     language?: Language | string | null;
   },
 ): Promise<PromptRecommendationResponse> {
-  return apiFetch<PromptRecommendationResponse>(withQuery("/api/v1/prompts/recommendations", {
+  return apiFetch<PromptRecommendationResponse>(withQuery(API_ENDPOINTS.promptRecommendations, {
     context: params?.context,
     limit: params?.limit,
     prompt_slug: params?.prompt_slug,
@@ -226,7 +228,7 @@ export async function fetchPromptBySlug(
   accessToken?: string | null,
   language?: Language | string | null,
 ): Promise<PromptDetail> {
-  return apiFetch<PromptDetail>(`/api/v1/prompts/by-slug/${encodeURIComponent(slug)}`, {
+  return apiFetch<PromptDetail>(apiPath.promptBySlug(slug), {
     accessToken,
     language,
   });
@@ -239,7 +241,7 @@ export async function fetchTopContributors(
     language?: Language | string | null;
   },
 ): Promise<ContributorTopItem[]> {
-  return apiFetch<ContributorTopItem[]>(withQuery("/api/v1/contributors/top", { limit: params?.limit }), {
+  return apiFetch<ContributorTopItem[]>(withQuery(API_ENDPOINTS.contributorsTop, { limit: params?.limit }), {
     accessToken: params?.accessToken,
     language: params?.language,
   });
@@ -247,24 +249,31 @@ export async function fetchTopContributors(
 
 export async function fetchContributorProfile(
   slug: string,
-  accessToken?: string | null,
-  language?: Language | string | null,
+  params?: {
+    review_sort?: ReviewSort;
+    review_limit?: number;
+    accessToken?: string | null;
+    language?: Language | string | null;
+  },
 ): Promise<ContributorProfile> {
-  return apiFetch<ContributorProfile>(`/api/v1/contributors/${encodeURIComponent(slug)}`, {
-    accessToken,
-    language,
+  return apiFetch<ContributorProfile>(withQuery(apiPath.contributorBySlug(slug), {
+    review_sort: params?.review_sort,
+    review_limit: params?.review_limit,
+  }), {
+    accessToken: params?.accessToken,
+    language: params?.language,
   });
 }
 
 export async function fetchPlans(language?: Language | string | null): Promise<PlanRecord[]> {
-  return apiFetch<PlanRecord[]>("/api/v1/billing/plans", { language });
+  return apiFetch<PlanRecord[]>(API_ENDPOINTS.billingPlans, { language });
 }
 
 export async function fetchBillingStatus(
   accessToken?: string | null,
   language?: Language | string | null,
 ): Promise<BillingStatus> {
-  return apiFetch<BillingStatus>("/api/v1/billing/subscription", {
+  return apiFetch<BillingStatus>(API_ENDPOINTS.billingSubscription, {
     accessToken,
     language,
     cache: "no-store",
@@ -275,7 +284,7 @@ export async function fetchLessons(
   accessToken?: string | null,
   language?: Language | string | null,
 ): Promise<LessonListItem[]> {
-  return apiFetch<LessonListItem[]>("/api/v1/lessons", { accessToken, language });
+  return apiFetch<LessonListItem[]>(API_ENDPOINTS.lessons, { accessToken, language });
 }
 
 export async function fetchPopularLessons(
@@ -285,7 +294,7 @@ export async function fetchPopularLessons(
     language?: Language | string | null;
   },
 ): Promise<PopularLessonItem[]> {
-  return apiFetch<PopularLessonItem[]>(withQuery("/api/v1/lessons/popular", { limit: params?.limit }), {
+  return apiFetch<PopularLessonItem[]>(withQuery(API_ENDPOINTS.lessonsPopular, { limit: params?.limit }), {
     accessToken: params?.accessToken,
     language: params?.language,
   });
@@ -296,7 +305,7 @@ export async function fetchLessonBySlug(
   accessToken?: string | null,
   language?: Language | string | null,
 ): Promise<LessonDetail> {
-  return apiFetch<LessonDetail>(`/api/v1/lessons/by-slug/${encodeURIComponent(slug)}`, {
+  return apiFetch<LessonDetail>(apiPath.lessonBySlug(slug), {
     accessToken,
     language,
   });

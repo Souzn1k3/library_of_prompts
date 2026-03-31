@@ -9,6 +9,7 @@ from app.api.service_deps import (
     get_contributor_service,
     get_mission_service,
     get_saved_prompt_service,
+    get_store_service,
     get_user_service,
 )
 from app.core.cache import get_cache
@@ -17,6 +18,8 @@ from app.infrastructure.db.session import get_db
 from app.modules.catalog.model.prompt import AuthorPromptRow, PromptListItem
 from app.modules.catalog.repository.prompt_repository import PromptRepository
 from app.modules.contributors.service.contributor_service import ContributorService
+from app.modules.economy.model.store import EconomyActionRead
+from app.modules.economy.service.store_service import StoreService
 from app.modules.identity.model.user import UserRead
 from app.modules.identity.model.user_update import UserUpdateMe
 from app.modules.identity.service.saved_prompt_service import SavedPromptService
@@ -73,32 +76,40 @@ async def list_saved_prompts(
     return await svc.list_saved(current_user.id)
 
 
-@router.post("/me/saved-prompts/{prompt_id}", status_code=204)
+@router.post("/me/saved-prompts/{prompt_id}", response_model=EconomyActionRead)
 async def save_prompt(
     prompt_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     svc: SavedPromptService = Depends(get_saved_prompt_service),
     missions: MissionService = Depends(get_mission_service),
     contributors: ContributorService = Depends(get_contributor_service),
-) -> Response:
+    store: StoreService = Depends(get_store_service),
+) -> EconomyActionRead:
+    previous_balance = (await store.wallet(current_user)).balance
     await svc.save(current_user.id, prompt_id)
     today_key = datetime.now(timezone.utc).date().isoformat()
-    await missions.record_event(
+    completed = await missions.record_event(
         user=current_user,
         event_type="prompt_saved",
         prompt_id=prompt_id,
         source_event_key=f"prompt_saved:{current_user.id}:{prompt_id}",
     )
-    await missions.record_event(
-        user=current_user,
-        event_type="streak_activity",
-        prompt_id=prompt_id,
-        source_event_key=f"streak_activity:{current_user.id}:{today_key}",
-        payload={"source": "prompt_saved"},
+    completed.extend(
+        await missions.record_event(
+            user=current_user,
+            event_type="streak_activity",
+            prompt_id=prompt_id,
+            source_event_key=f"streak_activity:{current_user.id}:{today_key}",
+            payload={"source": "prompt_saved"},
+        )
     )
     await contributors.refresh_prompt_quality(prompt_id)
     await get_cache().bump_many(("prompts", "contributors", "recommendations"))
-    return Response(status_code=204)
+    return await store.build_action_feedback(
+        current_user,
+        previous_balance=previous_balance,
+        completed_mission_slugs=list(dict.fromkeys(completed)),
+    )
 
 
 @router.delete("/me/saved-prompts/{prompt_id}", status_code=204)

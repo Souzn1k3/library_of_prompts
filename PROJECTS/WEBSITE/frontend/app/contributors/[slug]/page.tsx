@@ -11,14 +11,17 @@ import { absoluteUrl, buildPageMetadata } from "@/lib/seo";
 import { getServerAccessToken } from "@/lib/server-auth";
 import { getServerLanguage } from "@/lib/server-i18n";
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = {
+  params: Promise<{ slug: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const { slug } = await props.params;
   const language = await getServerLanguage();
   const accessToken = await getServerAccessToken();
   try {
-    const profile = await fetchContributorProfile(slug, accessToken, language);
+    const profile = await fetchContributorProfile(slug, { accessToken, language });
     return buildPageMetadata({
       title: `${profile.display_name} (@${profile.slug})`,
       description: `Contributor profile, reputation score ${profile.reputation_score}, approved prompts ${profile.stats.approved_submissions}.`,
@@ -35,12 +38,19 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function ContributorProfilePage(props: Props) {
   const { slug } = await props.params;
+  const searchParams = (await props.searchParams) ?? {};
   const language = await getServerLanguage();
   const accessToken = await getServerAccessToken();
+  const reviewSort = typeof searchParams.review_sort === "string" && searchParams.review_sort === "best" ? "best" : "new";
 
   try {
     const [profile, prompts] = await Promise.all([
-      fetchContributorProfile(slug, accessToken, language),
+      fetchContributorProfile(slug, {
+        accessToken,
+        language,
+        review_sort: reviewSort,
+        review_limit: 8,
+      }),
       fetchPrompts({
         contributor: slug,
         sort: "relevance",
@@ -86,10 +96,15 @@ export default async function ContributorProfilePage(props: Props) {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard label={getTranslation(language, "contributors.reputationScore")} value={profile.reputation_score} />
             <StatCard label={getTranslation(language, "contributors.approvalRate")} value={`${approvalRate}%`} />
+            <StatCard label="Rating" value={profile.rating_display ? `${profile.rating_display}/5` : "New"} />
+            <StatCard label="Reviews" value={profile.review_count ?? 0} />
             <StatCard
               label={getTranslation(language, "contributors.approvedPrompts")}
               value={profile.stats.approved_submissions}
             />
+            <StatCard label="Sold paid prompts" value={profile.sold_prompts_count ?? 0} />
+            <StatCard label="Purchases served" value={profile.purchases_count ?? 0} />
+            <StatCard label="Revenue (RUB)" value={profile.seller_revenue_rub ?? 0} />
             <StatCard label={getTranslation(language, "contributors.rejectionRate")} value={`${profile.stats.rejection_rate}%`} />
             <StatCard label={getTranslation(language, "contributors.totalSaves")} value={profile.stats.total_saves} />
             <StatCard label={getTranslation(language, "contributors.totalCopies")} value={profile.stats.total_copies} />
@@ -100,6 +115,19 @@ export default async function ContributorProfilePage(props: Props) {
             <StatCard label={getTranslation(language, "contributors.avgQuality")} value={profile.stats.average_prompt_quality} />
           </div>
         </header>
+
+        {profile.trust_indicators?.length ? (
+          <section className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+            <h2 className="text-sm font-semibold text-zinc-900">Trust signals</h2>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {profile.trust_indicators.map((indicator) => (
+                <span key={indicator.key} className="pv-chip">
+                  {indicator.key.replaceAll("_", " ")}
+                </span>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
         <section className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
           <h2 className="text-sm font-semibold text-zinc-900">
@@ -119,6 +147,48 @@ export default async function ContributorProfilePage(props: Props) {
               {getTranslation(language, "contributors.tierTop")}
             </li>
           </ul>
+        </section>
+
+        <section className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-zinc-900">Marketplace reviews</h2>
+              <p className="mt-1 text-xs text-zinc-600">
+                Verified buyers only. Average rating is calculated from all visible reviews.
+              </p>
+            </div>
+            <div className="flex gap-2 text-sm">
+              <Link
+                href={`/contributors/${encodeURIComponent(profile.slug)}?review_sort=new`}
+                className={reviewSort === "new" ? "pv-button-secondary" : "pv-chip"}
+              >
+                New
+              </Link>
+              <Link
+                href={`/contributors/${encodeURIComponent(profile.slug)}?review_sort=best`}
+                className={reviewSort === "best" ? "pv-button-secondary" : "pv-chip"}
+              >
+                Best
+              </Link>
+            </div>
+          </div>
+          {profile.recent_reviews?.length ? (
+            <div className="mt-4 space-y-3">
+              {profile.recent_reviews.map((review) => (
+                <div key={review.id} className="rounded-md border border-zinc-200 bg-white p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-zinc-900">{review.author_display_name}</p>
+                    <p className="text-sm text-zinc-600">{review.rating}/5</p>
+                  </div>
+                  <p className="mt-1 text-xs text-zinc-500">{review.prompt_title}</p>
+                  {review.text ? <p className="mt-3 text-sm text-zinc-700">{review.text}</p> : null}
+                  <p className="mt-3 text-xs text-zinc-500">{new Date(review.created_at).toLocaleDateString()}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-zinc-500">No verified reviews yet.</p>
+          )}
         </section>
 
         <section className="space-y-3">

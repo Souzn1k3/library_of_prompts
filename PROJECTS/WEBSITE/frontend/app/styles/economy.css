@@ -6,25 +6,6 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  border-radius: 1rem;
-  padding: 2px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 246, 222, 0.78));
-  box-shadow:
-    0 12px 24px rgba(120, 76, 9, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.92);
-}
-
-.pv-lmn-mark::after {
-  content: "";
-  position: absolute;
-  inset: auto;
-  width: 55%;
-  height: 55%;
-  border-radius: 999px;
-  background: var(--pv-lmn-glow);
-  filter: blur(14px);
-  opacity: 0.7;
-  pointer-events: none;
 }
 
 .pv-lmn-mark svg {
@@ -33,20 +14,12 @@
   filter: drop-shadow(0 8px 12px rgba(120, 76, 9, 0.18));
 }
 
-.pv-lmn-mark[data-tone="earned"] {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(232, 255, 246, 0.84));
+.pv-lmn-mark[data-tone="earned"] svg {
+  filter: drop-shadow(0 7px 11px rgba(16, 140, 98, 0.14));
 }
 
-.pv-lmn-mark[data-tone="earned"]::after {
-  background: rgba(57, 200, 141, 0.26);
-}
-
-.pv-lmn-mark[data-tone="spent"] {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 238, 225, 0.84));
-}
-
-.pv-lmn-mark[data-tone="spent"]::after {
-  background: rgba(249, 115, 22, 0.2);
+.pv-lmn-mark[data-tone="spent"] svg {
+  filter: drop-shadow(0 8px 12px rgba(194, 65, 12, 0.18));
 }
 
 .pv-lmn-token {
@@ -55,6 +28,7 @@
   isolation: isolate;
   overflow: hidden;
   display: inline-flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 0.72rem;
   border-radius: 1.1rem;
@@ -96,6 +70,7 @@
   display: flex;
   align-items: baseline;
   gap: 0.45rem;
+  white-space: nowrap;
 }
 
 .pv-lmn-token-value {
@@ -110,8 +85,10 @@
 .pv-lmn-token-code {
   font-size: 0.66rem;
   font-weight: 800;
-  letter-spacing: 0.22em;
+  line-height: 1;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  white-space: nowrap;
   color: color-mix(in srgb, var(--pv-lmn-base-strong) 72%, #5c4220);
 }
 

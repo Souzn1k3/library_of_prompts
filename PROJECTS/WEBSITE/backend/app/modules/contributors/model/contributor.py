@@ -4,6 +4,7 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from app.infrastructure.db.models import ContributorTier
+from app.modules.marketplace.model.marketplace import PromptReviewRead, TrustIndicatorRead
 
 
 class ContributorStats(BaseModel):
@@ -25,6 +26,15 @@ class ContributorProfileRead(BaseModel):
     reputation_score: int
     reputation_tier: ContributorTier
     stats: ContributorStats
+    rating_average: float | None = None
+    rating_display: float | None = None
+    review_count: int = 0
+    sold_prompts_count: int = 0
+    purchases_count: int = 0
+    seller_revenue_rub: int = 0
+    seller_lumens_earned: int = 0
+    trust_indicators: list[TrustIndicatorRead] = []
+    recent_reviews: list[PromptReviewRead] = []
     computed_at: datetime | None = None
 
 

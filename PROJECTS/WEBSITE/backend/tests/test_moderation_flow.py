@@ -8,7 +8,7 @@ import pytest
 
 from app.infrastructure.db.models import UserRole
 
-from tests.helpers.db_users import set_user_role
+from .helpers.db_users import set_user_role
 
 
 async def _first_category_id(async_client) -> uuid.UUID:

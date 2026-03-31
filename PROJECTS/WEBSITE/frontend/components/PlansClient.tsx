@@ -13,7 +13,9 @@ import {
   fetchBillingStatus,
 } from "@/lib/client-api";
 import { ApiRequestError } from "@/lib/api";
-import { getTierTranslationKey } from "@/lib/i18n";
+import { APP_ROUTES } from "@/lib/constants/routes";
+import { formatNumber } from "@/lib/formatters";
+import { getTierTranslationKey, languageToIntlLocale, type TranslationKey } from "@/lib/i18n";
 import type { BillingStatus, PlanRecord } from "@/lib/types";
 
 const TIER_RANK: Record<string, number> = {
@@ -28,8 +30,21 @@ type PlansClientProps = {
   error: string | null;
 };
 
+function localizedBillingStatus(
+  status: string | null | undefined,
+  t: (key: TranslationKey, params?: Record<string, string | number | null | undefined>) => string,
+): string | null {
+  if (!status) {
+    return null;
+  }
+  const key = `plans.billingStatus.${status}` as TranslationKey;
+  const translated = t(key);
+  return translated === key ? t("plans.billingStatus.unknown") : translated;
+}
+
 export function PlansClient({ plans, error }: PlansClientProps) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
+  const locale = languageToIntlLocale(language);
   const { status, user, isAuthenticated } = useAuth();
   const searchParams = useSearchParams();
   const preferredTier = searchParams.get("tier");
@@ -39,7 +54,9 @@ export function PlansClient({ plans, error }: PlansClientProps) {
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [pendingTier, setPendingTier] = useState<string | null>(null);
+  const [expandedTier, setExpandedTier] = useState<string | null>(preferredTier);
   const currentTier = billing?.plan_tier ?? user?.plan_tier ?? "free";
+  const currentBillingStatusLabel = localizedBillingStatus(billing?.status, t);
   const { portalError, portalPending, openPortal, clearPortalError } = useBillingPortal();
 
   useEffect(() => {
@@ -58,7 +75,7 @@ export function PlansClient({ plans, error }: PlansClientProps) {
         if (billingState === "success" && (billingStatus.status === "active" || billingStatus.status === "trialing")) {
           trackEvent({
             eventName: "subscription_activated",
-            page: "/pricing",
+            page: APP_ROUTES.pricing,
             feature: "billing_return",
             onceKey: `subscription_activated:${billingSessionId ?? billingStatus.updated_at ?? user.id}`,
             metadata: {
@@ -98,7 +115,7 @@ export function PlansClient({ plans, error }: PlansClientProps) {
     setPendingTier(tier);
     trackEvent({
       eventName: "upgrade_clicked",
-      page: "/pricing",
+      page: APP_ROUTES.pricing,
       feature: "plan_upgrade_cta",
       metadata: {
         current_tier: currentTier,
@@ -130,11 +147,11 @@ export function PlansClient({ plans, error }: PlansClientProps) {
           <p>
             {t("plans.currentTier")}:{" "}
             <span className="font-medium text-zinc-900">{t(getTierTranslationKey(currentTier))}</span>
-            {billing?.status ? (
+            {currentBillingStatusLabel ? (
               <>
                 {" "}
                 · {t("plans.subscriptionStatus")}:{" "}
-                <span className="font-medium text-zinc-900">{billing.status}</span>
+                <span className="font-medium text-zinc-900">{currentBillingStatusLabel}</span>
               </>
             ) : null}
           </p>
@@ -154,7 +171,7 @@ export function PlansClient({ plans, error }: PlansClientProps) {
         </div>
       ) : (
         <p className="text-sm text-zinc-600">
-          <Link href="/signup" className="font-medium text-zinc-900 underline">
+          <Link href={APP_ROUTES.signup} className="font-medium text-zinc-900 underline">
             {t("plans.createAccount")}
           </Link>{" "}
           {t("plans.createAccountSuffix")}
@@ -171,6 +188,9 @@ export function PlansClient({ plans, error }: PlansClientProps) {
         {sortedPlans.map((plan) => {
           const isCurrent = plan.tier === currentTier;
           const isLowerOrEqual = (TIER_RANK[plan.tier] ?? 0) <= (TIER_RANK[currentTier] ?? 0);
+          const expanded = expandedTier === plan.tier;
+          const localizedTierName = t(getTierTranslationKey(plan.tier));
+          const planDisplayName = localizedTierName || plan.name;
           return (
             <div
               key={plan.tier}
@@ -181,18 +201,49 @@ export function PlansClient({ plans, error }: PlansClientProps) {
               }`}
             >
               <div className="flex items-baseline justify-between gap-2">
-                <h2 className="text-lg font-semibold text-zinc-900">{plan.name}</h2>
-                <p className="text-sm text-zinc-600">
-                  ${String(plan.price_usd_month)}
-                  <span className="text-zinc-400">{t("plans.perMonth")}</span>
-                </p>
+                <h2 className="text-lg font-semibold text-zinc-900">{planDisplayName}</h2>
+                <div className="text-right text-sm text-zinc-600">
+                  <p className="font-semibold text-zinc-900">
+                    {plan.price_rub_month > 0 ? `${formatNumber(plan.price_rub_month, locale)} RUB` : t("plans.priceFree")}
+                  </p>
+                  {plan.price_usd_month > 0 ? (
+                    <p className="text-zinc-500">${formatNumber(plan.price_usd_month, locale)}{t("plans.perMonth")}</p>
+                  ) : (
+                    <p className="text-zinc-500">{t("plans.perMonth")}</p>
+                  )}
+                </div>
               </div>
               {plan.description ? <p className="mt-1 text-sm text-zinc-600">{plan.description}</p> : null}
-              <ul className="mt-4 list-inside list-disc space-y-1 text-sm text-zinc-700">
-                {plan.features.map((f) => (
-                  <li key={f}>{f}</li>
+              <div className="mt-4 grid gap-2 text-sm text-zinc-700">
+                <div className="rounded-[1rem] border border-zinc-200 bg-white/70 p-3">
+                  <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{t("plans.includedPaidPrompts")}</p>
+                  <p className="mt-2 text-2xl font-semibold text-zinc-950">{formatNumber(plan.monthly_paid_prompt_limit, locale)}</p>
+                  <p className="mt-1 text-xs text-zinc-500">{t("plans.includedPaidPromptsBody")}</p>
+                </div>
+                {plan.highlights.map((item) => (
+                  <div key={item} className="rounded-[0.9rem] border border-zinc-200 bg-zinc-50/80 px-3 py-2">
+                    {item}
+                  </div>
                 ))}
-              </ul>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2 text-xs text-zinc-500">
+                <span className="pv-chip">{t("plans.directBuyDiscount", { value: plan.prompt_purchase_discount_percent })}</span>
+                <span className="pv-chip">{t("plans.lumenDiscount", { value: plan.lumen_purchase_discount_percent })}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setExpandedTier((current) => (current === plan.tier ? null : plan.tier))}
+                className="mt-4 text-sm font-semibold text-[var(--pv-brand-strong)]"
+              >
+                {expanded ? t("plans.hideFeatures") : t("plans.showFeatures")}
+              </button>
+              {expanded ? (
+                <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-zinc-700">
+                  {plan.full_features.map((f) => (
+                    <li key={f}>{f}</li>
+                  ))}
+                </ul>
+              ) : null}
               <div className="mt-4">
                 {status === "loading" ? (
                   <span className="inline-flex items-center rounded-md bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-700">
@@ -200,7 +251,7 @@ export function PlansClient({ plans, error }: PlansClientProps) {
                   </span>
                 ) : !isAuthenticated ? (
                   <Link
-                    href="/signup"
+                    href={APP_ROUTES.signup}
                     className="pv-button-secondary"
                   >
                     {t("plans.createAccountCta")}
@@ -222,7 +273,7 @@ export function PlansClient({ plans, error }: PlansClientProps) {
                   >
                     {pendingTier === plan.tier
                       ? t("plans.openingCheckout")
-                      : t("plans.upgradeTo", { plan: plan.name })}
+                      : t("plans.upgradeTo", { plan: planDisplayName })}
                   </button>
                 )}
               </div>

@@ -6,6 +6,7 @@ import { cache } from "react";
 import { PromptViewTracker } from "@/components/analytics/PromptViewTracker";
 import { TrackedUpgradeButton } from "@/components/analytics/TrackedUpgradeButton";
 import { CopyPromptButton } from "@/components/CopyPromptButton";
+import { PromptMarketplaceActions } from "@/components/PromptMarketplaceActions";
 import { PageIntro } from "@/components/navigation/PageIntro";
 import { PromptCard } from "@/components/PromptCard";
 import { SavePromptButton } from "@/components/SavePromptButton";
@@ -19,6 +20,7 @@ import {
   fetchRelatedPromptsBySlug,
 } from "@/lib/api";
 import {
+  formatTranslation,
   getDifficultyTranslationKey,
   getOutputTypeTranslationKey,
   getTechniqueTranslationKey,
@@ -45,7 +47,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     const prompt = await getPromptBySlugCached(slug, accessToken, language);
     return buildPageMetadata({
       title: prompt.title,
-      description: prompt.summary ?? `High-quality prompt: ${prompt.title}`,
+      description: prompt.summary ?? formatTranslation(language, "prompt.metadataDescriptionFallback", { title: prompt.title }),
       path: `/prompt/${prompt.slug}`,
       type: "article",
     });
@@ -135,7 +137,7 @@ export default async function PromptPage(props: Props) {
             {category ? <span>· {category.name}</span> : null}
           </div>
 
-          {prompt.body_locked ? (
+          {prompt.body_locked && !prompt.price ? (
             <div className="pv-alert pv-alert-warning text-sm">
               <p>{getTranslation(language, "prompt.previewOnlyMessage")}</p>
               <div className="mt-4 flex flex-wrap gap-3">
@@ -167,7 +169,7 @@ export default async function PromptPage(props: Props) {
           ) : null}
         </PageIntro>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
           <section className="pv-panel px-6 py-6 sm:px-7">
             <pre className="overflow-x-auto whitespace-pre-wrap rounded-[1.25rem] border border-[var(--pv-border)] bg-white/80 p-5 font-mono text-sm leading-relaxed text-zinc-900">
               {prompt.body}
@@ -177,7 +179,7 @@ export default async function PromptPage(props: Props) {
           <aside className="space-y-4">
             <section className="pv-panel px-5 py-5">
               <p className="pv-kicker">
-                {prompt.body_locked
+                {prompt.price ? getTranslation(language, "prompt.marketplaceAccess") : prompt.body_locked
                   ? prompt.unlock_offer
                     ? getTranslation(language, "prompt.unlockWithLumens")
                     : getTranslation(language, "prompt.upgradeToUnlock")
@@ -195,6 +197,41 @@ export default async function PromptPage(props: Props) {
                 ) : null}
                 <SavePromptButton promptId={prompt.id} promptSlug={prompt.slug} metadata={interactionMetadata} />
               </div>
+
+              {prompt.price ? (
+                <div className="mt-5 border-t border-[var(--pv-border)] pt-4">
+                  <PromptMarketplaceActions
+                    promptId={prompt.id}
+                    promptSlug={prompt.slug}
+                    price={prompt.price}
+                    access={prompt.access}
+                    bodyLocked={Boolean(prompt.body_locked)}
+                  />
+                </div>
+              ) : null}
+
+              {prompt.author_display_name || prompt.author_rating_average ? (
+                <div className="mt-5 border-t border-[var(--pv-border)] pt-4 text-sm text-zinc-700">
+                  <p className="font-medium text-zinc-950">{prompt.author_display_name ?? getTranslation(language, "prompt.creatorFallback")}</p>
+                  {prompt.author_rating_average ? (
+                    <p className="mt-1">
+                      {formatTranslation(language, "prompt.authorRatingReviews", {
+                        rating: prompt.author_rating_average.toFixed(1),
+                        count: prompt.author_rating_count ?? 0,
+                      })}
+                    </p>
+                  ) : null}
+                  {prompt.contributor_slug ? (
+                    <Link
+                      href={`/contributors/${encodeURIComponent(prompt.contributor_slug)}`}
+                      className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--pv-brand-strong)]"
+                    >
+                      {getTranslation(language, "prompt.creatorProfile")}
+                      <span aria-hidden="true">↗</span>
+                    </Link>
+                  ) : null}
+                </div>
+              ) : null}
 
               {primaryLesson ? (
                 <div className="mt-5 border-t border-[var(--pv-border)] pt-4">

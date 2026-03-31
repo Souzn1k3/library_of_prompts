@@ -7,13 +7,23 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { EconomyLoop } from "@/components/navigation/EconomyLoop";
 import { PageIntro } from "@/components/navigation/PageIntro";
+import { EconomyActionBanner } from "@/components/ui/EconomyActionBanner";
 import { LmnAmount } from "@/components/ui/LmnAmount";
 import { LmnBalanceCard } from "@/components/ui/LmnBalanceCard";
 import { useLmnBalanceFeedback } from "@/components/ui/useLmnBalanceFeedback";
 import { ApiRequestError } from "@/lib/api";
-import { fetchWallet, walletCheckIn } from "@/lib/client-api";
-import type { TranslationKey } from "@/lib/i18n";
-import type { CurrencyTransaction, WalletBenefit, WalletPurchase, WalletRead } from "@/lib/types";
+import { APP_ROUTES } from "@/lib/constants/routes";
+import {
+  buildClientEconomyAction,
+  buildDailyLadder,
+  nextMilestone,
+  pickBestStoreItem,
+  resolveStreakMilestones,
+} from "@/lib/economy";
+import { fetchStoreItems, fetchWallet, walletCheckIn } from "@/lib/client-api";
+import { formatDateTime, formatMultiplier, formatNumber, humanizeSnakeCase } from "@/lib/formatters";
+import { languageToIntlLocale, type TranslationKey } from "@/lib/i18n";
+import type { CurrencyTransaction, EconomyAction, StoreItem, WalletBenefit, WalletPurchase, WalletRead } from "@/lib/types";
 
 function formatAmount(amount: number): string {
   const sign = amount > 0 ? "+" : "";
@@ -23,14 +33,26 @@ function formatAmount(amount: number): string {
 function reasonLabel(reason: string, t: ReturnType<typeof useI18n>["t"]): string {
   const key = `wallet.transaction.reason.${reason}` as TranslationKey;
   const translated = t(key);
-  return translated === key ? reason : translated;
+  return translated === key ? humanizeSnakeCase(reason) : translated;
 }
 
-function benefitLabel(benefit: WalletBenefit, t: ReturnType<typeof useI18n>["t"]) {
-  if (benefit.kind === "subscription_discount") {
+function benefitLabel(
+  benefit: WalletBenefit,
+  t: ReturnType<typeof useI18n>["t"],
+  locale: string,
+) {
+  if (benefit.kind === "subscription_discount" || benefit.kind === "starter") {
     const code = typeof benefit.metadata?.code === "string" ? benefit.metadata.code : null;
     const percent = benefit.metadata?.discount_percent;
-    return code ? `${percent ?? ""}% · ${code}` : t("store.kind.subscription_discount");
+    if (code) {
+      if (typeof percent === "number") {
+        return `${formatNumber(percent, locale)}% · ${code}`;
+      }
+      return code;
+    }
+    return typeof benefit.metadata?.item_title === "string"
+      ? String(benefit.metadata.item_title)
+      : t("store.kind.starter");
   }
   if (benefit.kind === "premium_access") {
     return t("store.kind.premium_pass");
@@ -45,53 +67,148 @@ function benefitLabel(benefit: WalletBenefit, t: ReturnType<typeof useI18n>["t"]
       ? String(benefit.metadata.item_title)
       : t("store.kind.prompt_bundle");
   }
-  return benefit.kind;
+  return humanizeSnakeCase(benefit.kind);
+}
+
+function benefitKindLabel(kind: string, t: ReturnType<typeof useI18n>["t"]): string {
+  if (kind === "premium_access") {
+    return t("store.kind.premium_pass");
+  }
+  if (kind === "boost") {
+    return t("store.kind.boost");
+  }
+  const key = `store.kind.${kind}` as TranslationKey;
+  const translated = t(key);
+  return translated === key ? humanizeSnakeCase(kind) : translated;
+}
+
+function localizedGoalCopy(
+  goal: WalletRead["goals"][number],
+  t: ReturnType<typeof useI18n>["t"],
+): { layer: string; title: string; description: string } {
+  const layerKey = `wallet.goal.layer.${goal.layer}` as TranslationKey;
+  const translatedLayer = t(layerKey);
+  const layer = translatedLayer === layerKey ? goal.layer : translatedLayer;
+
+  const slugOrLevel = goal.key.includes(":") ? goal.key.split(":")[1] : null;
+  const titleSuffix = goal.title.includes(":") ? goal.title.split(":").slice(1).join(":").trim() : "";
+  const fallbackTitle = titleSuffix || slugOrLevel?.replaceAll("-", " ") || goal.title;
+
+  if (goal.key.startsWith("next-item:")) {
+    return {
+      layer,
+      title: t("wallet.goal.nextUnlockTitle", { title: fallbackTitle }),
+      description: t("wallet.goal.nextUnlockDescription"),
+    };
+  }
+  if (goal.key.startsWith("buy-now:")) {
+    return {
+      layer,
+      title: t("wallet.goal.buyNowTitle", { title: fallbackTitle }),
+      description: t("wallet.goal.buyNowDescription"),
+    };
+  }
+  if (goal.key === "next-earn") {
+    return {
+      layer,
+      title: t("wallet.goal.nextEarnTitle"),
+      description: t("wallet.goal.nextEarnDescription"),
+    };
+  }
+  if (goal.key.startsWith("inactive-comeback:")) {
+    return {
+      layer,
+      title: t("wallet.goal.comebackTitle", { count: goal.target }),
+      description: t("wallet.goal.comebackDescription"),
+    };
+  }
+  if (goal.key.startsWith("hoarder-convert:")) {
+    return {
+      layer,
+      title: t("wallet.goal.hoarderTitle", { count: goal.target }),
+      description: t("wallet.goal.hoarderDescription"),
+    };
+  }
+  if (goal.key.startsWith("spender-maintain:")) {
+    return {
+      layer,
+      title: t("wallet.goal.spenderTitle", { count: goal.target }),
+      description: t("wallet.goal.spenderDescription"),
+    };
+  }
+  if (goal.key.startsWith("habit-window:")) {
+    return {
+      layer,
+      title: t("wallet.goal.habitTitle", { count: goal.target }),
+      description: t("wallet.goal.habitDescription"),
+    };
+  }
+  if (goal.key.startsWith("rank:")) {
+    const level = slugOrLevel ?? String(goal.target);
+    return {
+      layer,
+      title: t("wallet.goal.rankTitle", { level }),
+      description: t("wallet.goal.rankDescription"),
+    };
+  }
+  return {
+    layer,
+    title: goal.title || t("wallet.goal.unknown"),
+    description: goal.description,
+  };
 }
 
 export function WalletClient() {
   const { status } = useAuth();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
+  const locale = languageToIntlLocale(language);
   const [wallet, setWallet] = useState<WalletRead | null>(null);
+  const [items, setItems] = useState<StoreItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkinPending, setCheckinPending] = useState(false);
-  const [successDelta, setSuccessDelta] = useState<number | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const [checkinFeedback, setCheckinFeedback] = useState<EconomyAction | null>(null);
   const { change: balanceChange, delta: balanceDelta } = useLmnBalanceFeedback(wallet?.balance);
 
   useEffect(() => {
-    if (status !== "authenticated") return;
+    if (status !== "authenticated") {
+      setLoading(status === "loading");
+      return;
+    }
     setLoading(true);
-    fetchWallet()
-      .then((data) => {
-        setWallet(data);
+    Promise.all([fetchWallet(), fetchStoreItems()])
+      .then(([walletData, storeItems]) => {
+        setWallet(walletData);
+        setItems(storeItems);
         setError(null);
       })
       .catch((e) => {
         setWallet(null);
+        setItems([]);
         setError(e instanceof ApiRequestError ? e.message : t("wallet.checkInError"));
       })
       .finally(() => setLoading(false));
   }, [status, reloadToken, t]);
 
-  useEffect(() => {
-    if (!successDelta) return;
-    const timeoutId = window.setTimeout(() => setSuccessDelta(null), 3200);
-    return () => window.clearTimeout(timeoutId);
-  }, [successDelta]);
-
   async function handleCheckIn() {
     setCheckinPending(true);
     try {
-      const previousBalance = wallet?.balance ?? null;
-      const data = await walletCheckIn();
-      setWallet(data);
+      const previousBalance = wallet?.balance ?? 0;
+      const [walletData, storeItems] = await Promise.all([walletCheckIn(), fetchStoreItems()]);
+      setWallet(walletData);
+      setItems(storeItems);
       setError(null);
-      const delta = previousBalance !== null ? data.balance - previousBalance : null;
-      setSuccessDelta(delta !== null && delta > 0 ? delta : null);
+      setCheckinFeedback(
+        buildClientEconomyAction({
+          balanceDelta: walletData.balance - previousBalance,
+          items: storeItems,
+          previousBalance,
+        }),
+      );
     } catch (e) {
       setError(e instanceof ApiRequestError ? e.message : t("wallet.checkInError"));
-      setSuccessDelta(null);
+      setCheckinFeedback(null);
     } finally {
       setCheckinPending(false);
     }
@@ -102,7 +219,7 @@ export function WalletClient() {
       <div className="space-y-6">
         <PageIntro
           breadcrumbs={[
-            { label: t("nav.dashboard"), href: "/dashboard" },
+            { label: t("nav.dashboard"), href: APP_ROUTES.dashboard },
             { label: t("nav.economy") },
             { label: t("nav.wallet") },
           ]}
@@ -121,31 +238,31 @@ export function WalletClient() {
       <div className="space-y-6">
         <PageIntro
           breadcrumbs={[
-            { label: t("nav.dashboard"), href: "/dashboard" },
+            { label: t("nav.dashboard"), href: APP_ROUTES.dashboard },
             { label: t("nav.economy") },
             { label: t("nav.wallet") },
           ]}
           eyebrow={t("nav.wallet")}
           title={t("wallet.title")}
           description={t("wallet.subtitle")}
-          hint={t("economy.loopBody")}
+          hint={t("wallet.guestHint")}
           actions={
             <>
-              <Link href="/login" className="pv-button-primary">
+              <Link href={APP_ROUTES.login} className="pv-button-primary">
                 {t("nav.login")}
               </Link>
-              <Link href="/signup" className="pv-button-secondary">
+              <Link href={APP_ROUTES.signup} className="pv-button-secondary">
                 {t("nav.signup")}
               </Link>
             </>
           }
         />
         <div className="pv-empty-state text-sm text-zinc-600">
-          {t("missions.signInPrefix")}{" "}
-          <Link href="/login" className="font-medium text-zinc-900 underline">
-            {t("missions.signInLink")}
+          {t("wallet.signInPrefix")}{" "}
+          <Link href={APP_ROUTES.login} className="font-medium text-zinc-900 underline">
+            {t("wallet.signInLink")}
           </Link>{" "}
-          {t("missions.signInSuffix")}
+          {t("wallet.signInSuffix")}
         </div>
       </div>
     );
@@ -156,7 +273,7 @@ export function WalletClient() {
       <div className="space-y-6">
         <PageIntro
           breadcrumbs={[
-            { label: t("nav.dashboard"), href: "/dashboard" },
+            { label: t("nav.dashboard"), href: APP_ROUTES.dashboard },
             { label: t("nav.economy") },
             { label: t("nav.wallet") },
           ]}
@@ -170,16 +287,12 @@ export function WalletClient() {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => setReloadToken((v) => v + 1)}
+              onClick={() => setReloadToken((value) => value + 1)}
               className="pv-button-secondary !w-auto"
             >
               {t("wallet.refresh")}
             </button>
-            <button
-              type="button"
-              onClick={handleCheckIn}
-              className="pv-button-primary !w-auto"
-            >
+            <button type="button" onClick={handleCheckIn} className="pv-button-primary !w-auto">
               {t("wallet.checkinCta")}
             </button>
           </div>
@@ -192,29 +305,32 @@ export function WalletClient() {
 
   const checkInMessage = wallet.check_in_available
     ? t("wallet.checkinReady")
-    : `${t("wallet.checkinLocked")}${wallet.last_check_in_at ? ` · ${new Date(wallet.last_check_in_at).toLocaleString()}` : ""}`;
+    : `${t("wallet.checkinLocked")}${wallet.last_check_in_at ? ` · ${formatDateTime(wallet.last_check_in_at, locale)}` : ""}`;
+  const bestItem = pickBestStoreItem(items);
+  const ladder = buildDailyLadder(wallet.current_streak, wallet);
+  const streakMilestones = resolveStreakMilestones(wallet);
+  const nextMilestoneEntry = nextMilestone(wallet.current_streak, wallet);
 
   return (
     <div className="space-y-6">
-      {successDelta ? (
-        <section className="pv-alert pv-alert-success flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="font-medium">{t("wallet.checkedIn")}</p>
-          </div>
-          <LmnAmount amount={`+${successDelta}`} symbol={wallet.currency_symbol} strong state="earned" />
-        </section>
-      ) : null}
+      <EconomyActionBanner summary={checkinFeedback} />
 
       <PageIntro
         breadcrumbs={[
-          { label: t("nav.dashboard"), href: "/dashboard" },
+          { label: t("nav.dashboard"), href: APP_ROUTES.dashboard },
           { label: t("nav.economy") },
           { label: t("nav.wallet") },
         ]}
         eyebrow={t("nav.wallet")}
         title={t("wallet.title")}
         description={t("wallet.subtitle")}
-        hint={checkInMessage}
+        hint={
+          bestItem
+            ? bestItem.is_affordable
+              ? t("wallet.bestUseReady", { title: bestItem.title })
+              : t("wallet.bestUseAlmost", { title: bestItem.title, count: bestItem.remaining_lumens })
+            : checkInMessage
+        }
         actions={
           <>
             <button
@@ -225,7 +341,7 @@ export function WalletClient() {
             >
               {checkinPending ? t("missions.loading") : t("wallet.checkinCta")}
             </button>
-            <Link href="/store" className="pv-button-secondary">
+            <Link href={APP_ROUTES.store} className="pv-button-secondary">
               {t("nav.store")}
             </Link>
           </>
@@ -248,8 +364,13 @@ export function WalletClient() {
               <p className="mt-3 text-2xl font-extrabold tracking-[-0.05em] text-zinc-950">{wallet.current_streak}</p>
             </div>
             <div className="pv-stat-card">
-              <p className="pv-stat-label">{t("wallet.bestStreak")}</p>
-              <p className="mt-3 text-2xl font-extrabold tracking-[-0.05em] text-zinc-950">{wallet.best_streak}</p>
+              <p className="pv-stat-label">{t("wallet.spendStreak")}</p>
+              <p className="mt-3 text-2xl font-extrabold tracking-[-0.05em] text-zinc-950">
+                {t("wallet.spendStreakValue", {
+                  days: formatNumber(wallet.spend_streak_days, locale),
+                  mult: formatMultiplier(wallet.spend_streak_mult, locale),
+                })}
+              </p>
             </div>
           </div>
         }
@@ -258,6 +379,153 @@ export function WalletClient() {
       <section className="pv-panel px-6 py-6 sm:px-7">
         <EconomyLoop activeStep="wallet" />
       </section>
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
+        <section className="pv-panel px-5 py-5">
+          <div className="pv-section-head">
+            <div className="pv-section-copy">
+              <p className="pv-kicker">{t("wallet.bestUse")}</p>
+              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("wallet.bestUse")}</h2>
+            </div>
+            {bestItem ? (
+              <LmnAmount amount={bestItem.price} symbol={wallet.currency_symbol} strong state="spent" />
+            ) : (
+              <LmnAmount amount={wallet.balance} symbol={wallet.currency_symbol} strong state="balance" />
+            )}
+          </div>
+
+          {bestItem ? (
+            <div className="mt-5 space-y-4">
+              <div className="pv-card-muted p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-zinc-900">{bestItem.title}</p>
+                    <p className="mt-1 text-sm text-zinc-600">
+                      {bestItem.is_affordable
+                        ? t("wallet.bestUseReady", { title: bestItem.title })
+                        : t("wallet.bestUseAlmost", { title: bestItem.title, count: bestItem.remaining_lumens })}
+                    </p>
+                  </div>
+                  {bestItem.is_affordable ? (
+                    <span className="pv-badge-success">{t("store.availableNow")}</span>
+                  ) : (
+                    <span className="pv-badge-warning">{t("store.remaining", { count: bestItem.remaining_lumens })}</span>
+                  )}
+                </div>
+                <div className="mt-4 pv-progress">
+                  <div
+                    className="pv-progress-fill"
+                    style={{ width: `${Math.max(bestItem.progress_ratio > 0 ? 8 : 0, Math.round(bestItem.progress_ratio * 100))}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <Link href={bestItem.is_affordable ? APP_ROUTES.store : APP_ROUTES.missions} className="pv-button-primary">
+                  {bestItem.is_affordable ? t("economy.openStore") : t("economy.earnCta")}
+                </Link>
+                <Link href={APP_ROUTES.store} className="pv-button-secondary">
+                  {t("nav.store")}
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="pv-empty-state mt-5 text-sm text-zinc-600">{t("store.empty")}</div>
+          )}
+        </section>
+
+        <aside className="space-y-4">
+          <section className="pv-panel px-5 py-5">
+            <p className="pv-kicker">{t("wallet.dailyLadder")}</p>
+            <div className="pv-daily-ladder-grid mt-4" data-testid="wallet-daily-ladder">
+              {ladder.map((step) => (
+                <div
+                  key={step.day}
+                  className={`pv-daily-ladder-card rounded-[1rem] border ${
+                    step.isActive
+                      ? "border-[var(--pv-brand)] bg-[rgba(37,92,255,0.08)]"
+                      : step.isBigReward
+                        ? "border-amber-200 bg-amber-50/80"
+                        : "border-zinc-200 bg-zinc-50/80"
+                  }`}
+                  data-testid={`wallet-daily-ladder-step-${step.day}`}
+                >
+                  <p className="pv-daily-ladder-label">
+                    {t("wallet.dayLabel", { day: step.day })}
+                  </p>
+                  <p className="pv-daily-ladder-reward">+{step.reward}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 text-sm text-zinc-600">{t("wallet.dailyLadderBody")}</p>
+          </section>
+
+          <section className="pv-panel px-5 py-5">
+            <p className="pv-kicker">{t("wallet.streakMilestones")}</p>
+            <div className="mt-4 space-y-3">
+              {streakMilestones.map((milestone) => {
+                const reached = wallet.current_streak >= milestone.streak;
+                return (
+                  <div key={milestone.streak} className="pv-card-muted p-3">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold leading-snug text-zinc-900">
+                          {t("wallet.milestoneLabel", { count: milestone.streak })}
+                        </p>
+                        <p className="text-xs text-zinc-600">{t("wallet.milestoneReward", { amount: milestone.reward })}</p>
+                      </div>
+                      <span
+                        className={`${reached ? "pv-badge-success" : "pv-badge"} max-w-full shrink-0 whitespace-normal text-center`}
+                      >
+                        {reached ? t("wallet.reached") : t("wallet.upcoming")}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {nextMilestoneEntry ? (
+              <p className="mt-4 text-sm text-zinc-600">
+                {t("wallet.nextMilestone", {
+                  count: nextMilestoneEntry.streak,
+                  amount: nextMilestoneEntry.reward,
+                })}
+              </p>
+            ) : null}
+            <p className="mt-3 text-xs text-zinc-500">
+              {t("wallet.freezeTokens")}: {formatNumber(wallet.streak_freeze_tokens, locale)}
+            </p>
+          </section>
+
+          <section className="pv-panel px-5 py-5">
+            <p className="pv-kicker">{t("wallet.vaultRank")}</p>
+            <p className="mt-2 text-xl font-bold text-zinc-950">
+              {t("wallet.rankLevelProgress", {
+                level: formatNumber(wallet.rank_level, locale),
+                points: formatNumber(wallet.rank_points, locale),
+                threshold: formatNumber(wallet.rank_next_threshold, locale),
+              })}
+            </p>
+            <div className="mt-3 pv-progress">
+              <div
+                className="pv-progress-fill"
+                style={{
+                  width: `${Math.max(
+                    4,
+                    Math.min(
+                      100,
+                      Math.round((wallet.rank_points / Math.max(1, wallet.rank_next_threshold)) * 100),
+                    ),
+                  )}%`,
+                }}
+              />
+            </div>
+            <p className="mt-3 text-sm text-zinc-600">
+              {t("wallet.ownedValueGenerated", { amount: formatNumber(wallet.owned_value_generated, locale) })}
+            </p>
+          </section>
+        </aside>
+      </div>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
@@ -278,9 +546,35 @@ export function WalletClient() {
           label={t("wallet.purchaseHistory")}
           value={<span className="pv-metric-value">{wallet.recent_purchases.length}</span>}
         />
+        <StatCard
+          label={t("wallet.pendingCashback")}
+          value={<span className="pv-metric-value">{formatNumber(wallet.pending_locked_rewards.length, locale)}</span>}
+          tone="positive"
+        />
       </section>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      {wallet.goals.length > 0 ? (
+        <section className="pv-panel px-5 py-5">
+          <p className="pv-kicker">{t("wallet.activeGoals")}</p>
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            {wallet.goals.map((goal) => {
+              const localizedGoal = localizedGoalCopy(goal, t);
+              return (
+                <div key={goal.key} className="pv-card-muted p-4">
+                  <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">{localizedGoal.layer}</p>
+                  <p className="mt-2 text-sm font-semibold text-zinc-900">{localizedGoal.title}</p>
+                  <p className="mt-1 text-xs text-zinc-600">{localizedGoal.description}</p>
+                  <p className="mt-2 text-xs text-zinc-500">
+                    {formatNumber(goal.progress, locale)}/{formatNumber(goal.target, locale)}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
+
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:items-start">
         <section className="pv-panel px-5 py-5">
           <div className="pv-section-head">
             <div className="pv-section-copy">
@@ -297,19 +591,45 @@ export function WalletClient() {
                 <div key={benefit.key} className="pv-card-muted p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-zinc-900">{benefitLabel(benefit, t)}</p>
+                      <p className="text-sm font-semibold text-zinc-900">{benefitLabel(benefit, t, locale)}</p>
                       {benefit.expires_at ? (
                         <p className="mt-1 text-xs text-zinc-500">
-                          {t("wallet.premiumUntil")}: {new Date(benefit.expires_at).toLocaleString()}
+                          {t("wallet.premiumUntil")}: {formatDateTime(benefit.expires_at, locale)}
                         </p>
                       ) : null}
+                      {typeof benefit.metadata?.reward_body === "string" ? (
+                        <p className="mt-2 text-xs text-zinc-600">{String(benefit.metadata.reward_body)}</p>
+                      ) : null}
                     </div>
-                    <span className="pv-badge-brand">{benefit.kind}</span>
+                    <span className="pv-badge-brand">{benefitKindLabel(benefit.kind, t)}</span>
                   </div>
                 </div>
               ))}
             </div>
           )}
+
+          {wallet.pending_locked_rewards.length > 0 ? (
+            <div className="mt-5 space-y-3">
+              {wallet.pending_locked_rewards.map((reward) => (
+                <div key={reward.id} className="pv-card-muted p-4">
+                  <p className="text-sm font-semibold text-zinc-900">
+                    {t("wallet.pendingCashbackLocked", { amount: formatNumber(reward.amount, locale) })}
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-600">
+                    {t("wallet.pendingCashbackMissions", {
+                      completed: formatNumber(reward.completed_mission_count, locale),
+                      required: formatNumber(reward.required_mission_count, locale),
+                    })}
+                    {reward.unlock_by
+                      ? ` · ${t("wallet.pendingCashbackUnlockBy", {
+                          date: formatDateTime(reward.unlock_by, locale),
+                        })}`
+                      : ""}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : null}
         </section>
 
         <section className="pv-panel px-5 py-5">
@@ -318,7 +638,7 @@ export function WalletClient() {
               <p className="pv-kicker">{t("wallet.purchaseHistory")}</p>
               <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("wallet.purchaseHistory")}</h2>
             </div>
-            <Link href="/store" className="pv-inline-link">
+            <Link href={APP_ROUTES.store} className="pv-inline-link">
               {t("nav.store")}
               <span aria-hidden="true">↗</span>
             </Link>
@@ -332,7 +652,7 @@ export function WalletClient() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-zinc-900">{purchase.item_title}</p>
-                      <p className="mt-1 text-xs text-zinc-500">{new Date(purchase.created_at).toLocaleString()}</p>
+                      <p className="mt-1 text-xs text-zinc-500">{formatDateTime(purchase.created_at, locale)}</p>
                     </div>
                     <LmnAmount amount={`-${purchase.price_paid}`} symbol={wallet.currency_symbol} state="spent" />
                   </div>
@@ -346,11 +666,11 @@ export function WalletClient() {
       <section className="pv-panel px-5 py-5">
         <div className="pv-section-head">
           <div className="pv-section-copy">
-              <p className="pv-kicker">{t("wallet.recentActivity")}</p>
-              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("wallet.recentActivity")}</h2>
-            </div>
-            <LmnAmount amount={wallet.balance} symbol={wallet.currency_symbol} state="balance" />
+            <p className="pv-kicker">{t("wallet.recentActivity")}</p>
+            <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("wallet.recentActivity")}</h2>
           </div>
+          <LmnAmount amount={wallet.balance} symbol={wallet.currency_symbol} state="balance" />
+        </div>
 
         {wallet.recent.length === 0 ? (
           <div className="pv-empty-state mt-5 text-sm text-zinc-600">{t("wallet.empty")}</div>
@@ -368,7 +688,7 @@ export function WalletClient() {
                     <div>
                       <p className="font-semibold text-zinc-900">{reasonLabel(tx.reason, t)}</p>
                       <p className="text-xs text-zinc-500">
-                        {new Date(tx.created_at).toLocaleString()}
+                        {formatDateTime(tx.created_at, locale)}
                         {tx.context ? ` · ${tx.context}` : ""}
                       </p>
                     </div>

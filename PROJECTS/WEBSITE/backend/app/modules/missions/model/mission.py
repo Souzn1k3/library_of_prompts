@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.infrastructure.db.models import (
     MissionActionType,
@@ -54,6 +54,12 @@ class MissionRead(BaseModel):
     action_type: MissionActionType
     is_repeatable: bool = False
     repeat_interval_days: int = 0
+    chain_id: str | None = None
+    chain_step: int = 0
+    chain_total: int = 0
+    chain_next_unlocked: bool = False
+    adaptive_reason: str | None = None
+    synergy_bonus_preview: int = 0
     status: MissionProgressStatus
     completion_count: int = 0
     progress_count: int
@@ -64,7 +70,7 @@ class MissionRead(BaseModel):
     available_again_at: datetime | None = None
     prompts: list[MissionPromptRef]
     lesson: MissionLessonRef | None = None
-    steps: list["MissionStepRead"] = []
+    steps: list["MissionStepRead"] = Field(default_factory=list)
     reward: MissionRewardView
     next_step: MissionNextStep | None = None
 

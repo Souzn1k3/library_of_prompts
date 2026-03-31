@@ -1,13 +1,15 @@
 import enum
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from sqlalchemy import (
     BigInteger,
+    Date,
     JSON,
     Boolean,
     DateTime,
     Enum,
+    Float,
     ForeignKey,
     Integer,
     String,
@@ -104,6 +106,7 @@ class MissionActionType(str, enum.Enum):
     challenge_submission = "challenge_submission"
     multi_step = "multi_step"
     apply_prompt = "apply_prompt"
+    store_purchase = "store_purchase"
 
 
 class MissionProgressStatus(str, enum.Enum):
@@ -131,28 +134,108 @@ class MissionType(str, enum.Enum):
     streak = "streak"
     challenge = "challenge"
     progression = "progression"
+    habit = "habit"
+    progress = "progress"
+    spend_linked = "spend_linked"
 
 
 class CurrencyTransactionType(str, enum.Enum):
     mission_reward = "mission_reward"
     store_purchase = "store_purchase"
     streak_bonus = "streak_bonus"
+    first_purchase_bonus = "first_purchase_bonus"
     manual_adjustment = "manual_adjustment"
     refund = "refund"
+    marketplace_purchase = "marketplace_purchase"
+    marketplace_sale = "marketplace_sale"
+    cashback_locked = "cashback_locked"
+    cashback_unlocked = "cashback_unlocked"
+    boost_purchase = "boost_purchase"
+    upgrade_purchase = "upgrade_purchase"
+    surprise_reward = "surprise_reward"
+    rank_bonus = "rank_bonus"
+    spend_streak_bonus = "spend_streak_bonus"
 
 
 class StoreItemKind(str, enum.Enum):
+    starter = "starter"
     subscription_discount = "subscription_discount"
     premium_pass = "premium_pass"
     premium_prompt_unlock = "premium_prompt_unlock"
     prompt_bundle = "prompt_bundle"
+    boost = "boost"
     future = "future"
+
+
+class LockedRewardStatus(str, enum.Enum):
+    pending = "pending"
+    unlocked = "unlocked"
+    expired = "expired"
+
+
+class BoostStatus(str, enum.Enum):
+    active = "active"
+    exhausted = "exhausted"
+    expired = "expired"
 
 
 class PurchaseStatus(str, enum.Enum):
     pending = "pending"
     completed = "completed"
     refunded = "refunded"
+    failed = "failed"
+    canceled = "canceled"
+
+
+class PromptAccessSource(str, enum.Enum):
+    free = "free"
+    author = "author"
+    staff = "staff"
+    subscription_limit = "subscription_limit"
+    direct_lumens = "direct_lumens"
+    direct_money = "direct_money"
+    legacy_store = "legacy_store"
+
+
+class PromptPaymentMethod(str, enum.Enum):
+    included_limit = "included_limit"
+    lumens = "lumens"
+    stripe = "stripe"
+    legacy_store = "legacy_store"
+
+
+class MarketplaceTransactionKind(str, enum.Enum):
+    buyer_charge = "buyer_charge"
+    seller_credit = "seller_credit"
+    platform_fee = "platform_fee"
+    refund = "refund"
+    included_unlock = "included_unlock"
+    seller_available = "seller_available"
+    seller_payout = "seller_payout"
+    seller_reversal = "seller_reversal"
+    dispute_hold = "dispute_hold"
+
+
+class MarketplaceSettlementStatus(str, enum.Enum):
+    pending = "pending"
+    available = "available"
+    paid_out = "paid_out"
+    refunded = "refunded"
+    disputed = "disputed"
+
+
+class MarketplacePayoutStatus(str, enum.Enum):
+    requested = "requested"
+    processing = "processing"
+    paid = "paid"
+    failed = "failed"
+    canceled = "canceled"
+
+
+class ReviewModerationStatus(str, enum.Enum):
+    visible = "visible"
+    pending = "pending"
+    hidden = "hidden"
 
 
 class ContributorTier(str, enum.Enum):
@@ -233,6 +316,52 @@ class User(Base):
         cascade="all, delete-orphan",
     )
     purchases: Mapped[list["UserPurchase"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    locked_rewards: Mapped[list["UserLockedReward"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    active_boosts: Mapped[list["UserActiveBoost"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    marketplace_entitlements: Mapped[list["PromptEntitlement"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    marketplace_purchases: Mapped[list["PromptPurchase"]] = relationship(
+        back_populates="buyer",
+        cascade="all, delete-orphan",
+        foreign_keys="PromptPurchase.user_id",
+    )
+    marketplace_sales: Mapped[list["PromptPurchase"]] = relationship(
+        back_populates="seller",
+        foreign_keys="PromptPurchase.seller_user_id",
+    )
+    marketplace_reviews_written: Mapped[list["PromptReview"]] = relationship(
+        back_populates="author",
+        cascade="all, delete-orphan",
+        foreign_keys="PromptReview.author_user_id",
+    )
+    marketplace_reviews_received: Mapped[list["PromptReview"]] = relationship(
+        back_populates="seller",
+        foreign_keys="PromptReview.seller_user_id",
+    )
+    marketplace_transactions: Mapped[list["MarketplaceTransaction"]] = relationship(
+        back_populates="actor_user",
+        cascade="all, delete-orphan",
+    )
+    marketplace_payouts: Mapped[list["MarketplacePayout"]] = relationship(
+        back_populates="seller",
+        cascade="all, delete-orphan",
+    )
+    marketplace_review_reports: Mapped[list["PromptReviewReport"]] = relationship(
+        back_populates="reporter",
+        cascade="all, delete-orphan",
+    )
+    plan_usage_windows: Mapped[list["PlanUsageWindow"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
     )
@@ -332,6 +461,10 @@ class Plan(Base):
     name: Mapped[str] = mapped_column(String(80), nullable=False)
     description: Mapped[str | None] = mapped_column(String(255), nullable=True)
     price_usd_month: Mapped[int] = mapped_column(Integer, nullable=False)
+    price_rub_month: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    monthly_paid_prompt_limit: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    prompt_purchase_discount_percent: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    lumen_purchase_discount_percent: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     stripe_price_id: Mapped[str | None] = mapped_column(
         String(128),
         nullable=True,
@@ -775,6 +908,23 @@ class Prompt(Base):
         back_populates="prompt",
         cascade="all, delete-orphan",
     )
+    pricing: Mapped["PromptPrice | None"] = relationship(
+        back_populates="prompt",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    marketplace_entitlements: Mapped[list["PromptEntitlement"]] = relationship(
+        back_populates="prompt",
+        cascade="all, delete-orphan",
+    )
+    marketplace_purchases: Mapped[list["PromptPurchase"]] = relationship(
+        back_populates="prompt",
+        cascade="all, delete-orphan",
+    )
+    marketplace_reviews: Mapped[list["PromptReview"]] = relationship(
+        back_populates="prompt",
+        cascade="all, delete-orphan",
+    )
 
 
 class PromptStats(Base):
@@ -926,6 +1076,27 @@ class UserCurrencyBalance(Base):
     current_streak: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     best_streak: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     last_check_in_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    spend_streak_days: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    last_spend_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    streak_freeze_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    surprise_miss_streak: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    rank_points: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    rank_level: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    owned_value_generated: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    catchup_boost_pct: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    catchup_boost_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    second_purchase_challenge_started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    second_purchase_challenge_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    second_purchase_challenge_completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -1032,3 +1203,537 @@ class UserPurchase(Base):
 
     user: Mapped["User"] = relationship(back_populates="purchases")
     item: Mapped["StoreItem"] = relationship(back_populates="purchases")
+
+
+class UserLockedReward(Base):
+    __tablename__ = "user_locked_rewards"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    source_purchase_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("user_purchases.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    amount: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    required_mission_count: Mapped[int] = mapped_column(Integer, nullable=False, default=2)
+    completed_mission_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    status: Mapped[LockedRewardStatus] = mapped_column(
+        Enum(LockedRewardStatus, native_enum=False, length=24),
+        nullable=False,
+        default=LockedRewardStatus.pending,
+        index=True,
+    )
+    unlock_by: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    unlocked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    expired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    meta: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    user: Mapped["User"] = relationship(back_populates="locked_rewards")
+    source_purchase: Mapped["UserPurchase | None"] = relationship()
+
+
+class UserActiveBoost(Base):
+    __tablename__ = "user_active_boosts"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    source_purchase_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("user_purchases.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    boost_percent: Mapped[int] = mapped_column(Integer, nullable=False, default=20)
+    missions_total: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
+    missions_used: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    status: Mapped[BoostStatus] = mapped_column(
+        Enum(BoostStatus, native_enum=False, length=24),
+        nullable=False,
+        default=BoostStatus.active,
+        index=True,
+    )
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    meta: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    user: Mapped["User"] = relationship(back_populates="active_boosts")
+    source_purchase: Mapped["UserPurchase | None"] = relationship()
+
+
+class EconomyDailyKpi(Base):
+    __tablename__ = "economy_daily_kpis"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    experiment_name: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
+    cohort: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+
+    active_users: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    new_users: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    first_purchase_users: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    second_purchase_48h_users: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    second_purchase_48h_rate: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    d1_retention_rate: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    d7_retention_rate: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    lmn_earned: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    lmn_spent: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    lmn_spent_earned_ratio: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    avg_balance: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    median_balance: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    store_views: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    store_purchases: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    store_conversion_rate: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    wallet_views: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    mission_completions: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    avg_time_to_first_purchase_hours: Mapped[float | None] = mapped_column(Float, nullable=True)
+    avg_time_to_second_purchase_hours: Mapped[float | None] = mapped_column(Float, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "date",
+            "experiment_name",
+            "cohort",
+            name="uq_economy_daily_kpis_day_experiment_cohort",
+        ),
+    )
+
+
+class PromptPrice(Base):
+    __tablename__ = "prompt_prices"
+
+    prompt_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("prompts.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    price_rub: Mapped[int] = mapped_column(Integer, nullable=False)
+    price_lumens: Mapped[int] = mapped_column(Integer, nullable=False)
+    commission_percent: Mapped[int] = mapped_column(Integer, nullable=False, default=5)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    prompt: Mapped["Prompt"] = relationship(back_populates="pricing")
+
+
+class PlanUsageWindow(Base):
+    __tablename__ = "plan_usage_windows"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    plan_tier: Mapped[PlanTier] = mapped_column(
+        Enum(PlanTier, native_enum=False, length=32),
+        nullable=False,
+        index=True,
+    )
+    window_started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    window_ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    included_paid_prompt_limit: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    used_paid_prompt_unlocks: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "plan_tier",
+            "window_started_at",
+            "window_ends_at",
+            name="uq_plan_usage_windows_scope",
+        ),
+    )
+
+    user: Mapped["User"] = relationship(back_populates="plan_usage_windows")
+
+
+class PromptPurchase(Base):
+    __tablename__ = "prompt_purchases"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    prompt_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("prompts.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    seller_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    payment_method: Mapped[PromptPaymentMethod] = mapped_column(
+        Enum(PromptPaymentMethod, native_enum=False, length=32),
+        nullable=False,
+        default=PromptPaymentMethod.lumens,
+        index=True,
+    )
+    status: Mapped[PurchaseStatus] = mapped_column(
+        Enum(PurchaseStatus, native_enum=False, length=32),
+        nullable=False,
+        default=PurchaseStatus.pending,
+        index=True,
+    )
+    settlement_status: Mapped[MarketplaceSettlementStatus] = mapped_column(
+        Enum(MarketplaceSettlementStatus, native_enum=False, length=32),
+        nullable=False,
+        default=MarketplaceSettlementStatus.pending,
+        index=True,
+    )
+    price_rub: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    price_lumens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    platform_fee_rub: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    seller_amount_rub: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    platform_fee_lumens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    seller_amount_lumens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    settlement_available_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    paid_out_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    disputed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    payout_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("marketplace_payouts.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    provider_checkout_id: Mapped[str | None] = mapped_column(String(128), nullable=True, unique=True, index=True)
+    provider_payment_id: Mapped[str | None] = mapped_column(String(128), nullable=True, unique=True, index=True)
+    client_token: Mapped[str | None] = mapped_column(String(80), nullable=True, unique=True, index=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    refunded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    meta: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    buyer: Mapped["User"] = relationship(
+        back_populates="marketplace_purchases",
+        foreign_keys=[user_id],
+    )
+    seller: Mapped["User | None"] = relationship(
+        back_populates="marketplace_sales",
+        foreign_keys=[seller_user_id],
+    )
+    prompt: Mapped["Prompt"] = relationship(back_populates="marketplace_purchases")
+    entitlement: Mapped["PromptEntitlement | None"] = relationship(
+        back_populates="purchase",
+        uselist=False,
+    )
+    payout: Mapped["MarketplacePayout | None"] = relationship(back_populates="purchases")
+    review: Mapped["PromptReview | None"] = relationship(
+        back_populates="purchase",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    ledger_entries: Mapped[list["MarketplaceTransaction"]] = relationship(
+        back_populates="purchase",
+        cascade="all, delete-orphan",
+    )
+
+
+class PromptEntitlement(Base):
+    __tablename__ = "prompt_entitlements"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    prompt_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("prompts.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    purchase_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("prompt_purchases.id", ondelete="SET NULL"),
+        nullable=True,
+        unique=True,
+        index=True,
+    )
+    source: Mapped[PromptAccessSource] = mapped_column(
+        Enum(PromptAccessSource, native_enum=False, length=32),
+        nullable=False,
+        default=PromptAccessSource.direct_lumens,
+        index=True,
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoke_reason: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    meta: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    granted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "prompt_id", name="uq_prompt_entitlements_user_prompt"),
+    )
+
+    user: Mapped["User"] = relationship(back_populates="marketplace_entitlements")
+    prompt: Mapped["Prompt"] = relationship(back_populates="marketplace_entitlements")
+    purchase: Mapped["PromptPurchase | None"] = relationship(back_populates="entitlement")
+
+
+class PromptReview(Base):
+    __tablename__ = "prompt_reviews"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    prompt_purchase_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("prompt_purchases.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+    prompt_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("prompts.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    seller_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    author_user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    moderation_status: Mapped[ReviewModerationStatus] = mapped_column(
+        Enum(ReviewModerationStatus, native_enum=False, length=32),
+        nullable=False,
+        default=ReviewModerationStatus.visible,
+        index=True,
+    )
+    moderation_reason: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    rating: Mapped[int] = mapped_column(Integer, nullable=False)
+    body: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_visible: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
+    reported_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    edit_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    last_reported_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    hidden_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    purchase: Mapped["PromptPurchase"] = relationship(back_populates="review")
+    prompt: Mapped["Prompt"] = relationship(back_populates="marketplace_reviews")
+    seller: Mapped["User | None"] = relationship(
+        back_populates="marketplace_reviews_received",
+        foreign_keys=[seller_user_id],
+    )
+    author: Mapped["User"] = relationship(
+        back_populates="marketplace_reviews_written",
+        foreign_keys=[author_user_id],
+    )
+    reports: Mapped[list["PromptReviewReport"]] = relationship(
+        back_populates="review",
+        cascade="all, delete-orphan",
+    )
+
+
+class PromptReviewReport(Base):
+    __tablename__ = "prompt_review_reports"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    review_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("prompt_reviews.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    reporter_user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    reason: Mapped[str] = mapped_column(String(64), nullable=False)
+    details: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    __table_args__ = (
+        UniqueConstraint("review_id", "reporter_user_id", name="uq_prompt_review_reports_unique_reporter"),
+    )
+
+    review: Mapped["PromptReview"] = relationship(back_populates="reports")
+    reporter: Mapped["User"] = relationship(back_populates="marketplace_review_reports")
+
+
+class MarketplacePayout(Base):
+    __tablename__ = "marketplace_payouts"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    seller_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    currency_code: Mapped[str] = mapped_column(String(8), nullable=False)
+    status: Mapped[MarketplacePayoutStatus] = mapped_column(
+        Enum(MarketplacePayoutStatus, native_enum=False, length=32),
+        nullable=False,
+        default=MarketplacePayoutStatus.requested,
+        index=True,
+    )
+    total_amount: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    purchase_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    external_reference: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    notes: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    requested_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    paid_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    seller: Mapped["User | None"] = relationship(back_populates="marketplace_payouts")
+    purchases: Mapped[list["PromptPurchase"]] = relationship(back_populates="payout")
+
+
+class MarketplaceTransaction(Base):
+    __tablename__ = "marketplace_transactions"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    prompt_purchase_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("prompt_purchases.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    prompt_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("prompts.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    actor_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    kind: Mapped[MarketplaceTransactionKind] = mapped_column(
+        Enum(MarketplaceTransactionKind, native_enum=False, length=32),
+        nullable=False,
+        index=True,
+    )
+    currency_code: Mapped[str] = mapped_column(String(8), nullable=False)
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    meta: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    purchase: Mapped["PromptPurchase | None"] = relationship(back_populates="ledger_entries")
+    actor_user: Mapped["User | None"] = relationship(back_populates="marketplace_transactions")
+    prompt: Mapped["Prompt | None"] = relationship()

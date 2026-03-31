@@ -15,6 +15,7 @@ from app.infrastructure.db.models import (
     PromptTechnique,
     StoreItemKind,
 )
+from app.modules.marketplace.model.marketplace import PromptAccessRead, PromptPriceRead, PromptReviewListRead
 
 
 class PromptSort(str, enum.Enum):
@@ -37,8 +38,11 @@ class PromptListItem(BaseModel):
     author_id: uuid.UUID | None
     created_at: datetime
     is_premium: bool = False
+    is_paid: bool = False
     difficulty: PromptDifficulty | None = None
     output_type: PromptOutputType | None = None
+    price: PromptPriceRead | None = None
+    access: PromptAccessRead | None = None
     use_cases: list[str] = []
     model_compatibility: list[str] = []
     tags: list[str] = []
@@ -48,6 +52,9 @@ class PromptListItem(BaseModel):
     contributor_slug: str | None = None
     contributor_tier: ContributorTier | None = None
     contributor_reputation_score: int | None = None
+    author_display_name: str | None = None
+    author_rating_average: float | None = None
+    author_rating_count: int = 0
     recommendation_reason_key: str | None = None
 
     model_config = {"from_attributes": True}
@@ -65,6 +72,7 @@ class PromptRead(PromptListItem):
     body: str = Field(min_length=1)
     body_locked: bool = False
     unlock_offer: StoreUnlockOffer | None = None
+    reviews: PromptReviewListRead | None = None
 
 
 class PromptDiscoveryFilters(BaseModel):
@@ -98,6 +106,7 @@ class PromptSubmit(BaseModel):
     use_cases: list[str] = Field(default_factory=list, max_length=8)
     tags: list[str] = Field(default_factory=list, max_length=12)
     model_compatibility: list[str] = Field(default_factory=list, max_length=8)
+    price_rub: int | None = Field(default=None, ge=0, le=4999)
 
     model_config = {"extra": "forbid"}
 

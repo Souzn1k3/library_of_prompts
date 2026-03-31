@@ -180,3 +180,7 @@ export function languageToLocale(language: Language): string {
       return "en_US";
   }
 }
+
+export function languageToIntlLocale(language: Language): string {
+  return languageToLocale(language).replace("_", "-");
+}
