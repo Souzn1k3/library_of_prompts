@@ -6,6 +6,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
+from typing import Any
 from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse
 
 from sqlalchemy import inspect as sa_inspect
@@ -20,6 +21,7 @@ from app.infrastructure.db.models import (
     MarketplacePayoutStatus,
     MarketplaceSettlementStatus,
     MarketplaceTransactionKind,
+    PlanTier,
     Prompt,
     PromptAccessSource,
     PromptPaymentMethod,
@@ -55,10 +57,13 @@ from app.modules.marketplace.model.marketplace import (
 )
 from app.modules.marketplace.repository.marketplace_repository import MarketplaceRepository
 
+_stripe_module: Any | None
 try:
-    import stripe
+    import stripe as _stripe_module
 except Exception:  # pragma: no cover - runtime optional
-    stripe = None
+    _stripe_module = None
+
+stripe: Any = _stripe_module
 
 
 _MARKETPLACE_COMMISSION_PERCENT = 5
@@ -599,12 +604,12 @@ class MarketplaceService:
             )
         return self._payout_to_read(payout)
 
-    async def _resolve_usage_window(self, user: User) -> tuple[datetime, datetime]:
-        latest = await self._billing.get_latest_subscription_for_user(user.id)
+    async def _resolve_usage_window(self, *, user_id: uuid.UUID, plan_tier: PlanTier) -> tuple[datetime, datetime]:
+        latest = await self._billing.get_latest_subscription_for_user(user_id)
         if (
             latest is not None
             and latest.plan is not None
-            and latest.plan.tier == user.plan_tier
+            and latest.plan.tier == plan_tier
             and latest.status in {SubscriptionStatus.active, SubscriptionStatus.trialing, SubscriptionStatus.past_due}
         ):
             start = _ensure_aware(latest.current_period_start)
@@ -616,14 +621,15 @@ class MarketplaceService:
     async def _get_or_create_plan_usage_window(
         self,
         *,
-        user: User,
+        user_id: uuid.UUID,
+        plan_tier: PlanTier,
         window_started_at: datetime,
         window_ends_at: datetime,
         for_update: bool,
     ):
         usage = await self._repo.get_plan_usage_window(
-            user_id=user.id,
-            plan_tier=user.plan_tier,
+            user_id=user_id,
+            plan_tier=plan_tier,
             window_started_at=window_started_at,
             window_ends_at=window_ends_at,
             for_update=for_update,
@@ -631,47 +637,65 @@ class MarketplaceService:
         if usage is not None:
             return usage
 
-        plan = await self._billing.get_plan_by_tier(user.plan_tier)
+        plan = await self._billing.get_plan_by_tier(plan_tier)
         included_limit = int(plan.monthly_paid_prompt_limit) if plan is not None else 0
-        try:
-            return await self._repo.create_plan_usage_window(
-                user_id=user.id,
-                plan_tier=user.plan_tier,
-                window_started_at=window_started_at,
-                window_ends_at=window_ends_at,
-                included_paid_prompt_limit=included_limit,
-            )
-        except IntegrityError:
-            await self._repo.rollback()
-            usage = await self._repo.get_plan_usage_window(
-                user_id=user.id,
-                plan_tier=user.plan_tier,
-                window_started_at=window_started_at,
-                window_ends_at=window_ends_at,
-                for_update=for_update,
-            )
-            if usage is None:
-                raise
-            return usage
-
-    async def get_plan_access_context(self, user: User, *, for_update: bool = False) -> PlanAccessContext:
-        plan = await self._billing.get_plan_by_tier(user.plan_tier)
-        if plan is None:
-            return PlanAccessContext()
-        window_started_at, window_ends_at = await self._resolve_usage_window(user)
-        usage = await self._get_or_create_plan_usage_window(
-            user=user,
+        created = await self._repo.try_create_plan_usage_window(
+            user_id=user_id,
+            plan_tier=plan_tier,
+            window_started_at=window_started_at,
+            window_ends_at=window_ends_at,
+            included_paid_prompt_limit=included_limit,
+        )
+        if created is not None:
+            return created
+        usage = await self._repo.get_plan_usage_window(
+            user_id=user_id,
+            plan_tier=plan_tier,
             window_started_at=window_started_at,
             window_ends_at=window_ends_at,
             for_update=for_update,
         )
-        total = int(plan.monthly_paid_prompt_limit or 0)
+        if usage is None:
+            raise RuntimeError("Plan usage window insert conflicted but row was not found.")
+        return usage
+
+    async def _get_plan_access_context(
+        self,
+        *,
+        user_id: uuid.UUID,
+        plan_tier: PlanTier,
+        for_update: bool = False,
+    ) -> PlanAccessContext:
+        plan = await self._billing.get_plan_by_tier(plan_tier)
+        if plan is None:
+            return PlanAccessContext()
+        total_unlocks = int(plan.monthly_paid_prompt_limit or 0)
+        money_discount_percent = int(plan.prompt_purchase_discount_percent or 0)
+        lumen_discount_percent = int(plan.lumen_purchase_discount_percent or 0)
+        window_started_at, window_ends_at = await self._resolve_usage_window(
+            user_id=user_id,
+            plan_tier=plan_tier,
+        )
+        usage = await self._get_or_create_plan_usage_window(
+            user_id=user_id,
+            plan_tier=plan_tier,
+            window_started_at=window_started_at,
+            window_ends_at=window_ends_at,
+            for_update=for_update,
+        )
         used = int(usage.used_paid_prompt_unlocks or 0)
         return PlanAccessContext(
-            total_unlocks=total,
-            remaining_unlocks=max(total - used, 0),
-            money_discount_percent=int(plan.prompt_purchase_discount_percent or 0),
-            lumen_discount_percent=int(plan.lumen_purchase_discount_percent or 0),
+            total_unlocks=total_unlocks,
+            remaining_unlocks=max(total_unlocks - used, 0),
+            money_discount_percent=money_discount_percent,
+            lumen_discount_percent=lumen_discount_percent,
+        )
+
+    async def get_plan_access_context(self, user: User, *, for_update: bool = False) -> PlanAccessContext:
+        return await self._get_plan_access_context(
+            user_id=user.id,
+            plan_tier=user.plan_tier,
+            for_update=for_update,
         )
 
     async def build_access_map(self, rows: list[Prompt], viewer: User | None) -> dict[uuid.UUID, PromptAccessRead]:
@@ -742,20 +766,28 @@ class MarketplaceService:
                 purchase_required=True,
                 catalog_action=CatalogAction.signin,
             )
-        if prompt.author_id == viewer.id:
+        viewer_id = viewer.id
+        viewer_plan_tier = viewer.plan_tier
+        if prompt.author_id == viewer_id:
             return PromptAccessRead(has_access=True, is_owned=True, source=PromptAccessSource.author.value)
+        prompt_id = prompt.id
+        seller_user_id = prompt.author_id
         if is_staff(viewer):
             return PromptAccessRead(has_access=True, is_owned=True, source=PromptAccessSource.staff.value)
         entitlement = await self._repo.get_entitlement(
-            user_id=viewer.id,
-            prompt_id=prompt.id,
+            user_id=viewer_id,
+            prompt_id=prompt_id,
             for_update=auto_grant_included_unlock,
         )
         if entitlement is not None:
             return PromptAccessRead(has_access=True, is_owned=True, source=entitlement.source.value)
-        if await self._store.user_has_prompt_access(user_id=viewer.id, prompt_id=prompt.id):
+        if await self._store.user_has_prompt_access(user_id=viewer_id, prompt_id=prompt_id):
             return PromptAccessRead(has_access=True, is_owned=True, source=PromptAccessSource.legacy_store.value)
-        plan_context = await self.get_plan_access_context(viewer, for_update=auto_grant_included_unlock)
+        plan_context = await self._get_plan_access_context(
+            user_id=viewer_id,
+            plan_tier=viewer_plan_tier,
+            for_update=auto_grant_included_unlock,
+        )
         if plan_context.remaining_unlocks <= 0:
             return PromptAccessRead(
                 has_access=False,
@@ -770,9 +802,15 @@ class MarketplaceService:
                 can_unlock_with_plan=True,
                 remaining_plan_unlocks=plan_context.remaining_unlocks,
                 monthly_plan_unlocks=plan_context.total_unlocks,
-                catalog_action=CatalogAction.open,
-            )
-        await self._grant_included_unlock(prompt=prompt, user=viewer, plan_context=plan_context)
+                    catalog_action=CatalogAction.open,
+                )
+        await self._grant_included_unlock(
+            prompt_id=prompt_id,
+            seller_user_id=seller_user_id,
+            user_id=viewer_id,
+            plan_tier=viewer_plan_tier,
+            plan_context=plan_context,
+        )
         return PromptAccessRead(
             has_access=True,
             is_owned=True,
@@ -785,8 +823,10 @@ class MarketplaceService:
     async def _grant_included_unlock(
         self,
         *,
-        prompt: Prompt,
-        user: User,
+        prompt_id: uuid.UUID,
+        seller_user_id: uuid.UUID | None,
+        user_id: uuid.UUID,
+        plan_tier: PlanTier,
         plan_context: PlanAccessContext,
     ) -> PromptPurchase:
         if plan_context.remaining_unlocks <= 0:
@@ -795,9 +835,13 @@ class MarketplaceService:
                 message="You've used all included paid prompt unlocks for the current period.",
                 status_code=402,
             )
-        window_started_at, window_ends_at = await self._resolve_usage_window(user)
+        window_started_at, window_ends_at = await self._resolve_usage_window(
+            user_id=user_id,
+            plan_tier=plan_tier,
+        )
         usage = await self._get_or_create_plan_usage_window(
-            user=user,
+            user_id=user_id,
+            plan_tier=plan_tier,
             window_started_at=window_started_at,
             window_ends_at=window_ends_at,
             for_update=True,
@@ -808,53 +852,59 @@ class MarketplaceService:
                 message="You've used all included paid prompt unlocks for the current period.",
                 status_code=402,
             )
-        plan_token = f"plan-{user.id}-{prompt.id}"
+        plan_token = f"plan-{user_id}-{prompt_id}"
         now = datetime.now(timezone.utc)
-        try:
-            purchase = await self._repo.create_purchase(
-                user_id=user.id,
-                prompt_id=prompt.id,
-                seller_user_id=prompt.author_id,
-                payment_method=PromptPaymentMethod.included_limit,
-                status=PurchaseStatus.completed,
-                settlement_status=MarketplaceSettlementStatus.available,
-                price_rub=0,
-                price_lumens=0,
-                client_token=plan_token,
-                settlement_available_at=now,
-                completed_at=now,
-                meta={"included_unlock": True, "plan_tier": user.plan_tier.value},
-            )
-        except IntegrityError:
-            await self._repo.rollback()
-            existing = await self._repo.get_purchase_by_client_token(user_id=user.id, client_token=plan_token)
+        created_purchase = True
+        purchase = await self._repo.try_create_purchase(
+            user_id=user_id,
+            prompt_id=prompt_id,
+            seller_user_id=seller_user_id,
+            payment_method=PromptPaymentMethod.included_limit,
+            status=PurchaseStatus.completed,
+            settlement_status=MarketplaceSettlementStatus.available,
+            price_rub=0,
+            price_lumens=0,
+            client_token=plan_token,
+            settlement_available_at=now,
+            completed_at=now,
+            meta={"included_unlock": True, "plan_tier": plan_tier.value},
+        )
+        if purchase is None:
+            existing = await self._repo.get_purchase_by_client_token(user_id=user_id, client_token=plan_token)
             if existing is not None and existing.status == PurchaseStatus.completed:
-                return existing
-            raise
+                created_purchase = False
+                purchase = existing
+            else:
+                raise RuntimeError("Included unlock purchase insert conflicted but existing row was not found.")
 
         entitlement = await self._repo.try_create_entitlement(
-            user_id=user.id,
-            prompt_id=prompt.id,
+            user_id=user_id,
+            prompt_id=prompt_id,
             source=PromptAccessSource.subscription_limit,
             purchase_id=purchase.id,
-            meta={"plan_tier": user.plan_tier.value},
+            meta={"plan_tier": plan_tier.value},
             granted_at=now,
         )
         if entitlement is None:
-            entitlement = await self._repo.get_entitlement(user_id=user.id, prompt_id=prompt.id, for_update=True)
+            entitlement = await self._repo.get_entitlement(user_id=user_id, prompt_id=prompt_id, for_update=True)
             if entitlement is None:
                 raise
+
+        # Idempotency guard: retried/concurrent unlock requests that resolve to an existing
+        # purchase+entitlement must not consume included quota twice.
+        if not created_purchase or entitlement.purchase_id != purchase.id:
+            return purchase
 
         usage.used_paid_prompt_unlocks += 1
         await self._repo.save_plan_usage_window(usage)
         await self._repo.create_marketplace_transaction(
             prompt_purchase_id=purchase.id,
-            prompt_id=prompt.id,
-            actor_user_id=user.id,
+            prompt_id=prompt_id,
+            actor_user_id=user_id,
             kind=MarketplaceTransactionKind.included_unlock,
             currency_code="PLAN",
             amount=1,
-            meta={"plan_tier": user.plan_tier.value},
+            meta={"plan_tier": plan_tier.value},
         )
         return purchase
 
@@ -893,31 +943,38 @@ class MarketplaceService:
         payload: PromptLumenPurchaseRequest,
     ) -> PromptPurchaseActionResponse:
         token_prefix = "mkt-lmn"
+        user_id = user.id
+        staff_user = is_staff(user)
+        prompt_id = prompt.id
+        seller_user_id = prompt.author_id
         if prompt.pricing is None or not prompt.pricing.is_active:
             raise AppError(code="prompt_not_paid", message="This prompt does not require a paid unlock.", status_code=400)
-        if prompt.author_id == user.id:
+        base_price_lumens = int(prompt.pricing.price_lumens)
+        if seller_user_id == user_id:
             raise AppError(code="cannot_buy_own_prompt", message="You can't buy your own prompt.", status_code=400)
+        if staff_user:
+            raise ConflictError("You already own this prompt.")
+        entitlement = await self._repo.get_entitlement(user_id=user_id, prompt_id=prompt_id)
+        if entitlement is not None or await self._store.user_has_prompt_access(user_id=user_id, prompt_id=prompt_id):
+            raise ConflictError("You already own this prompt.")
 
         if payload.client_token:
             existing = await self._find_purchase_by_client_token(
-                user_id=user.id,
+                user_id=user_id,
                 client_token=payload.client_token,
                 prefix=token_prefix,
             )
             if existing is not None and existing.status == PurchaseStatus.completed:
-                access = await self.resolve_prompt_access(prompt, user, auto_grant_included_unlock=False)
+                access = PromptAccessRead(has_access=True, is_owned=True, source=PromptAccessSource.direct_lumens.value)
                 return PromptPurchaseActionResponse(purchase=self._purchase_to_read(existing), access=access)
 
-        active_purchase = await self._repo.get_active_purchase(user_id=user.id, prompt_id=prompt.id)
+        active_purchase = await self._repo.get_active_purchase(user_id=user_id, prompt_id=prompt_id)
         if active_purchase is not None:
             raise ConflictError("A purchase for this prompt is already being processed.")
-        current_access = await self.resolve_prompt_access(prompt, user, auto_grant_included_unlock=False)
-        if current_access.is_owned:
-            raise ConflictError("You already own this prompt.")
 
-        effective_client_token = self._scoped_client_token(user.id, payload.client_token, prefix=token_prefix)
+        effective_client_token = self._scoped_client_token(user_id, payload.client_token, prefix=token_prefix)
         plan_context = await self.get_plan_access_context(user)
-        effective_price_lumens = _apply_discount(prompt.pricing.price_lumens, plan_context.lumen_discount_percent)
+        effective_price_lumens = _apply_discount(base_price_lumens, plan_context.lumen_discount_percent)
         fee_lumens = _fee(effective_price_lumens)
         seller_lumens = max(effective_price_lumens - fee_lumens, 0)
         now = datetime.now(timezone.utc)
@@ -926,83 +983,83 @@ class MarketplaceService:
             seller_amount_lumens=seller_lumens,
             completed_at=now,
         )
-        try:
-            purchase = await self._repo.create_purchase(
-                user_id=user.id,
-                prompt_id=prompt.id,
-                seller_user_id=prompt.author_id,
-                payment_method=PromptPaymentMethod.lumens,
-                status=PurchaseStatus.pending,
-                settlement_status=settlement_status,
-                price_rub=0,
-                price_lumens=effective_price_lumens,
-                platform_fee_lumens=fee_lumens,
-                seller_amount_lumens=seller_lumens,
-                settlement_available_at=settlement_available_at,
-                client_token=effective_client_token,
-                meta={"base_price_lumens": prompt.pricing.price_lumens},
-            )
-        except IntegrityError as exc:
-            await self._repo.rollback()
-            existing = await self._repo.get_purchase_by_client_token(user_id=user.id, client_token=effective_client_token)
+        purchase = await self._repo.try_create_purchase(
+            user_id=user_id,
+            prompt_id=prompt_id,
+            seller_user_id=seller_user_id,
+            payment_method=PromptPaymentMethod.lumens,
+            status=PurchaseStatus.pending,
+            settlement_status=settlement_status,
+            price_rub=0,
+            price_lumens=effective_price_lumens,
+            platform_fee_lumens=fee_lumens,
+            seller_amount_lumens=seller_lumens,
+            settlement_available_at=settlement_available_at,
+            client_token=effective_client_token,
+            meta={"base_price_lumens": base_price_lumens},
+        )
+        if purchase is None:
+            existing = await self._repo.get_purchase_by_client_token(user_id=user_id, client_token=effective_client_token)
             if existing is not None and existing.status == PurchaseStatus.completed:
-                access = await self.resolve_prompt_access(prompt, user, auto_grant_included_unlock=False)
+                access = PromptAccessRead(has_access=True, is_owned=True, source=PromptAccessSource.direct_lumens.value)
                 return PromptPurchaseActionResponse(purchase=self._purchase_to_read(existing), access=access)
-            raise ConflictError("A purchase for this prompt is already being processed.") from exc
-        purchase.prompt = prompt
+            raise ConflictError("A purchase for this prompt is already being processed.")
+        prompt_row = await self._repo.get_prompt_by_id(prompt_id)
+        if prompt_row is not None:
+            purchase.prompt = prompt_row
         await self._wallet.adjust_balance(
-            user_id=user.id,
+            user_id=user_id,
             amount=-effective_price_lumens,
             reason=CurrencyTransactionType.marketplace_purchase,
-            context=f"prompt:{prompt.id}:purchase:{purchase.id}:buyer",
+            context=f"prompt:{prompt_id}:purchase:{purchase.id}:buyer",
             source_id=purchase.id,
-            metadata={"prompt_id": str(prompt.id), "purchase_id": str(purchase.id)},
+            metadata={"prompt_id": str(prompt_id), "purchase_id": str(purchase.id)},
             now=now,
         )
         purchase.status = PurchaseStatus.completed
         purchase.completed_at = now
         await self._repo.save_purchase(purchase)
         entitlement = await self._repo.try_create_entitlement(
-            user_id=user.id,
-            prompt_id=prompt.id,
+            user_id=user_id,
+            prompt_id=prompt_id,
             source=PromptAccessSource.direct_lumens,
             purchase_id=purchase.id,
             meta={"payment_method": PromptPaymentMethod.lumens.value},
             granted_at=now,
         )
         if entitlement is None:
-            entitlement = await self._repo.get_entitlement(user_id=user.id, prompt_id=prompt.id, for_update=True)
+            entitlement = await self._repo.get_entitlement(user_id=user_id, prompt_id=prompt_id, for_update=True)
             if entitlement is None:
                 raise
         await self._repo.create_marketplace_transaction(
             prompt_purchase_id=purchase.id,
-            prompt_id=prompt.id,
-            actor_user_id=user.id,
+            prompt_id=prompt_id,
+            actor_user_id=user_id,
             kind=MarketplaceTransactionKind.buyer_charge,
             currency_code="LMN",
             amount=effective_price_lumens,
-            meta={"prompt_id": str(prompt.id)},
+            meta={"prompt_id": str(prompt_id)},
         )
-        if prompt.author_id is not None and seller_lumens > 0:
+        if seller_user_id is not None and seller_lumens > 0:
             await self._repo.create_marketplace_transaction(
                 prompt_purchase_id=purchase.id,
-                prompt_id=prompt.id,
-                actor_user_id=prompt.author_id,
+                prompt_id=prompt_id,
+                actor_user_id=seller_user_id,
                 kind=MarketplaceTransactionKind.seller_credit,
                 currency_code="LMN",
                 amount=seller_lumens,
-                meta={"prompt_id": str(prompt.id)},
+                meta={"prompt_id": str(prompt_id)},
             )
         await self._repo.create_marketplace_transaction(
             prompt_purchase_id=purchase.id,
-            prompt_id=prompt.id,
+            prompt_id=prompt_id,
             actor_user_id=None,
             kind=MarketplaceTransactionKind.platform_fee,
             currency_code="LMN",
             amount=fee_lumens,
-            meta={"prompt_id": str(prompt.id)},
+            meta={"prompt_id": str(prompt_id)},
         )
-        access = await self.resolve_prompt_access(prompt, user, auto_grant_included_unlock=False)
+        access = PromptAccessRead(has_access=True, is_owned=True, source=PromptAccessSource.direct_lumens.value)
         return PromptPurchaseActionResponse(
             purchase=self._purchase_to_read(purchase, can_review=True),
             access=access,
@@ -1018,55 +1075,63 @@ class MarketplaceService:
         payload: PromptCheckoutSessionRequest,
     ) -> PromptCheckoutSessionResponse:
         token_prefix = "mkt-checkout"
+        user_id = user.id
+        staff_user = is_staff(user)
         prompt = await self._repo.get_prompt_by_id(payload.prompt_id)
         if prompt is None:
             raise NotFoundError("prompt", str(payload.prompt_id))
         if prompt.pricing is None or not prompt.pricing.is_active:
             raise AppError(code="prompt_not_paid", message="This prompt does not require a paid unlock.", status_code=400)
-        if prompt.author_id == user.id:
+        prompt_id = prompt.id
+        prompt_slug = prompt.slug
+        prompt_title = prompt.title
+        prompt_summary = prompt.summary or "Paid prompt unlock"
+        seller_user_id = prompt.author_id
+        base_price_rub = int(prompt.pricing.price_rub)
+        if seller_user_id == user_id:
             raise AppError(code="cannot_buy_own_prompt", message="You can't buy your own prompt.", status_code=400)
-        existing_access = await self.resolve_prompt_access(prompt, user, auto_grant_included_unlock=False)
-        if existing_access.is_owned:
+        if staff_user:
+            raise ConflictError("You already own this prompt.")
+        entitlement = await self._repo.get_entitlement(user_id=user_id, prompt_id=prompt_id)
+        if entitlement is not None or await self._store.user_has_prompt_access(user_id=user_id, prompt_id=prompt_id):
             raise ConflictError("You already own this prompt.")
         if payload.client_token:
             existing = await self._find_purchase_by_client_token(
-                user_id=user.id,
+                user_id=user_id,
                 client_token=payload.client_token,
                 prefix=token_prefix,
             )
             if existing is not None and existing.status == PurchaseStatus.completed:
                 raise ConflictError("This prompt is already purchased.")
-        active_purchase = await self._repo.get_active_purchase(user_id=user.id, prompt_id=prompt.id)
+        active_purchase = await self._repo.get_active_purchase(user_id=user_id, prompt_id=prompt_id)
         if active_purchase is not None:
             raise ConflictError("A purchase for this prompt is already being processed.")
-        effective_client_token = self._scoped_client_token(user.id, payload.client_token, prefix=token_prefix)
+        effective_client_token = self._scoped_client_token(user_id, payload.client_token, prefix=token_prefix)
         plan_context = await self.get_plan_access_context(user)
-        effective_price_rub = _apply_discount(prompt.pricing.price_rub, plan_context.money_discount_percent)
+        effective_price_rub = _apply_discount(base_price_rub, plan_context.money_discount_percent)
         fee_rub = _fee(effective_price_rub)
         seller_rub = max(effective_price_rub - fee_rub, 0)
-        try:
-            purchase = await self._repo.create_purchase(
-                user_id=user.id,
-                prompt_id=prompt.id,
-                seller_user_id=prompt.author_id,
-                payment_method=PromptPaymentMethod.stripe,
-                status=PurchaseStatus.pending,
-                price_rub=effective_price_rub,
-                price_lumens=0,
-                platform_fee_rub=fee_rub,
-                seller_amount_rub=seller_rub,
-                client_token=effective_client_token,
-                meta={"base_price_rub": prompt.pricing.price_rub},
-            )
-        except IntegrityError as exc:
-            await self._repo.rollback()
-            existing = await self._repo.get_purchase_by_client_token(user_id=user.id, client_token=effective_client_token)
+        purchase = await self._repo.try_create_purchase(
+            user_id=user_id,
+            prompt_id=prompt_id,
+            seller_user_id=seller_user_id,
+            payment_method=PromptPaymentMethod.stripe,
+            status=PurchaseStatus.pending,
+            price_rub=effective_price_rub,
+            price_lumens=0,
+            platform_fee_rub=fee_rub,
+            seller_amount_rub=seller_rub,
+            client_token=effective_client_token,
+            meta={"base_price_rub": base_price_rub},
+        )
+        if purchase is None:
+            existing = await self._repo.get_purchase_by_client_token(user_id=user_id, client_token=effective_client_token)
             if existing is not None and existing.status == PurchaseStatus.completed:
-                raise ConflictError("This prompt is already purchased.") from exc
-            raise ConflictError("A purchase for this prompt is already being processed.") from exc
+                raise ConflictError("This prompt is already purchased.")
+            raise ConflictError("A purchase for this prompt is already being processed.")
         success_url = self._resolve_checkout_redirect_url(
             payload.success_url,
-            default_url=_append_query(self._settings.billing_checkout_success_url, prompt=prompt.slug),
+            default_url=_append_query(self._settings.billing_checkout_success_url, prompt=prompt_slug),
         )
         cancel_url = self._resolve_checkout_redirect_url(
             payload.cancel_url,
@@ -1086,44 +1151,44 @@ class MarketplaceService:
             purchase.meta = {**(purchase.meta or {}), "mock": True}
             await self._repo.save_purchase(purchase)
             entitlement = await self._repo.try_create_entitlement(
-                user_id=user.id,
-                prompt_id=prompt.id,
+                user_id=user_id,
+                prompt_id=prompt_id,
                 source=PromptAccessSource.direct_money,
                 purchase_id=purchase.id,
                 meta={"payment_method": PromptPaymentMethod.stripe.value, "mock": True},
                 granted_at=completed_at,
             )
             if entitlement is None:
-                entitlement = await self._repo.get_entitlement(user_id=user.id, prompt_id=prompt.id, for_update=True)
+                entitlement = await self._repo.get_entitlement(user_id=user_id, prompt_id=prompt_id, for_update=True)
                 if entitlement is None:
                     raise
             await self._repo.create_marketplace_transaction(
                 prompt_purchase_id=purchase.id,
-                prompt_id=prompt.id,
-                actor_user_id=user.id,
+                prompt_id=prompt_id,
+                actor_user_id=user_id,
                 kind=MarketplaceTransactionKind.buyer_charge,
                 currency_code="RUB",
                 amount=effective_price_rub,
-                meta={"prompt_id": str(prompt.id), "mock": True},
+                meta={"prompt_id": str(prompt_id), "mock": True},
             )
             await self._repo.create_marketplace_transaction(
                 prompt_purchase_id=purchase.id,
-                prompt_id=prompt.id,
+                prompt_id=prompt_id,
                 actor_user_id=None,
                 kind=MarketplaceTransactionKind.platform_fee,
                 currency_code="RUB",
                 amount=fee_rub,
-                meta={"prompt_id": str(prompt.id), "mock": True},
+                meta={"prompt_id": str(prompt_id), "mock": True},
             )
-            if prompt.author_id is not None and seller_rub > 0:
+            if seller_user_id is not None and seller_rub > 0:
                 await self._repo.create_marketplace_transaction(
                     prompt_purchase_id=purchase.id,
-                    prompt_id=prompt.id,
-                    actor_user_id=prompt.author_id,
+                    prompt_id=prompt_id,
+                    actor_user_id=seller_user_id,
                     kind=MarketplaceTransactionKind.seller_credit,
                     currency_code="RUB",
                     amount=seller_rub,
-                    meta={"prompt_id": str(prompt.id), "mock": True},
+                    meta={"prompt_id": str(prompt_id), "mock": True},
                 )
             return PromptCheckoutSessionResponse(
                 url=success_url,
@@ -1140,8 +1205,8 @@ class MarketplaceService:
                         "currency": "rub",
                         "unit_amount": effective_price_rub * 100,
                         "product_data": {
-                            "name": prompt.title,
-                            "description": prompt.summary or "Paid prompt unlock",
+                            "name": prompt_title,
+                            "description": prompt_summary,
                         },
                     },
                     "quantity": 1,
@@ -1149,19 +1214,19 @@ class MarketplaceService:
             ],
             success_url=success_url,
             cancel_url=cancel_url,
-            client_reference_id=str(user.id),
+            client_reference_id=str(user_id),
             metadata={
                 "kind": "prompt_purchase",
                 "purchase_id": str(purchase.id),
-                "prompt_id": str(prompt.id),
-                "user_id": str(user.id),
+                "prompt_id": str(prompt_id),
+                "user_id": str(user_id),
             },
             payment_intent_data={
                 "metadata": {
                     "kind": "prompt_purchase",
                     "purchase_id": str(purchase.id),
-                    "prompt_id": str(prompt.id),
-                    "user_id": str(user.id),
+                    "prompt_id": str(prompt_id),
+                    "user_id": str(user_id),
                 }
             },
         )

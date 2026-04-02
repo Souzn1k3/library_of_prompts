@@ -57,7 +57,7 @@ export default async function PricingPage() {
             <Link href="/catalog" className="pv-button-secondary">
               <T k="home.explorePrompts" />
             </Link>
-            <Link href="/learn" className="pv-inline-link">
+            <Link href="/learn/start" className="pv-inline-link">
               <T k="home.startLearning" />
               <span aria-hidden="true">↗</span>
             </Link>

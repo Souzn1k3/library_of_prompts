@@ -39,6 +39,8 @@ from app.modules.missions.repository.mission_repository import MissionRepository
 from app.modules.missions.service.mission_service import MissionService
 from app.modules.marketplace.repository.marketplace_repository import MarketplaceRepository
 from app.modules.marketplace.service.marketplace_service import MarketplaceService
+from app.modules.learning.repository.learning_repository import LearningRepository
+from app.modules.learning.service.learning_service import LearningService
 from app.modules.onboarding.repository.onboarding_repository import OnboardingRepository
 from app.modules.onboarding.service.onboarding_service import OnboardingService
 
@@ -167,6 +169,16 @@ def build_lesson_service(session: AsyncSession) -> LessonService:
     return LessonService(LessonRepository(session))
 
 get_lesson_service = _db_service(build_lesson_service)
+
+
+def build_learning_service(session: AsyncSession) -> LearningService:
+    return LearningService(
+        LearningRepository(session),
+        WalletRepository(session),
+    )
+
+
+get_learning_service = _db_service(build_learning_service)
 
 
 def build_submission_service(session: AsyncSession) -> SubmissionService:

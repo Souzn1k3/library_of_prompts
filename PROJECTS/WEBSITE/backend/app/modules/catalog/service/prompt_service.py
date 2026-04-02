@@ -24,7 +24,7 @@ from app.modules.catalog.model.prompt import (
     StoreUnlockOffer,
 )
 from app.modules.economy.repository.store_repository import StoreRepository
-from app.modules.marketplace.model.marketplace import PromptAccessRead
+from app.modules.marketplace.model.marketplace import PromptAccessRead, PromptPriceRead
 from app.modules.marketplace.service.marketplace_service import MarketplaceService
 
 
@@ -109,6 +109,15 @@ def _to_list_item(
         quality_score = row.quality_metrics.quality_score
     elif row.stats is not None:
         quality_score = row.stats.quality_score
+    price = (
+        PromptPriceRead(
+            price_rub=row.pricing.price_rub,
+            price_lumens=row.pricing.price_lumens,
+            commission_percent=row.pricing.commission_percent,
+        )
+        if row.pricing is not None and row.pricing.is_active
+        else None
+    )
     return PromptListItem(
         id=row.id,
         slug=row.slug,
@@ -124,11 +133,7 @@ def _to_list_item(
         is_paid=bool(row.pricing and row.pricing.is_active),
         difficulty=row.difficulty,
         output_type=row.output_type,
-        price=None if row.pricing is None or not row.pricing.is_active else {
-            "price_rub": row.pricing.price_rub,
-            "price_lumens": row.pricing.price_lumens,
-            "commission_percent": row.pricing.commission_percent,
-        },
+        price=price,
         access=access,
         use_cases=[link.use_case.slug for link in row.use_case_links if link.use_case is not None],
         model_compatibility=[link.model.slug for link in row.model_links if link.model is not None],

@@ -426,7 +426,7 @@ async def test_review_reporting_hides_review_after_threshold(async_client, uniqu
     )
     await _credit_lumens(buyer["id"], 5_000)
 
-    purchase = await _purchase_with_lumens(async_client, token=buyer["token"], prompt_id=prompt_id, client_token="report-purchase")
+    await _purchase_with_lumens(async_client, token=buyer["token"], prompt_id=prompt_id, client_token="report-purchase")
     review = await async_client.put(
         f"/api/v1/marketplace/prompts/{prompt_id}/review",
         headers=_auth_headers(buyer["token"]),

@@ -13,7 +13,6 @@ from app.infrastructure.db.models import BillingCustomer, BillingProvider
 from app.infrastructure.db.session import async_session_maker
 
 from .helpers.stripe_webhook import (
-    event_json_bytes,
     sign_stripe_webhook_payload,
     subscription_updated_event,
 )

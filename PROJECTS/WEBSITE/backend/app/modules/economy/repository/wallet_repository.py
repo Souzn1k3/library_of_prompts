@@ -195,7 +195,7 @@ class WalletRepository:
             .limit(limit)
         )
         result = await self._session.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def has_transaction(self, *, user_id: uuid.UUID, reason: CurrencyTransactionType, context: str) -> bool:
         stmt = (
@@ -297,7 +297,7 @@ class WalletRepository:
             .order_by(UserLockedReward.created_at.asc())
         )
         rows = await self._session.execute(stmt)
-        return rows.scalars().all()
+        return list(rows.scalars().all())
 
     async def create_locked_cashback(
         self,
@@ -339,7 +339,7 @@ class WalletRepository:
         )
         result = await self._session.execute(stmt)
         await self._session.flush()
-        return int(result.rowcount or 0)
+        return int(getattr(result, "rowcount", 0) or 0)
 
     async def progress_locked_cashback(
         self,
@@ -354,17 +354,19 @@ class WalletRepository:
 
         await self.expire_locked_rewards(user_id=user_id, now=now)
 
-        rows = (
-            await self._session.execute(
-                select(UserLockedReward)
-                .where(
-                    UserLockedReward.user_id == user_id,
-                    UserLockedReward.status == LockedRewardStatus.pending,
-                    (UserLockedReward.unlock_by.is_(None) | (UserLockedReward.unlock_by >= now)),
-                )
-                .order_by(UserLockedReward.created_at.asc())
+        stmt = (
+            select(UserLockedReward)
+            .where(
+                UserLockedReward.user_id == user_id,
+                UserLockedReward.status == LockedRewardStatus.pending,
+                (UserLockedReward.unlock_by.is_(None) | (UserLockedReward.unlock_by >= now)),
             )
-        ).scalars().all()
+            .order_by(UserLockedReward.created_at.asc())
+        )
+        if not self._is_sqlite():
+            stmt = stmt.with_for_update()
+
+        rows = (await self._session.execute(stmt)).scalars().all()
 
         unlocked: list[UserLockedReward] = []
         for row in rows:
@@ -443,7 +445,7 @@ class WalletRepository:
             )
             .order_by(UserActiveBoost.created_at.asc())
         )
-        return rows.scalars().all()
+        return list(rows.scalars().all())
 
     async def consume_active_boost(
         self,

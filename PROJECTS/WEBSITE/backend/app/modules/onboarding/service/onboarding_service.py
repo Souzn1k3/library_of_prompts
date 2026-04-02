@@ -1,4 +1,3 @@
-import uuid
 from datetime import datetime, timezone
 
 from app.core.errors import AppError, NotFoundError

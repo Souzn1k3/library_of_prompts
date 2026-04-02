@@ -229,7 +229,7 @@ export function MissionsClient() {
       />
 
       <section className="pv-panel px-6 py-6 sm:px-7">
-        <EconomyLoop activeStep="missions" />
+        <EconomyLoop />
       </section>
 
       {sections.length === 0 ? (

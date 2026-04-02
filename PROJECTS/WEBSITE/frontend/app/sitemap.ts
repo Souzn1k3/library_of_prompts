@@ -1,6 +1,12 @@
 import type { MetadataRoute } from "next";
 
-import { ApiRequestError, fetchCategories, fetchLessons, fetchPrompts } from "@/lib/api";
+import {
+  ApiRequestError,
+  fetchCategories,
+  fetchLearningCatalog,
+  fetchLearningCourse,
+  fetchPrompts,
+} from "@/lib/api";
 import { listCategoryIntentLandings } from "@/lib/seo-landings";
 import { getSiteUrl } from "@/lib/site";
 
@@ -72,9 +78,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const paths = buildStaticPaths(base, now);
 
   try {
-    const [promptEntries, lessons, categories, categoryIntentLandings] = await Promise.all([
+    const [promptEntries, learningCatalog, categories, categoryIntentLandings] = await Promise.all([
       collectPromptEntries(),
-      fetchLessons(),
+      fetchLearningCatalog(),
       fetchCategories(),
       listCategoryIntentLandings({ minPromptCount: 2 }),
     ]);
@@ -88,14 +94,32 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         priority: 0.8,
       }));
 
-    const lessonUrls: MetadataRoute.Sitemap = lessons
-      .filter((lesson) => Boolean(lesson.slug))
-      .map((lesson) => ({
-        url: `${base}/learn/${encodeURIComponent(lesson.slug)}`,
-        lastModified: lesson.created_at ? new Date(lesson.created_at) : now,
-        changeFrequency: "weekly",
-        priority: 0.75,
-      }));
+    const courseDetailResults = await Promise.allSettled(
+      learningCatalog.courses.map((course) => fetchLearningCourse(course.slug)),
+    );
+
+    const courseUrls: MetadataRoute.Sitemap = learningCatalog.courses.map((course) => ({
+      url: `${base}/learn/course/${encodeURIComponent(course.slug)}`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.79,
+    }));
+
+    const lessonUrls: MetadataRoute.Sitemap = [];
+    for (const result of courseDetailResults) {
+      if (result.status !== "fulfilled") continue;
+      const course = result.value;
+      for (const courseModule of course.modules) {
+        for (const lesson of courseModule.lessons) {
+          lessonUrls.push({
+            url: `${base}/learn/course/${encodeURIComponent(course.slug)}/lesson/${encodeURIComponent(lesson.slug)}`,
+            lastModified: now,
+            changeFrequency: "weekly",
+            priority: lesson.is_final_assessment ? 0.73 : 0.76,
+          });
+        }
+      }
+    }
 
     const categoryUrlResults = await Promise.allSettled(
       categories.map(async (category) => {
@@ -131,7 +155,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.76,
     }));
 
-    return [...paths, ...promptUrls, ...lessonUrls, ...categoryUrls, ...categoryIntentUrls];
+    return [...paths, ...promptUrls, ...courseUrls, ...lessonUrls, ...categoryUrls, ...categoryIntentUrls];
   } catch (error) {
     if (!isBuildTimeApiFailure(error)) {
       throw error;

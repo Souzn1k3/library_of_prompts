@@ -7,7 +7,6 @@ from sqlalchemy.exc import IntegrityError
 from app.core.errors import AppError, ConflictError, NotFoundError
 from app.infrastructure.db.models import Category
 from app.modules.catalog.model.category import CategoryCreate, CategoryRead, CategoryUpdate
-from app.modules.catalog.repository.category_repository import CategoryRepository
 
 
 class CategoryRepositoryProtocol(Protocol):

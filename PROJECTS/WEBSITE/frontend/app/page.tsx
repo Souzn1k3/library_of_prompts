@@ -138,7 +138,7 @@ export default async function HomePage() {
                   </span>
                 </div>
                 <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[var(--pv-brand-strong)]">
-                  <T k="home.startLearning" />
+                  <T k="learn.openLesson" />
                   <span aria-hidden="true">↗</span>
                 </span>
               </Link>

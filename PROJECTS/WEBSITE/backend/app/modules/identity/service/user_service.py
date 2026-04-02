@@ -5,7 +5,6 @@ from app.core.errors import NotFoundError
 from app.infrastructure.db.models import User
 from app.modules.identity.model.user import UserRead
 from app.modules.identity.model.user_update import UserUpdateMe
-from app.modules.identity.repository.user_repository import UserRepository
 from app.modules.contributors.service.contributor_service import ContributorService
 from app.modules.marketplace.service.marketplace_service import MarketplaceService
 

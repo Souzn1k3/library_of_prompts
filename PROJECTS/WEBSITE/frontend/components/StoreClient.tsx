@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/LanguageProvider";
-import { EconomyLoop } from "@/components/navigation/EconomyLoop";
 import { PageIntro } from "@/components/navigation/PageIntro";
 import { LmnAmount } from "@/components/ui/LmnAmount";
 import { LmnBalanceCard } from "@/components/ui/LmnBalanceCard";
@@ -20,7 +19,7 @@ import {
 import { APP_ROUTES } from "@/lib/constants/routes";
 import { getAffordableStoreItems, getNearMissStoreItems, pickBestStoreItem, sortStoreItems } from "@/lib/economy";
 import { fetchStoreItems, fetchWallet, purchaseStoreItem } from "@/lib/client-api";
-import { formatNumber, humanizeSnakeCase } from "@/lib/formatters";
+import { formatNumber } from "@/lib/formatters";
 import { languageToIntlLocale, type TranslationKey } from "@/lib/i18n";
 import type { PurchaseResult, StoreItem, StoreItemKind, WalletRead } from "@/lib/types";
 
@@ -37,18 +36,6 @@ function sectionLabel(kind: StoreItem["kind"], t: TranslateFn) {
   const key = `store.section.${kind}` as TranslationKey;
   const translated = t(key);
   return translated === key ? kindLabel(kind, t) : translated;
-}
-
-function tagLabel(tag: string, t: TranslateFn) {
-  const key = `store.tag.${tag}` as TranslationKey;
-  const translated = t(key);
-  return translated === key ? humanizeSnakeCase(tag) : translated;
-}
-
-function priceBandLabel(priceBand: StoreItem["price_band"], t: TranslateFn) {
-  const key = `store.priceBand.${priceBand}` as TranslationKey;
-  const translated = t(key);
-  return translated === key ? priceBand : translated;
 }
 
 function translationOrNull(t: TranslateFn, key: TranslationKey, params?: TranslationParams): string | null {
@@ -108,13 +95,6 @@ function localizedStarterReward(args: {
   const title = translationOrNull(args.t, `store.item.${args.slug}.rewardTitle` as TranslationKey) ?? args.fallbackTitle;
   const body = translationOrNull(args.t, `store.item.${args.slug}.rewardBody` as TranslationKey) ?? args.fallbackBody;
   return { title, body };
-}
-
-function formatOfferRemainingHours(iso: string | null): number | null {
-  if (!iso) return null;
-  const ms = new Date(iso).getTime() - Date.now();
-  if (Number.isNaN(ms) || ms <= 0) return 0;
-  return Math.ceil(ms / (1000 * 60 * 60));
 }
 
 export function StoreClient() {
@@ -304,11 +284,11 @@ export function StoreClient() {
               />
             </div>
             <div className="pv-stat-card">
-              <p className="pv-stat-label">{t("store.availableNow")}</p>
+              <p className="pv-stat-label">{t("store.readyToBuyCount")}</p>
               <p className="mt-3 text-2xl font-extrabold tracking-[-0.05em] text-zinc-950">{formatNumber(affordableItems.length, locale)}</p>
             </div>
             <div className="pv-stat-card">
-              <p className="pv-stat-label">{t("store.almostThere")}</p>
+              <p className="pv-stat-label">{t("store.toNextSpend")}</p>
               <p className="mt-3 text-2xl font-extrabold tracking-[-0.05em] text-zinc-950">
                 {formatNumber(bestItem?.remaining_lumens ?? 0, locale)}
               </p>
@@ -317,10 +297,6 @@ export function StoreClient() {
         }
       />
 
-      <section className="pv-panel px-6 py-6 sm:px-7">
-        <EconomyLoop activeStep="store" />
-      </section>
-
       {success ? (
         <section className="space-y-3">
           <div className="pv-alert pv-alert-success flex flex-wrap items-center justify-between gap-3">
@@ -328,14 +304,21 @@ export function StoreClient() {
               <p className="font-medium">
                 {t("store.purchased")}: {successPurchaseItemTitle ?? success.purchase.item.title}
               </p>
-              <p className="mt-1 text-sm text-emerald-900/80">{t("store.balanceAfter")}</p>
+              <p className="mt-1 text-sm text-emerald-900/80">
+                {t("store.purchaseSummarySpent", {
+                  amount: success.purchase.price_paid,
+                  symbol: wallet?.currency_symbol ?? "LMN",
+                })}
+              </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <LmnAmount amount={`-${success.purchase.price_paid}`} symbol={wallet?.currency_symbol ?? "LMN"} state="spent" />
-              <span aria-hidden="true" className="text-sm font-semibold text-emerald-900/70">
-                →
+              <span className="pv-chip">
+                {t("store.currentBalance", {
+                  amount: success.wallet.balance,
+                  symbol: wallet?.currency_symbol ?? "LMN",
+                })}
               </span>
-              <LmnAmount amount={success.wallet.balance} symbol={wallet?.currency_symbol ?? "LMN"} strong state="balance" />
             </div>
           </div>
 
@@ -401,7 +384,7 @@ export function StoreClient() {
         <section className="space-y-3">
           <div className="pv-section-head">
             <div className="pv-section-copy">
-              <p className="pv-kicker">{t("store.availableNow")}</p>
+              <p className="pv-kicker">{t("store.readySectionKicker")}</p>
               <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("store.availableNow")}</h2>
               <p className="mt-2 max-w-2xl text-sm text-zinc-600">{t("store.availableNowBody")}</p>
             </div>
@@ -493,10 +476,8 @@ function StoreItemCard({
   const { t } = useI18n();
   const soldOut = item.availability !== null && item.availability <= 0;
   const disabled = purchasing === item.slug || soldOut || item.owned || !item.is_affordable;
-  const promptTitles = Array.isArray(item.metadata?.prompt_titles) ? (item.metadata?.prompt_titles as string[]) : [];
   const progressPct = Math.max(item.progress_ratio > 0 ? 8 : 0, Math.min(100, Math.round(item.progress_ratio * 100)));
   const tone = getStoreTone(item.kind);
-  const offerRemainingHours = formatOfferRemainingHours(item.offer_ends_at);
   const title = localizedStoreItemTitle(item, t);
   const description = localizedStoreItemDescription(item, t);
   const starterRewardCopy = localizedStarterReward({
@@ -512,53 +493,21 @@ function StoreItemCard({
       <div className="relative flex h-full flex-col gap-5">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-2">
-            <div className="flex flex-wrap gap-2">
-              <span className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${tone.badge}`}>
-                {kindLabel(item.kind, t)}
-              </span>
-              <span className="pv-badge">{priceBandLabel(item.price_band, t)}</span>
-              {item.tags.map((tag) => (
-                <span key={`${item.slug}-${tag}`} className={tag === "best_value" ? "pv-badge-success" : "pv-badge-brand"}>
-                  {tagLabel(tag, t)}
-                </span>
-              ))}
-              {item.is_limited_offer ? (
-                <span className="pv-badge-danger">
-                  {offerRemainingHours !== null
-                    ? t("store.offerEndsIn", { time: `${formatNumber(offerRemainingHours, locale)}h` })
-                    : t("store.limitedOffer")}
-                </span>
-              ) : null}
-            </div>
             <h3 className="text-lg font-semibold tracking-[-0.03em] text-zinc-900">{title}</h3>
             {description ? <p className="text-sm leading-relaxed text-zinc-600">{description}</p> : null}
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-1">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("store.price")}</span>
-            <LmnAmount
-              amount={formatNumber(item.price, locale)}
-              symbol={wallet?.currency_symbol ?? "LMN"}
-              className="shrink-0"
-              strong
-              state="spent"
-            />
+          <div className="shrink-0 rounded-[1rem] border border-orange-200 bg-orange-50/80 px-4 py-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-orange-700/80">{t("store.price")}</p>
+            <LmnAmount amount={formatNumber(item.price, locale)} symbol={wallet?.currency_symbol ?? "LMN"} className="mt-1" strong state="spent" />
           </div>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <span className="pv-badge">
-            {t("store.availability")}: {item.availability ?? "∞"}
-          </span>
           {item.owned ? <span className="pv-badge-success">{t("store.owned")}</span> : null}
           {soldOut ? <span className="pv-badge-danger">{t("store.soldOut")}</span> : null}
-          {!soldOut && !item.owned && item.is_affordable ? (
-            <span className="pv-badge-success">{t("store.availableNow")}</span>
-          ) : null}
           {!soldOut && !item.owned && !item.is_affordable ? (
             <span className="pv-badge-warning">{t("store.needMore", { count: formatNumber(item.near_miss_delta, locale) })}</span>
           ) : null}
-          {item.dynamic_offer ? <span className="pv-badge-brand">{t("store.personalized")}</span> : null}
-          {item.upgrade_tier > 1 ? <span className="pv-badge">{t("store.tierLabel", { tier: item.upgrade_tier })}</span> : null}
         </div>
 
         {!item.owned && !soldOut ? (
@@ -566,7 +515,7 @@ function StoreItemCard({
             <div className="flex items-center justify-between gap-3 text-sm">
               <span className="font-medium text-zinc-900">
                 {item.is_affordable
-                  ? t("store.availableNow")
+                  ? t("store.readyToBuy")
                   : t("store.needMore", { count: formatNumber(item.near_miss_delta, locale) })}
               </span>
               <span className="text-zinc-500">{progressPct}%</span>
@@ -577,27 +526,10 @@ function StoreItemCard({
           </div>
         ) : null}
 
-        {promptTitles.length > 0 ? (
-          <div className="pv-card-muted p-3 text-sm text-zinc-600">{promptTitles.join(" · ")}</div>
-        ) : null}
-
         {item.kind === "starter" && (starterRewardCopy.title || starterRewardCopy.body) ? (
           <div className="pv-card-muted p-3 text-sm text-zinc-600">
             {starterRewardCopy.title ? <span className="font-medium text-zinc-900">{starterRewardCopy.title}</span> : null}
             {starterRewardCopy.body ? <p className="mt-1">{starterRewardCopy.body}</p> : null}
-          </div>
-        ) : null}
-
-        {wallet && item.is_affordable && !soldOut && !item.owned ? (
-          <div className="pv-card-muted p-3">
-            <p className="pv-stat-label">{t("store.balanceAfter")}</p>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <LmnAmount amount={wallet.balance} symbol={wallet.currency_symbol} state="balance" />
-              <span aria-hidden="true" className="text-sm font-semibold text-zinc-400">
-                →
-              </span>
-              <LmnAmount amount={wallet.balance - item.price} symbol={wallet.currency_symbol} state="balance" />
-            </div>
           </div>
         ) : null}
 

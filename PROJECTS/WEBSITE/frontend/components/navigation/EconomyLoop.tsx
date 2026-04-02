@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { RouteCard } from "@/components/navigation/RouteCard";
-import { LmnMark } from "@/components/ui/LmnMark";
 
 type EconomyLoopCardProps = {
   title?: ReactNode;
@@ -41,7 +40,6 @@ export function EconomyLoop({ activeStep, missionCard, walletCard, storeCard }: 
           badge={missionCard?.badge}
           active={activeStep === "missions"}
           tone="neutral"
-          visual={<LmnMark size={30} tone="balance" />}
         />
         <RouteCard
           eyebrow={t("nav.wallet")}
@@ -52,7 +50,6 @@ export function EconomyLoop({ activeStep, missionCard, walletCard, storeCard }: 
           badge={walletCard?.badge}
           active={activeStep === "wallet"}
           tone="neutral"
-          visual={<LmnMark size={30} tone="balance" />}
         />
         <RouteCard
           eyebrow={t("nav.store")}
@@ -63,7 +60,6 @@ export function EconomyLoop({ activeStep, missionCard, walletCard, storeCard }: 
           badge={storeCard?.badge}
           active={activeStep === "store"}
           tone="neutral"
-          visual={<LmnMark size={30} tone="balance" />}
         />
       </div>
     </div>

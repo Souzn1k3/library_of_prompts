@@ -71,10 +71,15 @@ export function DashboardView({
 }: DashboardViewProps) {
   const { t, language } = useI18n();
   const locale = languageToIntlLocale(language);
-  const { change: balanceChange, delta: balanceDelta } = useLmnBalanceFeedback(wallet?.balance);
+  const { delta: balanceDelta } = useLmnBalanceFeedback(wallet?.balance);
   const { portalError, portalPending, openPortal } = useBillingPortal();
   const sectionTitle = <span>{t("dashboard.title")}</span>;
   const localizedBillingStatus = billingStatusLabel(billing?.status, t);
+  const planLabel = t(getTierTranslationKey(billing?.plan_tier ?? "free"));
+  const highlightedPlan =
+    billing?.plan_tier === "enterprise" ? "text-emerald-700" : "text-zinc-900";
+  const highlightedStatus =
+    billing?.status === "active" ? "text-emerald-700" : "text-zinc-700";
 
   if (status === "loading") {
     return (
@@ -177,10 +182,10 @@ export function DashboardView({
         href: APP_ROUTES.onboarding,
         label: t("dashboard.finishOnboardingLink"),
       }
-    : currentMissionView?.nextStep
+    : currentMissionView
       ? {
-          href: currentMissionView.nextStep.href,
-          label: t("learn.continueMission"),
+          href: currentMissionView.nextStep?.href ?? APP_ROUTES.missions,
+          label: t("dashboard.openCurrentTask"),
         }
       : starterPack?.action?.prompt_slug
         ? {
@@ -191,15 +196,9 @@ export function DashboardView({
             href: APP_ROUTES.catalog,
             label: t("home.explorePrompts"),
           };
-  const secondaryAction = onboardingProfile?.needs_onboarding
-    ? null
-    : primaryAction.href === APP_ROUTES.missions
-      ? { href: APP_ROUTES.catalog, label: t("home.explorePrompts") }
-      : { href: APP_ROUTES.missions, label: t("nav.missions") };
   const lessonHref = starterPack?.lesson?.slug
     ? appRoute.learnBySlug(starterPack.lesson.slug)
-    : APP_ROUTES.learn;
-  const lessonLabel = starterPack?.lesson?.title ?? t("nav.learn");
+    : APP_ROUTES.learnStart;
 
   return (
     <div className="space-y-6">
@@ -215,14 +214,12 @@ export function DashboardView({
         currentMission={currentMissionView}
         needsOnboarding={Boolean(onboardingProfile?.needs_onboarding)}
         primaryAction={primaryAction}
-        secondaryAction={secondaryAction}
         savedPromptsCount={items.length}
         savedPromptsPreviewTitle={items[0]?.title ?? null}
         submissionCount={submissions.length}
         latestSubmissionTitle={submissions[0]?.title ?? null}
         wallet={wallet}
         balanceDelta={balanceDelta}
-        balanceChange={balanceChange}
       />
 
       <section className="pv-panel px-6 py-6 sm:px-7">
@@ -239,7 +236,7 @@ export function DashboardView({
               title={currentMissionView?.title ?? t("economy.stepEarnTitle")}
               description={currentMissionView?.objective ?? t("missions.subtitle")}
               href={currentMissionView?.nextStep?.href ?? APP_ROUTES.missions}
-              actionLabel={currentMissionView?.nextStep?.label ?? t("nav.missions")}
+              actionLabel={t("dashboard.openCurrentTask")}
               badge={
                 currentMissionView ? (
                   <span className="pv-chip-brand">
@@ -255,11 +252,21 @@ export function DashboardView({
           <div className="xl:col-span-4">
             <RouteCard
               eyebrow={t("nav.wallet")}
-              title={t("economy.stepBalanceTitle")}
-              description={t("wallet.subtitle")}
+              title={`${wallet?.balance ?? "—"} ${wallet?.currency_symbol ?? "LMN"}`}
+              description={t("dashboard.walletSummaryBody")}
               href={APP_ROUTES.wallet}
-              actionLabel={t("nav.wallet")}
+              actionLabel={t("dashboard.openWallet")}
               tone="balance"
+              badge={
+                balanceDelta && balanceDelta !== 0 ? (
+                  <span className={balanceDelta > 0 ? "pv-badge-success" : "pv-badge-warning"}>
+                    {balanceDelta > 0 ? "+" : ""}
+                    {balanceDelta} {wallet?.currency_symbol ?? "LMN"}
+                  </span>
+                ) : (
+                  <span className="pv-chip">{t("wallet.balance")}</span>
+                )
+              }
               visual={<LmnMark size={30} tone="balance" />}
             />
           </div>
@@ -279,21 +286,20 @@ export function DashboardView({
           <div className="xl:col-span-6">
             <RouteCard
               eyebrow={t("nav.catalog")}
-              title={t("dashboard.savedPrompts")}
-              description={t("catalog.subtitle")}
-              href={items.length > 0 ? `${APP_ROUTES.dashboard}#saved` : APP_ROUTES.catalog}
-              actionLabel={items.length > 0 ? t("dashboard.savedPrompts") : t("home.explorePrompts")}
-              badge={<span className="pv-chip-brand">{items.length}</span>}
+              title={t("dashboard.mapBrowsePromptsTitle")}
+              description={t("dashboard.mapBrowsePromptsBody")}
+              href={APP_ROUTES.catalog}
+              actionLabel={t("dashboard.mapBrowsePromptsAction")}
             />
           </div>
 
           <div className="xl:col-span-6">
             <RouteCard
               eyebrow={t("nav.learn")}
-              title={lessonLabel}
-              description={starterPack?.lesson ? t("dashboard.recommendedNextAction") : t("learn.subtitle")}
+              title={t("dashboard.mapLearningTitle")}
+              description={t("dashboard.mapLearningBody")}
               href={lessonHref}
-              actionLabel={starterPack?.lesson ? t("home.startLearning") : t("nav.learn")}
+              actionLabel={t("dashboard.mapLearningAction")}
             />
           </div>
         </div>
@@ -303,31 +309,38 @@ export function DashboardView({
         <div className="pv-section-head">
           <div className="pv-section-copy">
             <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("nav.billing")}</h2>
+            <p className="mt-2 text-sm text-zinc-600">{t("dashboard.billingBody")}</p>
           </div>
-          <span className="pv-chip-brand">{t(getTierTranslationKey(billing?.plan_tier ?? "free"))}</span>
+          <span className={`pv-chip-brand ${highlightedPlan}`}>{planLabel}</span>
         </div>
-        <div className="mt-6 flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-2 text-sm text-zinc-700">
-            <p>
-              <span className="font-medium text-zinc-900">{t(getTierTranslationKey(billing?.plan_tier ?? "free"))}</span>
-              {localizedBillingStatus ? ` · ${localizedBillingStatus}` : ""}
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <div className="pv-card-muted p-4">
+            <p className="pv-kicker">{t("plans.currentTier")}</p>
+            <p className={`mt-2 text-base font-semibold ${highlightedPlan}`}>{planLabel}</p>
+          </div>
+          <div className="pv-card-muted p-4">
+            <p className="pv-kicker">{t("plans.subscriptionStatus")}</p>
+            <p className={`mt-2 text-base font-semibold ${highlightedStatus}`}>
+              {localizedBillingStatus ?? t("plans.billingStatus.unknown")}
             </p>
-            <p className="text-zinc-600">{t("dashboard.changePlan")}</p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={openPortal}
-              disabled={portalPending}
-              className="pv-button-secondary disabled:opacity-60"
-            >
-              {portalPending ? t("plans.openingCheckout") : t("dashboard.manageBilling")}
-            </button>
-            <Link href={APP_ROUTES.pricing} className="pv-inline-link">
-              {t("dashboard.changePlan")}
-              <span aria-hidden="true">↗</span>
-            </Link>
+          <div className="pv-card-muted p-4">
+            <p className="pv-kicker">{t("dashboard.manageBilling")}</p>
+            <p className="mt-2 text-sm text-zinc-700">{t("dashboard.billingActionHint")}</p>
           </div>
+        </div>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={openPortal}
+            disabled={portalPending}
+            className="pv-button-secondary disabled:opacity-60"
+          >
+            {portalPending ? t("plans.openingCheckout") : t("dashboard.manageBilling")}
+          </button>
+          <Link href={APP_ROUTES.pricing} className="pv-button-primary">
+            {t("dashboard.changePlan")}
+          </Link>
         </div>
         {portalError ? <p className="mt-3 text-sm text-red-700">{portalError}</p> : null}
       </section>
@@ -357,42 +370,6 @@ export function DashboardView({
           </div>
         )}
       </section>
-
-      {suggestions.length > 0 || onboardingProfile?.needs_onboarding ? (
-        <section
-          id="recommendations"
-          className="pv-panel pv-section-anchor px-6 py-6 sm:px-7"
-        >
-          <div className="pv-section-head">
-            <div className="pv-section-copy">
-              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
-                {t("dashboard.recommendedForYou")}
-              </h2>
-            </div>
-            <span className="pv-chip-brand">{suggestions.length + (onboardingProfile?.needs_onboarding ? 1 : 0)}</span>
-          </div>
-          <div className="mt-6 space-y-4">
-            {onboardingProfile?.needs_onboarding ? (
-              <div className="pv-alert pv-alert-warning">
-                <p className="font-medium">{t("dashboard.finishOnboardingTitle")}</p>
-                <p className="mt-2">
-                  <Link href={APP_ROUTES.onboarding} className="underline">
-                    {t("dashboard.finishOnboardingLink")}
-                  </Link>
-                </p>
-              </div>
-            ) : null}
-
-            {suggestions.length > 0 ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {suggestions.map((prompt) => (
-                  <PromptCard key={`dashboard-rec-${prompt.id}`} prompt={prompt} />
-                ))}
-              </div>
-            ) : null}
-          </div>
-        </section>
-      ) : null}
 
       <section id="submissions" className="pv-panel pv-section-anchor px-6 py-6 sm:px-7">
         <div className="pv-section-head">
@@ -434,6 +411,42 @@ export function DashboardView({
           </div>
         )}
       </section>
+
+      {suggestions.length > 0 || onboardingProfile?.needs_onboarding ? (
+        <section
+          id="recommendations"
+          className="pv-panel pv-section-anchor px-6 py-6 sm:px-7"
+        >
+          <div className="pv-section-head">
+            <div className="pv-section-copy">
+              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
+                {t("dashboard.recommendedForYou")}
+              </h2>
+            </div>
+            <span className="pv-chip-brand">{suggestions.length + (onboardingProfile?.needs_onboarding ? 1 : 0)}</span>
+          </div>
+          <div className="mt-6 space-y-4">
+            {onboardingProfile?.needs_onboarding ? (
+              <div className="pv-alert pv-alert-warning">
+                <p className="font-medium">{t("dashboard.finishOnboardingTitle")}</p>
+                <p className="mt-2">
+                  <Link href={APP_ROUTES.onboarding} className="underline">
+                    {t("dashboard.finishOnboardingLink")}
+                  </Link>
+                </p>
+              </div>
+            ) : null}
+
+            {suggestions.length > 0 ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {suggestions.map((prompt) => (
+                  <PromptCard key={`dashboard-rec-${prompt.id}`} prompt={prompt} />
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

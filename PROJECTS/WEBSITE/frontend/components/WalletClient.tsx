@@ -5,7 +5,6 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/LanguageProvider";
-import { EconomyLoop } from "@/components/navigation/EconomyLoop";
 import { PageIntro } from "@/components/navigation/PageIntro";
 import { EconomyActionBanner } from "@/components/ui/EconomyActionBanner";
 import { LmnAmount } from "@/components/ui/LmnAmount";
@@ -169,6 +168,7 @@ export function WalletClient() {
   const [checkinPending, setCheckinPending] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
   const [checkinFeedback, setCheckinFeedback] = useState<EconomyAction | null>(null);
+  const [activityPage, setActivityPage] = useState(1);
   const { change: balanceChange, delta: balanceDelta } = useLmnBalanceFeedback(wallet?.balance);
 
   useEffect(() => {
@@ -190,6 +190,10 @@ export function WalletClient() {
       })
       .finally(() => setLoading(false));
   }, [status, reloadToken, t]);
+
+  useEffect(() => {
+    setActivityPage(1);
+  }, [wallet?.recent.length]);
 
   async function handleCheckIn() {
     setCheckinPending(true);
@@ -303,10 +307,18 @@ export function WalletClient() {
 
   if (!wallet) return null;
 
+  const activityPageSize = 10;
+  const totalActivityPages = Math.max(1, Math.ceil(wallet.recent.length / activityPageSize));
+  const currentActivityPage = Math.min(activityPage, totalActivityPages);
+  const activityStart = (currentActivityPage - 1) * activityPageSize;
+  const pagedRecent = wallet.recent.slice(activityStart, activityStart + activityPageSize);
   const checkInMessage = wallet.check_in_available
     ? t("wallet.checkinReady")
     : `${t("wallet.checkinLocked")}${wallet.last_check_in_at ? ` · ${formatDateTime(wallet.last_check_in_at, locale)}` : ""}`;
   const bestItem = pickBestStoreItem(items);
+  const readyToBuyCount = items.filter(
+    (item) => !item.owned && item.is_affordable && (item.availability === null || item.availability > 0),
+  ).length;
   const ladder = buildDailyLadder(wallet.current_streak, wallet);
   const streakMilestones = resolveStreakMilestones(wallet);
   const nextMilestoneEntry = nextMilestone(wallet.current_streak, wallet);
@@ -341,9 +353,6 @@ export function WalletClient() {
             >
               {checkinPending ? t("missions.loading") : t("wallet.checkinCta")}
             </button>
-            <Link href={APP_ROUTES.store} className="pv-button-secondary">
-              {t("nav.store")}
-            </Link>
           </>
         }
         aside={
@@ -376,16 +385,13 @@ export function WalletClient() {
         }
       />
 
-      <section className="pv-panel px-6 py-6 sm:px-7">
-        <EconomyLoop activeStep="wallet" />
-      </section>
-
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
         <section className="pv-panel px-5 py-5">
           <div className="pv-section-head">
             <div className="pv-section-copy">
-              <p className="pv-kicker">{t("wallet.bestUse")}</p>
-              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("wallet.bestUse")}</h2>
+              <p className="pv-kicker">{t("wallet.nextSpend")}</p>
+              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("wallet.nextSpend")}</h2>
+              <p className="mt-2 text-sm text-zinc-600">{t("wallet.bestUse")}</p>
             </div>
             {bestItem ? (
               <LmnAmount amount={bestItem.price} symbol={wallet.currency_symbol} strong state="spent" />
@@ -422,10 +428,10 @@ export function WalletClient() {
 
               <div className="flex flex-wrap gap-3">
                 <Link href={bestItem.is_affordable ? APP_ROUTES.store : APP_ROUTES.missions} className="pv-button-primary">
-                  {bestItem.is_affordable ? t("economy.openStore") : t("economy.earnCta")}
+                  {bestItem.is_affordable ? t("wallet.spendNowCta") : t("wallet.earnToUnlockCta")}
                 </Link>
                 <Link href={APP_ROUTES.store} className="pv-button-secondary">
-                  {t("nav.store")}
+                  {t("economy.openStore")}
                 </Link>
               </div>
             </div>
@@ -523,6 +529,7 @@ export function WalletClient() {
             <p className="mt-3 text-sm text-zinc-600">
               {t("wallet.ownedValueGenerated", { amount: formatNumber(wallet.owned_value_generated, locale) })}
             </p>
+            <p className="mt-2 text-xs text-zinc-500">{t("wallet.rankExplainer")}</p>
           </section>
         </aside>
       </div>
@@ -538,8 +545,8 @@ export function WalletClient() {
           value={<LmnAmount amount={wallet.total_spent} symbol={wallet.currency_symbol} state="spent" />}
         />
         <StatCard
-          label={t("wallet.activeBenefits")}
-          value={<span className="pv-metric-value">{wallet.active_benefits.length}</span>}
+          label={t("store.readyToBuyCount")}
+          value={<span className="pv-metric-value">{formatNumber(readyToBuyCount, locale)}</span>}
           tone="positive"
         />
         <StatCard
@@ -578,8 +585,8 @@ export function WalletClient() {
         <section className="pv-panel px-5 py-5">
           <div className="pv-section-head">
             <div className="pv-section-copy">
-              <p className="pv-kicker">{t("wallet.activeBenefits")}</p>
-              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("wallet.activeBenefits")}</h2>
+              <p className="pv-kicker">{t("wallet.benefitsAndBoosts")}</p>
+              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("wallet.benefitsAndBoosts")}</h2>
             </div>
             <LmnAmount amount={wallet.balance} symbol={wallet.currency_symbol} strong state="balance" />
           </div>
@@ -635,8 +642,8 @@ export function WalletClient() {
         <section className="pv-panel px-5 py-5">
           <div className="pv-section-head">
             <div className="pv-section-copy">
-              <p className="pv-kicker">{t("wallet.purchaseHistory")}</p>
-              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("wallet.purchaseHistory")}</h2>
+              <p className="pv-kicker">{t("wallet.latestPurchases")}</p>
+              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("wallet.latestPurchases")}</h2>
             </div>
             <Link href={APP_ROUTES.store} className="pv-inline-link">
               {t("nav.store")}
@@ -666,8 +673,8 @@ export function WalletClient() {
       <section className="pv-panel px-5 py-5">
         <div className="pv-section-head">
           <div className="pv-section-copy">
-            <p className="pv-kicker">{t("wallet.recentActivity")}</p>
-            <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("wallet.recentActivity")}</h2>
+            <p className="pv-kicker">{t("wallet.operationsTimeline")}</p>
+            <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("wallet.operationsTimeline")}</h2>
           </div>
           <LmnAmount amount={wallet.balance} symbol={wallet.currency_symbol} state="balance" />
         </div>
@@ -676,7 +683,7 @@ export function WalletClient() {
           <div className="pv-empty-state mt-5 text-sm text-zinc-600">{t("wallet.empty")}</div>
         ) : (
           <div className="mt-5 space-y-3">
-            {wallet.recent.map((tx: CurrencyTransaction) => (
+            {pagedRecent.map((tx: CurrencyTransaction) => (
               <div key={tx.id} className="pv-card-muted p-4">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div className="flex items-start gap-3">
@@ -708,6 +715,29 @@ export function WalletClient() {
             ))}
           </div>
         )}
+        {wallet.recent.length > activityPageSize ? (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={() => setActivityPage((value) => Math.max(1, value - 1))}
+              disabled={currentActivityPage <= 1}
+              className="pv-button-secondary !w-auto disabled:opacity-60"
+            >
+              {t("wallet.prevPage")}
+            </button>
+            <p className="text-sm text-zinc-600">
+              {t("wallet.pageCounter", { current: currentActivityPage, total: totalActivityPages })}
+            </p>
+            <button
+              type="button"
+              onClick={() => setActivityPage((value) => Math.min(totalActivityPages, value + 1))}
+              disabled={currentActivityPage >= totalActivityPages}
+              className="pv-button-secondary !w-auto disabled:opacity-60"
+            >
+              {t("wallet.nextPage")}
+            </button>
+          </div>
+        ) : null}
       </section>
     </div>
   );

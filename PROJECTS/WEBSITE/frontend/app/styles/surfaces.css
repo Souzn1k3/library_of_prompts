@@ -111,9 +111,7 @@
 
 .pv-route-card[data-active="true"] {
   border-color: rgba(37, 92, 255, 0.24);
-  transform: translateY(-3px);
   box-shadow: 0 18px 36px rgba(15, 23, 42, 0.1);
-  animation: pv-route-card-active 1.9s ease-in-out infinite;
 }
 
 .pv-route-card::after {
@@ -137,7 +135,6 @@
 
 .pv-route-card[data-active="true"]::after {
   opacity: 0.5;
-  animation: pv-route-card-glow 1.9s ease-in-out infinite;
 }
 
 .pv-route-card-media {
@@ -162,50 +159,6 @@
   border-top: 1px solid rgba(15, 23, 42, 0.07);
 }
 
-.pv-route-card[data-active="true"] .pv-route-card-media {
-  animation: pv-route-card-media 1.9s ease-in-out infinite;
-}
-
-@keyframes pv-route-card-active {
-  0%,
-  100% {
-    transform: translateY(-3px);
-    border-color: rgba(37, 92, 255, 0.24);
-    box-shadow: 0 18px 36px rgba(15, 23, 42, 0.1);
-  }
-
-  50% {
-    transform: translateY(-8px);
-    border-color: rgba(37, 92, 255, 0.48);
-    box-shadow:
-      0 26px 48px rgba(15, 23, 42, 0.13),
-      0 0 0 1px rgba(37, 92, 255, 0.18);
-  }
-}
-
-@keyframes pv-route-card-glow {
-  0%,
-  100% {
-    transform: translate(0, 0) scale(1);
-    opacity: 0.5;
-  }
-
-  50% {
-    transform: translate(-14px, -12px) scale(1.24);
-    opacity: 0.76;
-  }
-}
-
-@keyframes pv-route-card-media {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-5px) scale(1.05);
-  }
-}
 
 .pv-kicker {
   font-family: var(--font-mono), monospace;

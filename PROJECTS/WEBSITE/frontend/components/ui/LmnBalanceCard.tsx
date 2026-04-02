@@ -21,6 +21,7 @@ export function LmnBalanceCard({
   tone = "balance",
   iconSize = 56,
   compact = false,
+  showIcon = false,
 }: {
   label: ReactNode;
   amount: string | number;
@@ -35,6 +36,7 @@ export function LmnBalanceCard({
   tone?: Exclude<LmnTone, "neutral">;
   iconSize?: number;
   compact?: boolean;
+  showIcon?: boolean;
 }) {
   return (
     <div
@@ -48,9 +50,11 @@ export function LmnBalanceCard({
           <p className="pv-lmn-balance-label">{label}</p>
           {caption ? <p className="pv-lmn-balance-caption">{caption}</p> : null}
         </div>
-        <div className="pv-lmn-balance-mark">
-          <LmnMark size={iconSize} label={symbol} tone={tone} />
-        </div>
+        {showIcon ? (
+          <div className="pv-lmn-balance-mark">
+            <LmnMark size={iconSize} label={symbol} tone={tone} />
+          </div>
+        ) : null}
       </div>
 
       <div className="pv-lmn-balance-main">

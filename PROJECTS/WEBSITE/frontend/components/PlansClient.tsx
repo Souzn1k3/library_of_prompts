@@ -57,6 +57,8 @@ export function PlansClient({ plans, error }: PlansClientProps) {
   const [expandedTier, setExpandedTier] = useState<string | null>(preferredTier);
   const currentTier = billing?.plan_tier ?? user?.plan_tier ?? "free";
   const currentBillingStatusLabel = localizedBillingStatus(billing?.status, t);
+  const currentTierClass = currentTier === "enterprise" ? "text-emerald-700" : "text-zinc-900";
+  const currentStatusClass = billing?.status === "active" ? "text-emerald-700" : "text-zinc-900";
   const { portalError, portalPending, openPortal, clearPortalError } = useBillingPortal();
 
   useEffect(() => {
@@ -146,12 +148,12 @@ export function PlansClient({ plans, error }: PlansClientProps) {
         <div className="pv-panel px-5 py-5 text-sm text-zinc-700 sm:px-6">
           <p>
             {t("plans.currentTier")}:{" "}
-            <span className="font-medium text-zinc-900">{t(getTierTranslationKey(currentTier))}</span>
+            <span className={`font-medium ${currentTierClass}`}>{t(getTierTranslationKey(currentTier))}</span>
             {currentBillingStatusLabel ? (
               <>
                 {" "}
                 · {t("plans.subscriptionStatus")}:{" "}
-                <span className="font-medium text-zinc-900">{currentBillingStatusLabel}</span>
+                <span className={`font-medium ${currentStatusClass}`}>{currentBillingStatusLabel}</span>
               </>
             ) : null}
           </p>
@@ -191,6 +193,7 @@ export function PlansClient({ plans, error }: PlansClientProps) {
           const expanded = expandedTier === plan.tier;
           const localizedTierName = t(getTierTranslationKey(plan.tier));
           const planDisplayName = localizedTierName || plan.name;
+          const isMaxPlan = plan.tier === "enterprise";
           return (
             <div
               key={plan.tier}
@@ -201,7 +204,9 @@ export function PlansClient({ plans, error }: PlansClientProps) {
               }`}
             >
               <div className="flex items-baseline justify-between gap-2">
-                <h2 className="text-lg font-semibold text-zinc-900">{planDisplayName}</h2>
+                <h2 className={`text-lg font-semibold ${isMaxPlan ? "text-emerald-700" : "text-zinc-900"}`}>
+                  {planDisplayName}
+                </h2>
                 <div className="text-right text-sm text-zinc-600">
                   <p className="font-semibold text-zinc-900">
                     {plan.price_rub_month > 0 ? `${formatNumber(plan.price_rub_month, locale)} RUB` : t("plans.priceFree")}
@@ -257,7 +262,7 @@ export function PlansClient({ plans, error }: PlansClientProps) {
                     {t("plans.createAccountCta")}
                   </Link>
                 ) : isCurrent ? (
-                  <span className="inline-flex items-center rounded-full bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-700">
+                  <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-2 text-sm font-medium text-emerald-800">
                     {t("plans.currentPlan")}
                   </span>
                 ) : isLowerOrEqual ? (

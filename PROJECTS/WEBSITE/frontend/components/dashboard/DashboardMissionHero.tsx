@@ -4,7 +4,6 @@ import Link from "next/link";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { PageIntro } from "@/components/navigation/PageIntro";
-import { LmnBalanceCard } from "@/components/ui/LmnBalanceCard";
 import type { MissionPresentation } from "@/lib/missionPresentation";
 import type { WalletRead } from "@/lib/types";
 
@@ -17,28 +16,24 @@ type DashboardMissionHeroProps = {
   currentMission: MissionPresentation | null;
   needsOnboarding: boolean;
   primaryAction: HeroAction;
-  secondaryAction: HeroAction | null;
   savedPromptsCount: number;
   savedPromptsPreviewTitle: string | null;
   submissionCount: number;
   latestSubmissionTitle: string | null;
   wallet: WalletRead | null;
   balanceDelta: number | null;
-  balanceChange: "up" | "down" | null;
 };
 
 export function DashboardMissionHero({
   currentMission,
   needsOnboarding,
   primaryAction,
-  secondaryAction,
   savedPromptsCount,
   savedPromptsPreviewTitle,
   submissionCount,
   latestSubmissionTitle,
   wallet,
   balanceDelta,
-  balanceChange,
 }: DashboardMissionHeroProps) {
   const { t } = useI18n();
   const cardTitle = needsOnboarding
@@ -54,18 +49,6 @@ export function DashboardMissionHero({
       eyebrow={t("dashboard.title")}
       title={t("dashboard.title")}
       description={t("dashboard.subtitle")}
-      actions={
-        <>
-          <Link href={primaryAction.href} className="pv-button-primary">
-            {primaryAction.label}
-          </Link>
-          {secondaryAction ? (
-            <Link href={secondaryAction.href} className="pv-button-secondary">
-              {secondaryAction.label}
-            </Link>
-          ) : null}
-        </>
-      }
     >
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="pv-card-muted flex h-full min-h-[11.5rem] flex-col gap-4 border-[rgba(37,92,255,0.12)] bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(239,244,255,0.92))] p-4 shadow-[0_16px_36px_rgba(37,92,255,0.06)] sm:p-5">
@@ -89,18 +72,20 @@ export function DashboardMissionHero({
           actionLabel={savedPromptsAction}
         />
 
-        <LmnBalanceCard
-          className="h-full min-h-[11.5rem]"
-          label={t("nav.wallet")}
-          amount={wallet?.balance ?? "—"}
-          symbol={wallet?.currency_symbol ?? "LMN"}
-          caption={wallet?.currency_name ?? wallet?.currency_symbol ?? "LMN"}
-          actionHref="/wallet"
-          actionLabel={t("nav.wallet")}
-          delta={balanceDelta}
-          change={balanceChange}
-          compact
-          iconSize={46}
+        <DashboardMetricCard
+          eyebrow={t("nav.wallet")}
+          value={
+            typeof wallet?.balance === "number"
+              ? `${wallet.balance} ${wallet.currency_symbol ?? "LMN"}`
+              : `— ${wallet?.currency_symbol ?? "LMN"}`
+          }
+          body={
+            balanceDelta && balanceDelta !== 0
+              ? `${balanceDelta > 0 ? "+" : ""}${balanceDelta} ${wallet?.currency_symbol ?? "LMN"}`
+              : t("dashboard.walletSummaryBody")
+          }
+          href="/wallet"
+          actionLabel={t("dashboard.openWallet")}
         />
 
         <DashboardMetricCard
@@ -123,7 +108,7 @@ function DashboardMetricCard({
   actionLabel,
 }: {
   eyebrow: string;
-  value: number;
+  value: number | string;
   body: string;
   href: string;
   actionLabel: string;

@@ -196,6 +196,28 @@ export function ProfileClient() {
     <div className="space-y-6">
       <ProfileIntro authenticated={isAuthenticated} />
 
+      <section className="pv-panel px-6 py-5 sm:px-7">
+        <p className="pv-kicker">{t("profile.navTreeTitle")}</p>
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-zinc-700">
+          <Link href={APP_ROUTES.dashboard} className="pv-chip">{t("nav.dashboard")}</Link>
+          <span aria-hidden="true">→</span>
+          <Link href={APP_ROUTES.profile} className="pv-chip-brand">{t("profile.title")}</Link>
+          <span aria-hidden="true">→</span>
+          <span className="pv-chip">{t("profile.marketplaceKicker")}</span>
+        </div>
+        <p className="mt-3 text-sm text-zinc-600">{t("profile.navTreeBody")}</p>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="pv-card-muted p-4">
+            <p className="pv-kicker">{t("profile.publicScopeTitle")}</p>
+            <p className="mt-2 text-sm text-zinc-700">{t("profile.publicScopeBody")}</p>
+          </div>
+          <div className="pv-card-muted p-4">
+            <p className="pv-kicker">{t("profile.privateScopeTitle")}</p>
+            <p className="mt-2 text-sm text-zinc-700">{t("profile.privateScopeBody")}</p>
+          </div>
+        </div>
+      </section>
+
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
         <section className="pv-panel px-6 py-6 sm:px-7">
           <p className="pv-kicker">{t("profile.accountTitle")}</p>
@@ -212,6 +234,14 @@ export function ProfileClient() {
               <p className="mt-2 text-sm text-zinc-600">
                 {ratingLabel} · {t("profile.reviewCountLabel", { count: summary.review_count })}
               </p>
+              {user.contributor_slug ? (
+                <Link
+                  href={appRoute.contributorBySlugReviewSort(user.contributor_slug, "best")}
+                  className="mt-2 inline-flex text-xs font-semibold text-[var(--pv-brand-strong)]"
+                >
+                  {t("profile.openPublicReviewPage")}
+                </Link>
+              ) : null}
             </MetricCard>
             <MetricCard label={t("profile.marketplaceSummary")}>
               <p className="mt-3 font-medium text-zinc-900">{t("profile.soldPromptsLabel", { count: summary.sold_prompts_count })}</p>
@@ -243,6 +273,7 @@ export function ProfileClient() {
         <div className="space-y-6">
           <section className="pv-panel px-6 py-6">
             <p className="pv-kicker">{t("profile.membershipTitle")}</p>
+            <p className="mt-2 text-sm text-zinc-600">{t("profile.membershipPrivateNote")}</p>
             <div className="mt-4 grid gap-3 text-sm text-zinc-600">
               <div className="rounded-[1.25rem] border border-zinc-200 bg-white/75 p-4">
                 <p>
@@ -330,6 +361,12 @@ export function ProfileClient() {
             </p>
           </div>
         </div>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <button type="button" onClick={() => setReloadToken((value) => value + 1)} className="pv-button-secondary !w-auto">
+            {t("profile.refreshMarketplaceData")}
+          </button>
+          <p className="text-xs text-zinc-500">{t("profile.marketplaceRefreshHint")}</p>
+        </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-4">
           <MetricCard label={t("profile.pendingSettlement")}>
@@ -416,9 +453,6 @@ export function ProfileClient() {
               {t("profile.recentPurchasesDescription")}
             </p>
           </div>
-          <button type="button" onClick={() => setReloadToken((value) => value + 1)} className="pv-button-secondary">
-            {t("profile.refreshMarketplaceData")}
-          </button>
         </div>
 
         {overview?.purchases?.length ? (
@@ -504,9 +538,8 @@ function ProfileIntro({ authenticated }: { authenticated: boolean }) {
             <Link href={APP_ROUTES.pricing} className="pv-button-secondary">
               {t("nav.billing")}
             </Link>
-            <Link href={APP_ROUTES.wallet} className="pv-inline-link">
+            <Link href={APP_ROUTES.wallet} className="pv-button-secondary">
               {t("nav.wallet")}
-              <span aria-hidden="true">↗</span>
             </Link>
           </>
         ) : (

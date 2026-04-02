@@ -1,20 +1,31 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { cache } from "react";
+import { notFound, redirect } from "next/navigation";
 
 import { CompleteLessonButton } from "@/components/CompleteLessonButton";
 import { T } from "@/components/i18n/T";
 import { PageIntro } from "@/components/navigation/PageIntro";
 import { PromptCard } from "@/components/PromptCard";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { ApiRequestError, fetchLessonBySlug, fetchPrompts } from "@/lib/api";
+import {
+  ApiRequestError,
+  fetchLearningLesson,
+  fetchLessonBySlug,
+  fetchPrompts,
+  locateLearningLessonBySlug,
+} from "@/lib/api";
 import { getTierTranslationKey, getTranslation } from "@/lib/i18n";
 import { absoluteUrl, buildPageMetadata } from "@/lib/seo";
 import { getServerLanguage } from "@/lib/server-i18n";
 import { getServerAccessToken } from "@/lib/server-auth";
 
 type Props = { params: Promise<{ slug: string }> };
+
+const locateCached = cache(
+  async (slug: string, accessToken: string | null | undefined, language: string) =>
+    locateLearningLessonBySlug(slug, accessToken, language),
+);
 
 const getLessonBySlugCached = cache(
   async (slug: string, accessToken: string | null | undefined, language: string) =>
@@ -25,7 +36,19 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const { slug } = await props.params;
   const accessToken = await getServerAccessToken();
   const language = await getServerLanguage();
+
   try {
+    const locate = await locateCached(slug, accessToken, language);
+    if (locate) {
+      const lesson = await fetchLearningLesson(locate.course_slug, locate.lesson_slug, accessToken, language);
+      return buildPageMetadata({
+        title: lesson.title,
+        description: lesson.summary,
+        path: locate.href,
+        type: "article",
+      });
+    }
+
     const lesson = await getLessonBySlugCached(slug, accessToken, language);
     return buildPageMetadata({
       title: lesson.title,
@@ -42,10 +65,19 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   }
 }
 
-export default async function LessonPage(props: Props) {
+export default async function LegacyLessonCompatibilityPage(props: Props) {
   const { slug } = await props.params;
   const language = await getServerLanguage();
   const accessToken = await getServerAccessToken();
+
+  try {
+    const locate = await locateCached(slug, accessToken, language);
+    if (locate?.href) {
+      redirect(locate.href);
+    }
+  } catch {
+    // Keep legacy fallback behavior if new locator is not available.
+  }
 
   try {
     const lesson = await getLessonBySlugCached(slug, accessToken, language);
@@ -62,7 +94,7 @@ export default async function LessonPage(props: Props) {
     return (
       <article className="pv-page-sm">
         <JsonLd
-          id={`ld-lesson-${lesson.slug}`}
+          id={`ld-legacy-lesson-${lesson.slug}`}
           data={{
             "@context": "https://schema.org",
             "@type": "LearningResource",
@@ -151,8 +183,8 @@ export default async function LessonPage(props: Props) {
         ) : null}
       </article>
     );
-  } catch (e) {
-    if (e instanceof ApiRequestError && e.status === 404) {
+  } catch (error) {
+    if (error instanceof ApiRequestError && error.status === 404) {
       notFound();
     }
     return (

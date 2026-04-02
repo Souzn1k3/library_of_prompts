@@ -26,6 +26,7 @@ import type {
   OnboardingRole,
   OnboardingStarterPack,
   LessonCompletionResult,
+  LearningStepSubmitResponse,
   PromptListItem,
   PromptRecommendationContext,
   PromptRecommendationResponse,
@@ -390,4 +391,16 @@ export async function trackPromptApply(promptId: string): Promise<PromptActionRe
   return authFetch<PromptActionResult>(apiPath.promptEventApply(promptId), {
     method: "POST",
   });
+}
+
+export async function submitLearningStep(
+  courseSlug: string,
+  lessonSlug: string,
+  stepSlug: string,
+  answer: Record<string, unknown> | null,
+): Promise<LearningStepSubmitResponse> {
+  return authFetch<LearningStepSubmitResponse>(
+    apiPath.learningStepSubmit(courseSlug, lessonSlug, stepSlug),
+    jsonInit("POST", { answer }),
+  );
 }

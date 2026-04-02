@@ -460,9 +460,17 @@ class StoreService:
             existing = await self._find_purchase_by_client_token(user_id=user.id, client_token=client_token)
             if existing is not None:
                 feedback = await self.build_action_feedback(user)
+                if feedback.wallet is None:
+                    raise AppError(
+                        code="wallet_missing",
+                        message="Wallet could not be loaded.",
+                        status_code=500,
+                        message_key="errors.wallet_missing",
+                    )
+                wallet = feedback.wallet
                 return PurchaseResult(
-                    purchase=await self._serialize_purchase(existing, balance=feedback.wallet.balance if feedback.wallet is not None else 0),
-                    wallet=feedback.wallet,
+                    purchase=await self._serialize_purchase(existing, balance=wallet.balance),
+                    wallet=wallet,
                     available_items=feedback.available_items,
                     newly_affordable_items=feedback.newly_affordable_items,
                     best_item=feedback.best_item,
@@ -594,12 +602,20 @@ class StoreService:
             if existing is not None:
                 if client_token:
                     feedback = await self.build_action_feedback(user)
+                    if feedback.wallet is None:
+                        raise AppError(
+                            code="wallet_missing",
+                            message="Wallet could not be loaded.",
+                            status_code=500,
+                            message_key="errors.wallet_missing",
+                        )
+                    wallet = feedback.wallet
                     return PurchaseResult(
                         purchase=await self._serialize_purchase(
                             existing,
-                            balance=feedback.wallet.balance if feedback.wallet is not None else 0,
+                            balance=wallet.balance,
                         ),
-                        wallet=feedback.wallet,
+                        wallet=wallet,
                         available_items=feedback.available_items,
                         newly_affordable_items=feedback.newly_affordable_items,
                         best_item=feedback.best_item,
@@ -808,8 +824,12 @@ class StoreService:
         for item in defaults:
             existing = await self._store.get_item_by_slug(item.slug)
             if existing is None:
-                self._store.add_item(item)
-                continue
+                inserted = await self._store.try_add_item(item)
+                if inserted:
+                    continue
+                existing = await self._store.get_item_by_slug(item.slug)
+                if existing is None:
+                    continue
             existing.title = item.title
             existing.description = item.description
             existing.price = item.price

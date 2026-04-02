@@ -2,7 +2,7 @@ import uuid
 from collections.abc import Sequence
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import Select, and_, desc, distinct, func, or_, select
+from sqlalchemy import Select, desc, distinct, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased, selectinload
@@ -323,6 +323,65 @@ class MarketplaceRepository:
         await self._session.refresh(purchase)
         return purchase
 
+    async def try_create_purchase(
+        self,
+        *,
+        user_id: uuid.UUID,
+        prompt_id: uuid.UUID,
+        seller_user_id: uuid.UUID | None,
+        payment_method,
+        status: PurchaseStatus,
+        settlement_status: MarketplaceSettlementStatus = MarketplaceSettlementStatus.pending,
+        price_rub: int,
+        price_lumens: int,
+        platform_fee_rub: int = 0,
+        seller_amount_rub: int = 0,
+        platform_fee_lumens: int = 0,
+        seller_amount_lumens: int = 0,
+        settlement_available_at: datetime | None = None,
+        paid_out_at: datetime | None = None,
+        disputed_at: datetime | None = None,
+        payout_id: uuid.UUID | None = None,
+        provider_checkout_id: str | None = None,
+        provider_payment_id: str | None = None,
+        client_token: str | None = None,
+        completed_at: datetime | None = None,
+        refunded_at: datetime | None = None,
+        meta: dict | None = None,
+    ) -> PromptPurchase | None:
+        purchase = PromptPurchase(
+            user_id=user_id,
+            prompt_id=prompt_id,
+            seller_user_id=seller_user_id,
+            payment_method=payment_method,
+            status=status,
+            settlement_status=settlement_status,
+            price_rub=price_rub,
+            price_lumens=price_lumens,
+            platform_fee_rub=platform_fee_rub,
+            seller_amount_rub=seller_amount_rub,
+            platform_fee_lumens=platform_fee_lumens,
+            seller_amount_lumens=seller_amount_lumens,
+            settlement_available_at=settlement_available_at,
+            paid_out_at=paid_out_at,
+            disputed_at=disputed_at,
+            payout_id=payout_id,
+            provider_checkout_id=provider_checkout_id,
+            provider_payment_id=provider_payment_id,
+            client_token=client_token,
+            completed_at=completed_at,
+            refunded_at=refunded_at,
+            meta=meta,
+        )
+        try:
+            async with self._session.begin_nested():
+                self._session.add(purchase)
+                await self._session.flush()
+        except IntegrityError:
+            return None
+        await self._session.refresh(purchase)
+        return purchase
+
     async def save_purchase(self, purchase: PromptPurchase) -> PromptPurchase:
         await self._session.flush()
         await self._session.refresh(purchase)
@@ -351,7 +410,7 @@ class MarketplaceRepository:
             stmt = stmt.where(PromptPurchase.seller_user_id == seller_user_id)
         stmt = self._maybe_for_update(stmt, for_update)
         result = await self._session.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def list_available_purchases_for_payout(
         self,
@@ -378,7 +437,7 @@ class MarketplaceRepository:
             stmt = stmt.where(PromptPurchase.seller_amount_rub > 0)
         stmt = self._maybe_for_update(stmt, for_update)
         result = await self._session.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def create_payout(
         self,
@@ -426,7 +485,7 @@ class MarketplaceRepository:
             .limit(limit)
         )
         result = await self._session.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_plan_usage_window(
         self,
@@ -467,6 +526,33 @@ class MarketplaceRepository:
         )
         self._session.add(row)
         await self._session.flush()
+        await self._session.refresh(row)
+        return row
+
+    async def try_create_plan_usage_window(
+        self,
+        *,
+        user_id: uuid.UUID,
+        plan_tier: PlanTier,
+        window_started_at: datetime,
+        window_ends_at: datetime,
+        included_paid_prompt_limit: int,
+        used_paid_prompt_unlocks: int = 0,
+    ) -> PlanUsageWindow | None:
+        row = PlanUsageWindow(
+            user_id=user_id,
+            plan_tier=plan_tier,
+            window_started_at=window_started_at,
+            window_ends_at=window_ends_at,
+            included_paid_prompt_limit=included_paid_prompt_limit,
+            used_paid_prompt_unlocks=used_paid_prompt_unlocks,
+        )
+        try:
+            async with self._session.begin_nested():
+                self._session.add(row)
+                await self._session.flush()
+        except IntegrityError:
+            return None
         await self._session.refresh(row)
         return row
 
@@ -654,7 +740,7 @@ class MarketplaceRepository:
             .limit(limit)
         )
         result = await self._session.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_reviewable_purchase(
         self,
@@ -707,7 +793,10 @@ class MarketplaceRepository:
             stmt = stmt.order_by(desc(PromptReview.created_at))
         stmt = stmt.limit(limit)
         result = await self._session.execute(stmt)
-        return list(result.all())
+        return [
+            (review, prompt, author, author_profile if author_profile is not None else None)
+            for review, prompt, author, author_profile in result.all()
+        ]
 
     async def get_seller_summary(self, seller_user_id: uuid.UUID) -> dict[str, int | float | None]:
         purchase_stmt = (

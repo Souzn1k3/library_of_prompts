@@ -10,7 +10,6 @@ from sqlalchemy.orm import contains_eager, joinedload, selectinload
 from app.infrastructure.db.models import (
     Category,
     ContributorProfile,
-    ContributorTier,
     ModelCompatibility,
     ModerationState,
     Prompt,

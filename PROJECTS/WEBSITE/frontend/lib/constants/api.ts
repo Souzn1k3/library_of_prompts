@@ -31,6 +31,9 @@ export const API_ENDPOINTS = {
   store: `${API_V1_PREFIX}/store`,
   lessons: `${API_V1_PREFIX}/lessons`,
   lessonsPopular: `${API_V1_PREFIX}/lessons/popular`,
+  learningStartTarget: `${API_V1_PREFIX}/learning/start-target`,
+  learningCourses: `${API_V1_PREFIX}/learning/courses`,
+  learningMy: `${API_V1_PREFIX}/learning/my`,
   usersMe: `${API_V1_PREFIX}/users/me`,
   usersSavedPrompts: `${API_V1_PREFIX}/users/me/saved-prompts`,
   usersSubmissions: `${API_V1_PREFIX}/users/me/submissions`,
@@ -43,6 +46,13 @@ export const apiPath = {
   lessonBySlug: (slug: string) => `${API_ENDPOINTS.lessons}/by-slug/${encodeURIComponent(slug)}`,
   lessonCompleteBySlug: (slug: string) =>
     `${API_ENDPOINTS.lessons}/by-slug/${encodeURIComponent(slug)}/complete`,
+  learningCourse: (courseSlug: string) => `${API_ENDPOINTS.learningCourses}/${encodeURIComponent(courseSlug)}`,
+  learningLesson: (courseSlug: string, lessonSlug: string) =>
+    `${API_ENDPOINTS.learningCourses}/${encodeURIComponent(courseSlug)}/lessons/${encodeURIComponent(lessonSlug)}`,
+  learningStepSubmit: (courseSlug: string, lessonSlug: string, stepSlug: string) =>
+    `${API_ENDPOINTS.learningCourses}/${encodeURIComponent(courseSlug)}/lessons/${encodeURIComponent(lessonSlug)}/steps/${encodeURIComponent(stepSlug)}/submit`,
+  learningLocateLessonBySlug: (lessonSlug: string) =>
+    `${API_V1_PREFIX}/learning/lessons/by-slug/${encodeURIComponent(lessonSlug)}/locate`,
   promptBySlug: (slug: string) => `${API_ENDPOINTS.prompts}/by-slug/${encodeURIComponent(slug)}`,
   promptRelatedBySlug: (slug: string) =>
     `${API_ENDPOINTS.prompts}/by-slug/${encodeURIComponent(slug)}/related`,

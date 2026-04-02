@@ -2,6 +2,8 @@ export const APP_ROUTES = {
   home: "/",
   catalog: "/catalog",
   learn: "/learn",
+  learnStart: "/learn/start",
+  learnMy: "/learn/my",
   plans: "/plans",
   pricing: "/pricing",
   missions: "/missions",
@@ -21,6 +23,9 @@ export const appRoute = {
   promptBySlug: (slug: string) => `${APP_ROUTES.prompt}/${encodeURIComponent(slug)}`,
   missionBySlug: (slug: string) => `${APP_ROUTES.missions}/${encodeURIComponent(slug)}`,
   learnBySlug: (slug: string) => `${APP_ROUTES.learn}/${encodeURIComponent(slug)}`,
+  learnCourse: (courseSlug: string) => `${APP_ROUTES.learn}/course/${encodeURIComponent(courseSlug)}`,
+  learnCourseLesson: (courseSlug: string, lessonSlug: string) =>
+    `${APP_ROUTES.learn}/course/${encodeURIComponent(courseSlug)}/lesson/${encodeURIComponent(lessonSlug)}`,
   plansWithTier: (tier: string) => `${APP_ROUTES.plans}?tier=${encodeURIComponent(tier)}`,
   contributorBySlug: (slug: string) => `${APP_ROUTES.contributors}/${encodeURIComponent(slug)}`,
   contributorBySlugReviewSort: (slug: string, reviewSort: string) =>

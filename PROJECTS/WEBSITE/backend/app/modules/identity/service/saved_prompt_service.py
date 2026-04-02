@@ -7,8 +7,6 @@ from sqlalchemy.exc import IntegrityError
 from app.core.errors import ConflictError, NotFoundError
 from app.infrastructure.db.models import Prompt, PromptStatus
 from app.modules.catalog.model.prompt import PromptListItem
-from app.modules.catalog.repository.prompt_repository import PromptRepository
-from app.modules.identity.repository.saved_prompt_repository import SavedPromptRepository
 
 
 class SavedPromptRepositoryProtocol(Protocol):

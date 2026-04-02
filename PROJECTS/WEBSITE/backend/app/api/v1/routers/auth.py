@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, Request, Response, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_optional_user
 from app.api.service_deps import get_auth_service
 from app.config import get_settings
 from app.core.errors import AppError
 from app.core.rate_limit import enforce_rate_limit, resolve_rate_limit_ip
+from app.infrastructure.db.session import get_db
 from app.infrastructure.db.models import User
 from app.modules.identity.model.auth import LoginRequest, RegisterRequest, TokenResponse
 from app.modules.identity.service.auth_cookies import clear_auth_cookies, set_auth_cookies
@@ -78,6 +80,7 @@ async def refresh(
     request: Request,
     response: Response,
     svc: AuthService = Depends(get_auth_service),
+    session: AsyncSession = Depends(get_db),
 ) -> TokenResponse:
     ip = resolve_rate_limit_ip(request)
     await enforce_rate_limit(
@@ -92,18 +95,23 @@ async def refresh(
             message="Your session has ended. Please log in again.",
             status_code=401,
         )
-    session = await svc.refresh_session(
-        refresh_token=refresh_token,
-        client_ip=ip,
-        user_agent=request.headers.get("user-agent"),
-    )
+    try:
+        session_tokens = await svc.refresh_session(
+            refresh_token=refresh_token,
+            client_ip=ip,
+            user_agent=request.headers.get("user-agent"),
+        )
+    except AppError:
+        # Persist security revocations triggered during refresh failures (reuse/expiry).
+        await session.commit()
+        raise
     set_auth_cookies(
         response,
-        access_token=session.access_token,
-        refresh_token=session.refresh_token,
+        access_token=session_tokens.access_token,
+        refresh_token=session_tokens.refresh_token,
         settings=get_settings(),
     )
-    return TokenResponse(access_token=session.access_token)
+    return TokenResponse(access_token=session_tokens.access_token)
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)

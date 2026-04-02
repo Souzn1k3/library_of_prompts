@@ -72,7 +72,7 @@ class RefreshTokenRepository:
             )
         )
         result = await self._session.execute(stmt)
-        return int(result.rowcount or 0)
+        return int(getattr(result, "rowcount", 0) or 0)
 
     async def revoke_all_for_user(
         self,
@@ -94,4 +94,4 @@ class RefreshTokenRepository:
             )
         )
         result = await self._session.execute(stmt)
-        return int(result.rowcount or 0)
+        return int(getattr(result, "rowcount", 0) or 0)

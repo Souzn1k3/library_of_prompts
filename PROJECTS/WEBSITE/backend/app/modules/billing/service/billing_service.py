@@ -30,10 +30,13 @@ from app.modules.billing.service.entitlement_service import EntitlementService
 from app.modules.identity.repository.user_repository import UserRepository
 from app.modules.marketplace.service.marketplace_service import MarketplaceService
 
+_stripe_module: Any | None
 try:
-    import stripe
+    import stripe as _stripe_module
 except Exception:  # pragma: no cover - optional runtime dependency
-    stripe = None
+    _stripe_module = None
+
+stripe: Any = _stripe_module
 
 log = get_logger(__name__)
 
@@ -106,6 +109,8 @@ class BillingService:
         items: list[PlanPublicRead] = []
         for row in rows:
             localized = copy.get(row.tier, {})
+            highlights_raw = localized.get("highlights")
+            full_features_raw = localized.get("full_features")
             items.append(
                 PlanPublicRead(
                     tier=row.tier,
@@ -116,8 +121,8 @@ class BillingService:
                     monthly_paid_prompt_limit=row.monthly_paid_prompt_limit,
                     prompt_purchase_discount_percent=row.prompt_purchase_discount_percent,
                     lumen_purchase_discount_percent=row.lumen_purchase_discount_percent,
-                    highlights=list(localized.get("highlights") or []),
-                    full_features=list(localized.get("full_features") or []),
+                    highlights=list(highlights_raw) if isinstance(highlights_raw, list) else [],
+                    full_features=list(full_features_raw) if isinstance(full_features_raw, list) else [],
                     sort_order=row.sort_order,
                     is_active=row.is_active,
                 )
@@ -332,6 +337,14 @@ class BillingService:
             assert stripe is not None
             stripe.api_key = self._settings.stripe_secret_key
             customer_id = await self._get_or_create_stripe_customer(user)
+            price_id = self._resolve_price_id(plan)
+            if price_id is None:
+                raise AppError(
+                    code="checkout_not_configured",
+                    status_code=501,
+                    message="Checkout is currently unavailable for this plan.",
+                    message_key="errors.checkout_not_configured",
+                )
             success_url = self._ensure_success_url(
                 self._resolve_redirect_url(
                     payload.success_url,
@@ -345,7 +358,7 @@ class BillingService:
             session = stripe.checkout.Session.create(
                 mode="subscription",
                 customer=customer_id,
-                line_items=[{"price": self._resolve_price_id(plan), "quantity": 1}],
+                line_items=[{"price": price_id, "quantity": 1}],
                 success_url=success_url,
                 cancel_url=cancel_url,
                 client_reference_id=str(user.id),

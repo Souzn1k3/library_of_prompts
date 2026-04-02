@@ -38,6 +38,7 @@ export function CatalogFilters({
   const [isPending, startTransition] = useTransition();
   const [filters, setFilters] = useState<InitialFilters>(initial);
   const { t } = useI18n();
+  const shouldFocusSearch = !(initial.q && initial.q.trim().length > 0);
 
   useEffect(() => {
     setFilters(initial);
@@ -130,6 +131,7 @@ export function CatalogFilters({
             value={filters.q ?? ""}
             onChange={(e) => setFilters((prev) => ({ ...prev, q: e.target.value }))}
             placeholder={t("catalogFilters.searchPlaceholder")}
+            autoFocus={shouldFocusSearch}
             className="pv-input"
           />
         </div>

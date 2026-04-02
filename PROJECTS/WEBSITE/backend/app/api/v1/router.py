@@ -8,6 +8,7 @@ from app.api.v1.routers import (
     categories,
     store,
     wallet,
+    learning,
     contributors,
     contributions,
     health,
@@ -33,6 +34,7 @@ api_router.include_router(wallet.router)
 api_router.include_router(contributors.router)
 api_router.include_router(marketplace.router)
 api_router.include_router(prompts.router)
+api_router.include_router(learning.router)
 api_router.include_router(lessons.router)
 api_router.include_router(missions.router)
 api_router.include_router(onboarding.router)

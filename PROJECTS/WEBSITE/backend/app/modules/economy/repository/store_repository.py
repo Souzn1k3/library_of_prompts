@@ -1,6 +1,7 @@
 import uuid
 
 from sqlalchemy import select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -40,6 +41,15 @@ class StoreRepository:
     def add_item(self, item: StoreItem) -> None:
         self._session.add(item)
 
+    async def try_add_item(self, item: StoreItem) -> bool:
+        try:
+            async with self._session.begin_nested():
+                self._session.add(item)
+                await self._session.flush()
+        except IntegrityError:
+            return False
+        return True
+
     async def flush(self) -> None:
         await self._session.flush()
 
@@ -50,7 +60,7 @@ class StoreRepository:
             .order_by(StoreItem.sort_order.asc(), StoreItem.created_at.asc())
         )
         rows = await self._session.execute(stmt)
-        return rows.scalars().all()
+        return list(rows.scalars().all())
 
     async def get_item_by_id(self, item_id: uuid.UUID) -> StoreItem | None:
         row = await self._session.execute(select(StoreItem).where(StoreItem.id == item_id))
@@ -70,7 +80,7 @@ class StoreRepository:
             .order_by(Prompt.created_at.desc())
             .limit(limit)
         )
-        return rows.scalars().all()
+        return list(rows.scalars().all())
 
     async def list_recent_purchases(self, user_id: uuid.UUID, *, limit: int = 20) -> list[UserPurchase]:
         stmt = (
@@ -84,7 +94,7 @@ class StoreRepository:
             .limit(limit)
         )
         rows = await self._session.execute(stmt)
-        return rows.scalars().all()
+        return list(rows.scalars().all())
 
     async def has_completed_purchase(self, user_id: uuid.UUID) -> bool:
         stmt = (
@@ -109,7 +119,7 @@ class StoreRepository:
             .order_by(UserPurchase.created_at.desc())
         )
         rows = await self._session.execute(stmt)
-        return rows.scalars().all()
+        return list(rows.scalars().all())
 
     async def list_owned_one_time_item_ids(self, user_id: uuid.UUID) -> set[uuid.UUID]:
         stmt = (
@@ -145,7 +155,7 @@ class StoreRepository:
             .order_by(UserPurchase.created_at.desc())
         )
         rows = await self._session.execute(stmt)
-        return rows.scalars().all()
+        return list(rows.scalars().all())
 
     async def list_active_unlock_items(self) -> list[StoreItem]:
         stmt = (
@@ -157,7 +167,7 @@ class StoreRepository:
             .order_by(StoreItem.sort_order.asc(), StoreItem.created_at.asc())
         )
         rows = await self._session.execute(stmt)
-        return rows.scalars().all()
+        return list(rows.scalars().all())
 
     async def get_purchase_by_client_token(self, *, user_id: uuid.UUID, client_token: str) -> UserPurchase | None:
         stmt = (
@@ -223,7 +233,7 @@ class StoreRepository:
             )
             .values(availability=StoreItem.availability - 1)
         )
-        return int(result.rowcount or 0) > 0
+        return int(getattr(result, "rowcount", 0) or 0) > 0
 
     async def create_purchase(
         self,

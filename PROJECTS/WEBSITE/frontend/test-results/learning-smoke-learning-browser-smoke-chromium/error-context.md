@@ -1,0 +1,267 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - link "Skip to content" [ref=e3] [cursor=pointer]:
+      - /url: "#main-content"
+    - banner [ref=e4]:
+      - generic [ref=e7]:
+        - generic [ref=e8]:
+          - link "Prompts Vault" [ref=e9] [cursor=pointer]:
+            - /url: /
+          - navigation [ref=e11]:
+            - link "Catalog" [ref=e12] [cursor=pointer]:
+              - /url: /catalog
+            - link "Learn" [ref=e13] [cursor=pointer]:
+              - /url: /learn
+            - link "Missions" [ref=e14] [cursor=pointer]:
+              - /url: /missions
+            - link "Pricing" [ref=e15] [cursor=pointer]:
+              - /url: /pricing
+        - generic [ref=e17]:
+          - generic [ref=e18]: Global search
+          - generic [ref=e19]:
+            - img [ref=e20]
+            - searchbox "Global search" [ref=e23]
+          - button "Search" [ref=e24] [cursor=pointer]:
+            - img [ref=e25]
+        - generic [ref=e27]:
+          - button "Language switcher" [ref=e29] [cursor=pointer]:
+            - generic [ref=e30]: EN
+            - img [ref=e31]
+          - button "Account menu" [ref=e34] [cursor=pointer]:
+            - generic [ref=e35]: CQ
+            - generic [ref=e36]: Codex QA
+            - img [ref=e37]
+    - main [ref=e39]:
+      - article [ref=e40]:
+        - generic [ref=e41]:
+          - navigation "Breadcrumb" [ref=e42]:
+            - generic [ref=e43]:
+              - link "Prompts Vault" [ref=e44] [cursor=pointer]:
+                - /url: /
+              - generic [ref=e45]: /
+            - generic [ref=e46]:
+              - link "Learn" [ref=e47] [cursor=pointer]:
+                - /url: /learn
+              - generic [ref=e48]: /
+            - generic [ref=e49]:
+              - link "Basics of Prompt Engineering" [ref=e50] [cursor=pointer]:
+                - /url: /learn/course/prompt-engineering-foundations
+              - generic [ref=e51]: /
+            - generic [ref=e53]: Role-Context-Task-Output Pattern
+          - generic [ref=e55]:
+            - generic [ref=e56]:
+              - heading "Role-Context-Task-Output Pattern" [level=1] [ref=e57]
+              - paragraph [ref=e58]: Use a repeatable pattern to reduce randomness in model output.
+            - generic [ref=e59]: 2/6 · 30m
+            - generic [ref=e60]:
+              - link "Return to course" [ref=e61] [cursor=pointer]:
+                - /url: /learn/course/prompt-engineering-foundations
+              - link "Continue lesson" [ref=e62] [cursor=pointer]:
+                - /url: /learn/course/prompt-engineering-foundations/lesson/pe-constraints-and-examples
+        - generic [ref=e63]:
+          - complementary [ref=e64]:
+            - generic [ref=e65]:
+              - paragraph [ref=e66]: Course lessons
+              - generic [ref=e67]: 17%
+            - progressbar [ref=e68]
+            - list [ref=e70]:
+              - listitem [ref=e71]:
+                - link "1. What Makes a Prompt Work 100%" [ref=e72] [cursor=pointer]:
+                  - /url: /learn/course/prompt-engineering-foundations/lesson/pe-foundations
+                  - generic [ref=e73]:
+                    - generic [ref=e74]: 1. What Makes a Prompt Work
+                    - generic [ref=e75]: 100%
+              - listitem [ref=e76]:
+                - link "2. Role-Context-Task-Output Pattern 0%" [ref=e77] [cursor=pointer]:
+                  - /url: /learn/course/prompt-engineering-foundations/lesson/pe-structure-pattern
+                  - generic [ref=e78]:
+                    - generic [ref=e79]: 2. Role-Context-Task-Output Pattern
+                    - generic [ref=e80]: 0%
+              - listitem [ref=e81]:
+                - link "3. Constraints and Examples 0%":
+                  - /url: /learn/course/prompt-engineering-foundations/lesson/pe-constraints-and-examples
+                  - generic:
+                    - generic: 3. Constraints and Examples
+                    - generic: 0%
+              - listitem [ref=e82]:
+                - link "1. Prompt Iteration Loop 0%" [ref=e83] [cursor=pointer]:
+                  - /url: /learn/course/prompt-engineering-foundations/lesson/pe-iteration-loop
+                  - generic [ref=e84]:
+                    - generic [ref=e85]: 1. Prompt Iteration Loop
+                    - generic [ref=e86]: 0%
+              - listitem [ref=e87]:
+                - link "2. Evaluate Response Quality 0%" [ref=e88] [cursor=pointer]:
+                  - /url: /learn/course/prompt-engineering-foundations/lesson/pe-evaluate-quality
+                  - generic [ref=e89]:
+                    - generic [ref=e90]: 2. Evaluate Response Quality
+                    - generic [ref=e91]: 0%
+              - listitem [ref=e92]:
+                - link "3. Final Prompt Studio 0%":
+                  - /url: /learn/course/prompt-engineering-foundations/lesson/pe-final-studio
+                  - generic:
+                    - generic: 3. Final Prompt Studio
+                    - generic: 0%
+          - generic [ref=e93]:
+            - generic [ref=e94]:
+              - generic [ref=e95]:
+                - paragraph [ref=e96]: "Lesson progress: 0%"
+                - paragraph [ref=e97]: "Estimated time: 30m"
+              - progressbar [ref=e98]
+            - generic [ref=e99]:
+              - article [ref=e100]:
+                - generic [ref=e101]:
+                  - generic [ref=e102]:
+                    - paragraph [ref=e103]: Theory
+                    - heading "Pattern Logic" [level=3] [ref=e104]
+                  - generic [ref=e105]: 6m
+                - paragraph [ref=e107]: Role sets perspective, context sets boundaries, task sets action, output sets shape.
+                - generic [ref=e108]:
+                  - button "Check step" [ref=e109] [cursor=pointer]
+                  - generic [ref=e110]: "Attempts: 0"
+              - article [ref=e111]:
+                - generic [ref=e112]:
+                  - generic [ref=e113]:
+                    - paragraph [ref=e114]: Guided practice
+                    - heading "Build with the Pattern" [level=3] [ref=e115]
+                  - generic [ref=e116]: 8m
+                - generic [ref=e117]: Create a prompt for planning a one-week study sprint. Use all required markers.
+                - textbox [ref=e119]
+                - generic [ref=e120]:
+                  - button "Check step" [ref=e121] [cursor=pointer]
+                  - generic [ref=e122]: "Attempts: 0"
+              - article [ref=e123]:
+                - generic [ref=e124]:
+                  - generic [ref=e125]:
+                    - paragraph [ref=e126]: Quiz
+                    - heading "Checkpoint Quiz" [level=3] [ref=e127]
+                  - generic [ref=e128]: 4m
+                - 'group "What block is missing: ''[ROLE] Career coach [TASK] Build a roadmap [OUTPUT] table''?" [ref=e129]':
+                  - generic [ref=e130]: "What block is missing: '[ROLE] Career coach [TASK] Build a roadmap [OUTPUT] table'?"
+                  - generic [ref=e131] [cursor=pointer]:
+                    - radio "[CHECK]" [ref=e132]
+                    - generic [ref=e133]: "[CHECK]"
+                  - generic [ref=e134] [cursor=pointer]:
+                    - radio "[CONTEXT]" [ref=e135]
+                    - generic [ref=e136]: "[CONTEXT]"
+                  - generic [ref=e137] [cursor=pointer]:
+                    - radio "[EXAMPLE]" [ref=e138]
+                    - generic [ref=e139]: "[EXAMPLE]"
+                - generic [ref=e140]:
+                  - button "Check step" [ref=e141] [cursor=pointer]
+                  - generic [ref=e142]: "Attempts: 0"
+              - article [ref=e143]:
+                - generic [ref=e144]:
+                  - generic [ref=e145]:
+                    - paragraph [ref=e146]: Applied exercise
+                    - heading "Prompt Template Draft" [level=3] [ref=e147]
+                  - generic [ref=e148]: 8m
+                - generic [ref=e149]: Write a reusable template with placeholders like <topic>, <audience>, <time_limit>.
+                - textbox [ref=e151]
+                - generic [ref=e152]:
+                  - button "Check step" [ref=e153] [cursor=pointer]
+                  - generic [ref=e154]: "Attempts: 0"
+              - article [ref=e155]:
+                - generic [ref=e156]:
+                  - generic [ref=e157]:
+                    - paragraph [ref=e158]: Reflection
+                    - heading "Quick Synthesis" [level=3] [ref=e159]
+                  - generic [ref=e160]: 4m
+                - generic [ref=e161]: "In one sentence: why is output format not a cosmetic detail?"
+                - textbox [ref=e163]
+                - generic [ref=e164]:
+                  - button "Check step" [ref=e165] [cursor=pointer]
+                  - generic [ref=e166]: "Attempts: 0"
+        - generic [ref=e168]:
+          - link "Return to course" [ref=e169] [cursor=pointer]:
+            - /url: /learn/course/prompt-engineering-foundations
+            - text: Return to course
+            - generic [ref=e170]: ↗
+          - generic [ref=e171]:
+            - link "Previous lesson" [ref=e172] [cursor=pointer]:
+              - /url: /learn/course/prompt-engineering-foundations/lesson/pe-foundations
+            - link "Next lesson" [ref=e173] [cursor=pointer]:
+              - /url: /learn/course/prompt-engineering-foundations/lesson/pe-constraints-and-examples
+    - contentinfo [ref=e174]:
+      - generic [ref=e175]:
+        - generic [ref=e176]:
+          - generic [ref=e177]:
+            - link "PV Prompts Vault" [ref=e178] [cursor=pointer]:
+              - /url: /
+              - generic [ref=e179]: PV
+              - generic [ref=e180]: Prompts Vault
+            - paragraph [ref=e181]: Prompt library, lessons, and AI workflows in one clean workspace.
+          - generic [ref=e182]:
+            - navigation "Product" [ref=e183]:
+              - heading "Product" [level=3] [ref=e184]
+              - list [ref=e185]:
+                - listitem [ref=e186]:
+                  - link "Catalog" [ref=e187] [cursor=pointer]:
+                    - /url: /catalog
+                    - generic [ref=e188]: Catalog
+                - listitem [ref=e189]:
+                  - link "Learn" [ref=e190] [cursor=pointer]:
+                    - /url: /learn
+                    - generic [ref=e191]: Learn
+                - listitem [ref=e192]:
+                  - link "Missions" [ref=e193] [cursor=pointer]:
+                    - /url: /missions
+                    - generic [ref=e194]: Missions
+                - listitem [ref=e195]:
+                  - link "Pricing" [ref=e196] [cursor=pointer]:
+                    - /url: /pricing
+                    - generic [ref=e197]: Pricing
+            - navigation "Resources" [ref=e198]:
+              - heading "Resources" [level=3] [ref=e199]
+              - list [ref=e200]:
+                - listitem [ref=e201]:
+                  - link "Guides" [ref=e202] [cursor=pointer]:
+                    - /url: /learn
+                    - generic [ref=e203]: Guides
+                - listitem [ref=e204]:
+                  - link "Prompt techniques" [ref=e205] [cursor=pointer]:
+                    - /url: /catalog
+                    - generic [ref=e206]: Prompt techniques
+            - navigation "Company" [ref=e207]:
+              - heading "Company" [level=3] [ref=e208]
+              - list [ref=e209]:
+                - listitem [ref=e210]:
+                  - link "About Prompts Vault" [ref=e211] [cursor=pointer]:
+                    - /url: /
+                    - generic [ref=e212]: About Prompts Vault
+                - listitem [ref=e213]:
+                  - link "Contribute" [ref=e214] [cursor=pointer]:
+                    - /url: /submit
+                    - generic [ref=e215]: Contribute
+            - navigation "Account" [ref=e216]:
+              - heading "Account" [level=3] [ref=e217]
+              - list [ref=e218]:
+                - listitem [ref=e219]:
+                  - link "Dashboard" [ref=e220] [cursor=pointer]:
+                    - /url: /dashboard
+                    - generic [ref=e221]: Dashboard
+                - listitem [ref=e222]:
+                  - link "Profile" [ref=e223] [cursor=pointer]:
+                    - /url: /profile
+                    - generic [ref=e224]: Profile
+        - generic [ref=e225]:
+          - generic [ref=e226]:
+            - paragraph [ref=e227]: © 2026 Prompts Vault
+            - paragraph [ref=e228]: Built for focused AI work.
+          - generic "Social" [ref=e229]:
+            - link "Telegram bot" [ref=e230] [cursor=pointer]:
+              - /url: https://t.me/prompts_souz_bot
+              - img [ref=e231]
+            - link "Instagram" [ref=e233] [cursor=pointer]:
+              - /url: https://instagram.com
+              - img [ref=e234]
+            - link "TikTok" [ref=e238] [cursor=pointer]:
+              - /url: https://www.tiktok.com
+              - img [ref=e239]
+            - link "YouTube" [ref=e242] [cursor=pointer]:
+              - /url: https://www.youtube.com
+              - img [ref=e243]
+  - alert [ref=e246]
+```

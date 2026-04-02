@@ -190,18 +190,6 @@ def upgrade() -> None:
             """
         )
     ).scalar()
-    premium_prompts = bind.execute(
-        sa.text(
-            """
-            SELECT id, slug, title
-            FROM prompts
-            WHERE status = 'published' AND is_premium = true
-            ORDER BY created_at DESC
-            LIMIT 3
-            """
-        )
-    ).fetchall()
-
     mission_table = sa.table(
         "lesson_missions",
         sa.column("id", sa.Uuid()),
