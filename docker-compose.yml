@@ -85,6 +85,10 @@ services:
         HTTP_PROXY: ${HTTP_PROXY:-}
         HTTPS_PROXY: ${HTTPS_PROXY:-}
         NO_PROXY: ${NO_PROXY:-}
+    command: >
+      sh -lc "set -o pipefail;
+              npm run dev -- --hostname 0.0.0.0 --port 3000 2>&1 |
+              awk '!/^[[:space:]]*(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD) \\/.*$/ && !/\\[\\?25h/ { print; fflush(); }'"
     environment:
       API_URL: http://api:8000
       NEXT_PUBLIC_API_URL: http://localhost:8000
