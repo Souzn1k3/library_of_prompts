@@ -326,7 +326,8 @@ export function LearningLessonRuntime({
                   <summary className="cursor-pointer select-none text-sm font-semibold text-zinc-900">
                     {t("learn.readyPrompt")}
                   </summary>
-                  <p className="mt-2 text-sm text-zinc-600">{t("learn.readyPromptHint")}</p>
+                  <p className="mt-2 pv-hint-badge">Подсказка</p>
+                  <p className="mt-1 text-sm text-zinc-600">{t("learn.readyPromptHint")}</p>
                   <pre className="mt-3 overflow-x-auto rounded-[0.9rem] border border-[var(--pv-border)] bg-zinc-50 px-3 py-3 text-xs leading-relaxed text-zinc-800">
                     {suggestedTemplate(activeStep, t)}
                   </pre>
@@ -334,9 +335,10 @@ export function LearningLessonRuntime({
               ) : null}
               <p className="text-xs text-zinc-500">{t("learn.answerFormatHint")}</p>
               {activeStep.kind === "reflection" ? (
-                <p className="rounded-[0.9rem] border border-[var(--pv-border)] bg-zinc-50/80 px-3 py-2 text-xs text-zinc-600">
-                  {t("learn.reflectionHint")}
-                </p>
+                <div className="rounded-[0.9rem] border border-[var(--pv-border)] bg-zinc-50/80 px-3 py-2 text-xs text-zinc-600">
+                  <p className="pv-hint-badge">Подсказка</p>
+                  <p className="mt-1">{t("learn.reflectionHint")}</p>
+                </div>
               ) : null}
               <textarea
                 value={textAnswers[activeStep.slug] ?? ""}

@@ -245,7 +245,8 @@ export function SubmitPromptForm() {
 
       <details className="pv-details">
         <summary>{t("submit.advancedOptions")}</summary>
-        <p className="mt-2 text-sm text-zinc-600">{t("submit.advancedOptionsHint")}</p>
+        <p className="mt-2 pv-hint-badge">Подсказка</p>
+        <p className="mt-1 text-sm text-zinc-600">{t("submit.advancedOptionsHint")}</p>
 
         <div className="mt-4 grid gap-4 md:grid-cols-2">
           <div className="pv-field">

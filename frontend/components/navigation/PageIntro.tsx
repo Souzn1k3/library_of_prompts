@@ -66,7 +66,12 @@ export function PageIntro({
             {description ? <p className="pv-lead max-w-3xl">{description}</p> : null}
           </div>
 
-          {hint ? <div className="pv-note">{hint}</div> : null}
+          {hint ? (
+            <div className="pv-note">
+              <p className="pv-hint-badge">Подсказка</p>
+              <div className="mt-1">{hint}</div>
+            </div>
+          ) : null}
           {actions ? <div className="pv-cta-group">{actions}</div> : null}
           {children}
         </div>

@@ -87,6 +87,7 @@ export function ProfileClient() {
   const [onboardingProfile, setOnboardingProfile] = useState<OnboardingProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const [lastMarketplaceSyncAt, setLastMarketplaceSyncAt] = useState<string | null>(null);
   const locale = useMemo(() => languageToIntlLocale(language), [language]);
   const marketplaceUnavailable = t("profile.marketplaceUnavailable");
 
@@ -95,6 +96,7 @@ export function ProfileClient() {
       setOverview(null);
       setBilling(null);
       setOnboardingProfile(null);
+      setLastMarketplaceSyncAt(null);
       return;
     }
 
@@ -116,6 +118,13 @@ export function ProfileClient() {
         }
         if (onboardingResult.status === "fulfilled") {
           setOnboardingProfile(onboardingResult.value);
+        }
+        if (
+          overviewResult.status === "fulfilled" ||
+          billingResult.status === "fulfilled" ||
+          onboardingResult.status === "fulfilled"
+        ) {
+          setLastMarketplaceSyncAt(new Date().toISOString());
         }
 
         const firstError = [overviewResult, billingResult].find((result) => result.status === "rejected");
@@ -192,7 +201,13 @@ export function ProfileClient() {
     recent_payouts: [],
   };
   const payouts = overview?.payouts?.length ? overview.payouts : summary.recent_payouts;
+  const purchases = overview?.purchases ?? [];
+  const reviews = overview?.reviews ?? [];
   const ratingLabel = summary.rating_display ? `${summary.rating_display.toFixed(1)}/5` : t("profile.ratingNew");
+  const reviewsAnchorHref = "#seller-reviews";
+  const publicReviewsHref = user.contributor_slug
+    ? appRoute.contributorBySlugReviewSort(user.contributor_slug, "best")
+    : null;
   const planUnlocks =
     billing && billing.paid_prompt_limit_total > 0
       ? `${billing.paid_prompt_limit_remaining}/${billing.paid_prompt_limit_total}`
@@ -354,12 +369,11 @@ export function ProfileClient() {
           <div>
             <p className="pv-kicker">{t("profile.marketplaceKicker")}</p>
             <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("profile.marketplaceTitle")}</h2>
-            <p className="mt-2 text-sm text-zinc-600">
-              {t("profile.marketplaceDescription")}
-            </p>
+            <p className="mt-2 text-sm text-zinc-600">{t("profile.marketplaceDescription")}</p>
           </div>
           <div className="rounded-[1rem] border border-zinc-200 bg-white/80 px-4 py-3 text-sm text-zinc-700">
-            <p className="font-medium text-zinc-950">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">{t("profile.statusHintBadge")}</p>
+            <p className="mt-1 font-medium text-zinc-950">
               {summary.payout_eligible ? t("profile.payoutEligible") : t("profile.settlementInProgress")}
             </p>
             <p className="mt-1 text-xs text-zinc-500">
@@ -367,105 +381,59 @@ export function ProfileClient() {
                 ? t("profile.payoutEligibleDescription")
                 : t("profile.settlementInProgressDescription")}
             </p>
+            <p className="mt-2 text-[11px] text-zinc-500">{t("profile.statusHintNote")}</p>
           </div>
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <button type="button" onClick={() => setReloadToken((value) => value + 1)} className="pv-button-secondary !w-auto">
-            {t("profile.refreshMarketplaceData")}
-          </button>
-          <p className="text-xs text-zinc-500">{t("profile.marketplaceRefreshHint")}</p>
-        </div>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-4">
-          <MetricCard label={t("profile.pendingSettlement")}>
-            <p className="mt-3 font-medium text-zinc-900">{formatDualCurrency(summary.pending_balance_rub, summary.pending_balance_lumens, locale)}</p>
-            <p className="mt-2 text-sm text-zinc-600">{t("profile.pendingSettlementDescription")}</p>
-          </MetricCard>
-          <MetricCard label={t("profile.availableToPayout")}>
-            <p className="mt-3 font-medium text-zinc-900">{formatDualCurrency(summary.available_balance_rub, summary.available_balance_lumens, locale)}</p>
-            <p className="mt-2 text-sm text-zinc-600">
-              {summary.payout_eligible ? t("profile.availableToPayoutReady") : t("profile.availableToPayoutEmpty")}
-            </p>
-          </MetricCard>
-          <MetricCard label={t("profile.paidOutLifetime")}>
-            <p className="mt-3 font-medium text-zinc-900">{formatDualCurrency(summary.paid_out_rub, summary.paid_out_lumens, locale)}</p>
-            <p className="mt-2 text-sm text-zinc-600">{t("profile.paidOutLifetimeDescription")}</p>
-          </MetricCard>
-          <MetricCard label={t("profile.feesAndClawbacks")}>
-            <p className="mt-3 font-medium text-zinc-900">
-              {formatDualCurrency(summary.platform_commission_rub, summary.platform_commission_lumens, locale)}
-            </p>
-            <p className="mt-2 text-sm text-zinc-600">
-              {t("profile.clawbackDue")}: {formatDualCurrency(summary.clawback_due_rub, summary.clawback_due_lumens, locale)}
-            </p>
-          </MetricCard>
-        </div>
-
-        <div className="mt-4 grid gap-4 lg:grid-cols-2">
-          <div className="rounded-[1.25rem] border border-zinc-200 bg-white/75 p-4 text-sm text-zinc-700">
-            <p className="font-medium text-zinc-950">{t("profile.refundImpact")}</p>
-            <p className="mt-2">
-              {t("profile.refunded")}: <span className="font-medium text-zinc-900">{formatDualCurrency(summary.refunded_balance_rub, summary.refunded_balance_lumens, locale)}</span>
-            </p>
-            <p className="mt-2">
-              {t("profile.disputed")}: <span className="font-medium text-zinc-900">{formatDualCurrency(summary.disputed_balance_rub, summary.disputed_balance_lumens, locale)}</span>
-            </p>
-            <p className="mt-2 text-xs text-zinc-500">
-              {t("profile.refundImpactDescription")}
-            </p>
-          </div>
-          <div className="rounded-[1.25rem] border border-zinc-200 bg-white/75 p-4 text-sm text-zinc-700">
-            <p className="font-medium text-zinc-950">{t("profile.sellerTrust")}</p>
-            <p className="mt-2">
-              {t("profile.averageRating")}: <span className="font-medium text-zinc-900">{ratingLabel}</span>
-            </p>
-            <p className="mt-2">
-              {t("profile.verifiedReviews")}: <span className="font-medium text-zinc-900">{summary.review_count}</span>
-            </p>
-            <p className="mt-2">
-              {t("profile.promptsSold")}: <span className="font-medium text-zinc-900">{summary.sold_prompts_count}</span>
-            </p>
-            <p className="mt-2 text-xs text-zinc-500">
-              {t("profile.sellerTrustDescription")}
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6">
+        <div className="mt-4 rounded-[1rem] border border-zinc-200 bg-white/80 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="pv-kicker">{t("profile.recentPayouts")}</p>
-              <p className="mt-1 text-sm text-zinc-600">{t("profile.recentPayoutsDescription")}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                {t("profile.marketplaceSyncTitle")}
+              </p>
+              <p className="mt-1 text-sm text-zinc-700">{t("profile.marketplaceSyncDescription")}</p>
+              <p className="mt-2 text-xs text-zinc-500">
+                {lastMarketplaceSyncAt
+                  ? t("profile.marketplaceSyncUpdatedAt", { date: formatDateTime(lastMarketplaceSyncAt, locale) })
+                  : t("profile.marketplaceSyncNever")}
+              </p>
             </div>
+            <button
+              type="button"
+              onClick={() => setReloadToken((value) => value + 1)}
+              className="pv-button-secondary !w-auto"
+            >
+              {t("profile.marketplaceSyncAction")}
+            </button>
           </div>
-          {payouts.length ? (
-            <div className="mt-4 grid gap-3 lg:grid-cols-2">
-              {payouts.map((payout) => (
-                <PayoutCard key={payout.id} locale={locale} payout={payout} />
-              ))}
-            </div>
-          ) : (
-            <p className="mt-4 text-sm text-zinc-500">
-              {t("profile.noPayouts")}
-            </p>
-          )}
+        </div>
+
+        <div className="mt-6 space-y-5">
+          <BalanceCard summary={summary} payouts={payouts} locale={locale} />
+          <MoneyStatusBlock summary={summary} payouts={payouts} purchases={purchases} locale={locale} />
+          <WhyZeroBalanceBlock summary={summary} purchases={purchases} locale={locale} />
+          <MoneyPipeline summary={summary} payouts={payouts} purchases={purchases} locale={locale} />
+          <PayoutsTable payouts={payouts} locale={locale} />
         </div>
       </section>
 
       <section className="pv-panel px-6 py-6 sm:px-7">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="pv-kicker">{t("profile.recentPurchases")}</p>
+            <p className="pv-kicker">{t("profile.purchasesLibraryKicker")}</p>
             <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("profile.recentPurchasesTitle")}</h2>
-            <p className="mt-2 text-sm text-zinc-600">
-              {t("profile.recentPurchasesDescription")}
-            </p>
+            <p className="mt-2 text-sm text-zinc-600">{t("profile.recentPurchasesDescription")}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="pv-chip">{t("profile.totalPurchasesCount", { count: summary.purchases_count })}</span>
+            <Link href={APP_ROUTES.catalog} className="pv-button-secondary !w-auto">
+              {t("footer.browsePrompts")}
+            </Link>
           </div>
         </div>
 
-        {overview?.purchases?.length ? (
+        {purchases.length ? (
           <div className="mt-6 space-y-4">
-            {overview.purchases.map((purchase) => (
+            {purchases.map((purchase) => (
               <PurchaseReviewCard
                 key={purchase.id}
                 locale={locale}
@@ -482,24 +450,31 @@ export function ProfileClient() {
       </section>
 
       <section className="pv-panel px-6 py-6 sm:px-7">
+        <SellerTrustBlock
+          summary={summary}
+          ratingLabel={ratingLabel}
+          reviewsHref={reviewsAnchorHref}
+          publicReviewsHref={publicReviewsHref}
+        />
+      </section>
+
+      <section id="seller-reviews" className="pv-panel px-6 py-6 sm:px-7">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="pv-kicker">{t("profile.recentReviews")}</p>
             <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("profile.recentReviewsTitle")}</h2>
+            <p className="mt-2 text-sm text-zinc-600">{t("profile.recentReviewsDescription")}</p>
           </div>
-          {user.contributor_slug ? (
-            <Link
-              href={appRoute.contributorBySlugReviewSort(user.contributor_slug, "best")}
-              className="text-sm font-semibold text-[var(--pv-brand)]"
-            >
+          {publicReviewsHref ? (
+            <Link href={publicReviewsHref} className="text-sm font-semibold text-[var(--pv-brand)]">
               {t("profile.openPublicReviewPage")}
             </Link>
           ) : null}
         </div>
 
-        {overview?.reviews?.length ? (
+        {reviews.length ? (
           <div className="mt-6 space-y-3">
-            {overview.reviews.map((review) => (
+            {reviews.map((review) => (
               <div key={review.id} className="rounded-[1rem] border border-zinc-200 bg-white/75 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
@@ -581,23 +556,337 @@ function QuickLink({ href, label }: { href: string; label: string }) {
   );
 }
 
-function PayoutCard({ locale, payout }: { locale: string; payout: MarketplacePayout }) {
+function StatusMetric({ title, value, caption }: { title: string; value: string; caption?: string }) {
+  return (
+    <div className="rounded-[1rem] border border-zinc-200/80 bg-white p-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">{title}</p>
+      <p className="mt-2 text-sm font-semibold text-zinc-900">{value}</p>
+      {caption ? <p className="mt-1 text-xs text-zinc-500">{caption}</p> : null}
+    </div>
+  );
+}
+
+function BalanceCard({
+  summary,
+  payouts,
+  locale,
+}: {
+  summary: SellerMarketplaceSummary;
+  payouts: MarketplacePayout[];
+  locale: string;
+}) {
+  const { t } = useI18n();
+  const nextPayout = findUpcomingPayout(payouts);
+  const nextPayoutDate = nextPayout ? formatDate(nextPayout.requested_at, locale) : t("profile.noData");
+
+  return (
+    <div className="rounded-[1.75rem] border border-zinc-200 bg-white p-6 shadow-[0_1px_0_rgba(0,0,0,0.04)] sm:p-7">
+      <p className="pv-kicker">{t("profile.sellerBalanceTitle")}</p>
+      <p className="mt-3 text-xs uppercase tracking-[0.2em] text-zinc-500">{t("profile.availableToPayout")}</p>
+      <p className="mt-2 text-[2rem] font-bold leading-tight tracking-[-0.05em] text-zinc-950 sm:text-[2.65rem]">
+        {formatDualCurrency(summary.available_balance_rub, summary.available_balance_lumens, locale)}
+      </p>
+      <p className="mt-2 text-sm text-zinc-600">{t("profile.nextPayoutDate", { date: nextPayoutDate })}</p>
+      <p className="mt-1 text-xs text-zinc-500">
+        {summary.payout_eligible ? t("profile.availableToPayoutReady") : t("profile.availableToPayoutEmpty")}
+      </p>
+      <div className="mt-5 flex flex-wrap gap-3">
+        <Link href={APP_ROUTES.wallet} className="pv-button-primary !w-auto">
+          {t("profile.withdrawFunds")}
+        </Link>
+        <Link href={APP_ROUTES.dashboard} className="pv-button-secondary !w-auto">
+          {t("profile.openReport")}
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function MoneyStatusBlock({
+  summary,
+  payouts,
+  purchases,
+  locale,
+}: {
+  summary: SellerMarketplaceSummary;
+  payouts: MarketplacePayout[];
+  purchases: PromptMarketplacePurchase[];
+  locale: string;
+}) {
+  const { t } = useI18n();
+  const pendingReleaseDate = findNearestPendingSettlementDate(purchases);
+  const pendingReleaseLabel = pendingReleaseDate
+    ? t("profile.pendingReleaseAt", { date: formatDate(pendingReleaseDate, locale) })
+    : t("profile.pendingReleaseNoDate");
+  const holdRub = summary.clawback_due_rub + summary.disputed_balance_rub;
+  const holdLumens = summary.clawback_due_lumens + summary.disputed_balance_lumens;
+  const paidOutLast30 = formatPaidOutLast30(payouts, locale, t);
+
+  return (
+    <div className="rounded-[1.5rem] border border-zinc-200 bg-white/80 p-5">
+      <p className="pv-kicker">{t("profile.moneyStatusTitle")}</p>
+      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <StatusMetric
+          title={t("profile.pendingStatus")}
+          value={formatDualCurrency(summary.pending_balance_rub, summary.pending_balance_lumens, locale)}
+          caption={pendingReleaseLabel}
+        />
+        <StatusMetric
+          title={t("profile.fees")}
+          value={formatDualCurrency(summary.platform_commission_rub, summary.platform_commission_lumens, locale)}
+        />
+        <StatusMetric
+          title={t("profile.holdsAndDisputes")}
+          value={formatDualCurrency(holdRub, holdLumens, locale)}
+          caption={`${t("profile.refunded")}: ${formatDualCurrency(summary.refunded_balance_rub, summary.refunded_balance_lumens, locale)}`}
+        />
+        <StatusMetric
+          title={t("profile.paidOutLast30")}
+          value={paidOutLast30.value}
+          caption={paidOutLast30.caption}
+        />
+      </div>
+    </div>
+  );
+}
+
+function WhyZeroBalanceBlock({
+  summary,
+  purchases,
+  locale,
+}: {
+  summary: SellerMarketplaceSummary;
+  purchases: PromptMarketplacePurchase[];
+  locale: string;
+}) {
+  const { t } = useI18n();
+  const hasZeroAvailable = summary.available_balance_rub === 0 && summary.available_balance_lumens === 0;
+  if (!hasZeroAvailable) {
+    return null;
+  }
+
+  const reasons: string[] = [];
+  const pendingReleaseDate = findNearestPendingSettlementDate(purchases);
+
+  if (summary.pending_balance_rub !== 0 || summary.pending_balance_lumens !== 0) {
+    const pendingAmount = formatDualCurrency(summary.pending_balance_rub, summary.pending_balance_lumens, locale);
+    reasons.push(
+      pendingReleaseDate
+        ? t("profile.zeroReasonPendingWithDate", { amount: pendingAmount, date: formatDate(pendingReleaseDate, locale) })
+        : t("profile.zeroReasonPendingNoDate", { amount: pendingAmount }),
+    );
+  }
+
+  const holdRub = summary.clawback_due_rub + summary.disputed_balance_rub;
+  const holdLumens = summary.clawback_due_lumens + summary.disputed_balance_lumens;
+  if (holdRub !== 0 || holdLumens !== 0) {
+    reasons.push(t("profile.zeroReasonHoldDispute", { amount: formatDualCurrency(holdRub, holdLumens, locale) }));
+  }
+
+  if ((summary.platform_commission_rub !== 0 || summary.platform_commission_lumens !== 0) && reasons.length < 3) {
+    reasons.push(
+      t("profile.zeroReasonCommission", {
+        amount: formatDualCurrency(summary.platform_commission_rub, summary.platform_commission_lumens, locale),
+      }),
+    );
+  }
+
+  const hasNoSales = summary.seller_revenue_rub === 0 && summary.seller_lumens_earned === 0;
+  if (hasNoSales && reasons.length < 3) {
+    reasons.push(t("profile.zeroReasonNoSales"));
+  }
+
+  if (reasons.length === 0) {
+    reasons.push(t("profile.zeroReasonFallback"));
+  }
+  reasons.push(t("profile.zeroReasonPayoutRule"));
+
+  return (
+    <div className="rounded-[1.25rem] border border-amber-200 bg-amber-50/70 p-4 text-sm text-amber-900">
+      <p className="font-semibold">{t("profile.whyZeroBalance")}</p>
+      <ul className="mt-2 list-disc space-y-1 pl-5">
+        {reasons.map((reason, index) => (
+          <li key={`${reason}-${index}`}>{reason}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function MoneyPipeline({
+  summary,
+  payouts,
+  purchases,
+  locale,
+}: {
+  summary: SellerMarketplaceSummary;
+  payouts: MarketplacePayout[];
+  purchases: PromptMarketplacePurchase[];
+  locale: string;
+}) {
+  const { t } = useI18n();
+  const upcomingPayout = findUpcomingPayout(payouts);
+  const latestPaidPayout = findLatestPaidPayout(payouts);
+  const pendingReleaseDate = findNearestPendingSettlementDate(purchases);
+  const steps: Array<{ label: string; amount: string; date?: string }> = [
+    {
+      label: t("profile.pipelinePaidByBuyers"),
+      amount: formatDualCurrency(summary.seller_revenue_rub, summary.seller_lumens_earned, locale),
+    },
+    {
+      label: t("profile.pipelineInHold"),
+      amount: formatDualCurrency(summary.pending_balance_rub, summary.pending_balance_lumens, locale),
+      date: pendingReleaseDate ? formatDate(pendingReleaseDate, locale) : undefined,
+    },
+    {
+      label: t("profile.pipelineAvailable"),
+      amount: formatDualCurrency(summary.available_balance_rub, summary.available_balance_lumens, locale),
+    },
+    {
+      label: t("profile.pipelinePayout"),
+      amount: upcomingPayout ? formatPayoutAmount(upcomingPayout, locale) : t("profile.pipelineNoPayoutQueue"),
+      date: upcomingPayout ? formatDate(upcomingPayout.requested_at, locale) : undefined,
+    },
+    {
+      label: t("profile.pipelinePaidOut"),
+      amount: formatDualCurrency(summary.paid_out_rub, summary.paid_out_lumens, locale),
+      date: latestPaidPayout?.paid_at ? formatDate(latestPaidPayout.paid_at, locale) : undefined,
+    },
+  ];
+
+  return (
+    <div className="rounded-[1.5rem] border border-zinc-200 bg-white/80 p-5">
+      <p className="pv-kicker">{t("profile.moneyPipelineTitle")}</p>
+      <ol className="mt-4 space-y-3">
+        {steps.map((step, index) => (
+          <li key={`${step.label}-${index}`} className="relative rounded-[1rem] border border-zinc-200/80 bg-white p-3 pl-10">
+            <span className="absolute left-4 top-4 h-2.5 w-2.5 rounded-full bg-[var(--pv-brand)]" aria-hidden="true" />
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">{step.label}</p>
+            <p className="mt-1 text-sm font-semibold text-zinc-900">{step.amount}</p>
+            {step.date ? <p className="mt-1 text-xs text-zinc-500">{t("profile.pipelineDate", { date: step.date })}</p> : null}
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function PayoutsTable({ payouts, locale }: { payouts: MarketplacePayout[]; locale: string }) {
+  const { t } = useI18n();
+  const sortedPayouts = [...payouts].sort((left, right) => Date.parse(right.requested_at) - Date.parse(left.requested_at));
+  const upcomingPayout = findUpcomingPayout(payouts) ?? sortedPayouts[0] ?? null;
+
+  return (
+    <div className="rounded-[1.5rem] border border-zinc-200 bg-white/80 p-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="pv-kicker">{t("profile.recentPayouts")}</p>
+          <p className="mt-1 text-sm text-zinc-600">{t("profile.recentPayoutsDescription")}</p>
+        </div>
+      </div>
+      <div className="mt-4 rounded-[1rem] border border-zinc-200 bg-white p-4">
+        <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">{t("profile.nextPayoutCardTitle")}</p>
+        {upcomingPayout ? (
+          <>
+            <p className="mt-2 text-lg font-semibold text-zinc-950">{formatPayoutAmount(upcomingPayout, locale)}</p>
+            <p className="mt-1 text-sm text-zinc-600">
+              {t("profile.nextPayoutCardDate", { date: formatDate(upcomingPayout.requested_at, locale) })}
+            </p>
+            <p className="mt-1 text-sm text-zinc-600">
+              {t("profile.nextPayoutCardStatus", { status: humanizePayoutTableStatus(upcomingPayout.status, t) })}
+            </p>
+          </>
+        ) : (
+          <p className="mt-2 text-sm text-zinc-500">{t("profile.noData")}</p>
+        )}
+      </div>
+      {sortedPayouts.length ? (
+        <div className="mt-4 overflow-x-auto rounded-[1rem] border border-zinc-200 bg-white">
+          <table className="min-w-full border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-zinc-200 bg-zinc-50 text-left text-xs uppercase tracking-[0.14em] text-zinc-500">
+                <th className="px-4 py-3">{t("profile.payoutsDateColumn")}</th>
+                <th className="px-4 py-3">{t("profile.payoutsAmountColumn")}</th>
+                <th className="px-4 py-3">{t("profile.payoutsStatusColumn")}</th>
+                <th className="px-4 py-3">{t("profile.payoutsMethodColumn")}</th>
+                <th className="px-4 py-3">{t("profile.payoutsIdColumn")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedPayouts.map((payout) => (
+                <tr key={payout.id} className="border-b border-zinc-100 last:border-b-0">
+                  <td className="px-4 py-3 text-zinc-700">{formatDate(payout.requested_at, locale)}</td>
+                  <td className="px-4 py-3 font-medium text-zinc-900">{formatPayoutAmount(payout, locale)}</td>
+                  <td className="px-4 py-3 text-zinc-700">{humanizePayoutTableStatus(payout.status, t)}</td>
+                  <td className="px-4 py-3 text-zinc-600">{humanizePayoutMethod(payout.currency_code, t)}</td>
+                  <td className="px-4 py-3 text-zinc-600">{payout.external_reference ?? payout.id}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p className="mt-4 text-sm text-zinc-500">{t("profile.noPayouts")}</p>
+      )}
+    </div>
+  );
+}
+
+function SellerTrustBlock({
+  summary,
+  ratingLabel,
+  reviewsHref,
+  publicReviewsHref,
+}: {
+  summary: SellerMarketplaceSummary;
+  ratingLabel: string;
+  reviewsHref: string;
+  publicReviewsHref: string | null;
+}) {
   const { t } = useI18n();
 
   return (
-    <div className="rounded-[1rem] border border-zinc-200 bg-white/75 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="font-medium text-zinc-900">{formatPayoutAmount(payout, locale)}</p>
-          <p className="mt-1 text-xs text-zinc-500">{t("profile.payoutPurchaseCount", { count: payout.purchase_count })}</p>
-        </div>
-        <span className={payout.status === "paid" ? "pv-chip" : payout.status === "processing" ? "pv-badge-warning" : "pv-chip"}>
-          {humanizePayoutStatus(payout.status, t)}
-        </span>
+    <div className="rounded-[1.25rem] border border-zinc-200/80 bg-zinc-50/80 p-5 text-sm text-zinc-700">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">{t("profile.sellerTrustSecondaryKicker")}</p>
+      <h3 className="mt-2 text-lg font-semibold text-zinc-900">{t("profile.sellerTrust")}</h3>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <Link href={reviewsHref} className="inline-flex items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-900">
+          {summary.review_count > 0
+            ? t("profile.ratingReviewsEntry", { rating: ratingLabel, count: summary.review_count })
+            : t("profile.ratingReviewsEntryEmpty")}
+        </Link>
+        {publicReviewsHref ? (
+          <Link href={publicReviewsHref} className="text-xs font-semibold text-[var(--pv-brand)]">
+            {t("profile.openPublicReviewPage")}
+          </Link>
+        ) : null}
       </div>
-      <p className="mt-3 text-sm text-zinc-600">{t("profile.payoutRequested", { date: formatDate(payout.requested_at, locale) })}</p>
-      {payout.paid_at ? <p className="mt-1 text-sm text-zinc-600">{t("profile.payoutPaid", { date: formatDate(payout.paid_at, locale) })}</p> : null}
-      {payout.external_reference ? <p className="mt-2 text-xs text-zinc-500">{t("profile.reference", { value: payout.external_reference })}</p> : null}
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <Link href={reviewsHref} className="rounded-[0.9rem] border border-zinc-200/80 bg-white/70 p-3 transition hover:border-zinc-300">
+          <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">{t("profile.averageRating")}</p>
+          <p className="mt-1 text-sm font-semibold text-zinc-900">{ratingLabel}</p>
+          <p className="mt-1 text-xs text-zinc-500">{t("profile.openReviewsFromTrust")}</p>
+        </Link>
+        <Link href={reviewsHref} className="rounded-[0.9rem] border border-zinc-200/80 bg-white/70 p-3 transition hover:border-zinc-300">
+          <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">{t("profile.verifiedReviews")}</p>
+          <p className="mt-1 text-sm font-semibold text-zinc-900">{summary.review_count}</p>
+          <p className="mt-1 text-xs text-zinc-500">{t("profile.openReviewsFromTrust")}</p>
+        </Link>
+        <div className="rounded-[0.9rem] border border-zinc-200/80 bg-white/70 p-3">
+          <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">{t("profile.promptsSold")}</p>
+          <p className="mt-1 text-sm font-semibold text-zinc-900">{summary.sold_prompts_count}</p>
+        </div>
+      </div>
+      <p className="mt-4 text-xs text-zinc-500">{t("profile.sellerTrustDescription")}</p>
+      {summary.trust_indicators.length ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {summary.trust_indicators.map((indicator) => (
+            <span key={indicator.key} className="pv-chip">
+              {humanizeTrustIndicator(indicator.key, t)}
+            </span>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -770,6 +1059,109 @@ function humanizePayoutStatus(status: MarketplacePayout["status"], t: TranslateF
   return t(PAYOUT_STATUS_LABELS[status]);
 }
 
+function humanizePayoutTableStatus(status: MarketplacePayout["status"], t: TranslateFn): string {
+  switch (status) {
+    case "requested":
+      return t("profile.payoutTableStatusProcessing");
+    case "processing":
+      return t("profile.payoutTableStatusSent");
+    case "paid":
+      return t("profile.payoutTableStatusCredited");
+    case "failed":
+    case "canceled":
+      return t("profile.payoutTableStatusError");
+    default:
+      return humanizePayoutStatus(status, t);
+  }
+}
+
+function humanizePayoutMethod(currencyCode: string, t: TranslateFn): string {
+  const normalized = currencyCode.toUpperCase();
+  if (normalized === "LMN") {
+    return t("profile.payoutMethodLmn");
+  }
+  if (normalized === "RUB") {
+    return t("profile.payoutMethodRub");
+  }
+  return t("profile.payoutMethodUnknown");
+}
+
+function formatPaidOutLast30(
+  payouts: MarketplacePayout[],
+  locale: string,
+  t: TranslateFn,
+): { value: string; caption: string | undefined } {
+  if (payouts.length === 0) {
+    return {
+      value: `${formatNumber(0, locale)} RUB`,
+      caption: t("profile.paidOutLast30NoCompleted"),
+    };
+  }
+
+  const now = Date.now();
+  const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+  const totalsByCurrency = new Map<string, number>();
+
+  for (const payout of payouts) {
+    if (payout.status !== "paid") {
+      continue;
+    }
+    const referenceDate = payout.paid_at ?? payout.requested_at;
+    const timestamp = Date.parse(referenceDate);
+    if (!Number.isFinite(timestamp) || now - timestamp > thirtyDaysMs) {
+      continue;
+    }
+    const code = payout.currency_code.toUpperCase();
+    totalsByCurrency.set(code, (totalsByCurrency.get(code) ?? 0) + payout.total_amount);
+  }
+
+  if (totalsByCurrency.size === 0) {
+    const fallbackCurrency = payouts[0]?.currency_code?.toUpperCase() ?? "RUB";
+    return {
+      value: `${formatNumber(0, locale)} ${fallbackCurrency}`,
+      caption: t("profile.paidOutLast30NoCompleted"),
+    };
+  }
+
+  const value = [...totalsByCurrency.entries()]
+    .sort((left, right) => left[0].localeCompare(right[0]))
+    .map(([currency, amount]) => `${formatNumber(amount, locale)} ${currency}`)
+    .join(" · ");
+  return { value, caption: undefined };
+}
+
+function findUpcomingPayout(payouts: MarketplacePayout[]): MarketplacePayout | null {
+  const activeStatuses: MarketplacePayout["status"][] = ["requested", "processing"];
+  const active = payouts.filter((payout) => activeStatuses.includes(payout.status));
+  if (!active.length) {
+    return null;
+  }
+  return [...active].sort((left, right) => Date.parse(left.requested_at) - Date.parse(right.requested_at))[0] ?? null;
+}
+
+function findLatestPaidPayout(payouts: MarketplacePayout[]): MarketplacePayout | null {
+  const paid = payouts.filter((payout) => payout.status === "paid" && payout.paid_at);
+  if (!paid.length) {
+    return null;
+  }
+  return [...paid].sort((left, right) => Date.parse(right.paid_at ?? right.requested_at) - Date.parse(left.paid_at ?? left.requested_at))[0] ?? null;
+}
+
+function findNearestPendingSettlementDate(purchases: PromptMarketplacePurchase[]): string | null {
+  const withDate = purchases
+    .filter((purchase) => purchase.settlement_status === "pending" && purchase.settlement_available_at)
+    .map((purchase) => ({
+      date: purchase.settlement_available_at as string,
+      timestamp: Date.parse(purchase.settlement_available_at as string),
+    }))
+    .filter((value) => Number.isFinite(value.timestamp))
+    .sort((left, right) => left.timestamp - right.timestamp);
+  if (!withDate.length) {
+    return null;
+  }
+  return withDate[0].date;
+}
+
 function humanizeReviewModerationStatus(
   status: PromptReview["moderation_status"] | null | undefined,
   t: TranslateFn,
@@ -804,4 +1196,18 @@ function formatDualCurrency(rub: number, lumens: number, locale: string): string
 
 function formatPayoutAmount(payout: MarketplacePayout, locale: string): string {
   return `${formatNumber(payout.total_amount, locale)} ${payout.currency_code.toUpperCase()}`;
+}
+
+function formatDateTime(value: string, locale: string): string {
+  const parsed = Date.parse(value);
+  if (!Number.isFinite(parsed)) {
+    return value;
+  }
+  return new Intl.DateTimeFormat(locale, {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(parsed));
 }

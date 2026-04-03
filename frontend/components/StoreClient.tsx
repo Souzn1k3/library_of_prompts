@@ -8,6 +8,7 @@ import { useI18n } from "@/components/i18n/LanguageProvider";
 import { PageIntro } from "@/components/navigation/PageIntro";
 import { LmnAmount } from "@/components/ui/LmnAmount";
 import { LmnBalanceCard } from "@/components/ui/LmnBalanceCard";
+import { LmnMark } from "@/components/ui/LmnMark";
 import { useLmnBalanceFeedback } from "@/components/ui/useLmnBalanceFeedback";
 import { ApiRequestError } from "@/lib/api";
 import {
@@ -489,6 +490,7 @@ function StoreItemCard({
   const tone = getStoreTone(item.kind);
   const title = localizedStoreItemTitle(item, t);
   const description = localizedStoreItemDescription(item, t);
+  const currencySymbol = wallet?.currency_symbol ?? "LMN";
   const starterRewardCopy = localizedStarterReward({
     slug: item.slug,
     t,
@@ -498,17 +500,10 @@ function StoreItemCard({
 
   return (
     <article className="pv-card flex flex-col justify-between gap-5 p-5">
-      <div className={`pointer-events-none absolute right-4 top-4 h-20 w-20 rounded-full blur-2xl ${tone.glow}`} />
       <div className="relative flex h-full flex-col gap-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold tracking-[-0.03em] text-zinc-900">{title}</h3>
-            {description ? <p className="text-sm leading-relaxed text-zinc-600">{description}</p> : null}
-          </div>
-          <div className="shrink-0 rounded-[1rem] border border-orange-200 bg-orange-50/80 px-4 py-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-orange-700/80">{t("store.price")}</p>
-            <LmnAmount amount={formatNumber(item.price, locale)} symbol={wallet?.currency_symbol ?? "LMN"} className="mt-1" strong state="spent" />
-          </div>
+        <div className="space-y-2">
+          <h3 className="text-lg font-semibold tracking-[-0.03em] text-zinc-900">{title}</h3>
+          {description ? <p className="text-sm leading-relaxed text-zinc-600">{description}</p> : null}
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -546,7 +541,7 @@ function StoreItemCard({
           <button
             type="button"
             disabled
-            className={`mt-auto inline-flex items-center justify-center rounded-full px-4 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${tone.button}`}
+            className={`mt-auto inline-flex min-h-[2.9rem] items-center justify-center rounded-full bg-[var(--pv-brand)] px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(37,92,255,0.3)] transition disabled:cursor-not-allowed disabled:opacity-75 ${tone.button}`}
           >
             {t("store.owned")}
           </button>
@@ -554,7 +549,7 @@ function StoreItemCard({
           <button
             type="button"
             disabled
-            className={`mt-auto inline-flex items-center justify-center rounded-full px-4 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${tone.button}`}
+            className={`mt-auto inline-flex min-h-[2.9rem] items-center justify-center rounded-full bg-[var(--pv-brand)] px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(37,92,255,0.3)] transition disabled:cursor-not-allowed disabled:opacity-75 ${tone.button}`}
           >
             {t("store.soldOut")}
           </button>
@@ -563,9 +558,20 @@ function StoreItemCard({
             type="button"
             onClick={() => void onPurchase(item)}
             disabled={disabled}
-            className={`mt-auto inline-flex items-center justify-center rounded-full px-4 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${tone.button}`}
+            className={`mt-auto inline-flex min-h-[2.9rem] items-center justify-center gap-2 rounded-full bg-[var(--pv-brand)] px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(37,92,255,0.3)] transition disabled:cursor-not-allowed disabled:opacity-75 ${tone.button}`}
           >
-            {purchasing === item.slug ? t("missions.loading") : t("store.purchase")}
+            {purchasing === item.slug ? (
+              t("missions.loading")
+            ) : (
+              <>
+                <span>{t("store.purchase")}</span>
+                <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold tracking-[0.06em] text-white/95">
+                  <LmnMark size={14} label={currencySymbol} tone="balance" />
+                  <span>{formatNumber(item.price, locale)}</span>
+                  <span className="text-white/85">{currencySymbol}</span>
+                </span>
+              </>
+            )}
           </button>
         ) : (
           <Link href={APP_ROUTES.missions} className="pv-button-secondary mt-auto !w-auto justify-center">

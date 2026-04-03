@@ -210,6 +210,6 @@ export const ruMissions = {
   "onboardingWizard.currentlyLocked": "сейчас закрыт",
   "onboardingWizard.availableNow": "доступен сейчас",
   "onboardingWizard.noLesson": "Подходящий урок пока недоступен.",
-  "onboardingWizard.goDashboard": "В кабинет",
+  "onboardingWizard.goDashboard": "В рабочее пространство",
   "onboardingWizard.browseCatalog": "Открыть каталог",
 } as const;

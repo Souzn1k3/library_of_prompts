@@ -404,7 +404,8 @@ export function DashboardView({
           </div>
           <div className="pv-card-muted p-4">
             <p className="pv-kicker">{t("dashboard.manageBilling")}</p>
-            <p className="mt-2 text-sm text-zinc-700">{t("dashboard.billingActionHint")}</p>
+            <p className="mt-2 pv-hint-badge">Подсказка</p>
+            <p className="mt-1 text-sm text-zinc-700">{t("dashboard.billingActionHint")}</p>
           </div>
         </div>
         <div className="mt-5 flex flex-wrap gap-3">
