@@ -26,6 +26,8 @@ import type {
   OnboardingRole,
   OnboardingStarterPack,
   LessonCompletionResult,
+  LearningCourseDetail,
+  LearningMyModules,
   LearningStepSubmitResponse,
   PromptListItem,
   PromptRecommendationContext,
@@ -274,6 +276,14 @@ export async function completeLesson(slug: string): Promise<LessonCompletionResu
   return authFetch<LessonCompletionResult>(apiPath.lessonCompleteBySlug(slug), {
     method: "POST",
   });
+}
+
+export async function fetchLearningMyModules(): Promise<LearningMyModules> {
+  return authFetch<LearningMyModules>(API_ENDPOINTS.learningMy);
+}
+
+export async function fetchLearningCourse(courseSlug: string): Promise<LearningCourseDetail> {
+  return authFetch<LearningCourseDetail>(apiPath.learningCourse(courseSlug));
 }
 
 export async function createCheckoutSession(tier: string): Promise<CheckoutSessionResult> {

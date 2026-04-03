@@ -26,6 +26,8 @@ export const appRoute = {
   learnCourse: (courseSlug: string) => `${APP_ROUTES.learn}/course/${encodeURIComponent(courseSlug)}`,
   learnCourseLesson: (courseSlug: string, lessonSlug: string) =>
     `${APP_ROUTES.learn}/course/${encodeURIComponent(courseSlug)}/lesson/${encodeURIComponent(lessonSlug)}`,
+  learnCourseLessonStep: (courseSlug: string, lessonSlug: string, stepSlug: string) =>
+    `${APP_ROUTES.learn}/course/${encodeURIComponent(courseSlug)}/lesson/${encodeURIComponent(lessonSlug)}/step/${encodeURIComponent(stepSlug)}`,
   plansWithTier: (tier: string) => `${APP_ROUTES.plans}?tier=${encodeURIComponent(tier)}`,
   contributorBySlug: (slug: string) => `${APP_ROUTES.contributors}/${encodeURIComponent(slug)}`,
   contributorBySlugReviewSort: (slug: string, reviewSort: string) =>

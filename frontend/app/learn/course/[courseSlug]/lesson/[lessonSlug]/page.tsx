@@ -1,13 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { cache } from "react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
-import { LearningLessonRuntime } from "@/components/learning/LearningLessonRuntime";
-import { T } from "@/components/i18n/T";
-import { PageIntro } from "@/components/navigation/PageIntro";
-import { ApiRequestError, fetchLearningCourse, fetchLearningLesson } from "@/lib/api";
-import { APP_ROUTES, appRoute } from "@/lib/constants/routes";
+import { ApiRequestError, fetchLearningLesson } from "@/lib/api";
+import { appRoute } from "@/lib/constants/routes";
 import { getTranslation } from "@/lib/i18n";
 import { buildPageMetadata } from "@/lib/seo";
 import { getServerAccessToken } from "@/lib/server-auth";
@@ -56,91 +52,9 @@ export default async function LearningLessonPage(props: Props) {
   const language = await getServerLanguage();
   const accessToken = await getServerAccessToken();
 
+  let lesson: Awaited<ReturnType<typeof getLessonCached>>;
   try {
-    const [lesson, course] = await Promise.all([
-      getLessonCached(courseSlug, lessonSlug, accessToken, language),
-      fetchLearningCourse(courseSlug, accessToken, language),
-    ]);
-    const lessonHint = {
-      en: `Lesson ${lesson.position_in_course} of ${lesson.total_lessons} · estimated lesson time ${lesson.estimated_minutes} min`,
-      ru: `Урок ${lesson.position_in_course} из ${lesson.total_lessons} · ориентировочное время урока ${lesson.estimated_minutes} мин`,
-      tt: `Дәрес ${lesson.position_in_course}/${lesson.total_lessons} · дәрескә якынча вакыт ${lesson.estimated_minutes} мин`,
-    }[language];
-
-    return (
-      <article className="pv-page">
-        <PageIntro
-          breadcrumbs={[
-            { label: getTranslation(language, "brand.name"), href: APP_ROUTES.home },
-            { label: getTranslation(language, "nav.learn"), href: APP_ROUTES.learn },
-            { label: course.title, href: appRoute.learnCourse(courseSlug) },
-            { label: lesson.title },
-          ]}
-          eyebrow={<T k="learn.lesson" />}
-          title={lesson.title}
-          description={lesson.summary}
-          hint={lessonHint}
-          actions={
-            <>
-              <Link href={lesson.return_to_course_href} className="pv-button-secondary">
-                <T k="learn.returnToCourse" />
-              </Link>
-              {lesson.next_lesson_href ? (
-                <Link href={lesson.next_lesson_href} className="pv-button-primary">
-                  <T k="learn.nextLessonCta" />
-                </Link>
-              ) : (
-                <Link href={APP_ROUTES.learnMy} className="pv-button-primary">
-                  <T k="learn.myModules" />
-                </Link>
-              )}
-            </>
-          }
-        />
-
-        {!accessToken ? (
-          <section className="pv-alert pv-alert-warning">
-            <p className="font-medium">{getTranslation(language, "learn.signInToSubmit")}</p>
-            <div className="mt-3 flex flex-wrap gap-3">
-              <Link href={APP_ROUTES.login} className="pv-button-secondary !w-auto">
-                <T k="nav.login" />
-              </Link>
-              <Link href={APP_ROUTES.signup} className="pv-button-primary !w-auto">
-                <T k="nav.signup" />
-              </Link>
-            </div>
-          </section>
-        ) : null}
-
-        <LearningLessonRuntime lesson={lesson} canSubmit={Boolean(accessToken)} />
-
-        <section className="pv-panel px-6 py-5 sm:px-7">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <Link href={lesson.return_to_course_href} className="pv-inline-link">
-              <T k="learn.returnToCourse" />
-              <span aria-hidden="true">↗</span>
-            </Link>
-
-            <div className="flex flex-wrap items-center gap-3">
-              {lesson.previous_lesson_href ? (
-                <Link href={lesson.previous_lesson_href} className="pv-button-secondary !w-auto">
-                  <T k="learn.previousLesson" />
-                </Link>
-              ) : null}
-              {lesson.next_lesson_href ? (
-                <Link href={lesson.next_lesson_href} className="pv-button-primary !w-auto">
-                  <T k="learn.nextLesson" />
-                </Link>
-              ) : (
-                <Link href={lesson.return_to_course_href} className="pv-button-primary !w-auto">
-                  <T k="learn.courseCompleteState" />
-                </Link>
-              )}
-            </div>
-          </div>
-        </section>
-      </article>
-    );
+    lesson = await getLessonCached(courseSlug, lessonSlug, accessToken, language);
   } catch (error) {
     if (error instanceof ApiRequestError && (error.status === 404 || error.status === 409)) {
       notFound();
@@ -148,4 +62,11 @@ export default async function LearningLessonPage(props: Props) {
 
     return <div className="pv-page-sm"><div className="pv-alert pv-alert-warning">{getTranslation(language, "learn.lessonLoadFailed")}</div></div>;
   }
+
+  const stepSlug = lesson.current_step_slug ?? lesson.steps[0]?.slug;
+  if (!stepSlug) {
+    notFound();
+  }
+
+  redirect(appRoute.learnCourseLessonStep(courseSlug, lessonSlug, stepSlug));
 }

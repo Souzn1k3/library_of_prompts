@@ -220,13 +220,13 @@ export function PlansClient({ plans, error }: PlansClientProps) {
               </div>
               {plan.description ? <p className="mt-1 text-sm text-zinc-600">{plan.description}</p> : null}
               <div className="mt-4 grid gap-2 text-sm text-zinc-700">
-                <div className="rounded-[1rem] border border-zinc-200 bg-white/70 p-3">
+                <div className="rounded-[0.75rem] border border-zinc-200 bg-white/70 p-3">
                   <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">{t("plans.includedPaidPrompts")}</p>
                   <p className="mt-2 text-2xl font-semibold text-zinc-950">{formatNumber(plan.monthly_paid_prompt_limit, locale)}</p>
                   <p className="mt-1 text-xs text-zinc-500">{t("plans.includedPaidPromptsBody")}</p>
                 </div>
                 {plan.highlights.map((item) => (
-                  <div key={item} className="rounded-[0.9rem] border border-zinc-200 bg-zinc-50/80 px-3 py-2">
+                  <div key={item} className="rounded-[0.625rem] border border-zinc-200 bg-zinc-50/80 px-3 py-2">
                     {item}
                   </div>
                 ))}

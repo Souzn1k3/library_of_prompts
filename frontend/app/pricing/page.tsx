@@ -48,7 +48,6 @@ export default async function PricingPage() {
         eyebrow={<T k="plans.title" />}
         title={<T k="plans.title" />}
         description={<T k="plans.subtitle" />}
-        hint={<T k="dashboard.changePlan" />}
         actions={
           <>
             <Link href={authState.hasAnyAuthCookie ? "/dashboard" : "/signup"} className="pv-button-primary">
@@ -57,9 +56,8 @@ export default async function PricingPage() {
             <Link href="/catalog" className="pv-button-secondary">
               <T k="home.explorePrompts" />
             </Link>
-            <Link href="/learn/start" className="pv-inline-link">
+            <Link href="/learn/start" className="pv-button-secondary">
               <T k="home.startLearning" />
-              <span aria-hidden="true">↗</span>
             </Link>
           </>
         }

@@ -7,7 +7,6 @@ import { useBillingPortal } from "@/components/billing/useBillingPortal";
 import { DashboardMissionHero } from "@/components/dashboard/DashboardMissionHero";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { PageIntro } from "@/components/navigation/PageIntro";
-import { RouteCard } from "@/components/navigation/RouteCard";
 import { PromptCard } from "@/components/PromptCard";
 import { useLmnBalanceFeedback } from "@/components/ui/useLmnBalanceFeedback";
 import { APP_ROUTES, appRoute } from "@/lib/constants/routes";
@@ -17,6 +16,8 @@ import { getMissionPresentation } from "@/lib/missionPresentation";
 import type {
   AuthorSubmission,
   BillingStatus,
+  LearningCourseDetail,
+  LearningMyModules,
   MissionCurrentRead,
   OnboardingProfile,
   OnboardingStarterPack,
@@ -48,6 +49,8 @@ type DashboardViewProps = {
   missionCurrent: MissionCurrentRead | null;
   onboardingProfile: OnboardingProfile | null;
   starterPack: OnboardingStarterPack | null;
+  learningMy: LearningMyModules | null;
+  learningCourse: LearningCourseDetail | null;
   submitted: boolean;
   autoApproved: boolean;
   onReload: () => void;
@@ -64,6 +67,8 @@ export function DashboardView({
   missionCurrent,
   onboardingProfile,
   starterPack,
+  learningMy,
+  learningCourse,
   submitted,
   autoApproved,
   onReload,
@@ -79,6 +84,16 @@ export function DashboardView({
     billing?.plan_tier === "enterprise" ? "text-emerald-700" : "text-zinc-900";
   const highlightedStatus =
     billing?.status === "active" ? "text-emerald-700" : "text-zinc-700";
+  const rejectedSubmissionsCount = submissions.filter(
+    (submission) => submission.moderation_state === "rejected",
+  ).length;
+  const pendingSubmissionsCount = submissions.filter(
+    (submission) => submission.moderation_state === "pending",
+  ).length;
+  const walletPendingRewards = (wallet?.pending_locked_rewards ?? []).filter(
+    (reward) => reward.status === "pending",
+  );
+  const walletPendingAmount = walletPendingRewards.reduce((sum, reward) => sum + reward.amount, 0);
 
   if (status === "loading") {
     return (
@@ -179,21 +194,21 @@ export function DashboardView({
   const primaryAction = onboardingProfile?.needs_onboarding
     ? {
         href: APP_ROUTES.onboarding,
-        label: t("dashboard.finishOnboardingLink"),
+        label: t("dashboard.opsContinueOnboarding"),
       }
     : currentMissionView
       ? {
           href: currentMissionView.nextStep?.href ?? APP_ROUTES.missions,
-          label: t("dashboard.openCurrentTask"),
+          label: currentMissionView.nextStep?.label ?? t("dashboard.opsContinueMission"),
         }
       : starterPack?.action?.prompt_slug
         ? {
-            href: appRoute.promptBySlug(starterPack.action.prompt_slug),
-            label: t("dashboard.tryNow"),
-          }
+          href: appRoute.promptBySlug(starterPack.action.prompt_slug),
+          label: t("dashboard.opsContinueLearning"),
+        }
         : {
             href: APP_ROUTES.catalog,
-            label: t("home.explorePrompts"),
+            label: t("dashboard.opsOpenCatalog"),
           };
   const lessonHref = starterPack?.lesson?.slug
     ? appRoute.learnBySlug(starterPack.lesson.slug)
@@ -213,12 +228,18 @@ export function DashboardView({
         currentMission={currentMissionView}
         needsOnboarding={Boolean(onboardingProfile?.needs_onboarding)}
         primaryAction={primaryAction}
+        learningOverviewHref={APP_ROUTES.learnMy}
+        missionCompletedCount={missionCurrent?.completed_count ?? 0}
+        missionTotalCount={missionCurrent?.total_count ?? 0}
         savedPromptsCount={items.length}
-        savedPromptsPreviewTitle={items[0]?.title ?? null}
         submissionCount={submissions.length}
-        latestSubmissionTitle={submissions[0]?.title ?? null}
+        rejectedSubmissionCount={rejectedSubmissionsCount}
+        pendingSubmissionCount={pendingSubmissionsCount}
         wallet={wallet}
         balanceDelta={balanceDelta}
+        learningMy={learningMy}
+        learningCourse={learningCourse}
+        lessonHref={lessonHref}
       />
 
       <section className="pv-panel px-6 py-6 sm:px-7">
@@ -226,29 +247,139 @@ export function DashboardView({
           <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">
             {t("dashboard.workspaceNavTitle")}
           </h2>
+          <p className="mt-2 text-sm text-zinc-600">{t("dashboard.workspaceNavBody")}</p>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
-          <div>
-            <RouteCard
-              eyebrow={t("nav.store")}
-              title={t("economy.stepSpendTitle")}
-              description={t("store.subtitle")}
-              href={APP_ROUTES.store}
-              actionLabel={t("nav.store")}
-              tone="spend"
-            />
-          </div>
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <WorkspaceMapCard
+            title={t("dashboard.navSectionPromptsTitle")}
+            description={t("dashboard.navSectionPromptsBody")}
+            href={APP_ROUTES.catalog}
+            statusLabel={
+              items.length > 0
+                ? t("dashboard.navStatusSavedCount", { count: items.length })
+                : t("dashboard.navStatusNew")
+            }
+            statusTone={items.length > 0 ? "success" : "neutral"}
+            lastVisitLabel={formatVisitLabel(items[0]?.created_at, locale, t)}
+            actionLabel={t("dashboard.navOpenSection")}
+          />
 
-          <div>
-            <RouteCard
-              eyebrow={t("nav.learn")}
-              title={t("dashboard.mapLearningTitle")}
-              description={t("dashboard.mapLearningBody")}
-              href={lessonHref}
-              actionLabel={t("dashboard.mapLearningAction")}
-            />
-          </div>
+          <WorkspaceMapCard
+            title={t("dashboard.navSectionSubmissionsTitle")}
+            description={t("dashboard.navSectionSubmissionsBody")}
+            href={`${APP_ROUTES.dashboard}#submissions`}
+            statusLabel={
+              rejectedSubmissionsCount > 0
+                ? t("dashboard.navStatusNeedsAttention", { count: rejectedSubmissionsCount })
+                : pendingSubmissionsCount > 0
+                  ? t("dashboard.navStatusPendingReviewCount", { count: pendingSubmissionsCount })
+                  : submissions.length > 0
+                    ? t("dashboard.navStatusNoChanges")
+                    : t("dashboard.navStatusNew")
+            }
+            statusTone={
+              rejectedSubmissionsCount > 0 || pendingSubmissionsCount > 0
+                ? "warning"
+                : submissions.length > 0
+                  ? "info"
+                  : "neutral"
+            }
+            lastVisitLabel={formatVisitLabel(submissions[0]?.created_at, locale, t)}
+            actionLabel={t("dashboard.navOpenSection")}
+          />
+
+          <WorkspaceMapCard
+            title={t("dashboard.navSectionLearningTitle")}
+            description={t("dashboard.navSectionLearningBody")}
+            href={APP_ROUTES.learnMy}
+            statusLabel={
+              onboardingProfile?.needs_onboarding
+                ? t("dashboard.navStatusOnboarding")
+                : (learningMy?.active_courses.length ?? 0) > 0
+                  ? t("dashboard.navStatusActiveCourses", {
+                      count: learningMy?.active_courses.length ?? 0,
+                    })
+                  : (learningMy?.completed_courses.length ?? 0) > 0
+                    ? t("dashboard.navStatusCompletedCourses", {
+                        count: learningMy?.completed_courses.length ?? 0,
+                      })
+                    : t("dashboard.navStatusNew")
+            }
+            statusTone={
+              onboardingProfile?.needs_onboarding
+                ? "warning"
+                : (learningMy?.active_courses.length ?? 0) > 0
+                  ? "success"
+                  : "neutral"
+            }
+            lastVisitLabel={formatVisitLabel(
+              learningMy?.active_courses[0]?.last_activity_at ?? learningMy?.completed_courses[0]?.completed_at,
+              locale,
+              t,
+            )}
+            actionLabel={t("dashboard.navOpenSection")}
+          />
+
+          <WorkspaceMapCard
+            title={t("dashboard.navSectionStoreTitle")}
+            description={t("dashboard.navSectionStoreBody")}
+            href={APP_ROUTES.store}
+            statusLabel={
+              typeof wallet?.balance === "number" && wallet.balance > 0
+                ? t("dashboard.navStatusBalance", {
+                    count: wallet.balance,
+                    symbol: wallet.currency_symbol ?? "LMN",
+                  })
+                : t("dashboard.navStatusNew")
+            }
+            statusTone={typeof wallet?.balance === "number" && wallet.balance > 0 ? "info" : "neutral"}
+            lastVisitLabel={formatVisitLabel(wallet?.recent_purchases[0]?.created_at, locale, t)}
+            actionLabel={t("dashboard.navOpenSection")}
+          />
+
+          <WorkspaceMapCard
+            title={t("dashboard.navSectionWalletTitle")}
+            description={t("dashboard.navSectionWalletBody")}
+            href={APP_ROUTES.wallet}
+            statusLabel={
+              walletPendingAmount > 0
+                ? t("dashboard.navStatusPendingBonuses", {
+                    count: walletPendingAmount,
+                    symbol: wallet?.currency_symbol ?? "LMN",
+                  })
+                : typeof wallet?.balance === "number"
+                  ? t("dashboard.navStatusNoChanges")
+                  : t("dashboard.navStatusNew")
+            }
+            statusTone={
+              walletPendingAmount > 0
+                ? "warning"
+                : typeof wallet?.balance === "number"
+                  ? "info"
+                  : "neutral"
+            }
+            lastVisitLabel={formatVisitLabel(wallet?.recent[0]?.created_at, locale, t)}
+            actionLabel={t("dashboard.navOpenSection")}
+          />
+
+          <WorkspaceMapCard
+            title={t("dashboard.navSectionProfileTitle")}
+            description={t("dashboard.navSectionProfileBody")}
+            href={APP_ROUTES.profile}
+            statusLabel={
+              billing?.status === "active" || billing?.status === "trialing"
+                ? t("dashboard.navStatusSubscriptionActive")
+                : localizedBillingStatus ?? t("dashboard.navStatusNoChanges")
+            }
+            statusTone={
+              billing?.status === "active" || billing?.status === "trialing"
+                ? "success"
+                : "neutral"
+            }
+            lastVisitLabel={formatVisitLabel(billing?.updated_at, locale, t)}
+            actionLabel={t("dashboard.navOpenSection")}
+          />
         </div>
       </section>
 
@@ -396,6 +527,90 @@ export function DashboardView({
       ) : null}
     </div>
   );
+}
+
+type WorkspaceStatusTone = "neutral" | "info" | "success" | "warning";
+
+function WorkspaceMapCard({
+  title,
+  description,
+  href,
+  statusLabel,
+  statusTone,
+  lastVisitLabel,
+  actionLabel,
+}: {
+  title: string;
+  description: string;
+  href: string;
+  statusLabel: string;
+  statusTone: WorkspaceStatusTone;
+  lastVisitLabel: string;
+  actionLabel: string;
+}) {
+  return (
+    <Link href={href} className="pv-card-muted flex h-full min-h-[12rem] flex-col gap-3 p-5">
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="text-lg font-semibold tracking-[-0.035em] text-zinc-950">{title}</h3>
+        <span className={workspaceStatusClass(statusTone)}>{statusLabel}</span>
+      </div>
+      <p className="text-sm leading-relaxed text-zinc-600">{description}</p>
+      <p className="text-xs text-zinc-500">{lastVisitLabel}</p>
+      <span className="pv-inline-link mt-auto flex w-full items-center justify-between border-t border-[rgba(15,23,42,0.07)] pt-3">
+        {actionLabel}
+        <span aria-hidden="true">↗</span>
+      </span>
+    </Link>
+  );
+}
+
+function workspaceStatusClass(tone: WorkspaceStatusTone): string {
+  switch (tone) {
+    case "success":
+      return "pv-badge-success";
+    case "warning":
+      return "pv-badge-warning";
+    case "info":
+      return "pv-chip-brand";
+    default:
+      return "pv-badge";
+  }
+}
+
+function formatVisitLabel(
+  value: string | null | undefined,
+  locale: string,
+  t: (key: TranslationKey, params?: Record<string, string | number | null | undefined>) => string,
+): string {
+  if (!value) {
+    return t("dashboard.navLastVisitNever");
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return t("dashboard.navLastVisitNever");
+  }
+
+  const now = new Date();
+  const nowDayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const parsedDayStart = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate()).getTime();
+  const dayDiff = Math.round((nowDayStart - parsedDayStart) / (24 * 60 * 60 * 1000));
+
+  if (dayDiff === 0) {
+    return t("dashboard.navLastVisitToday");
+  }
+
+  if (dayDiff === 1) {
+    return t("dashboard.navLastVisitYesterday");
+  }
+
+  const formatted = new Intl.DateTimeFormat(locale, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(parsed);
+
+  return t("dashboard.navLastVisitDate", { date: formatted });
 }
 
 function normalizeStarterPrompt(prompt: OnboardingStarterPack["prompts"][number]): PromptListItem {

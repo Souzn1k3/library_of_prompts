@@ -9,6 +9,8 @@ import { ApiRequestError } from "@/lib/api";
 import {
   fetchBillingStatus,
   fetchCurrentMission,
+  fetchLearningCourse,
+  fetchLearningMyModules,
   fetchMySubmissions,
   fetchOnboardingProfile,
   fetchOnboardingStarterPack,
@@ -19,6 +21,8 @@ import {
 import type {
   AuthorSubmission,
   BillingStatus,
+  LearningCourseDetail,
+  LearningMyModules,
   MissionCurrentRead,
   OnboardingProfile,
   OnboardingStarterPack,
@@ -39,6 +43,8 @@ export function useDashboardData(status: AuthStatus) {
   const [missionCurrent, setMissionCurrent] = useState<MissionCurrentRead | null>(null);
   const [onboardingProfile, setOnboardingProfile] = useState<OnboardingProfile | null>(null);
   const [starterPack, setStarterPack] = useState<OnboardingStarterPack | null>(null);
+  const [learningMy, setLearningMy] = useState<LearningMyModules | null>(null);
+  const [learningCourse, setLearningCourse] = useState<LearningCourseDetail | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
@@ -52,6 +58,8 @@ export function useDashboardData(status: AuthStatus) {
       setMissionCurrent(null);
       setOnboardingProfile(null);
       setStarterPack(null);
+      setLearningMy(null);
+      setLearningCourse(null);
       return;
     }
 
@@ -67,6 +75,7 @@ export function useDashboardData(status: AuthStatus) {
         onboardingResult,
         starterResult,
         missionResult,
+        learningMyResult,
       ] = await Promise.allSettled([
         fetchSavedPrompts(),
         fetchPromptRecommendations({ context: "dashboard", limit: 4 }),
@@ -76,6 +85,7 @@ export function useDashboardData(status: AuthStatus) {
         fetchOnboardingProfile(),
         fetchOnboardingStarterPack(),
         fetchCurrentMission(),
+        fetchLearningMyModules(),
       ]);
 
       if (cancelled) return;
@@ -123,6 +133,27 @@ export function useDashboardData(status: AuthStatus) {
       setOnboardingProfile(onboardingResult.status === "fulfilled" ? onboardingResult.value : null);
       setStarterPack(starterResult.status === "fulfilled" ? starterResult.value : null);
       setMissionCurrent(missionResult.status === "fulfilled" ? missionResult.value : null);
+
+      const learningSummary = learningMyResult.status === "fulfilled" ? learningMyResult.value : null;
+      setLearningMy(learningSummary);
+      setLearningCourse(null);
+
+      const learningCourseSlug =
+        learningSummary?.active_courses[0]?.slug ?? learningSummary?.completed_courses[0]?.slug ?? null;
+
+      if (!learningCourseSlug) {
+        return;
+      }
+
+      void fetchLearningCourse(learningCourseSlug)
+        .then((course) => {
+          if (cancelled) return;
+          setLearningCourse(course);
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setLearningCourse(null);
+        });
     }
 
     void loadDashboard();
@@ -165,6 +196,8 @@ export function useDashboardData(status: AuthStatus) {
     missionCurrent,
     onboardingProfile,
     starterPack,
+    learningMy,
+    learningCourse,
     submitted: searchParams.get("submitted") === "1",
     autoApproved: searchParams.get("autoApproved") === "1",
     reload: () => setReloadToken((value) => value + 1),

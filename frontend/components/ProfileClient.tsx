@@ -7,12 +7,13 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { PageIntro } from "@/components/navigation/PageIntro";
 import { ApiRequestError } from "@/lib/api";
-import { fetchBillingStatus, fetchMarketplaceOverview, upsertPromptReview } from "@/lib/client-api";
+import { fetchBillingStatus, fetchMarketplaceOverview, fetchOnboardingProfile, upsertPromptReview } from "@/lib/client-api";
 import { APP_ROUTES, appRoute } from "@/lib/constants/routes";
 import { formatDate, formatNumber, humanizeSnakeCase } from "@/lib/formatters";
 import { getTierTranslationKey, languageToIntlLocale } from "@/lib/i18n";
 import type {
   BillingStatus,
+  OnboardingProfile,
   MarketplacePayout,
   MarketplaceOverview,
   PromptMarketplacePurchase,
@@ -83,6 +84,7 @@ export function ProfileClient() {
   const isAuthenticated = status === "authenticated" && Boolean(user);
   const [overview, setOverview] = useState<MarketplaceOverview | null>(null);
   const [billing, setBilling] = useState<BillingStatus | null>(null);
+  const [onboardingProfile, setOnboardingProfile] = useState<OnboardingProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const locale = useMemo(() => languageToIntlLocale(language), [language]);
@@ -92,18 +94,19 @@ export function ProfileClient() {
     if (status !== "authenticated" || !user) {
       setOverview(null);
       setBilling(null);
+      setOnboardingProfile(null);
       return;
     }
 
     let cancelled = false;
 
-    Promise.allSettled([fetchMarketplaceOverview(), fetchBillingStatus()])
+    Promise.allSettled([fetchMarketplaceOverview(), fetchBillingStatus(), fetchOnboardingProfile()])
       .then((results) => {
         if (cancelled) {
           return;
         }
 
-        const [overviewResult, billingResult] = results;
+        const [overviewResult, billingResult, onboardingResult] = results;
 
         if (overviewResult.status === "fulfilled") {
           setOverview(overviewResult.value);
@@ -111,8 +114,11 @@ export function ProfileClient() {
         if (billingResult.status === "fulfilled") {
           setBilling(billingResult.value);
         }
+        if (onboardingResult.status === "fulfilled") {
+          setOnboardingProfile(onboardingResult.value);
+        }
 
-        const firstError = results.find((result) => result.status === "rejected");
+        const firstError = [overviewResult, billingResult].find((result) => result.status === "rejected");
         if (!firstError || firstError.status !== "rejected") {
           setError(null);
           return;
@@ -329,7 +335,9 @@ export function ProfileClient() {
               <QuickLink href={APP_ROUTES.dashboard} label={t("profile.openDashboard")} />
               <QuickLink href={APP_ROUTES.wallet} label={t("profile.openWallet")} />
               <QuickLink href={APP_ROUTES.store} label={t("profile.openStore")} />
-              <QuickLink href={APP_ROUTES.onboarding} label={t("profile.finishOnboarding")} />
+              {onboardingProfile?.needs_onboarding ? (
+                <QuickLink href={APP_ROUTES.onboarding} label={t("profile.finishOnboarding")} />
+              ) : null}
             </div>
           </section>
         </div>
@@ -528,7 +536,6 @@ function ProfileIntro({ authenticated }: { authenticated: boolean }) {
       eyebrow={t("profile.title")}
       title={t("profile.title")}
       description={t("profile.subtitle")}
-      hint={authenticated ? t("dashboard.manageBilling") : t("profile.guestHint")}
       actions={
         authenticated ? (
           <>
