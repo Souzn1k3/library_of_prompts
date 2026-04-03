@@ -1,11 +1,8 @@
-# Prompts Vault — local/production-style stack
-# Usage: docker compose up --build
-#
-# Frontend SSR uses API_URL to reach the API inside the network.
-# The browser uses NEXT_PUBLIC_API_URL (typically http://localhost:8000).
+name: website
 
 services:
   db:
+    container_name: website-db
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: postgres
@@ -21,32 +18,89 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    container_name: website-redis
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   api:
+    container_name: website-api
     build:
       context: ./backend
       dockerfile: Dockerfile
+      network: host
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app --reload-dir /app/alembic"
     environment:
+      APP_ENV: docker
+      CANONICAL_COMPOSE_PROJECT: website
       DATABASE_URL: postgresql+asyncpg://postgres:postgres@db:5432/prompts_vault
+      EXPECTED_DATABASE_NAME: prompts_vault
+      EXPECTED_DATABASE_SCHEMA: public
+      EXPECTED_DATABASE_HOST: db
+      EXPECTED_DATABASE_PORT: 5432
+      DUPLICATE_DB_DETECTION_ENABLED: true
       CORS_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
-      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production}
+      # Keep local HTTP docker dev boot-safe; avoid accidental host env collisions.
+      AUTH_COOKIE_ALLOW_INSECURE: ${DOCKER_AUTH_COOKIE_ALLOW_INSECURE:-true}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-docker-local-dev-only-min-32-characters!!}
+      TELEGRAM_BOT_API_KEY: ${TELEGRAM_BOT_API_KEY:-telegram-local-dev-only-change-me}
+      BILLING_MOCK_MODE: ${BILLING_MOCK_MODE:-true}
+      BILLING_CHECKOUT_SUCCESS_URL: ${BILLING_CHECKOUT_SUCCESS_URL:-http://localhost:3000/dashboard?billing=success}
+      BILLING_CHECKOUT_CANCEL_URL: ${BILLING_CHECKOUT_CANCEL_URL:-http://localhost:3000/plans?billing=cancel}
+      BILLING_PORTAL_RETURN_URL: ${BILLING_PORTAL_RETURN_URL:-http://localhost:3000/dashboard}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_PRICE_STARTER: ${STRIPE_PRICE_STARTER:-}
+      STRIPE_PRICE_PRO: ${STRIPE_PRICE_PRO:-}
+      STRIPE_PRICE_ENTERPRISE: ${STRIPE_PRICE_ENTERPRISE:-}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
     ports:
       - "8000:8000"
+    volumes:
+      - ./backend:/app
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
 
   web:
+    container_name: website-web
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      target: dev
+      network: host
+      args:
+        HTTP_PROXY: ${HTTP_PROXY:-}
+        HTTPS_PROXY: ${HTTPS_PROXY:-}
+        NO_PROXY: ${NO_PROXY:-}
     environment:
       API_URL: http://api:8000
       NEXT_PUBLIC_API_URL: http://localhost:8000
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
     ports:
       - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - website_frontend_node_modules:/app/node_modules
     depends_on:
       - api
 
 volumes:
   pv_pgdata:
+    name: website_pv_pgdata
+  redis_data:
+    name: website_redis_data
+  website_frontend_node_modules:
+    name: website_frontend_node_modules

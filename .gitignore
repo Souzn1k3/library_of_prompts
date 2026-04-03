@@ -1,0 +1,38 @@
+# IDE / workspace
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local task scratch file
+main_task
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Env files
+.env
+.env.*
+!.env.example
+
+# Node / Next
+node_modules/
+.next/
+*.tsbuildinfo
+
+# Logs
+*.log
+
+# Project-specific temp artifacts
+backend/.mypy_cache/
+frontend/test-results/
+frontend/playwright-report/
+_tmp_next_from_container/
+_tmp_server_from_container.js
