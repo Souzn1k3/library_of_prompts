@@ -29,6 +29,7 @@ import type {
 export function useDashboardData(status: AuthStatus) {
   const { t } = useI18n();
   const searchParams = useSearchParams();
+  const billingQueryState = searchParams.get("billing");
   const [items, setItems] = useState<PromptListItem[] | null>(null);
   const [recommended, setRecommended] = useState<PromptListItem[]>([]);
   const [submissions, setSubmissions] = useState<AuthorSubmission[]>([]);
@@ -132,7 +133,7 @@ export function useDashboardData(status: AuthStatus) {
 
   useEffect(() => {
     if (status !== "authenticated") return;
-    if (searchParams.get("billing") !== "success") return;
+    if (billingQueryState !== "success") return;
     let attempt = 0;
     const maxAttempts = 12;
     const interval = window.setInterval(() => {
@@ -152,7 +153,7 @@ export function useDashboardData(status: AuthStatus) {
         });
     }, 2500);
     return () => window.clearInterval(interval);
-  }, [searchParams, status]);
+  }, [billingQueryState, status]);
 
   return {
     items,

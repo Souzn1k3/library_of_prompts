@@ -114,9 +114,11 @@ export function StoreClient() {
       setLoading(status === "loading");
       return;
     }
+    let cancelled = false;
     setLoading(true);
     Promise.allSettled([fetchStoreItems(), fetchWallet()])
       .then(([itemsResult, walletResult]) => {
+        if (cancelled) return;
         let localError: string | null = null;
         if (itemsResult.status === "fulfilled") {
           setItems(sortStoreItems(itemsResult.value));
@@ -129,9 +131,16 @@ export function StoreClient() {
         setError(localError);
       })
       .catch((e) => {
+        if (cancelled) return;
         setError(e instanceof ApiRequestError ? e.message : t("store.purchaseFailed"));
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (cancelled) return;
+        setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [status, t]);
 
   useEffect(() => {

@@ -7,6 +7,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import {
   fetchDiscoverySections,
   fetchPopularLessons,
+  fetchPromptBySlug,
   fetchPromptRecommendations,
 } from "@/lib/api";
 import { getTechniqueTranslationKey, getTranslation, type Language } from "@/lib/i18n";
@@ -47,6 +48,12 @@ export default async function HomePage() {
     accessToken && homeRecommendations.items.length > 0
       ? getTranslation(language, "dashboard.recommendedForYou")
       : getTranslation(language, "home.trendingPrompts");
+  const heroPrompt = featuredPrompts[0];
+  const heroPromptBody = heroPrompt
+    ? await fetchPromptBySlug(heroPrompt.slug, accessToken, language)
+        .then((detail) => (detail.body_locked ? null : detail.body?.trim() || null))
+        .catch(() => null)
+    : null;
 
   return (
     <div className="pv-page">
@@ -87,7 +94,7 @@ export default async function HomePage() {
             <HomeHeroActions initialAuthenticated={Boolean(accessToken)} />
           </div>
 
-          <HeroPreview prompt={featuredPrompts[0]} language={language} />
+          <HeroPreview prompt={heroPrompt} language={language} promptBody={heroPromptBody} />
         </div>
       </section>
 
@@ -153,15 +160,21 @@ export default async function HomePage() {
 function HeroPreview({
   prompt,
   language,
+  promptBody,
 }: {
   prompt: PromptListItem | undefined;
   language: Language;
+  promptBody: string | null;
 }) {
   const techniqueLabel = prompt
     ? getTranslation(language, getTechniqueTranslationKey(prompt.technique))
     : getTranslation(language, "catalog.prompts");
   const previewTitle = prompt?.title ?? getTranslation(language, "home.previewEmptyTitle");
   const previewBody = prompt?.summary ?? getTranslation(language, "home.previewEmptyBody");
+  const readyPromptTemplate =
+    promptBody && promptBody.length > 0
+      ? promptBody
+      : getHeroStrongPromptFallback(language, previewTitle, previewBody);
 
   return (
     <div className="pv-hero-visual">
@@ -174,7 +187,36 @@ function HeroPreview({
             <h2 className="pv-hero-preview-title">{previewTitle}</h2>
             <p className="pv-hero-preview-body line-clamp-4">{previewBody}</p>
           </div>
-          <p className="pv-hero-preview-foot">{getTranslation(language, "home.previewFooter")}</p>
+
+          <details className="pv-hero-preview-dropdown">
+            <summary className="pv-hero-preview-foot pv-hero-preview-foot-toggle">
+              <span>{getTranslation(language, "home.previewFooter")}</span>
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 20 20"
+                className="pv-hero-preview-chevron h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m5.5 8 4.5 4 4.5-4" />
+              </svg>
+            </summary>
+
+            <div className="pv-hero-preview-dropdown-body">
+              <pre className="pv-hero-preview-prompt">{readyPromptTemplate}</pre>
+              {prompt ? (
+                <Link
+                  href={`/prompt/${encodeURIComponent(prompt.slug)}`}
+                  className="pv-inline-link text-sm text-[var(--pv-brand-strong)]"
+                >
+                  {getTranslation(language, "prompt.openPrompt")}
+                </Link>
+              ) : null}
+            </div>
+          </details>
         </div>
       </div>
     </div>
@@ -218,4 +260,46 @@ function ShelfSection({
       </div>
     </section>
   );
+}
+
+function getHeroStrongPromptFallback(language: Language, title: string, summary: string) {
+  if (language === "ru") {
+    return [
+      "Ты Senior React Debugger. Помоги найти и исправить баги быстро и безопасно.",
+      "",
+      `Контекст: ${title}`,
+      `Симптом: ${summary}`,
+      "",
+      "Сделай:",
+      "1) Сначала перечисли 3-5 наиболее вероятных причин.",
+      "2) Для каждой причины дай шаги проверки (что открыть, что посмотреть, какие логи снять).",
+      "3) Покажи минимальный патч для самой вероятной причины.",
+      "4) Укажи риски регрессии и как их проверить.",
+      "",
+      "Формат ответа:",
+      "- Гипотезы",
+      "- Диагностика",
+      "- Патч",
+      "- Проверка",
+    ].join("\n");
+  }
+
+  return [
+    "You are a Senior React Debugger. Find and fix bugs fast without regressions.",
+    "",
+    `Context: ${title}`,
+    `Symptom: ${summary}`,
+    "",
+    "Do this:",
+    "1) List the top 3-5 likely root causes first.",
+    "2) For each cause, provide concrete validation steps.",
+    "3) Provide the minimal patch for the most likely cause.",
+    "4) List regression risks and how to test them.",
+    "",
+    "Response format:",
+    "- Hypotheses",
+    "- Diagnosis",
+    "- Patch",
+    "- Verification",
+  ].join("\n");
 }

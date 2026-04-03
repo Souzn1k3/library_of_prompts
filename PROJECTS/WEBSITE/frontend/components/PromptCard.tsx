@@ -11,8 +11,12 @@ export function PromptCard({ prompt }: { prompt: PromptListItem }) {
   const isPaid = Boolean(prompt.is_paid && prompt.price);
 
   return (
-    <Link href={`/prompt/${encodeURIComponent(prompt.slug)}`} className="pv-card group block p-5">
-      <div className={`pointer-events-none absolute right-4 top-4 h-16 w-16 rounded-full blur-2xl ${tone.glow}`} />
+    <Link
+      href={`/prompt/${encodeURIComponent(prompt.slug)}`}
+      prefetch={false}
+      className="pv-card pv-card-optimized group block p-5"
+    >
+      <div className={`pv-prompt-card-glow ${tone.glow}`} />
 
         <div className="relative flex h-full flex-col gap-4">
           <div className="flex items-start justify-between gap-3">

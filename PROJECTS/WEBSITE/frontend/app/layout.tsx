@@ -8,6 +8,7 @@ import { T } from "@/components/i18n/T";
 import { OnboardingBanner } from "@/components/OnboardingBanner";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
+import { RouteTransitionLoader } from "@/components/navigation/RouteTransitionLoader";
 import { OrganizationJsonLd, WebSiteJsonLd } from "@/components/seo/JsonLd";
 import { getTranslation, languageToLocale } from "@/lib/i18n";
 import { getServerAuthCookieState } from "@/lib/server-auth";
@@ -117,6 +118,7 @@ export default async function RootLayout({
           <LanguageProvider initialLanguage={language}>
             <AuthProvider initialHasAuthCookie={authState.hasAnyAuthCookie}>
               <AnalyticsPageTracker />
+              <RouteTransitionLoader />
               <a href="#main-content" className="skip-link">
                 <T k="a11y.skipToContent" />
               </a>

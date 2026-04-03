@@ -9,7 +9,6 @@ import { useI18n } from "@/components/i18n/LanguageProvider";
 import { PageIntro } from "@/components/navigation/PageIntro";
 import { RouteCard } from "@/components/navigation/RouteCard";
 import { PromptCard } from "@/components/PromptCard";
-import { LmnMark } from "@/components/ui/LmnMark";
 import { useLmnBalanceFeedback } from "@/components/ui/useLmnBalanceFeedback";
 import { APP_ROUTES, appRoute } from "@/lib/constants/routes";
 import { formatDateTime } from "@/lib/formatters";
@@ -229,49 +228,8 @@ export function DashboardView({
           </h2>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-12">
-          <div className="xl:col-span-4">
-            <RouteCard
-              eyebrow={t("nav.missions")}
-              title={currentMissionView?.title ?? t("economy.stepEarnTitle")}
-              description={currentMissionView?.objective ?? t("missions.subtitle")}
-              href={currentMissionView?.nextStep?.href ?? APP_ROUTES.missions}
-              actionLabel={t("dashboard.openCurrentTask")}
-              badge={
-                currentMissionView ? (
-                  <span className="pv-chip-brand">
-                    {currentMissionView.mission.progress_count}/{currentMissionView.mission.required_count}
-                  </span>
-                ) : undefined
-              }
-              tone="earn"
-              visual={<LmnMark size={30} tone="earned" />}
-            />
-          </div>
-
-          <div className="xl:col-span-4">
-            <RouteCard
-              eyebrow={t("nav.wallet")}
-              title={`${wallet?.balance ?? "—"} ${wallet?.currency_symbol ?? "LMN"}`}
-              description={t("dashboard.walletSummaryBody")}
-              href={APP_ROUTES.wallet}
-              actionLabel={t("dashboard.openWallet")}
-              tone="balance"
-              badge={
-                balanceDelta && balanceDelta !== 0 ? (
-                  <span className={balanceDelta > 0 ? "pv-badge-success" : "pv-badge-warning"}>
-                    {balanceDelta > 0 ? "+" : ""}
-                    {balanceDelta} {wallet?.currency_symbol ?? "LMN"}
-                  </span>
-                ) : (
-                  <span className="pv-chip">{t("wallet.balance")}</span>
-                )
-              }
-              visual={<LmnMark size={30} tone="balance" />}
-            />
-          </div>
-
-          <div className="xl:col-span-4">
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <div>
             <RouteCard
               eyebrow={t("nav.store")}
               title={t("economy.stepSpendTitle")}
@@ -279,21 +237,10 @@ export function DashboardView({
               href={APP_ROUTES.store}
               actionLabel={t("nav.store")}
               tone="spend"
-              visual={<LmnMark size={30} tone="spent" />}
             />
           </div>
 
-          <div className="xl:col-span-6">
-            <RouteCard
-              eyebrow={t("nav.catalog")}
-              title={t("dashboard.mapBrowsePromptsTitle")}
-              description={t("dashboard.mapBrowsePromptsBody")}
-              href={APP_ROUTES.catalog}
-              actionLabel={t("dashboard.mapBrowsePromptsAction")}
-            />
-          </div>
-
-          <div className="xl:col-span-6">
+          <div>
             <RouteCard
               eyebrow={t("nav.learn")}
               title={t("dashboard.mapLearningTitle")}

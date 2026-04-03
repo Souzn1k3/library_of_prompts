@@ -127,6 +127,7 @@ async def list_prompts(
     normalized_models = _normalize_multi(model)
     normalized_tags = _normalize_multi(tag)
     visibility = _catalog_visibility(viewer)
+    viewer_segment = _viewer_segment(viewer)
     cache = get_cache()
 
     suffix = (
@@ -139,7 +140,7 @@ async def list_prompts(
         f":use_case={_norm_multi(normalized_use_case)}"
         f":model={_norm_multi(normalized_models)}"
         f":tag={_norm_multi(normalized_tags)}"
-        f":sort={sort.value}:visibility={visibility}"
+        f":sort={sort.value}:visibility={visibility}:user={viewer_segment}"
     )
 
     return await cache.get_or_set_json(

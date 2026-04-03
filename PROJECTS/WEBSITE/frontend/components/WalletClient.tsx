@@ -176,19 +176,28 @@ export function WalletClient() {
       setLoading(status === "loading");
       return;
     }
+    let cancelled = false;
     setLoading(true);
     Promise.all([fetchWallet(), fetchStoreItems()])
       .then(([walletData, storeItems]) => {
+        if (cancelled) return;
         setWallet(walletData);
         setItems(storeItems);
         setError(null);
       })
       .catch((e) => {
+        if (cancelled) return;
         setWallet(null);
         setItems([]);
         setError(e instanceof ApiRequestError ? e.message : t("wallet.checkInError"));
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (cancelled) return;
+        setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [status, reloadToken, t]);
 
   useEffect(() => {

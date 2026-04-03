@@ -39,14 +39,14 @@ export default async function LearnIndexPage() {
           title={<T k="learn.title" />}
           description={<T k="learn.releaseSubtitle" />}
           hint={
-            <div className="rounded-[1rem] border border-[var(--pv-border)] bg-white/80 px-4 py-3">
+            <>
               <p className="text-sm font-semibold text-zinc-900">
                 <T k="learn.releaseHintTitle" />
               </p>
               <p className="mt-1 text-sm text-zinc-700">
                 <T k="learn.releaseHint" />
               </p>
-            </div>
+            </>
           }
           actions={
             <>

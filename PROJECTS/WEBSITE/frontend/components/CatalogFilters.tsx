@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useState, useTransition } from "react";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
+import { startRouteTransitionLoader } from "@/components/navigation/RouteTransitionLoader";
 import { trackEvent } from "@/lib/analytics";
 import {
   getDifficultyTranslationKey,
@@ -97,6 +98,7 @@ export function CatalogFilters({
     for (const value of next.tag ?? []) sp.append("tag", value);
     const q = sp.toString();
     startTransition(() => {
+      startRouteTransitionLoader();
       router.replace(`/catalog${q ? `?${q}` : ""}`);
     });
   }

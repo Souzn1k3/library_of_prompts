@@ -33,13 +33,16 @@ export function MissionsClient() {
   const [selectedView, setSelectedView] = useState<MissionCollectionView>("active");
 
   useEffect(() => {
+    let cancelled = false;
     setLoading(true);
     fetchMissions()
       .then((payload) => {
+        if (cancelled) return;
         setData(payload);
         setError(null);
       })
       .catch((e) => {
+        if (cancelled) return;
         setData(null);
         if (e instanceof ApiRequestError && e.status === 401) {
           setError("signed_out");
@@ -48,8 +51,12 @@ export function MissionsClient() {
         }
       })
       .finally(() => {
+        if (cancelled) return;
         setLoading(false);
       });
+    return () => {
+      cancelled = true;
+    };
   }, [language, reloadToken, t]);
 
   const localizedMissions = useMemo(

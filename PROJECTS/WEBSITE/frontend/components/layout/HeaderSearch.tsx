@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useId, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
+import { startRouteTransitionLoader } from "@/components/navigation/RouteTransitionLoader";
 
 type HeaderSearchProps = {
   mobile?: boolean;
@@ -28,6 +29,7 @@ export function HeaderSearch({ mobile = false, onSearch }: HeaderSearchProps) {
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmed = query.trim();
+    startRouteTransitionLoader();
     router.push(`/catalog${trimmed ? `?q=${encodeURIComponent(trimmed)}` : ""}`);
     onSearch?.();
   }
