@@ -16,6 +16,7 @@ import { ApiRequestError } from "@/lib/api";
 import { fetchMissions } from "@/lib/client-api";
 import { MISSION_SECTION_ORDER, MISSION_TYPE_TONE } from "@/lib/constants/economy-ui";
 import { APP_ROUTES, appRoute } from "@/lib/constants/routes";
+import { TOKEN_SHORT_CODE } from "@/lib/constants/tokens";
 import { getMissionStatusTranslationKey, type TranslationKey } from "@/lib/i18n";
 import {
   formatMissionDateTime,
@@ -339,7 +340,7 @@ function MissionCard({ mission }: { mission: MissionPresentation }) {
           </div>
 
           {mission.mission.reward.credits > 0 ? (
-            <LmnAmount amount={`+${mission.mission.reward.credits}`} symbol="LMN" state="earned" strong />
+            <LmnAmount amount={`+${mission.mission.reward.credits}`} symbol={TOKEN_SHORT_CODE} state="earned" strong />
           ) : null}
         </div>
 

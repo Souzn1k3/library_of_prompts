@@ -6,13 +6,18 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { PageIntro } from "@/components/navigation/PageIntro";
+import { StoreItemCard } from "@/components/store/StoreItemCard";
+import {
+  localizedStarterReward,
+  localizedStoreItemTitle,
+  sectionLabel,
+  textOrNull,
+} from "@/components/store/presentation";
 import { LmnAmount } from "@/components/ui/LmnAmount";
 import { LmnBalanceCard } from "@/components/ui/LmnBalanceCard";
-import { LmnMark } from "@/components/ui/LmnMark";
 import { useLmnBalanceFeedback } from "@/components/ui/useLmnBalanceFeedback";
 import { ApiRequestError } from "@/lib/api";
 import {
-  STORE_KIND_TONE,
   STORE_NEAR_MISS_ITEMS_LIMIT,
   STORE_SECTION_ORDER,
   STORE_SUCCESS_CLEAR_TIMEOUT_MS,
@@ -20,83 +25,10 @@ import {
 import { APP_ROUTES } from "@/lib/constants/routes";
 import { getAffordableStoreItems, getNearMissStoreItems, pickBestStoreItem, sortStoreItems } from "@/lib/economy";
 import { fetchStoreItems, fetchWallet, purchaseStoreItem } from "@/lib/client-api";
+import { TOKEN_SHORT_CODE } from "@/lib/constants/tokens";
 import { formatNumber } from "@/lib/formatters";
-import { languageToIntlLocale, type TranslationKey } from "@/lib/i18n";
-import type { PurchaseResult, StoreItem, StoreItemKind, WalletRead } from "@/lib/types";
-
-type TranslateFn = ReturnType<typeof useI18n>["t"];
-type TranslationParams = Record<string, string | number | null | undefined>;
-
-function kindLabel(kind: StoreItem["kind"], t: TranslateFn) {
-  const key = `store.kind.${kind}` as TranslationKey;
-  const translated = t(key);
-  return translated === key ? kind : translated;
-}
-
-function sectionLabel(kind: StoreItem["kind"], t: TranslateFn) {
-  const key = `store.section.${kind}` as TranslationKey;
-  const translated = t(key);
-  return translated === key ? kindLabel(kind, t) : translated;
-}
-
-function translationOrNull(t: TranslateFn, key: TranslationKey, params?: TranslationParams): string | null {
-  const translated = t(key, params);
-  return translated === key ? null : translated;
-}
-
-function textOrNull(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
-function extractPromptTitle(item: StoreItem): string {
-  const fromMeta = textOrNull(item.metadata?.prompt_title);
-  if (fromMeta) return fromMeta;
-
-  const normalized = item.title.trim();
-  if (normalized.toLowerCase().startsWith("unlock:")) {
-    return normalized.slice("unlock:".length).trim();
-  }
-  return normalized;
-}
-
-function localizedStoreItemTitle(item: StoreItem, t: TranslateFn): string {
-  const key = `store.item.${item.slug}.title` as TranslationKey;
-  const directTranslation = translationOrNull(t, key);
-  if (directTranslation) return directTranslation;
-
-  if (item.kind === "premium_prompt_unlock" || item.slug.startsWith("unlock-")) {
-    const dynamicTranslation = translationOrNull(t, "store.item.dynamicUnlock.title", {
-      title: extractPromptTitle(item),
-    });
-    if (dynamicTranslation) return dynamicTranslation;
-  }
-  return item.title;
-}
-
-function localizedStoreItemDescription(item: StoreItem, t: TranslateFn): string | null {
-  const key = `store.item.${item.slug}.description` as TranslationKey;
-  const directTranslation = translationOrNull(t, key);
-  if (directTranslation) return directTranslation;
-
-  if (item.kind === "premium_prompt_unlock" || item.slug.startsWith("unlock-")) {
-    const dynamicTranslation = translationOrNull(t, "store.item.dynamicUnlock.description");
-    if (dynamicTranslation) return dynamicTranslation;
-  }
-  return textOrNull(item.description);
-}
-
-function localizedStarterReward(args: {
-  slug: string;
-  t: TranslateFn;
-  fallbackTitle: string | null;
-  fallbackBody: string | null;
-}) {
-  const title = translationOrNull(args.t, `store.item.${args.slug}.rewardTitle` as TranslationKey) ?? args.fallbackTitle;
-  const body = translationOrNull(args.t, `store.item.${args.slug}.rewardBody` as TranslationKey) ?? args.fallbackBody;
-  return { title, body };
-}
+import { languageToIntlLocale } from "@/lib/i18n";
+import type { PurchaseResult, StoreItem, WalletRead } from "@/lib/types";
 
 export function StoreClient() {
   const { status } = useAuth();
@@ -287,10 +219,12 @@ export function StoreClient() {
               <LmnBalanceCard
                 label={t("wallet.balance")}
                 amount={wallet?.balance ?? "—"}
-                symbol={wallet?.currency_symbol ?? "LMN"}
-                caption={wallet?.currency_name ?? wallet?.currency_symbol ?? "LMN"}
+                symbol={TOKEN_SHORT_CODE}
+                caption={t("wallet.currencyHint")}
                 delta={balanceDelta}
                 change={balanceChange}
+                showIcon
+                compactCode={false}
               />
             </div>
             <div className="pv-stat-card">
@@ -317,16 +251,16 @@ export function StoreClient() {
               <p className="mt-1 text-sm text-emerald-900/80">
                 {t("store.purchaseSummarySpent", {
                   amount: success.purchase.price_paid,
-                  symbol: wallet?.currency_symbol ?? "LMN",
+                  symbol: TOKEN_SHORT_CODE,
                 })}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <LmnAmount amount={`-${success.purchase.price_paid}`} symbol={wallet?.currency_symbol ?? "LMN"} state="spent" />
+              <LmnAmount amount={`-${success.purchase.price_paid}`} symbol={TOKEN_SHORT_CODE} state="spent" />
               <span className="pv-chip">
                 {t("store.currentBalance", {
                   amount: success.wallet.balance,
-                  symbol: wallet?.currency_symbol ?? "LMN",
+                  symbol: TOKEN_SHORT_CODE,
                 })}
               </span>
             </div>
@@ -337,7 +271,7 @@ export function StoreClient() {
               <p className="text-sm font-semibold text-zinc-900">{success.first_purchase_reward.title}</p>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 {success.first_purchase_reward.amount ? (
-                  <LmnAmount amount={`+${success.first_purchase_reward.amount}`} symbol={wallet?.currency_symbol ?? "LMN"} state="earned" />
+                  <LmnAmount amount={`+${success.first_purchase_reward.amount}`} symbol={TOKEN_SHORT_CODE} state="earned" />
                 ) : null}
                 <p className="text-sm text-zinc-600">{success.first_purchase_reward.description}</p>
               </div>
@@ -349,7 +283,7 @@ export function StoreClient() {
               <p className="text-sm font-semibold text-zinc-900">{success.locked_cashback_reward.title}</p>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 {success.locked_cashback_reward.amount ? (
-                  <LmnAmount amount={`+${success.locked_cashback_reward.amount}`} symbol={wallet?.currency_symbol ?? "LMN"} state="earned" />
+                  <LmnAmount amount={`+${success.locked_cashback_reward.amount}`} symbol={TOKEN_SHORT_CODE} state="earned" />
                 ) : null}
                 <p className="text-sm text-zinc-600">{success.locked_cashback_reward.description}</p>
               </div>
@@ -361,7 +295,7 @@ export function StoreClient() {
               <p className="text-sm font-semibold text-zinc-900">{success.second_purchase_challenge_reward.title}</p>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 {success.second_purchase_challenge_reward.amount ? (
-                  <LmnAmount amount={`+${success.second_purchase_challenge_reward.amount}`} symbol={wallet?.currency_symbol ?? "LMN"} state="earned" />
+                  <LmnAmount amount={`+${success.second_purchase_challenge_reward.amount}`} symbol={TOKEN_SHORT_CODE} state="earned" />
                 ) : null}
                 <p className="text-sm text-zinc-600">{success.second_purchase_challenge_reward.description}</p>
               </div>
@@ -404,7 +338,6 @@ export function StoreClient() {
               <StoreItemCard
                 key={`available-${item.id}`}
                 item={item}
-                wallet={wallet}
                 purchasing={purchasing}
                 onPurchase={handlePurchase}
                 locale={locale}
@@ -428,7 +361,6 @@ export function StoreClient() {
               <StoreItemCard
                 key={`near-miss-${item.id}`}
                 item={item}
-                wallet={wallet}
                 purchasing={purchasing}
                 onPurchase={handlePurchase}
                 locale={locale}
@@ -456,7 +388,6 @@ export function StoreClient() {
                 <StoreItemCard
                   key={item.id}
                   item={item}
-                  wallet={wallet}
                   purchasing={purchasing}
                   onPurchase={handlePurchase}
                   locale={locale}
@@ -468,121 +399,4 @@ export function StoreClient() {
       )}
     </div>
   );
-}
-
-function StoreItemCard({
-  item,
-  wallet,
-  purchasing,
-  onPurchase,
-  locale,
-}: {
-  item: StoreItem;
-  wallet: WalletRead | null;
-  purchasing: string | null;
-  onPurchase: (item: StoreItem) => Promise<void>;
-  locale: string;
-}) {
-  const { t } = useI18n();
-  const soldOut = item.availability !== null && item.availability <= 0;
-  const disabled = purchasing === item.slug || soldOut || item.owned || !item.is_affordable;
-  const progressPct = Math.max(item.progress_ratio > 0 ? 8 : 0, Math.min(100, Math.round(item.progress_ratio * 100)));
-  const tone = getStoreTone(item.kind);
-  const title = localizedStoreItemTitle(item, t);
-  const description = localizedStoreItemDescription(item, t);
-  const currencySymbol = wallet?.currency_symbol ?? "LMN";
-  const starterRewardCopy = localizedStarterReward({
-    slug: item.slug,
-    t,
-    fallbackTitle: textOrNull(item.metadata?.reward_title),
-    fallbackBody: textOrNull(item.metadata?.reward_body),
-  });
-
-  return (
-    <article className="pv-card flex flex-col justify-between gap-5 p-5">
-      <div className="relative flex h-full flex-col gap-5">
-        <div className="space-y-2">
-          <h3 className="text-lg font-semibold tracking-[-0.03em] text-zinc-900">{title}</h3>
-          {description ? <p className="text-sm leading-relaxed text-zinc-600">{description}</p> : null}
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          {item.owned ? <span className="pv-badge-success">{t("store.owned")}</span> : null}
-          {soldOut ? <span className="pv-badge-danger">{t("store.soldOut")}</span> : null}
-          {!soldOut && !item.owned && !item.is_affordable ? (
-            <span className="pv-badge-warning">{t("store.needMore", { count: formatNumber(item.near_miss_delta, locale) })}</span>
-          ) : null}
-        </div>
-
-        {!item.owned && !soldOut ? (
-          <div className="pv-card-muted p-3">
-            <div className="flex items-center justify-between gap-3 text-sm">
-              <span className="font-medium text-zinc-900">
-                {item.is_affordable
-                  ? t("store.readyToBuy")
-                  : t("store.needMore", { count: formatNumber(item.near_miss_delta, locale) })}
-              </span>
-              <span className="text-zinc-500">{progressPct}%</span>
-            </div>
-            <div className="mt-3 pv-progress">
-              <div className="pv-progress-fill" style={{ width: `${progressPct}%` }} />
-            </div>
-          </div>
-        ) : null}
-
-        {item.kind === "starter" && (starterRewardCopy.title || starterRewardCopy.body) ? (
-          <div className="pv-card-muted p-3 text-sm text-zinc-600">
-            {starterRewardCopy.title ? <span className="font-medium text-zinc-900">{starterRewardCopy.title}</span> : null}
-            {starterRewardCopy.body ? <p className="mt-1">{starterRewardCopy.body}</p> : null}
-          </div>
-        ) : null}
-
-        {item.owned ? (
-          <button
-            type="button"
-            disabled
-            className={`mt-auto inline-flex min-h-[2.9rem] items-center justify-center rounded-full bg-[var(--pv-brand)] px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(37,92,255,0.3)] transition disabled:cursor-not-allowed disabled:opacity-75 ${tone.button}`}
-          >
-            {t("store.owned")}
-          </button>
-        ) : soldOut ? (
-          <button
-            type="button"
-            disabled
-            className={`mt-auto inline-flex min-h-[2.9rem] items-center justify-center rounded-full bg-[var(--pv-brand)] px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(37,92,255,0.3)] transition disabled:cursor-not-allowed disabled:opacity-75 ${tone.button}`}
-          >
-            {t("store.soldOut")}
-          </button>
-        ) : item.is_affordable ? (
-          <button
-            type="button"
-            onClick={() => void onPurchase(item)}
-            disabled={disabled}
-            className={`mt-auto inline-flex min-h-[2.9rem] items-center justify-center gap-2 rounded-full bg-[var(--pv-brand)] px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(37,92,255,0.3)] transition disabled:cursor-not-allowed disabled:opacity-75 ${tone.button}`}
-          >
-            {purchasing === item.slug ? (
-              t("missions.loading")
-            ) : (
-              <>
-                <span>{t("store.purchase")}</span>
-                <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold tracking-[0.06em] text-white/95">
-                  <LmnMark size={14} label={currencySymbol} tone="balance" />
-                  <span>{formatNumber(item.price, locale)}</span>
-                  <span className="text-white/85">{currencySymbol}</span>
-                </span>
-              </>
-            )}
-          </button>
-        ) : (
-          <Link href={APP_ROUTES.missions} className="pv-button-secondary mt-auto !w-auto justify-center">
-            {t("economy.earnCta")}
-          </Link>
-        )}
-      </div>
-    </article>
-  );
-}
-
-function getStoreTone(kind: StoreItemKind) {
-  return STORE_KIND_TONE[kind];
 }

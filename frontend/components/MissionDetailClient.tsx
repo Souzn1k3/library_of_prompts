@@ -11,6 +11,7 @@ import type { TranslationKey } from "@/lib/i18n";
 import { ApiRequestError } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
 import { fetchMissionBySlug } from "@/lib/client-api";
+import { TOKEN_SHORT_CODE } from "@/lib/constants/tokens";
 import { getMissionStatusTranslationKey } from "@/lib/i18n";
 import {
   formatMissionDateTime,
@@ -169,9 +170,11 @@ export function MissionDetailClient({ slug }: { slug: string }) {
               <LmnBalanceCard
                 label={t("missionDetail.reward")}
                 amount={`+${currentMission.reward.credits}`}
-                symbol="LMN"
+                symbol={TOKEN_SHORT_CODE}
                 caption={t("missions.credits")}
                 tone="earned"
+                showIcon
+                compactCode={false}
               />
             ) : null}
           </div>
@@ -214,7 +217,7 @@ export function MissionDetailClient({ slug }: { slug: string }) {
                         {step.progress_count}/{step.required_count}
                       </p>
                       {step.reward_credits > 0 ? (
-                        <LmnAmount amount={`+${step.reward_credits}`} symbol="LMN" state="earned" />
+                        <LmnAmount amount={`+${step.reward_credits}`} symbol={TOKEN_SHORT_CODE} state="earned" />
                       ) : null}
                     </div>
                   </div>

@@ -7,6 +7,7 @@ import { useRef, useState } from "react";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { ApiRequestError } from "@/lib/api";
 import { buyPromptWithLumens, createPromptCheckoutSession } from "@/lib/client-api";
+import { TOKEN_SHORT_CODE } from "@/lib/constants/tokens";
 import { languageToIntlLocale } from "@/lib/i18n";
 import type { PromptAccess, PromptPrice } from "@/lib/types";
 
@@ -94,7 +95,7 @@ export function PromptMarketplaceActions({ promptId, promptSlug, price, access, 
         </p>
         <div className="mt-3 flex flex-wrap gap-2 text-xs text-zinc-500">
           <span className="pv-chip">{formatNumber(price.price_rub, locale)} RUB</span>
-          <span className="pv-chip">{formatNumber(price.price_lumens, locale)} LMN</span>
+          <span className="pv-chip">{formatNumber(price.price_lumens, locale)} {TOKEN_SHORT_CODE}</span>
           <span className="pv-chip">{t("prompt.marketplace.platformFee", { percent: price.commission_percent })}</span>
         </div>
       </div>

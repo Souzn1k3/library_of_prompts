@@ -45,6 +45,26 @@ function networkError(language: Language): ApiRequestError {
   );
 }
 
+function apiRequestError(
+  {
+    language,
+    status,
+    data,
+  }: {
+    language: Language;
+    status: number;
+    data: unknown;
+  },
+): ApiRequestError {
+  const message = extractApiErrorMessage(
+    data,
+    status,
+    getTranslation(language, "api.requestFailed"),
+    language,
+  );
+  return new ApiRequestError(message, status, data);
+}
+
 function requestHeaders(language: string, initHeaders?: HeadersInit): HeadersInit {
   return {
     Accept: "application/json",
@@ -125,13 +145,7 @@ async function authFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await authFetchRaw(path, init);
   const data = await parseJson<unknown>(res);
   if (!res.ok) {
-    const message = extractApiErrorMessage(
-      data,
-      res.status,
-      getTranslation(language, "api.requestFailed"),
-      language,
-    );
-    throw new ApiRequestError(message, res.status, data);
+    throw apiRequestError({ language, status: res.status, data });
   }
   return data as T;
 }
@@ -141,13 +155,7 @@ async function authFetchNoContent(path: string, init?: RequestInit): Promise<voi
   const res = await authFetchRaw(path, init);
   if (!res.ok) {
     const data = await parseJson<unknown>(res);
-    const message = extractApiErrorMessage(
-      data,
-      res.status,
-      getTranslation(language, "api.requestFailed"),
-      language,
-    );
-    throw new ApiRequestError(message, res.status, data);
+    throw apiRequestError({ language, status: res.status, data });
   }
 }
 
@@ -166,13 +174,7 @@ async function optionalAuthJsonFetch<T>(path: string, init?: RequestInit): Promi
   }
   const data = await parseJson<unknown>(res);
   if (!res.ok) {
-    const message = extractApiErrorMessage(
-      data,
-      res.status,
-      getTranslation(language, "api.requestFailed"),
-      language,
-    );
-    throw new ApiRequestError(message, res.status, data);
+    throw apiRequestError({ language, status: res.status, data });
   }
   return data as T;
 }
@@ -392,13 +394,13 @@ export async function unsavePrompt(promptId: string): Promise<void> {
 }
 
 export async function trackPromptCopy(promptId: string): Promise<PromptActionResult> {
-  return authFetch<PromptActionResult>(apiPath.promptEventCopy(promptId), {
+  return optionalAuthJsonFetch<PromptActionResult>(apiPath.promptEventCopy(promptId), {
     method: "POST",
   });
 }
 
 export async function trackPromptApply(promptId: string): Promise<PromptActionResult> {
-  return authFetch<PromptActionResult>(apiPath.promptEventApply(promptId), {
+  return optionalAuthJsonFetch<PromptActionResult>(apiPath.promptEventApply(promptId), {
     method: "POST",
   });
 }

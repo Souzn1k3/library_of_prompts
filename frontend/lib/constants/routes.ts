@@ -19,6 +19,8 @@ export const APP_ROUTES = {
   contributors: "/contributors",
 } as const;
 
+export const LEARNING_FOUNDATIONS_COURSE_SLUG = "prompt-engineering-foundations";
+
 export const appRoute = {
   promptBySlug: (slug: string) => `${APP_ROUTES.prompt}/${encodeURIComponent(slug)}`,
   missionBySlug: (slug: string) => `${APP_ROUTES.missions}/${encodeURIComponent(slug)}`,

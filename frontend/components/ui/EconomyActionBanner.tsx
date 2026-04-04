@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { LmnAmount } from "@/components/ui/LmnAmount";
+import { TOKEN_SHORT_CODE } from "@/lib/constants/tokens";
 import type { EconomyAction } from "@/lib/types";
 
 export function EconomyActionBanner({
@@ -47,7 +48,7 @@ export function EconomyActionBanner({
       </div>
       <div className="flex flex-wrap items-center gap-3">
         {summary.balance_delta > 0 ? (
-          <LmnAmount amount={`+${summary.balance_delta}`} symbol={summary.wallet?.currency_symbol ?? "LMN"} strong state="earned" />
+          <LmnAmount amount={`+${summary.balance_delta}`} symbol={TOKEN_SHORT_CODE} strong state="earned" />
         ) : null}
         {focusItem ? (
           <Link href={ctaHref} className="pv-button-secondary !w-auto">

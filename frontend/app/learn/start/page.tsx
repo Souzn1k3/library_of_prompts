@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+import { useI18n } from "@/components/i18n/LanguageProvider";
 import { getApiBaseUrl } from "@/lib/api";
 import { API_ENDPOINTS } from "@/lib/constants/api";
 import { APP_ROUTES } from "@/lib/constants/routes";
@@ -52,6 +53,7 @@ async function resolveStartTarget(): Promise<string> {
 
 export default function LearnStartPage() {
   const router = useRouter();
+  const { t } = useI18n();
 
   useEffect(() => {
     let mounted = true;
@@ -69,7 +71,7 @@ export default function LearnStartPage() {
   return (
     <div className="pv-page-sm">
       <div className="pv-panel px-6 py-6 sm:px-7">
-        <p className="text-sm text-zinc-600">Preparing your learning path...</p>
+        <p className="text-sm text-zinc-600">{t("learn.preparingPath")}</p>
       </div>
     </div>
   );

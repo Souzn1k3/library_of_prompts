@@ -68,6 +68,7 @@ export const enCore = {
   "common.open": "Open",
   "common.locked": "Locked",
   "common.completions": "completions",
+  "common.hintBadge": "Hint",
   "nav.workspace": "Workspace",
   "nav.economy": "Economy",
   "nav.billing": "Billing & plan",

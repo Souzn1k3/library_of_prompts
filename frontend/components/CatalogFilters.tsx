@@ -184,7 +184,7 @@ export function CatalogFilters({
 
       <details className="pv-details">
         <summary>{t("catalogFilters.advanced")}</summary>
-        <p className="mt-2 pv-hint-badge">Подсказка</p>
+        <p className="mt-2 pv-hint-badge">{t("common.hintBadge")}</p>
         <p className="mt-1 text-sm text-zinc-600">{t("catalogFilters.advancedHint")}</p>
 
         <div className="mt-4 grid gap-3 md:grid-cols-2">

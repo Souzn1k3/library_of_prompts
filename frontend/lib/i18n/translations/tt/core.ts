@@ -68,6 +68,7 @@ export const ttCore = {
   "common.open": "Ачык",
   "common.locked": "Ябык",
   "common.completions": "тәмамлау",
+  "common.hintBadge": "Киңәш",
   "nav.workspace": "Эш киңлеге",
   "nav.economy": "Экономика",
   "nav.billing": "Язылу һәм түләү",

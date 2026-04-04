@@ -2,11 +2,11 @@
   color-scheme: light;
   --font-sans: "Segoe UI Variable", "Segoe UI", "Aptos", "Inter", "Trebuchet MS", sans-serif;
   --font-mono: "Cascadia Code", "Cascadia Mono", "IBM Plex Mono", "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
-  --pv-bg: #eef4ff;
-  --pv-bg-strong: #f9fbff;
-  --pv-surface: rgba(255, 255, 255, 0.82);
+  --pv-bg: #f8f7f4;
+  --pv-bg-strong: #fffdfa;
+  --pv-surface: rgba(255, 255, 255, 0.84);
   --pv-surface-strong: rgba(255, 255, 255, 0.96);
-  --pv-surface-muted: #f4f7fd;
+  --pv-surface-muted: #f3f1eb;
   --pv-border: rgba(15, 23, 42, 0.08);
   --pv-border-strong: rgba(37, 92, 255, 0.22);
   --pv-text: #0f172a;
@@ -20,13 +20,16 @@
   --pv-success: #0f9f74;
   --pv-warning: #d97706;
   --pv-danger: #dc2626;
-  --pv-lmn-base: #f5b93d;
-  --pv-lmn-base-strong: #d88911;
-  --pv-lmn-highlight: #fff4ba;
-  --pv-lmn-surface: rgba(255, 244, 214, 0.88);
-  --pv-lmn-ink: #2d1a04;
-  --pv-lmn-glow: rgba(255, 196, 82, 0.34);
-  --pv-lmn-shadow: rgba(125, 80, 10, 0.28);
+  --pv-token-primary: #1f2937;
+  --pv-token-accent: #c8a24a;
+  --pv-token-surface: #f8f7f4;
+  --pv-lmn-base: #c8a24a;
+  --pv-lmn-base-strong: #a38233;
+  --pv-lmn-highlight: #f2e2b8;
+  --pv-lmn-surface: rgba(248, 247, 244, 0.95);
+  --pv-lmn-ink: #1f2937;
+  --pv-lmn-glow: rgba(200, 162, 74, 0.22);
+  --pv-lmn-shadow: rgba(17, 24, 39, 0.18);
   --pv-lmn-earned: #39c88d;
   --pv-lmn-earned-soft: rgba(57, 200, 141, 0.2);
   --pv-lmn-spent: #f97316;
@@ -42,9 +45,9 @@ html {
   min-height: 100%;
   overflow-x: clip;
   background:
-    radial-gradient(circle at top left, rgba(37, 92, 255, 0.12), transparent 36%),
-    radial-gradient(circle at top right, rgba(17, 184, 164, 0.12), transparent 28%),
-    linear-gradient(180deg, #fbfdff 0%, #eef3fb 52%, #eff4fb 100%);
+    radial-gradient(circle at top left, rgba(200, 162, 74, 0.14), transparent 35%),
+    radial-gradient(circle at top right, rgba(31, 41, 55, 0.08), transparent 30%),
+    linear-gradient(180deg, #fdfcf9 0%, #f8f7f4 55%, #f5f3ee 100%);
 }
 
 body {
@@ -72,7 +75,7 @@ body::before {
   left: -7rem;
   width: 18rem;
   height: 18rem;
-  background: rgba(37, 92, 255, 0.12);
+  background: rgba(200, 162, 74, 0.13);
 }
 
 body::after {
@@ -80,7 +83,7 @@ body::after {
   bottom: 6rem;
   width: 14rem;
   height: 14rem;
-  background: rgba(17, 184, 164, 0.1);
+  background: rgba(31, 41, 55, 0.08);
 }
 
 ::selection {

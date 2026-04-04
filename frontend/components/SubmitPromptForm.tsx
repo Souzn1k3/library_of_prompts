@@ -225,7 +225,7 @@ export function SubmitPromptForm() {
 
           <div className="pv-field">
             <label className="pv-label" htmlFor="price_rub">
-              Price in RUB (optional)
+              {t("submit.priceRubLabel")}
             </label>
             <input
               id="price_rub"
@@ -234,10 +234,10 @@ export function SubmitPromptForm() {
               min={0}
               max={4999}
               className="pv-input"
-              placeholder="0 for free"
+              placeholder={t("submit.priceRubPlaceholder")}
             />
             <p className="mt-1 text-xs text-zinc-500">
-              Paid prompts become marketplace items. Buyers can unlock with money or Lumens.
+              {t("submit.priceRubHint")}
             </p>
           </div>
         </div>
@@ -245,7 +245,7 @@ export function SubmitPromptForm() {
 
       <details className="pv-details">
         <summary>{t("submit.advancedOptions")}</summary>
-        <p className="mt-2 pv-hint-badge">Подсказка</p>
+        <p className="mt-2 pv-hint-badge">{t("common.hintBadge")}</p>
         <p className="mt-1 text-sm text-zinc-600">{t("submit.advancedOptionsHint")}</p>
 
         <div className="mt-4 grid gap-4 md:grid-cols-2">

@@ -6,7 +6,8 @@ import { ContributorBadge } from "@/components/ContributorBadge";
 import { PromptCard } from "@/components/PromptCard";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { ApiRequestError, fetchContributorProfile, fetchPrompts } from "@/lib/api";
-import { getTranslation } from "@/lib/i18n";
+import { isOfficialTeamContributor } from "@/lib/contributors";
+import { formatTranslation, getTranslation } from "@/lib/i18n";
 import { absoluteUrl, buildPageMetadata } from "@/lib/seo";
 import { getServerAccessToken } from "@/lib/server-auth";
 import { getServerLanguage } from "@/lib/server-i18n";
@@ -19,12 +20,22 @@ type Props = {
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const { slug } = await props.params;
   const language = await getServerLanguage();
+  if (isOfficialTeamContributor(slug)) {
+    return buildPageMetadata({
+      title: getTranslation(language, "contributors.metadataFallbackTitle"),
+      description: getTranslation(language, "contributors.metadataFallbackDescription"),
+      path: `/contributors/${slug}`,
+    });
+  }
   const accessToken = await getServerAccessToken();
   try {
     const profile = await fetchContributorProfile(slug, { accessToken, language });
     return buildPageMetadata({
       title: `${profile.display_name} (@${profile.slug})`,
-      description: `Contributor profile, reputation score ${profile.reputation_score}, approved prompts ${profile.stats.approved_submissions}.`,
+      description: formatTranslation(language, "contributors.metaDescription", {
+        score: profile.reputation_score,
+        approved: profile.stats.approved_submissions,
+      }),
       path: `/contributors/${profile.slug}`,
     });
   } catch {
@@ -38,6 +49,9 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function ContributorProfilePage(props: Props) {
   const { slug } = await props.params;
+  if (isOfficialTeamContributor(slug)) {
+    notFound();
+  }
   const searchParams = (await props.searchParams) ?? {};
   const language = await getServerLanguage();
   const accessToken = await getServerAccessToken();
@@ -77,7 +91,11 @@ export default async function ContributorProfilePage(props: Props) {
             "@type": "Person",
             name: profile.display_name,
             url: absoluteUrl(`/contributors/${profile.slug}`),
-            description: profile.bio ?? `${profile.display_name} contributor profile`,
+            description:
+              profile.bio ??
+              formatTranslation(language, "contributors.profileDescriptionFallback", {
+                name: profile.display_name,
+              }),
           }}
         />
 
@@ -96,15 +114,18 @@ export default async function ContributorProfilePage(props: Props) {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard label={getTranslation(language, "contributors.reputationScore")} value={profile.reputation_score} />
             <StatCard label={getTranslation(language, "contributors.approvalRate")} value={`${approvalRate}%`} />
-            <StatCard label="Rating" value={profile.rating_display ? `${profile.rating_display}/5` : "New"} />
-            <StatCard label="Reviews" value={profile.review_count ?? 0} />
+            <StatCard
+              label={getTranslation(language, "contributors.rating")}
+              value={profile.rating_display ? `${profile.rating_display}/5` : getTranslation(language, "contributors.ratingNew")}
+            />
+            <StatCard label={getTranslation(language, "contributors.reviews")} value={profile.review_count ?? 0} />
             <StatCard
               label={getTranslation(language, "contributors.approvedPrompts")}
               value={profile.stats.approved_submissions}
             />
-            <StatCard label="Sold paid prompts" value={profile.sold_prompts_count ?? 0} />
-            <StatCard label="Purchases served" value={profile.purchases_count ?? 0} />
-            <StatCard label="Revenue (RUB)" value={profile.seller_revenue_rub ?? 0} />
+            <StatCard label={getTranslation(language, "contributors.soldPaidPrompts")} value={profile.sold_prompts_count ?? 0} />
+            <StatCard label={getTranslation(language, "contributors.purchasesServed")} value={profile.purchases_count ?? 0} />
+            <StatCard label={getTranslation(language, "contributors.revenueRub")} value={profile.seller_revenue_rub ?? 0} />
             <StatCard label={getTranslation(language, "contributors.rejectionRate")} value={`${profile.stats.rejection_rate}%`} />
             <StatCard label={getTranslation(language, "contributors.totalSaves")} value={profile.stats.total_saves} />
             <StatCard label={getTranslation(language, "contributors.totalCopies")} value={profile.stats.total_copies} />
@@ -118,7 +139,9 @@ export default async function ContributorProfilePage(props: Props) {
 
         {profile.trust_indicators?.length ? (
           <section className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
-            <h2 className="text-sm font-semibold text-zinc-900">Trust signals</h2>
+            <h2 className="text-sm font-semibold text-zinc-900">
+              {getTranslation(language, "contributors.trustSignals")}
+            </h2>
             <div className="mt-3 flex flex-wrap gap-2">
               {profile.trust_indicators.map((indicator) => (
                 <span key={indicator.key} className="pv-chip">
@@ -152,9 +175,11 @@ export default async function ContributorProfilePage(props: Props) {
         <section className="rounded-lg border border-zinc-200 bg-zinc-50 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-semibold text-zinc-900">Marketplace reviews</h2>
+              <h2 className="text-sm font-semibold text-zinc-900">
+                {getTranslation(language, "contributors.marketplaceReviews")}
+              </h2>
               <p className="mt-1 text-xs text-zinc-600">
-                Verified buyers only. Average rating is calculated from all visible reviews.
+                {getTranslation(language, "contributors.marketplaceReviewsBody")}
               </p>
             </div>
             <div className="flex gap-2 text-sm">
@@ -162,13 +187,13 @@ export default async function ContributorProfilePage(props: Props) {
                 href={`/contributors/${encodeURIComponent(profile.slug)}?review_sort=new`}
                 className={reviewSort === "new" ? "pv-button-secondary" : "pv-chip"}
               >
-                New
+                {getTranslation(language, "contributors.sortNew")}
               </Link>
               <Link
                 href={`/contributors/${encodeURIComponent(profile.slug)}?review_sort=best`}
                 className={reviewSort === "best" ? "pv-button-secondary" : "pv-chip"}
               >
-                Best
+                {getTranslation(language, "contributors.sortBest")}
               </Link>
             </div>
           </div>
@@ -187,7 +212,7 @@ export default async function ContributorProfilePage(props: Props) {
               ))}
             </div>
           ) : (
-            <p className="mt-4 text-sm text-zinc-500">No verified reviews yet.</p>
+            <p className="mt-4 text-sm text-zinc-500">{getTranslation(language, "contributors.noVerifiedReviews")}</p>
           )}
         </section>
 

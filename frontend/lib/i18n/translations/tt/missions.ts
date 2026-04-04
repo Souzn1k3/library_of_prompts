@@ -2,7 +2,7 @@ export const ttMissions = {
   "missions.title": "Биремнәр",
   "missions.subtitle":
     "Өйрәнүне реаль AI куллануга тоташтыручы һәм прогресс өчен бүләк бирүче гамәли бурычлар.",
-  "missions.guestHint": "Биремнәр практика аша люмен табарга һәм прогрессны адымлап үстерергә ярдәм итә.",
+  "missions.guestHint": "Биремнәр практика аша Tokens табарга һәм прогрессны адымлап үстерергә ярдәм итә.",
   "missions.signInPrefix": "Зинһар,",
   "missions.signInLink": "керегез",
   "missions.signInSuffix": "биремнәр циклын карау өчен.",
@@ -16,7 +16,7 @@ export const ttMissions = {
   "missions.completion": "Тәмамлау шарты",
   "missions.progress": "Прогресс",
   "missions.badge": "Бейдж",
-  "missions.credits": "Люмен",
+  "missions.credits": "Tokens",
   "missions.premiumUnlockDays": "Премиум ачу",
   "missions.steps": "Адымнар",
   "missions.difficulty": "Катылык",

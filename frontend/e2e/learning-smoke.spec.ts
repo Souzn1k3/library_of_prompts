@@ -226,7 +226,7 @@ test("learning browser smoke", async ({ page, request }) => {
   await finalStepCard.getByRole("button").first().click();
 
   await expect(page.locator("section.pv-alert-success").first()).toBeVisible();
-  await expect(page.locator("text=LMN").first()).toBeVisible();
+  await expect(page.locator("text=Tokens").first()).toBeVisible();
   await expect(page.locator("[role='progressbar'][aria-valuenow='100']").first()).toBeVisible();
 
   await page.goto("/learn/start");

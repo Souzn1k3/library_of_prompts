@@ -68,6 +68,7 @@ export const ruCore = {
   "common.open": "Открыто",
   "common.locked": "Закрыто",
   "common.completions": "завершений",
+  "common.hintBadge": "Подсказка",
   "nav.workspace": "Рабочее пространство",
   "nav.economy": "Экономика",
   "nav.billing": "Подписка и оплата",

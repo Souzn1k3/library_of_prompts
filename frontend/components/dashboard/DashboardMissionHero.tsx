@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { PageIntro } from "@/components/navigation/PageIntro";
+import { getTokenDisplayLabel, TOKEN_SHORT_CODE } from "@/lib/constants/tokens";
 import type { MissionPresentation } from "@/lib/missionPresentation";
 import type { LearningCourseDetail, LearningMyModules, WalletRead } from "@/lib/types";
 
@@ -50,9 +51,9 @@ export function DashboardMissionHero({
 }: DashboardMissionHeroProps) {
   const { t } = useI18n();
   const nextStepIsLearning = primaryAction.href.startsWith("/learn");
-  const walletSymbol = wallet?.currency_symbol ?? "LMN";
+  const walletSymbol = TOKEN_SHORT_CODE;
   const walletBalanceLabel =
-    typeof wallet?.balance === "number" ? `${wallet.balance} ${walletSymbol}` : `— ${walletSymbol}`;
+    typeof wallet?.balance === "number" ? `${wallet.balance} ${getTokenDisplayLabel(wallet.balance)}` : `— ${getTokenDisplayLabel(0)}`;
   const pendingRewardAmount = (wallet?.pending_locked_rewards ?? [])
     .filter((reward) => reward.status === "pending")
     .reduce((sum, reward) => sum + reward.amount, 0);
@@ -178,7 +179,7 @@ export function DashboardMissionHero({
       description={t("dashboard.subtitle")}
     >
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-12">
-        <div className="pv-card-muted flex h-full min-h-[12rem] flex-col gap-4 border-[rgba(37,92,255,0.14)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(237,244,255,0.92))] p-5 shadow-[0_18px_36px_rgba(37,92,255,0.08)] md:col-span-2 xl:col-span-6 sm:p-6">
+        <div className="pv-card-muted pv-card-hover-lift flex h-full min-h-[12rem] flex-col gap-4 border-[rgba(37,92,255,0.14)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(237,244,255,0.92))] p-5 shadow-[0_18px_36px_rgba(37,92,255,0.08)] md:col-span-2 xl:col-span-6 sm:p-6">
           <p className="pv-kicker">{t("dashboard.opsNextStepLabel")}</p>
           <div className="space-y-2">
             <h2 className="text-xl font-bold tracking-[-0.035em] text-zinc-950 sm:text-2xl">
@@ -271,7 +272,7 @@ function DashboardOpsCard({
   className?: string;
 }) {
   return (
-    <div className={`pv-card-muted flex h-full min-h-[12rem] flex-col gap-3 p-4 sm:p-5 ${className ?? ""}`}>
+    <div className={`pv-card-muted pv-card-hover-lift flex h-full min-h-[12rem] flex-col gap-3 p-4 sm:p-5 ${className ?? ""}`}>
       <p className="pv-kicker">{eyebrow}</p>
       <div className="space-y-2">
         {summary}

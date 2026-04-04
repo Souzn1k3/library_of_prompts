@@ -4,6 +4,15 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   output: "standalone",
+  async rewrites() {
+    const apiOrigin = (process.env.API_URL ?? "http://localhost:8000").replace(/\/$/, "");
+    return [
+      {
+        source: "/api-proxy/:path*",
+        destination: `${apiOrigin}/:path*`,
+      },
+    ];
+  },
   async redirects() {
     return [
       {

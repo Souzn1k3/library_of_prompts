@@ -143,7 +143,7 @@ export function SavePromptButton({
         type="button"
         onClick={toggle}
         disabled={pending}
-        className="pv-button-secondary disabled:opacity-60"
+        className="pv-button-secondary !w-auto whitespace-nowrap disabled:opacity-60"
       >
         {pending ? t("save.pending") : saved ? t("save.savedRemove") : t("save.saveToDashboard")}
       </button>

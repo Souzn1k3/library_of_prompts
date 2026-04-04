@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { T } from "@/components/i18n/T";
 import { PageIntro } from "@/components/navigation/PageIntro";
+import { TokenAmount } from "@/components/ui/TokenAmount";
 import { ApiRequestError, fetchLearningCatalog } from "@/lib/api";
 import { APP_ROUTES, appRoute } from "@/lib/constants/routes";
 import { getDifficultyTranslationKey, getTranslation } from "@/lib/i18n";
@@ -39,14 +40,9 @@ export default async function LearnIndexPage() {
           title={<T k="learn.title" />}
           description={<T k="learn.releaseSubtitle" />}
           hint={
-            <>
-              <p className="text-sm font-semibold text-zinc-900">
-                <T k="learn.releaseHintTitle" />
-              </p>
-              <p className="mt-1 text-sm text-zinc-700">
-                <T k="learn.releaseHint" />
-              </p>
-            </>
+            <p className="text-sm font-semibold text-zinc-900">
+              <T k="learn.releaseHint" />
+            </p>
           }
           actions={
             <>
@@ -116,7 +112,7 @@ export default async function LearnIndexPage() {
                     <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-zinc-600">
                       <span className="pv-chip">{getTranslation(language, getDifficultyTranslationKey(course.difficulty))}</span>
                       {course.badge_earned ? <span className="pv-chip-brand"><T k="learn.completed" /></span> : null}
-                      <span className="pv-chip">+{course.course_reward_lmn} LMN</span>
+                      <TokenAmount amount={`+${course.course_reward_lmn}`} compact showIcon={false} />
                     </div>
 
                     <div className="mt-4 pv-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={course.progress_percent}>

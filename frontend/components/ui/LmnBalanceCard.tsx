@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { LmnMark, type LmnTone } from "@/components/ui/LmnMark";
+import { TOKEN_FORMAL_NAME, TOKEN_NAME_PLURAL, TOKEN_SHORT_CODE } from "@/lib/constants/tokens";
 
 function formatSignedAmount(amount: number) {
   return amount > 0 ? `+${amount}` : `${amount}`;
@@ -10,8 +11,8 @@ function formatSignedAmount(amount: number) {
 export function LmnBalanceCard({
   label,
   amount,
-  symbol = "LMN",
-  caption,
+  symbol = TOKEN_NAME_PLURAL,
+  caption = TOKEN_FORMAL_NAME,
   detail,
   actionHref,
   actionLabel,
@@ -22,6 +23,7 @@ export function LmnBalanceCard({
   iconSize = 56,
   compact = false,
   showIcon = false,
+  compactCode = true,
 }: {
   label: ReactNode;
   amount: string | number;
@@ -37,7 +39,10 @@ export function LmnBalanceCard({
   iconSize?: number;
   compact?: boolean;
   showIcon?: boolean;
+  compactCode?: boolean;
 }) {
+  const resolvedSymbol = compactCode ? TOKEN_SHORT_CODE : symbol;
+
   return (
     <div
       className={`pv-lmn-balance-card ${className ?? ""}`.trim()}
@@ -52,14 +57,14 @@ export function LmnBalanceCard({
         </div>
         {showIcon ? (
           <div className="pv-lmn-balance-mark">
-            <LmnMark size={iconSize} label={symbol} tone={tone} />
+            <LmnMark size={iconSize} label={TOKEN_NAME_PLURAL} tone={tone} />
           </div>
         ) : null}
       </div>
 
       <div className="pv-lmn-balance-main">
         <span className="pv-lmn-balance-value">{amount}</span>
-        <span className="pv-lmn-balance-code">{symbol}</span>
+        <span className="pv-lmn-balance-code">{resolvedSymbol}</span>
       </div>
 
       {detail || (delta && delta !== 0) ? (
@@ -69,7 +74,7 @@ export function LmnBalanceCard({
           </div>
           {delta && delta !== 0 ? (
             <span className="pv-lmn-balance-delta" data-direction={delta > 0 ? "up" : "down"}>
-              {formatSignedAmount(delta)} {symbol}
+              {formatSignedAmount(delta)} {TOKEN_SHORT_CODE}
             </span>
           ) : null}
         </div>

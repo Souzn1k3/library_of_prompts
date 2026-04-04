@@ -3,15 +3,21 @@
 import Link from "next/link";
 
 import type { AuthStatus } from "@/components/auth/AuthProvider";
+import { DashboardBillingSection } from "@/components/dashboard/DashboardBillingSection";
 import { useBillingPortal } from "@/components/billing/useBillingPortal";
 import { DashboardMissionHero } from "@/components/dashboard/DashboardMissionHero";
+import { DashboardSubmissionsSection } from "@/components/dashboard/DashboardSubmissionsSection";
+import { DashboardWorkspaceSection } from "@/components/dashboard/DashboardWorkspaceSection";
+import {
+  billingStatusLabel,
+  normalizeStarterPrompt,
+} from "@/components/dashboard/helpers";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { PageIntro } from "@/components/navigation/PageIntro";
 import { PromptCard } from "@/components/PromptCard";
 import { useLmnBalanceFeedback } from "@/components/ui/useLmnBalanceFeedback";
 import { APP_ROUTES, appRoute } from "@/lib/constants/routes";
-import { formatDateTime } from "@/lib/formatters";
-import { getTierTranslationKey, languageToIntlLocale, type TranslationKey } from "@/lib/i18n";
+import { getTierTranslationKey, languageToIntlLocale } from "@/lib/i18n";
 import { getMissionPresentation } from "@/lib/missionPresentation";
 import type {
   AuthorSubmission,
@@ -22,21 +28,8 @@ import type {
   OnboardingProfile,
   OnboardingStarterPack,
   PromptListItem,
-  PromptTechnique,
   WalletRead,
 } from "@/lib/types";
-
-function billingStatusLabel(
-  status: string | null | undefined,
-  t: (key: TranslationKey, params?: Record<string, string | number | null | undefined>) => string,
-): string | null {
-  if (!status) {
-    return null;
-  }
-  const key = `plans.billingStatus.${status}` as TranslationKey;
-  const translated = t(key);
-  return translated === key ? t("plans.billingStatus.unknown") : translated;
-}
 
 type DashboardViewProps = {
   status: AuthStatus;
@@ -242,187 +235,33 @@ export function DashboardView({
         lessonHref={lessonHref}
       />
 
-      <section className="pv-panel px-6 py-6 sm:px-7">
-        <div className="pv-section-copy">
-          <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">
-            {t("dashboard.workspaceNavTitle")}
-          </h2>
-          <p className="mt-2 text-sm text-zinc-600">{t("dashboard.workspaceNavBody")}</p>
-        </div>
+      <DashboardWorkspaceSection
+        t={t}
+        locale={locale}
+        savedPromptsCount={items.length}
+        lastSavedPromptAt={items[0]?.created_at}
+        submissionsCount={submissions.length}
+        rejectedSubmissionsCount={rejectedSubmissionsCount}
+        pendingSubmissionsCount={pendingSubmissionsCount}
+        lastSubmissionAt={submissions[0]?.created_at}
+        needsOnboarding={Boolean(onboardingProfile?.needs_onboarding)}
+        learningMy={learningMy}
+        wallet={wallet}
+        walletPendingAmount={walletPendingAmount}
+        billing={billing}
+        localizedBillingStatus={localizedBillingStatus}
+      />
 
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <WorkspaceMapCard
-            title={t("dashboard.navSectionPromptsTitle")}
-            description={t("dashboard.navSectionPromptsBody")}
-            href={APP_ROUTES.catalog}
-            statusLabel={
-              items.length > 0
-                ? t("dashboard.navStatusSavedCount", { count: items.length })
-                : t("dashboard.navStatusNew")
-            }
-            statusTone={items.length > 0 ? "success" : "neutral"}
-            lastVisitLabel={formatVisitLabel(items[0]?.created_at, locale, t)}
-            actionLabel={t("dashboard.navOpenSection")}
-          />
-
-          <WorkspaceMapCard
-            title={t("dashboard.navSectionSubmissionsTitle")}
-            description={t("dashboard.navSectionSubmissionsBody")}
-            href={`${APP_ROUTES.dashboard}#submissions`}
-            statusLabel={
-              rejectedSubmissionsCount > 0
-                ? t("dashboard.navStatusNeedsAttention", { count: rejectedSubmissionsCount })
-                : pendingSubmissionsCount > 0
-                  ? t("dashboard.navStatusPendingReviewCount", { count: pendingSubmissionsCount })
-                  : submissions.length > 0
-                    ? t("dashboard.navStatusNoChanges")
-                    : t("dashboard.navStatusNew")
-            }
-            statusTone={
-              rejectedSubmissionsCount > 0 || pendingSubmissionsCount > 0
-                ? "warning"
-                : submissions.length > 0
-                  ? "info"
-                  : "neutral"
-            }
-            lastVisitLabel={formatVisitLabel(submissions[0]?.created_at, locale, t)}
-            actionLabel={t("dashboard.navOpenSection")}
-          />
-
-          <WorkspaceMapCard
-            title={t("dashboard.navSectionLearningTitle")}
-            description={t("dashboard.navSectionLearningBody")}
-            href={APP_ROUTES.learnMy}
-            statusLabel={
-              onboardingProfile?.needs_onboarding
-                ? t("dashboard.navStatusOnboarding")
-                : (learningMy?.active_courses.length ?? 0) > 0
-                  ? t("dashboard.navStatusActiveCourses", {
-                      count: learningMy?.active_courses.length ?? 0,
-                    })
-                  : (learningMy?.completed_courses.length ?? 0) > 0
-                    ? t("dashboard.navStatusCompletedCourses", {
-                        count: learningMy?.completed_courses.length ?? 0,
-                      })
-                    : t("dashboard.navStatusNew")
-            }
-            statusTone={
-              onboardingProfile?.needs_onboarding
-                ? "warning"
-                : (learningMy?.active_courses.length ?? 0) > 0
-                  ? "success"
-                  : "neutral"
-            }
-            lastVisitLabel={formatVisitLabel(
-              learningMy?.active_courses[0]?.last_activity_at ?? learningMy?.completed_courses[0]?.completed_at,
-              locale,
-              t,
-            )}
-            actionLabel={t("dashboard.navOpenSection")}
-          />
-
-          <WorkspaceMapCard
-            title={t("dashboard.navSectionStoreTitle")}
-            description={t("dashboard.navSectionStoreBody")}
-            href={APP_ROUTES.store}
-            statusLabel={
-              typeof wallet?.balance === "number" && wallet.balance > 0
-                ? t("dashboard.navStatusBalance", {
-                    count: wallet.balance,
-                    symbol: wallet.currency_symbol ?? "LMN",
-                  })
-                : t("dashboard.navStatusNew")
-            }
-            statusTone={typeof wallet?.balance === "number" && wallet.balance > 0 ? "info" : "neutral"}
-            lastVisitLabel={formatVisitLabel(wallet?.recent_purchases[0]?.created_at, locale, t)}
-            actionLabel={t("dashboard.navOpenSection")}
-          />
-
-          <WorkspaceMapCard
-            title={t("dashboard.navSectionWalletTitle")}
-            description={t("dashboard.navSectionWalletBody")}
-            href={APP_ROUTES.wallet}
-            statusLabel={
-              walletPendingAmount > 0
-                ? t("dashboard.navStatusPendingBonuses", {
-                    count: walletPendingAmount,
-                    symbol: wallet?.currency_symbol ?? "LMN",
-                  })
-                : typeof wallet?.balance === "number"
-                  ? t("dashboard.navStatusNoChanges")
-                  : t("dashboard.navStatusNew")
-            }
-            statusTone={
-              walletPendingAmount > 0
-                ? "warning"
-                : typeof wallet?.balance === "number"
-                  ? "info"
-                  : "neutral"
-            }
-            lastVisitLabel={formatVisitLabel(wallet?.recent[0]?.created_at, locale, t)}
-            actionLabel={t("dashboard.navOpenSection")}
-          />
-
-          <WorkspaceMapCard
-            title={t("dashboard.navSectionProfileTitle")}
-            description={t("dashboard.navSectionProfileBody")}
-            href={APP_ROUTES.profile}
-            statusLabel={
-              billing?.status === "active" || billing?.status === "trialing"
-                ? t("dashboard.navStatusSubscriptionActive")
-                : localizedBillingStatus ?? t("dashboard.navStatusNoChanges")
-            }
-            statusTone={
-              billing?.status === "active" || billing?.status === "trialing"
-                ? "success"
-                : "neutral"
-            }
-            lastVisitLabel={formatVisitLabel(billing?.updated_at, locale, t)}
-            actionLabel={t("dashboard.navOpenSection")}
-          />
-        </div>
-      </section>
-
-      <section className="pv-panel px-6 py-6 sm:px-7">
-        <div className="pv-section-head">
-          <div className="pv-section-copy">
-            <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("nav.billing")}</h2>
-            <p className="mt-2 text-sm text-zinc-600">{t("dashboard.billingBody")}</p>
-          </div>
-          <span className={`pv-chip-brand ${highlightedPlan}`}>{planLabel}</span>
-        </div>
-        <div className="mt-6 grid gap-3 sm:grid-cols-3">
-          <div className="pv-card-muted p-4">
-            <p className="pv-kicker">{t("plans.currentTier")}</p>
-            <p className={`mt-2 text-base font-semibold ${highlightedPlan}`}>{planLabel}</p>
-          </div>
-          <div className="pv-card-muted p-4">
-            <p className="pv-kicker">{t("plans.subscriptionStatus")}</p>
-            <p className={`mt-2 text-base font-semibold ${highlightedStatus}`}>
-              {localizedBillingStatus ?? t("plans.billingStatus.unknown")}
-            </p>
-          </div>
-          <div className="pv-card-muted p-4">
-            <p className="pv-kicker">{t("dashboard.manageBilling")}</p>
-            <p className="mt-2 pv-hint-badge">Подсказка</p>
-            <p className="mt-1 text-sm text-zinc-700">{t("dashboard.billingActionHint")}</p>
-          </div>
-        </div>
-        <div className="mt-5 flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={openPortal}
-            disabled={portalPending}
-            className="pv-button-secondary disabled:opacity-60"
-          >
-            {portalPending ? t("plans.openingCheckout") : t("dashboard.manageBilling")}
-          </button>
-          <Link href={APP_ROUTES.pricing} className="pv-button-primary">
-            {t("dashboard.changePlan")}
-          </Link>
-        </div>
-        {portalError ? <p className="mt-3 text-sm text-red-700">{portalError}</p> : null}
-      </section>
+      <DashboardBillingSection
+        t={t}
+        planLabel={planLabel}
+        highlightedPlanClassName={highlightedPlan}
+        highlightedStatusClassName={highlightedStatus}
+        localizedBillingStatus={localizedBillingStatus}
+        portalPending={portalPending}
+        portalError={portalError}
+        onOpenPortal={openPortal}
+      />
 
       <section id="saved" className="pv-panel pv-section-anchor px-6 py-6 sm:px-7">
         <div className="pv-section-head">
@@ -450,46 +289,7 @@ export function DashboardView({
         )}
       </section>
 
-      <section id="submissions" className="pv-panel pv-section-anchor px-6 py-6 sm:px-7">
-        <div className="pv-section-head">
-          <div className="pv-section-copy">
-            <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("dashboard.mySubmissions")}</h2>
-          </div>
-          <Link href={APP_ROUTES.submit} className="pv-inline-link">
-            {t("dashboard.submitAnother")}
-            <span aria-hidden="true">↗</span>
-          </Link>
-        </div>
-        {submissions.length === 0 ? (
-          <div className="pv-empty-state mt-6 text-sm text-zinc-600">{t("dashboard.noSubmissions")}</div>
-        ) : (
-          <div className="mt-6 space-y-3">
-            {submissions.slice(0, 4).map((submission) => (
-              <div key={submission.id} className="pv-card-muted p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  {submission.moderation_state === "approved" ? (
-                    <Link
-                      href={appRoute.promptBySlug(submission.slug)}
-                      className="text-sm font-semibold text-zinc-900 underline"
-                    >
-                      {submission.title}
-                    </Link>
-                  ) : (
-                    <p className="text-sm font-semibold text-zinc-900">{submission.title}</p>
-                  )}
-                  <SubmissionStateBadge state={submission.moderation_state} />
-                </div>
-                <p className="mt-2 text-xs text-zinc-500">
-                  {t("dashboard.createdAt")} {formatDateTime(submission.created_at, locale)}
-                </p>
-                {submission.moderation_notes ? (
-                  <p className="mt-2 text-sm text-zinc-600">{submission.moderation_notes}</p>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      <DashboardSubmissionsSection t={t} locale={locale} submissions={submissions} />
 
       {suggestions.length > 0 || onboardingProfile?.needs_onboarding ? (
         <section
@@ -528,121 +328,4 @@ export function DashboardView({
       ) : null}
     </div>
   );
-}
-
-type WorkspaceStatusTone = "neutral" | "info" | "success" | "warning";
-
-function WorkspaceMapCard({
-  title,
-  description,
-  href,
-  statusLabel,
-  statusTone,
-  lastVisitLabel,
-  actionLabel,
-}: {
-  title: string;
-  description: string;
-  href: string;
-  statusLabel: string;
-  statusTone: WorkspaceStatusTone;
-  lastVisitLabel: string;
-  actionLabel: string;
-}) {
-  return (
-    <Link href={href} className="pv-card-muted flex h-full min-h-[12rem] flex-col gap-3 p-5">
-      <div className="flex items-start justify-between gap-3">
-        <h3 className="text-lg font-semibold tracking-[-0.035em] text-zinc-950">{title}</h3>
-        <span className={workspaceStatusClass(statusTone)}>{statusLabel}</span>
-      </div>
-      <p className="text-sm leading-relaxed text-zinc-600">{description}</p>
-      <p className="text-xs text-zinc-500">{lastVisitLabel}</p>
-      <span className="pv-inline-link mt-auto flex w-full items-center justify-between border-t border-[rgba(15,23,42,0.07)] pt-3">
-        {actionLabel}
-        <span aria-hidden="true">↗</span>
-      </span>
-    </Link>
-  );
-}
-
-function workspaceStatusClass(tone: WorkspaceStatusTone): string {
-  switch (tone) {
-    case "success":
-      return "pv-badge-success";
-    case "warning":
-      return "pv-badge-warning";
-    case "info":
-      return "pv-chip-brand";
-    default:
-      return "pv-badge";
-  }
-}
-
-function formatVisitLabel(
-  value: string | null | undefined,
-  locale: string,
-  t: (key: TranslationKey, params?: Record<string, string | number | null | undefined>) => string,
-): string {
-  if (!value) {
-    return t("dashboard.navLastVisitNever");
-  }
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return t("dashboard.navLastVisitNever");
-  }
-
-  const now = new Date();
-  const nowDayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const parsedDayStart = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate()).getTime();
-  const dayDiff = Math.round((nowDayStart - parsedDayStart) / (24 * 60 * 60 * 1000));
-
-  if (dayDiff === 0) {
-    return t("dashboard.navLastVisitToday");
-  }
-
-  if (dayDiff === 1) {
-    return t("dashboard.navLastVisitYesterday");
-  }
-
-  const formatted = new Intl.DateTimeFormat(locale, {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(parsed);
-
-  return t("dashboard.navLastVisitDate", { date: formatted });
-}
-
-function normalizeStarterPrompt(prompt: OnboardingStarterPack["prompts"][number]): PromptListItem {
-  return {
-    id: prompt.id,
-    slug: prompt.slug,
-    title: prompt.title,
-    summary: prompt.summary,
-    technique: (prompt.technique as PromptTechnique) ?? "other",
-    category_id: prompt.category_id,
-    status: "published",
-    moderation_state: "approved",
-    author_id: null,
-    created_at: new Date(0).toISOString(),
-  };
-}
-
-function SubmissionStateBadge({
-  state,
-}: {
-  state: AuthorSubmission["moderation_state"];
-}) {
-  const { t } = useI18n();
-  if (state === "approved") {
-    return <span className="pv-badge-success">{t("dashboard.statusApproved")}</span>;
-  }
-  if (state === "rejected") {
-    return <span className="pv-badge-danger">{t("dashboard.statusRejected")}</span>;
-  }
-  if (state === "pending") {
-    return <span className="pv-badge-warning">{t("dashboard.statusPending")}</span>;
-  }
-  return <span className="pv-badge">{t("dashboard.statusDraft")}</span>;
 }

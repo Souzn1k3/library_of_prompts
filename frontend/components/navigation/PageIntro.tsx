@@ -1,5 +1,6 @@
 import { isValidElement, type ReactNode } from "react";
 
+import { T } from "@/components/i18n/T";
 import { AppBreadcrumbs } from "@/components/navigation/AppBreadcrumbs";
 
 type PageIntroProps = {
@@ -68,7 +69,7 @@ export function PageIntro({
 
           {hint ? (
             <div className="pv-note">
-              <p className="pv-hint-badge">Подсказка</p>
+              <p className="pv-hint-badge"><T k="common.hintBadge" /></p>
               <div className="mt-1">{hint}</div>
             </div>
           ) : null}

@@ -1,51 +1,72 @@
+.pv-token-icon,
 .pv-lmn-mark {
   position: relative;
   display: inline-flex;
-  height: var(--lmn-size);
-  width: var(--lmn-size);
+  height: var(--token-size, var(--lmn-size));
+  width: var(--token-size, var(--lmn-size));
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(150deg, #253140 0%, var(--pv-token-primary) 52%, #111827 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 10px 18px rgba(15, 23, 42, 0.2);
 }
 
+.pv-token-icon svg,
 .pv-lmn-mark svg {
   position: relative;
   z-index: 1;
-  filter: drop-shadow(0 8px 12px rgba(120, 76, 9, 0.18));
+  width: 72%;
+  height: 72%;
 }
 
-.pv-lmn-mark[data-tone="earned"] svg {
-  filter: drop-shadow(0 7px 11px rgba(16, 140, 98, 0.14));
+.pv-token-icon svg path,
+.pv-lmn-mark svg path {
+  stroke: var(--pv-token-accent);
 }
 
-.pv-lmn-mark[data-tone="spent"] svg {
-  filter: drop-shadow(0 8px 12px rgba(194, 65, 12, 0.18));
+.pv-token-icon[data-tone="earned"],
+.pv-lmn-mark[data-tone="earned"] {
+  background: linear-gradient(150deg, #1e3a34 0%, #1f4d3f 60%, #14382d 100%);
+}
+
+.pv-token-icon[data-tone="earned"] svg path,
+.pv-lmn-mark[data-tone="earned"] svg path {
+  stroke: #6ee7b7;
+}
+
+.pv-token-icon[data-tone="spent"],
+.pv-lmn-mark[data-tone="spent"] {
+  background: linear-gradient(150deg, #3f2a23 0%, #5a3326 60%, #3e241f 100%);
+}
+
+.pv-token-icon[data-tone="spent"] svg path,
+.pv-lmn-mark[data-tone="spent"] svg path {
+  stroke: #fdba74;
 }
 
 .pv-lmn-token {
   position: relative;
-  z-index: 0;
   isolation: isolate;
   overflow: hidden;
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
-  gap: 0.72rem;
-  border-radius: 1.1rem;
-  border: 1px solid rgba(216, 137, 17, 0.22);
+  gap: 0.58rem;
+  border-radius: 999px;
+  border: 1px solid rgba(31, 41, 55, 0.14);
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 245, 219, 0.94) 52%, rgba(255, 250, 238, 0.88)),
-    var(--pv-lmn-surface);
-  padding: 0.5rem 0.84rem 0.5rem 0.62rem;
+    linear-gradient(150deg, rgba(255, 255, 255, 0.98), rgba(248, 247, 244, 0.97)),
+    var(--pv-token-surface);
+  padding: 0.48rem 0.78rem 0.48rem 0.56rem;
   font-weight: 700;
-  color: var(--pv-lmn-ink);
+  color: var(--pv-token-primary);
   box-shadow:
-    0 16px 30px rgba(125, 80, 10, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.88);
-}
-
-.pv-lmn-token::before {
-  display: none;
+    0 10px 24px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
 .pv-lmn-token-mark,
@@ -58,86 +79,105 @@
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: 0.1rem;
 }
 
 .pv-lmn-token-meta {
   display: flex;
   align-items: baseline;
-  gap: 0.45rem;
+  gap: 0.42rem;
   white-space: nowrap;
 }
 
 .pv-lmn-token-value {
-  font-size: 0.95rem;
-  font-weight: 820;
+  font-size: 0.94rem;
+  font-weight: 810;
   line-height: 1;
   letter-spacing: -0.045em;
-  color: var(--pv-lmn-ink);
+  color: var(--pv-token-primary);
   font-variant-numeric: tabular-nums;
 }
 
 .pv-lmn-token-code {
-  font-size: 0.66rem;
-  font-weight: 800;
+  font-size: 0.64rem;
+  font-weight: 780;
   line-height: 1;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   white-space: nowrap;
-  color: color-mix(in srgb, var(--pv-lmn-base-strong) 72%, #5c4220);
+  color: color-mix(in srgb, var(--pv-token-primary) 72%, #6b7280);
 }
 
 .pv-lmn-token-glow {
   position: absolute;
-  right: -1rem;
-  bottom: -1.1rem;
+  right: -0.9rem;
+  bottom: -0.9rem;
   z-index: 0;
-  width: 3.5rem;
-  height: 3.5rem;
+  width: 3rem;
+  height: 3rem;
   border-radius: 999px;
   background: var(--pv-lmn-glow);
-  filter: blur(20px);
-  opacity: 0.5;
+  filter: blur(18px);
+  opacity: 0.56;
   pointer-events: none;
 }
 
 .pv-lmn-token[data-state="earned"] {
-  border-color: rgba(57, 200, 141, 0.28);
+  border-color: rgba(34, 197, 94, 0.3);
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(238, 255, 248, 0.96) 56%, rgba(255, 249, 236, 0.9)),
-    rgba(238, 255, 248, 0.8);
+    linear-gradient(150deg, rgba(255, 255, 255, 0.98), rgba(236, 253, 245, 0.96)),
+    rgba(236, 253, 245, 0.8);
 }
 
 .pv-lmn-token[data-state="earned"] .pv-lmn-token-glow {
-  background: rgba(57, 200, 141, 0.24);
+  background: rgba(34, 197, 94, 0.2);
 }
 
 .pv-lmn-token[data-state="spent"] {
-  border-color: rgba(249, 115, 22, 0.24);
+  border-color: rgba(249, 115, 22, 0.26);
   background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 243, 233, 0.96) 54%, rgba(255, 249, 238, 0.92)),
-    rgba(255, 243, 233, 0.82);
+    linear-gradient(150deg, rgba(255, 255, 255, 0.98), rgba(255, 243, 233, 0.95)),
+    rgba(255, 243, 233, 0.78);
 }
 
 .pv-lmn-token[data-state="spent"] .pv-lmn-token-glow {
-  background: rgba(249, 115, 22, 0.2);
+  background: rgba(249, 115, 22, 0.18);
+}
+
+.pv-lmn-token.pv-lmn-token-no-border {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.pv-lmn-token.pv-lmn-token-no-border .pv-lmn-token-glow {
+  display: none;
+}
+
+.pv-lmn-token.pv-lmn-token-no-border .pv-token-icon,
+.pv-lmn-token.pv-lmn-token-no-border .pv-lmn-mark {
+  box-shadow: none;
+}
+
+.pv-lmn-token[data-compact="true"] {
+  padding-left: 0.7rem;
 }
 
 .pv-lmn-token-strong {
-  min-height: 3rem;
-  border-radius: 1.25rem;
-  padding: 0.62rem 0.98rem 0.62rem 0.72rem;
+  min-height: 2.85rem;
+  padding: 0.58rem 0.92rem 0.58rem 0.66rem;
   box-shadow:
-    0 20px 40px rgba(125, 80, 10, 0.16),
+    0 14px 30px rgba(15, 23, 42, 0.12),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .pv-lmn-token[data-strong="true"] .pv-lmn-token-value {
-  font-size: 1.22rem;
+  font-size: 1.18rem;
 }
 
 .pv-lmn-token[data-strong="true"] .pv-lmn-token-code {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
 }
 
 .pv-lmn-balance-card {
@@ -147,16 +187,16 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  border: 1px solid rgba(255, 206, 112, 0.26);
-  border-radius: 1.55rem;
+  border: 1px solid rgba(200, 162, 74, 0.4);
+  border-radius: 1.4rem;
   background:
-    radial-gradient(circle at top right, rgba(255, 243, 185, 0.18), transparent 34%),
-    linear-gradient(135deg, rgba(61, 39, 6, 0.99), rgba(111, 69, 9, 0.96) 36%, rgba(34, 22, 4, 0.99));
-  padding: 1.15rem;
+    radial-gradient(circle at top right, rgba(200, 162, 74, 0.22), transparent 38%),
+    linear-gradient(150deg, #253142 0%, var(--pv-token-primary) 58%, #111827 100%);
+  padding: 1.12rem;
   box-shadow:
-    0 26px 54px rgba(89, 58, 9, 0.24),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  color: #fff7eb;
+    0 20px 48px rgba(15, 23, 42, 0.24),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  color: #f8fafc;
 }
 
 .pv-lmn-balance-card::before {
@@ -164,23 +204,23 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(125deg, transparent 20%, rgba(255, 255, 255, 0.08) 34%, transparent 48%),
-    radial-gradient(circle at bottom right, rgba(255, 200, 90, 0.18), transparent 32%);
+    linear-gradient(124deg, transparent 20%, rgba(255, 255, 255, 0.08) 36%, transparent 52%),
+    radial-gradient(circle at bottom right, rgba(200, 162, 74, 0.18), transparent 35%);
   pointer-events: none;
 }
 
 .pv-lmn-balance-card[data-tone="earned"] {
-  border-color: rgba(140, 247, 208, 0.28);
+  border-color: rgba(110, 231, 183, 0.34);
   background:
-    radial-gradient(circle at top right, rgba(196, 255, 230, 0.16), transparent 34%),
-    linear-gradient(135deg, rgba(10, 46, 31, 0.98), rgba(18, 86, 62, 0.96) 38%, rgba(8, 35, 25, 0.99));
+    radial-gradient(circle at top right, rgba(110, 231, 183, 0.2), transparent 38%),
+    linear-gradient(150deg, #17463a 0%, #115e4e 58%, #0f3c32 100%);
 }
 
 .pv-lmn-balance-card[data-tone="spent"] {
-  border-color: rgba(255, 191, 145, 0.28);
+  border-color: rgba(253, 186, 116, 0.34);
   background:
-    radial-gradient(circle at top right, rgba(255, 216, 191, 0.16), transparent 34%),
-    linear-gradient(135deg, rgba(69, 29, 10, 0.98), rgba(132, 55, 15, 0.96) 38%, rgba(52, 19, 7, 0.99));
+    radial-gradient(circle at top right, rgba(253, 186, 116, 0.2), transparent 38%),
+    linear-gradient(150deg, #5b3327 0%, #7f3f2a 58%, #4f251b 100%);
 }
 
 .pv-lmn-balance-head,
@@ -195,17 +235,17 @@
 
 .pv-lmn-balance-label {
   font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.24em;
+  font-weight: 760;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(255, 243, 221, 0.82);
+  color: rgba(241, 245, 249, 0.86);
 }
 
 .pv-lmn-balance-caption {
   margin-top: 0.38rem;
-  font-size: 0.85rem;
-  line-height: 1.45;
-  color: rgba(255, 243, 221, 0.74);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: rgba(226, 232, 240, 0.86);
 }
 
 .pv-lmn-balance-mark {
@@ -218,37 +258,37 @@
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  gap: 0.55rem;
+  gap: 0.52rem;
 }
 
 .pv-lmn-balance-value {
-  font-size: clamp(2rem, 4vw, 2.5rem);
+  font-size: clamp(1.95rem, 4vw, 2.45rem);
   line-height: 0.92;
   font-weight: 860;
-  letter-spacing: -0.065em;
-  color: #fff9ef;
+  letter-spacing: -0.06em;
+  color: #f8fafc;
   font-variant-numeric: tabular-nums;
-  text-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
+  text-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
 }
 
 .pv-lmn-balance-code {
-  font-size: 0.76rem;
-  font-weight: 800;
-  letter-spacing: 0.28em;
+  font-size: 0.72rem;
+  font-weight: 760;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  color: rgba(255, 243, 221, 0.76);
+  color: rgba(226, 232, 240, 0.86);
 }
 
 .pv-lmn-balance-detail {
   display: inline-flex;
   max-width: 100%;
   border-radius: 999px;
-  border: 1px solid rgba(255, 243, 221, 0.12);
-  background: rgba(255, 255, 255, 0.08);
-  padding: 0.42rem 0.72rem;
-  font-size: 0.78rem;
+  border: 1px solid rgba(226, 232, 240, 0.2);
+  background: rgba(15, 23, 42, 0.2);
+  padding: 0.4rem 0.7rem;
+  font-size: 0.75rem;
   line-height: 1.3;
-  color: rgba(255, 243, 221, 0.78);
+  color: rgba(226, 232, 240, 0.9);
 }
 
 .pv-lmn-balance-delta {
@@ -257,31 +297,31 @@
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  padding: 0.42rem 0.74rem;
-  font-size: 0.76rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
+  padding: 0.38rem 0.72rem;
+  font-size: 0.73rem;
+  font-weight: 780;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: white;
+  color: #fff;
   font-variant-numeric: tabular-nums;
 }
 
 .pv-lmn-balance-delta[data-direction="up"] {
-  background: rgba(57, 200, 141, 0.22);
-  box-shadow: inset 0 0 0 1px rgba(174, 255, 224, 0.18);
+  background: rgba(16, 185, 129, 0.28);
+  box-shadow: inset 0 0 0 1px rgba(110, 231, 183, 0.24);
 }
 
 .pv-lmn-balance-delta[data-direction="down"] {
-  background: rgba(249, 115, 22, 0.2);
-  box-shadow: inset 0 0 0 1px rgba(255, 212, 181, 0.16);
+  background: rgba(249, 115, 22, 0.26);
+  box-shadow: inset 0 0 0 1px rgba(253, 186, 116, 0.24);
 }
 
 .pv-lmn-balance-action {
   position: relative;
   z-index: 1;
   margin-top: auto;
-  border-top: 1px solid rgba(255, 243, 221, 0.14);
-  padding-top: 0.85rem;
+  border-top: 1px solid rgba(226, 232, 240, 0.22);
+  padding-top: 0.82rem;
 }
 
 .pv-lmn-balance-action-link {
@@ -290,19 +330,19 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  font-size: 0.9rem;
+  font-size: 0.86rem;
   font-weight: 700;
-  color: rgba(255, 247, 235, 0.92);
+  color: rgba(248, 250, 252, 0.92);
 }
 
 .pv-lmn-balance-action-link:hover {
-  color: white;
+  color: #fff;
 }
 
 .pv-lmn-balance-card[data-compact="true"] {
-  gap: 0.75rem;
-  border-radius: 1.4rem;
-  padding: 1rem;
+  gap: 0.74rem;
+  border-radius: 1.2rem;
+  padding: 0.96rem;
 }
 
 .pv-lmn-balance-card[data-compact="true"] .pv-lmn-balance-caption {
@@ -310,18 +350,17 @@
 }
 
 .pv-lmn-balance-card[data-compact="true"] .pv-lmn-balance-value {
-  font-size: clamp(1.85rem, 3vw, 2.2rem);
+  font-size: clamp(1.7rem, 3vw, 2.15rem);
 }
 
 .pv-lmn-balance-card[data-compact="true"] .pv-lmn-balance-code {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
 }
 
 .pv-lmn-balance-card[data-compact="true"] .pv-lmn-balance-foot {
-  gap: 0.7rem;
+  gap: 0.66rem;
 }
 
 .pv-lmn-balance-card[data-compact="true"] .pv-lmn-balance-action {
-  padding-top: 0.75rem;
+  padding-top: 0.72rem;
 }
-

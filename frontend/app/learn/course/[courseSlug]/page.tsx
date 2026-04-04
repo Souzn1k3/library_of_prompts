@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 
 import { T } from "@/components/i18n/T";
 import { PageIntro } from "@/components/navigation/PageIntro";
+import { TokenAmount } from "@/components/ui/TokenAmount";
 import { ApiRequestError, fetchLearningCourse } from "@/lib/api";
 import { APP_ROUTES, appRoute } from "@/lib/constants/routes";
 import { getTranslation } from "@/lib/i18n";
@@ -181,9 +182,16 @@ export default async function LearningCoursePage(props: Props) {
               <p className="text-sm font-medium text-zinc-900">
                 <T k="learn.courseRewards" />
               </p>
-              <p className="mt-1 text-sm text-zinc-600">
-                <T k="learn.lessonReward" />: +{course.rewards.lesson_reward_lmn} LMN · <T k="learn.courseReward" />: +{course.rewards.course_reward_lmn} LMN
-              </p>
+              <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-zinc-600">
+                <span className="inline-flex items-center gap-2">
+                  <T k="learn.lessonReward" />:
+                  <TokenAmount amount={`+${course.rewards.lesson_reward_lmn}`} />
+                </span>
+                <span className="inline-flex items-center gap-2">
+                  <T k="learn.courseReward" />:
+                  <TokenAmount amount={`+${course.rewards.course_reward_lmn}`} />
+                </span>
+              </div>
               <p className="mt-1 text-xs text-zinc-500">
                 <T k="learn.badge" />: {course.rewards.badge_code}
               </p>
