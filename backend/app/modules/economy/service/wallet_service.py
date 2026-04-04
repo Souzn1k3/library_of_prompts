@@ -146,20 +146,26 @@ class WalletService:
                         expires_at=None,
                     )
                 )
-            if item.kind == StoreItemKind.boost:
-                benefits.append(
-                    WalletBenefitRead(
-                        key=f"boost_purchase:{purchase.id}",
-                        kind="boost",
-                        metadata={
-                            "item_slug": item.slug,
-                            "item_title": item.title,
-                            "boost_pct": purchase.meta.get("boost_pct"),
-                            "boost_missions": purchase.meta.get("boost_missions"),
-                        },
-                        expires_at=None,
-                    )
+
+        active_boosts = await self._repo.list_active_boosts(user_id=user.id)
+        for boost in active_boosts:
+            boost_meta = boost.meta if isinstance(boost.meta, dict) else {}
+            missions_total = max(0, int(boost.missions_total))
+            missions_used = max(0, int(boost.missions_used))
+            missions_left = max(0, missions_total - missions_used)
+            benefits.append(
+                WalletBenefitRead(
+                    key=f"boost:{boost.id}",
+                    kind="boost",
+                    metadata={
+                        **boost_meta,
+                        "boost_pct": int(boost.boost_percent),
+                        "boost_missions_total": missions_total,
+                        "boost_missions_left": missions_left,
+                    },
+                    expires_at=boost.expires_at,
                 )
+            )
         return benefits
 
     async def _build_goals(

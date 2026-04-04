@@ -1,5 +1,4 @@
 import uuid
-from hashlib import sha256
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -19,15 +18,9 @@ from app.infrastructure.db.models import (
 )
 from app.modules.economy.repository.wallet_repository import WalletRepository
 from app.modules.economy.config.tuning import (
-    ANTI_FARM_BREAKPOINTS,
-    ANTI_FARM_FALLBACK_FACTOR,
-    MISSION_DAILY_EARN_CAP,
     MISSION_REWARD_EVENT_COOLDOWN,
-    STREAK_SURPRISE_HIT_CHANCE_PERCENT,
-    STREAK_SURPRISE_PITY_THRESHOLD,
 )
 from app.modules.economy.service.experiment_service import economy_experiment_metadata
-from app.modules.economy.service.wallet_service import WalletService
 from app.modules.analytics.model.analytics import AnalyticsEventName
 from app.modules.analytics.service.analytics_service import AnalyticsService
 from app.modules.catalog.model.prompt import PromptSort
@@ -44,6 +37,10 @@ from app.modules.missions.model.mission import (
     MissionStepRead,
 )
 from app.modules.missions.repository.mission_repository import MissionRepository
+from app.modules.missions.service.analytics_emitter import MissionAnalyticsEmitter
+from app.modules.missions.service.event_matcher import MissionEventMatcher
+from app.modules.missions.service.policy import MissionPolicy
+from app.modules.missions.service.reward_planner import MissionRewardPlanner
 from app.modules.onboarding.repository.onboarding_repository import OnboardingRepository
 from app.modules.onboarding.service.persona_hints import build_persona_hint_query
 
@@ -65,51 +62,14 @@ class MissionService:
         self._onboarding = onboarding_repo
         self._prompts = prompt_repo
         self._wallet_repo = wallet_repo
-        self._wallet = WalletService(wallet_repo) if wallet_repo else None
+        self._policy = MissionPolicy()
+        self._reward_planner = MissionRewardPlanner(wallet_repo)
         self._analytics = analytics
-
-    def _is_eligible(
-        self,
-        mission: LessonMission,
-        profile: OnboardingProfile | None,
-        *,
-        segment: str = "balanced",
-    ) -> bool:
-        adaptive_segment = (mission.adaptive_segment or "").strip().lower()
-        if adaptive_segment and adaptive_segment not in {"any", segment}:
-            return False
-        if profile is None:
-            return mission.persona_role is None and mission.persona_goal is None
-        if mission.persona_role is not None and profile.role != mission.persona_role:
-            return False
-        if mission.persona_goal is not None and profile.goal != mission.persona_goal:
-            return False
-        return True
-
-    def _persona_score(
-        self,
-        mission: LessonMission,
-        profile: OnboardingProfile | None,
-        *,
-        segment: str = "balanced",
-    ) -> int:
-        if profile is None:
-            base = 1 if mission.persona_role is None and mission.persona_goal is None else 0
-        else:
-            base = 0
-            if mission.persona_role is None:
-                base += 1
-            elif profile.role == mission.persona_role:
-                base += 3
-            if mission.persona_goal is None:
-                base += 1
-            elif profile.goal == mission.persona_goal:
-                base += 3
-
-        adaptive_segment = (mission.adaptive_segment or "").strip().lower()
-        if adaptive_segment and adaptive_segment == segment:
-            base += 2
-        return base
+        self._event_matcher = MissionEventMatcher()
+        self._analytics_emitter = MissionAnalyticsEmitter(
+            analytics=analytics,
+            wallet_repo=wallet_repo,
+        )
 
     def _mission_next_step(
         self,
@@ -181,108 +141,6 @@ class MissionService:
 
         return MissionNextStep(label="Open mission details", href=f"/missions/{mission.slug}", action="details")
 
-    def _available_again_at(
-        self,
-        mission: LessonMission,
-        progress: UserMissionProgress | None,
-    ) -> datetime | None:
-        if (
-            progress is None
-            or progress.completed_at is None
-            or not mission.is_repeatable
-            or mission.repeat_interval_days <= 0
-        ):
-            return None
-        completed_at = (
-            progress.completed_at
-            if progress.completed_at.tzinfo is not None
-            else progress.completed_at.replace(tzinfo=timezone.utc)
-        )
-        return completed_at + timedelta(days=mission.repeat_interval_days)
-
-    def _can_reset_cycle(
-        self,
-        mission: LessonMission,
-        progress: UserMissionProgress | None,
-        *,
-        now: datetime,
-    ) -> bool:
-        available_again_at = self._available_again_at(mission, progress)
-        return bool(available_again_at is not None and available_again_at <= now)
-
-    def _required_step_count(self, step: MissionStep) -> int:
-        return max(1, step.required_count)
-
-    def _required_mission_count(self, mission: LessonMission) -> int:
-        return max(1, mission.required_count) if not mission.steps else sum(
-            self._required_step_count(step) for step in mission.steps
-        )
-
-    def _step_progress_totals(self, mission: LessonMission, step_progress: dict[uuid.UUID, UserMissionStepProgress]) -> tuple[int, int]:
-        total_required = total_progress = 0
-        for step in mission.steps:
-            required = self._required_step_count(step)
-            row = step_progress.get(step.id)
-            total_required += required
-            total_progress += min(row.progress_count if row else 0, required)
-        return total_required, min(total_required, total_progress)
-
-    def _mission_category(self, mission: LessonMission, *, event_type: str) -> str:
-        if mission.action_type in {
-            MissionActionType.copy_prompt,
-            MissionActionType.save_prompt,
-            MissionActionType.copy_or_save_prompt,
-            MissionActionType.apply_prompt,
-        }:
-            return "prompt"
-        if mission.action_type == MissionActionType.lesson_completed:
-            return "learning"
-        if mission.action_type in {
-            MissionActionType.daily_checkin,
-            MissionActionType.streak_activity,
-        }:
-            return "habit"
-        if mission.action_type == MissionActionType.store_purchase or event_type == "store_purchase":
-            return "spend"
-        return "progress"
-
-    def _anti_farm_factor(self, same_day_count: int) -> float:
-        for threshold, factor in ANTI_FARM_BREAKPOINTS:
-            if same_day_count <= threshold:
-                return factor
-        return ANTI_FARM_FALLBACK_FACTOR
-
-    def _day_bounds(self, now: datetime) -> tuple[datetime, datetime]:
-        start = datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
-        return start, start + timedelta(days=1)
-
-    def _daily_cap_for_rank(self, rank_level: int) -> int:
-        allowance = min(10, max(0, rank_level - 1))
-        return MISSION_DAILY_EARN_CAP + allowance
-
-    def _surprise_hit(self, *, seed: str, pity_count: int) -> bool:
-        if pity_count >= STREAK_SURPRISE_PITY_THRESHOLD:
-            return True
-        digest = int(sha256(seed.encode("utf-8")).hexdigest(), 16)
-        return digest % 100 < STREAK_SURPRISE_HIT_CHANCE_PERCENT
-
-    def _is_chain_unlocked(
-        self,
-        mission: LessonMission,
-        *,
-        mission_by_slug: dict[str, LessonMission],
-        progress_map: dict[uuid.UUID, UserMissionProgress],
-    ) -> bool:
-        unlock_slug = (mission.chain_unlock_on_slug or "").strip()
-        if not unlock_slug:
-            return True
-        unlock_mission = mission_by_slug.get(unlock_slug)
-        if unlock_mission is None:
-            return True
-        progress = progress_map.get(unlock_mission.id)
-        if progress is None:
-            return False
-        return progress.completed_at is not None or progress.status == MissionProgressStatus.completed
 
     async def _build_reward_plan(
         self,
@@ -296,124 +154,16 @@ class MissionService:
         segment: str,
         now: datetime,
     ) -> dict[str, Any]:
-        base_credits = max(0, int(base_credits))
-        if self._wallet_repo is None or base_credits <= 0:
-            return {
-                "base_reward": base_credits,
-                "spend_bonus": 0,
-                "chain_bonus": 0,
-                "surprise_bonus": 0,
-                "components": {
-                    "base_credits": base_credits,
-                    "anti_farm_factor": 1.0,
-                    "synergy_bonus": 0,
-                    "boost_mult": 1.0,
-                    "catchup_mult": 1.0,
-                    "catchup_boost_pct": 0,
-                    "catchup_activated": False,
-                    "spend_streak_mult": 1.0,
-                    "daily_cap": MISSION_DAILY_EARN_CAP,
-                    "daily_earned_before": 0,
-                    "daily_earned_available": MISSION_DAILY_EARN_CAP,
-                    "owned_value_delta": 0,
-                },
-            }
-
-        day_start, day_end = self._day_bounds(now)
-        same_day_count = await self._wallet_repo.count_mission_events_since(
-            user_id=user.id,
-            mission_id=mission.id,
-            since=day_start,
-        )
-        anti_farm_factor = self._anti_farm_factor(same_day_count)
-        mission_category = self._mission_category(mission, event_type=event_type)
-        synergy_bonus = await self._wallet_repo.owned_synergy_bonus(
-            user_id=user.id,
-            mission_category=mission_category,
-        )
-        balance_row = await self._wallet_repo.get_balance_row(user.id, for_update=True)
-        spend_streak_mult = self._wallet_repo.spend_streak_multiplier(int(balance_row.spend_streak_days))
-        catchup_mult, catchup_boost_pct, catchup_activated = await self._wallet_repo.resolve_catchup_boost(
-            user_id=user.id,
+        return await self._reward_planner.build_reward_plan(
+            user=user,
+            mission=mission,
+            event_type=event_type,
+            base_credits=base_credits,
+            source_key=source_key,
+            include_chain_bonus=include_chain_bonus,
             segment=segment,
             now=now,
         )
-        boost_mult, boost_pct, boost_missions_left = await self._wallet_repo.consume_active_boost(
-            user_id=user.id,
-            now=now,
-        )
-        total_boost_mult = boost_mult * catchup_mult
-
-        pity_count = int(balance_row.surprise_miss_streak)
-        surprise_seed = f"{source_key}:{mission.slug}:{base_credits}:{same_day_count}"
-        surprise_hit = self._surprise_hit(seed=surprise_seed, pity_count=pity_count)
-        surprise_roll_bonus = 0
-        if surprise_hit:
-            surprise_roll_bonus = 2 + min(4, max(0, int(balance_row.rank_level) - 1) // 2)
-            balance_row.surprise_miss_streak = 0
-        else:
-            balance_row.surprise_miss_streak = pity_count + 1
-
-        chain_bonus = int(mission.chain_bonus_credits) if include_chain_bonus else 0
-        base_component = max(0, int(base_credits * anti_farm_factor + synergy_bonus))
-        boosted_component = max(0, int(base_component * total_boost_mult))
-        spend_bonus_component = max(0, int(boosted_component * max(spend_streak_mult - 1.0, 0.0)))
-        composed_total = boosted_component + spend_bonus_component + chain_bonus + surprise_roll_bonus
-
-        catchup_only_component = max(0, int(base_component * catchup_mult))
-        owned_boost_delta = max(0, boosted_component - catchup_only_component)
-        owned_value_delta = max(0, int(synergy_bonus)) + owned_boost_delta
-        if owned_value_delta > 0:
-            balance_row.owned_value_generated = int(balance_row.owned_value_generated) + owned_value_delta
-
-        daily_cap = self._daily_cap_for_rank(int(balance_row.rank_level))
-        earned_today_before = await self._wallet_repo.sum_mission_earnings_today(
-            user_id=user.id,
-            start_of_day=day_start,
-            end_of_day=day_end,
-        )
-        available_today = max(0, daily_cap - earned_today_before)
-        capped_total = min(composed_total, available_today)
-
-        remaining = capped_total
-        base_reward = min(boosted_component, remaining)
-        remaining -= base_reward
-        spend_bonus = min(spend_bonus_component, remaining)
-        remaining -= spend_bonus
-        chain_award = min(chain_bonus, remaining)
-        remaining -= chain_award
-        surprise_award = max(0, remaining)
-
-        return {
-            "base_reward": max(0, base_reward),
-            "spend_bonus": max(0, spend_bonus),
-            "chain_bonus": max(0, chain_award),
-            "surprise_bonus": max(0, surprise_award),
-            "components": {
-                "base_credits": base_credits,
-                "anti_farm_factor": anti_farm_factor,
-                "same_day_count": same_day_count,
-                "mission_category": mission_category,
-                "synergy_bonus": synergy_bonus,
-                "boost_mult": round(boost_mult, 4),
-                "boost_pct": boost_pct,
-                "boost_missions_left": boost_missions_left,
-                "catchup_mult": round(catchup_mult, 4),
-                "catchup_boost_pct": catchup_boost_pct,
-                "catchup_activated": catchup_activated,
-                "spend_streak_mult": round(spend_streak_mult, 4),
-                "daily_cap": daily_cap,
-                "daily_earned_before": earned_today_before,
-                "daily_earned_available": available_today,
-                "pre_cap_total": composed_total,
-                "post_cap_total": capped_total,
-                "pity_before": pity_count,
-                "surprise_hit": surprise_hit,
-                "surprise_roll_bonus": surprise_roll_bonus,
-                "chain_bonus_configured": chain_bonus,
-                "owned_value_delta": owned_value_delta,
-            },
-        }
 
     async def _grant_reward_extras(
         self,
@@ -426,39 +176,18 @@ class MissionService:
         source_context: str,
         plan: dict[str, Any],
     ) -> int:
-        if self._wallet_repo is None:
-            return int(plan.get("base_reward", 0) or 0)
-
-        total_awarded = int(plan.get("base_reward", 0) or 0)
-        components = dict(plan.get("components") or {})
-        for key, reason in (
-            ("spend_bonus", CurrencyTransactionType.spend_streak_bonus),
-            ("chain_bonus", CurrencyTransactionType.rank_bonus),
-            ("surprise_bonus", CurrencyTransactionType.surprise_reward),
-        ):
-            amount = int(plan.get(key, 0) or 0)
-            if amount <= 0:
-                continue
-            total_awarded += amount
-            await self._wallet_repo.adjust_balance(
-                user_id=user.id,
-                amount=amount,
-                reason=reason,
-                context=f"{source_context}:{key}:cycle:{cycle_number}",
-                source_id=source_id,
-                metadata={
-                    "mission_id": str(mission.id),
-                    "mission_slug": mission.slug,
-                    "reward_cycle": cycle_number,
-                    "reward_component": key,
-                    **components,
-                },
-                now=now,
-            )
-        return total_awarded
+        return await self._reward_planner.grant_reward_extras(
+            user=user,
+            mission=mission,
+            source_id=source_id,
+            cycle_number=cycle_number,
+            now=now,
+            source_context=source_context,
+            plan=plan,
+        )
 
     async def _reset_progress_cycle_if_needed(self, mission: LessonMission, progress: UserMissionProgress | None, *, step_progress: dict[uuid.UUID, UserMissionStepProgress], now: datetime) -> None:
-        if progress is None or not self._can_reset_cycle(mission, progress, now=now):
+        if progress is None or not self._policy.can_reset_cycle(mission, progress, now=now):
             return
         await self._repo.reset_progress_cycle(progress=progress, step_progress_rows=[step_progress[step.id] for step in mission.steps if step.id in step_progress])
 
@@ -516,7 +245,7 @@ class MissionService:
         progress = step_progress.get(step.id)
         status = progress.status if progress else MissionProgressStatus.not_started
         progress_count = progress.progress_count if progress else 0
-        required_count = progress.required_count if progress else self._required_step_count(step)
+        required_count = progress.required_count if progress else self._policy.required_step_count(step)
 
         prompt = None
         if step.target_prompt:
@@ -571,10 +300,10 @@ class MissionService:
         step_progress: dict[uuid.UUID, UserMissionStepProgress],
         can_view_premium: bool,
     ) -> MissionRead:
-        available_again_at = self._available_again_at(mission, progress)
+        available_again_at = self._policy.available_again_at(mission, progress)
         status = progress.status if progress else MissionProgressStatus.not_started
         progress_count = progress.progress_count if progress else 0
-        required_count = progress.required_count if progress else self._required_mission_count(mission)
+        required_count = progress.required_count if progress else self._policy.required_mission_count(mission)
 
         steps: list[MissionStepRead] = []
         if mission.steps:
@@ -582,7 +311,7 @@ class MissionService:
                 self._step_read(step, step_progress=step_progress, user=user, can_view_premium=can_view_premium)
                 for step in mission.steps
             ]
-            required_count, progress_count = self._step_progress_totals(mission, step_progress)
+            required_count, progress_count = self._policy.step_progress_totals(mission, step_progress)
             if progress_count >= required_count and required_count > 0:
                 status = MissionProgressStatus.completed
         reward = MissionRewardView(
@@ -656,7 +385,7 @@ class MissionService:
         eligible = [
             mission
             for mission in all_missions
-            if self._is_eligible(mission, profile, segment=segment)
+            if self._policy.is_eligible(mission, profile, segment=segment)
         ]
         should_offer_recovery = (
             await self._wallet_repo.should_offer_streak_recovery(user_id=user.id, now=now)
@@ -692,7 +421,7 @@ class MissionService:
         eligible = [
             mission
             for mission in eligible
-            if self._is_chain_unlocked(
+            if self._policy.is_chain_unlocked(
                 mission,
                 mission_by_slug=mission_by_slug,
                 progress_map=progress_map,
@@ -711,7 +440,7 @@ class MissionService:
                 progress_rank = 2
             return (
                 progress_rank,
-                -self._persona_score(mission, profile, segment=segment),
+                -self._policy.persona_score(mission, profile, segment=segment),
                 mission.sort_order,
                 mission.slug,
             )
@@ -803,94 +532,11 @@ class MissionService:
                 return mission
         raise NotFoundError("mission", slug)
 
-    def _matches_event(
-        self,
-        mission: LessonMission,
-        *,
-        event_type: str,
-        prompt_id: uuid.UUID | None,
-        lesson_id: uuid.UUID | None,
-        step: MissionStep | None = None,
-    ) -> bool:
-        action_type = step.action_type if step else mission.action_type
-        linked_prompt_ids = (
-            {step.target_prompt_id} if step and step.target_prompt_id else {link.prompt_id for link in mission.prompt_links}
-        )
-        if action_type == MissionActionType.copy_prompt:
-            if event_type != "prompt_copied":
-                return False
-            if linked_prompt_ids and prompt_id not in linked_prompt_ids:
-                return False
-            return prompt_id is not None
-        if action_type == MissionActionType.save_prompt:
-            if event_type != "prompt_saved":
-                return False
-            if linked_prompt_ids and prompt_id not in linked_prompt_ids:
-                return False
-            return prompt_id is not None
-        if action_type == MissionActionType.copy_or_save_prompt:
-            if event_type not in {"prompt_copied", "prompt_saved"}:
-                return False
-            if linked_prompt_ids and prompt_id not in linked_prompt_ids:
-                return False
-            return prompt_id is not None
-        if action_type == MissionActionType.apply_prompt:
-            if event_type != "prompt_applied":
-                return False
-            if linked_prompt_ids and prompt_id not in linked_prompt_ids:
-                return False
-            return prompt_id is not None
-        if action_type == MissionActionType.lesson_completed:
-            if event_type != "lesson_completed":
-                return False
-            lesson_target = step.target_lesson_id if step else mission.lesson_id
-            if lesson_target and lesson_id != lesson_target:
-                return False
-            return lesson_id is not None
-        if action_type == MissionActionType.onboarding_first_win:
-            return event_type == "onboarding_first_win_completed"
-        if action_type == MissionActionType.manual_confirmation:
-            return event_type == "mission_manual_confirmed"
-        if action_type == MissionActionType.daily_checkin:
-            return event_type == "daily_checkin"
-        if action_type == MissionActionType.streak_activity:
-            return event_type in {"streak_activity", "daily_checkin"}
-        if action_type == MissionActionType.challenge_submission:
-            return event_type == "challenge_submitted"
-        if action_type == MissionActionType.store_purchase:
-            return event_type == "store_purchase"
-        if action_type == MissionActionType.multi_step:
-            # Steps handle this action; if no steps, allow generic completion event
-            return event_type in {"mission_manual_confirmed", "mission_step_completed"}
-        return False
-
-    def _matching_target_steps(self, mission: LessonMission, *, event_type: str, prompt_id: uuid.UUID | None, lesson_id: uuid.UUID | None) -> list[MissionStep | None]:
-        if mission.steps:
-            return [
-                step
-                for step in mission.steps
-                if self._matches_event(
-                    mission,
-                    event_type=event_type,
-                    prompt_id=prompt_id,
-                    lesson_id=lesson_id,
-                    step=step,
-                )
-            ]
-        if self._matches_event(
-            mission,
-            event_type=event_type,
-            prompt_id=prompt_id,
-            lesson_id=lesson_id,
-        ):
-            return [None]
-        return []
-
     async def _ensure_progress(self, *, user_id: uuid.UUID, mission: LessonMission, progress_map: dict[uuid.UUID, UserMissionProgress]) -> UserMissionProgress:
         progress = progress_map.get(mission.id)
         if progress is not None:
             return progress
-        progress = await self._repo.create_progress(UserMissionProgress(user_id=user_id, mission_id=mission.id, required_count=self._required_mission_count(mission), status=MissionProgressStatus.not_started, progress_count=0))
+        progress = await self._repo.create_progress(UserMissionProgress(user_id=user_id, mission_id=mission.id, required_count=self._policy.required_mission_count(mission), status=MissionProgressStatus.not_started, progress_count=0))
         progress_map[mission.id] = progress
         return progress
 
@@ -900,7 +546,7 @@ class MissionService:
         step_progress = step_progress_map.get(step.id)
         if step_progress is not None:
             return step_progress
-        step_progress = await self._repo.create_step_progress(UserMissionStepProgress(user_id=user_id, mission_step_id=step.id, required_count=self._required_step_count(step), status=MissionProgressStatus.not_started, progress_count=0))
+        step_progress = await self._repo.create_step_progress(UserMissionStepProgress(user_id=user_id, mission_step_id=step.id, required_count=self._policy.required_step_count(step), status=MissionProgressStatus.not_started, progress_count=0))
         step_progress_map[step.id] = step_progress
         return step_progress
 
@@ -1065,7 +711,7 @@ class MissionService:
         eligible = [
             mission
             for mission in missions
-            if self._is_eligible(mission, profile, segment=segment)
+            if self._policy.is_eligible(mission, profile, segment=segment)
         ]
         mission_slug_by_id = {mission.id: mission.slug for mission in eligible}
 
@@ -1077,13 +723,18 @@ class MissionService:
 
         for mission in eligible:
             await self._reset_progress_cycle_if_needed(mission, progress_map.get(mission.id), step_progress=step_progress_map, now=now)
-            if not self._is_chain_unlocked(
+            if not self._policy.is_chain_unlocked(
                 mission,
                 mission_by_slug=mission_by_slug,
                 progress_map=progress_map,
             ):
                 continue
-            target_steps = self._matching_target_steps(mission, event_type=event_type, prompt_id=prompt_id, lesson_id=lesson_id)
+            target_steps = self._event_matcher.matching_target_steps(
+                mission,
+                event_type=event_type,
+                prompt_id=prompt_id,
+                lesson_id=lesson_id,
+            )
             if not target_steps:
                 continue
 
@@ -1146,7 +797,7 @@ class MissionService:
                     progress.progress_count = min(progress.required_count, progress.progress_count + 1)
 
                 if mission.steps:
-                    progress.required_count, progress.progress_count = self._step_progress_totals(mission, step_progress_map)
+                    progress.required_count, progress.progress_count = self._policy.step_progress_totals(mission, step_progress_map)
 
                 completed_now = await self._finalize_progress_completion(
                     user=user,
@@ -1160,8 +811,8 @@ class MissionService:
                     completed_slugs.append(mission.slug)
 
                 await self._repo.save_progress(progress)
-                await self._emit_mission_analytics(
-                    user=user,
+                await self._analytics_emitter.emit_progress_event(
+                    user_id=user.id,
                     mission=mission,
                     mission_slug=mission_slug_by_id.get(mission.id, mission.slug),
                     event_type=event_type,
@@ -1176,87 +827,6 @@ class MissionService:
                 )
 
         return completed_slugs
-
-    async def _emit_mission_analytics(
-        self,
-        *,
-        user: User,
-        mission: LessonMission,
-        mission_slug: str,
-        event_type: str,
-        prompt_id: uuid.UUID | None,
-        lesson_id: uuid.UUID | None,
-        source_event_key: str,
-        mission_step_id: uuid.UUID | None,
-        progress: UserMissionProgress,
-        cycle_number: int,
-        started_now: bool,
-        completed_now: bool,
-    ) -> None:
-        if self._analytics is None:
-            return
-
-        payer_status = "non_payer"
-        if self._wallet_repo is not None:
-            _, _, total_spent = await self._wallet_repo.summary(user.id)
-            payer_status = "payer" if int(total_spent) > 0 else "non_payer"
-
-        base_metadata = {
-            "mission_id": str(mission.id),
-            "mission_slug": mission_slug,
-            "mission_action_type": mission.action_type.value,
-            "source_event_key": source_event_key,
-            "mission_cycle": cycle_number,
-            "trigger_event_type": event_type,
-            "progress_count": progress.progress_count,
-            "required_count": progress.required_count,
-            "prompt_id": str(prompt_id) if prompt_id is not None else None,
-            "lesson_id": str(lesson_id) if lesson_id is not None else None,
-            "mission_step_id": str(mission_step_id) if mission_step_id is not None else None,
-            **economy_experiment_metadata(user_id=user.id, payer_status=payer_status),
-        }
-
-        if started_now:
-            await self._analytics.record_server_event(
-                event_name=AnalyticsEventName.mission_started,
-                user_id=user.id,
-                metadata=base_metadata,
-                context_page="/api/v1/missions/events",
-                context_feature="mission_progress",
-                event_id=f"mission_started:{user.id}:{mission.id}:cycle:{cycle_number}",
-            )
-
-        if not completed_now:
-            await self._analytics.record_server_event(
-                event_name=AnalyticsEventName.mission_progressed,
-                user_id=user.id,
-                metadata=base_metadata,
-                context_page="/api/v1/missions/events",
-                context_feature="mission_progress",
-                event_id=(
-                    f"mission_progressed:{user.id}:{mission.id}:cycle:{cycle_number}:"
-                    f"{progress.progress_count}:{source_event_key}"
-                ),
-            )
-
-        if completed_now:
-            await self._analytics.record_server_event(
-                event_name=AnalyticsEventName.mission_completed,
-                user_id=user.id,
-                metadata=base_metadata,
-                context_page="/api/v1/missions/events",
-                context_feature="mission_progress",
-                event_id=f"mission_completed:{user.id}:{mission.id}:cycle:{cycle_number}",
-            )
-            if mission.slug == STREAK_RECOVERY_MISSION_SLUG:
-                await self._analytics.record_server_event(
-                    event_name=AnalyticsEventName.streak_recovery_completed,
-                    user_id=user.id,
-                    metadata=base_metadata,
-                    context_page="/api/v1/missions/events",
-                    context_feature="streak_recovery",
-                    event_id=f"streak_recovery_completed:{user.id}:{mission.id}:cycle:{cycle_number}",
-                )
 
     async def confirm_manual_step(self, user: User, slug: str) -> MissionRead:
         mission = await self._repo.get_mission_by_slug(slug)

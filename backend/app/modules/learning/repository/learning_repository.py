@@ -53,6 +53,10 @@ class LearningRepository:
         await self._session.refresh(row)
         return row
 
+    async def create_course_progress(self, row: LearningCourseProgress) -> LearningCourseProgress:
+        self._session.add(row)
+        return await self.save_course_progress(row)
+
     async def get_lesson_progress(
         self,
         *,
@@ -82,6 +86,10 @@ class LearningRepository:
         await self._session.flush()
         await self._session.refresh(row)
         return row
+
+    async def create_lesson_progress(self, row: LearningLessonProgress) -> LearningLessonProgress:
+        self._session.add(row)
+        return await self.save_lesson_progress(row)
 
     async def get_step_progress(
         self,
@@ -121,6 +129,10 @@ class LearningRepository:
         await self._session.flush()
         await self._session.refresh(row)
         return row
+
+    async def create_step_progress(self, row: LearningStepProgress) -> LearningStepProgress:
+        self._session.add(row)
+        return await self.save_step_progress(row)
 
     async def grant_reward(
         self,

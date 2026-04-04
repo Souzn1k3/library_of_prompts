@@ -1,18 +1,16 @@
 from __future__ import annotations
 
-import math
-import secrets
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from hashlib import sha256
 from typing import Any
-from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse
+from urllib.parse import urljoin, urlparse
 
 from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.exc import IntegrityError
 
 from app.config import Settings
+from app.core.client_tokens import candidate_scoped_tokens, scoped_client_token, scoped_or_random_token
 from app.core.errors import AppError, ConflictError, NotFoundError
 from app.core.tiers import is_staff
 from app.infrastructure.db.models import (
@@ -56,6 +54,24 @@ from app.modules.marketplace.model.marketplace import (
     TrustIndicatorRead,
 )
 from app.modules.marketplace.repository.marketplace_repository import MarketplaceRepository
+from app.modules.marketplace.service.payout_manager import MarketplacePayoutManager
+from app.modules.marketplace.service.policy import (
+    MARKETPLACE_COMMISSION_PERCENT,
+    MAX_AUTHOR_REVIEWS_PER_24H,
+    MAX_REVIEW_EDITS,
+    REVIEW_EDIT_COOLDOWN_MINUTES,
+    REVIEW_HIDE_REPORT_THRESHOLD,
+    SUSPICIOUS_SELLER_REVIEW_THRESHOLD,
+    append_query,
+    apply_discount,
+    ensure_aware,
+    fee,
+    normalize_prompt_price,
+    price_lumens_from_rub,
+    round_rating,
+    settlement_available_at,
+    start_of_current_month,
+)
 
 _stripe_module: Any | None
 try:
@@ -66,94 +82,12 @@ except Exception:  # pragma: no cover - runtime optional
 stripe: Any = _stripe_module
 
 
-_MARKETPLACE_COMMISSION_PERCENT = 5
-_LUMEN_PRICE_MULTIPLIER = 4
-_MIN_PROMPT_PRICE_RUB = 49
-_MAX_PROMPT_PRICE_RUB = 4999
-_SETTLEMENT_HOLD_DAYS = 7
-_REVIEW_EDIT_COOLDOWN_MINUTES = 15
-_MAX_REVIEW_EDITS = 6
-_REVIEW_HIDE_REPORT_THRESHOLD = 3
-_MAX_AUTHOR_REVIEWS_PER_24H = 8
-_SUSPICIOUS_SELLER_REVIEW_THRESHOLD = 3
-_ALLOWED_PAYOUT_CURRENCIES = frozenset({"RUB", "LMN"})
-
-
 @dataclass(slots=True)
 class PlanAccessContext:
     total_unlocks: int = 0
     remaining_unlocks: int = 0
     money_discount_percent: int = 0
     lumen_discount_percent: int = 0
-
-
-def price_lumens_from_rub(price_rub: int) -> int:
-    return max(120, int(price_rub) * _LUMEN_PRICE_MULTIPLIER)
-
-
-def normalize_prompt_price(price_rub: int | None) -> tuple[int, int] | None:
-    if price_rub is None or price_rub <= 0:
-        return None
-    if price_rub < _MIN_PROMPT_PRICE_RUB or price_rub > _MAX_PROMPT_PRICE_RUB:
-        raise AppError(
-            code="invalid_prompt_price",
-            message=f"Prompt price must be between {_MIN_PROMPT_PRICE_RUB} and {_MAX_PROMPT_PRICE_RUB} RUB.",
-            status_code=400,
-            details={
-                "minimum_price_rub": _MIN_PROMPT_PRICE_RUB,
-                "maximum_price_rub": _MAX_PROMPT_PRICE_RUB,
-            },
-        )
-    return int(price_rub), price_lumens_from_rub(int(price_rub))
-
-
-def _round_rating(value: float | None) -> float | None:
-    if value is None:
-        return None
-    return round(float(value) + 1e-8, 1)
-
-
-def _fee(amount: int) -> int:
-    if amount <= 0:
-        return 0
-    return max(1, int(math.ceil(amount * (_MARKETPLACE_COMMISSION_PERCENT / 100.0))))
-
-
-def _apply_discount(amount: int, discount_percent: int) -> int:
-    if amount <= 0 or discount_percent <= 0:
-        return amount
-    return max(1, int(round(amount * (100 - discount_percent) / 100.0)))
-
-
-def _ensure_aware(value: datetime | None) -> datetime | None:
-    if value is None:
-        return None
-    if value.tzinfo is None:
-        return value.replace(tzinfo=timezone.utc)
-    return value.astimezone(timezone.utc)
-
-
-def _start_of_current_month(now: datetime) -> tuple[datetime, datetime]:
-    start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
-    if now.month == 12:
-        end = datetime(now.year + 1, 1, 1, tzinfo=timezone.utc)
-    else:
-        end = datetime(now.year, now.month + 1, 1, tzinfo=timezone.utc)
-    return start, end
-
-
-def _settlement_available_at(completed_at: datetime | None) -> datetime | None:
-    if completed_at is None:
-        return None
-    return completed_at + timedelta(days=_SETTLEMENT_HOLD_DAYS)
-
-
-def _append_query(url: str, **params: str) -> str:
-    parsed = urlparse(url)
-    query = dict(parse_qsl(parsed.query, keep_blank_values=True))
-    query.update({k: v for k, v in params.items() if v})
-    encoded = urlencode(query)
-    return urlunparse(parsed._replace(query=encoded))
 
 
 class MarketplaceService:
@@ -170,23 +104,13 @@ class MarketplaceService:
         self._wallet = wallet_repo
         self._store = store_repo
         self._settings = settings
+        self._payouts = MarketplacePayoutManager(repo, wallet_repo)
 
     def _seller_amount_for_currency(self, purchase: PromptPurchase, currency_code: str) -> int:
-        if currency_code.upper() == "LMN":
-            return int(purchase.seller_amount_lumens or 0)
-        return int(purchase.seller_amount_rub or 0)
+        return self._payouts.seller_amount_for_currency(purchase, currency_code)
 
     def _payout_to_read(self, payout: MarketplacePayout) -> MarketplacePayoutRead:
-        return MarketplacePayoutRead(
-            id=payout.id,
-            currency_code=payout.currency_code,
-            status=payout.status,
-            total_amount=payout.total_amount,
-            purchase_count=payout.purchase_count,
-            external_reference=payout.external_reference,
-            requested_at=payout.requested_at,
-            paid_at=payout.paid_at,
-        )
+        return self._payouts.payout_to_read(payout)
 
     def _review_is_public(self, review: PromptReview) -> bool:
         return review.is_visible and review.moderation_status == ReviewModerationStatus.visible
@@ -200,7 +124,7 @@ class MarketplaceService:
     ) -> tuple[MarketplaceSettlementStatus, datetime | None]:
         if seller_amount_rub <= 0 and seller_amount_lumens <= 0:
             return MarketplaceSettlementStatus.available, completed_at
-        return MarketplaceSettlementStatus.pending, _settlement_available_at(completed_at)
+        return MarketplaceSettlementStatus.pending, settlement_available_at(completed_at)
 
     def _redirect_origin(self, url: str) -> str | None:
         parsed = urlparse(url)
@@ -254,34 +178,16 @@ class MarketplaceService:
         return raw
 
     def _normalize_payout_currency(self, currency_code: str) -> str:
-        normalized = currency_code.strip().upper()
-        if normalized not in _ALLOWED_PAYOUT_CURRENCIES:
-            raise AppError(
-                code="invalid_payout_currency",
-                message="Unsupported payout currency.",
-                status_code=400,
-                details={"allowed": sorted(_ALLOWED_PAYOUT_CURRENCIES)},
-            )
-        return normalized
+        return self._payouts.normalize_payout_currency(currency_code)
 
     def _client_token_scope(self, user_id: uuid.UUID, client_token: str, *, prefix: str) -> str:
-        digest = sha256(client_token.encode("utf-8")).hexdigest()[:32]
-        return f"{prefix}:{user_id.hex}:{digest}"[:80]
+        return scoped_client_token(user_id, client_token, prefix=prefix)
 
     def _scoped_client_token(self, user_id: uuid.UUID, client_token: str | None, *, prefix: str) -> str:
-        raw = (client_token or "").strip()
-        if raw:
-            return self._client_token_scope(user_id, raw, prefix=prefix)
-        return f"{prefix}:{user_id.hex}:{secrets.token_hex(8)}"[:80]
+        return scoped_or_random_token(user_id, client_token, prefix=prefix)
 
     def _candidate_client_tokens(self, user_id: uuid.UUID, client_token: str, *, prefix: str) -> list[str]:
-        raw = client_token.strip()
-        if not raw:
-            return []
-        scoped = self._client_token_scope(user_id, raw, prefix=prefix)
-        if scoped == raw:
-            return [scoped]
-        return [scoped, raw]
+        return candidate_scoped_tokens(user_id, client_token, prefix=prefix)
 
     async def _find_purchase_by_client_token(
         self,
@@ -297,43 +203,13 @@ class MarketplaceService:
         return None
 
     def _eligible_payout_purchases(self, payout: MarketplacePayout) -> list[PromptPurchase]:
-        return [
-            purchase
-            for purchase in payout.purchases
-            if purchase.status == PurchaseStatus.completed
-            and purchase.settlement_status == MarketplaceSettlementStatus.available
-            and purchase.payout_id == payout.id
-        ]
+        return self._payouts.eligible_payout_purchases(payout)
 
     async def _sync_reserved_payout(self, payout: MarketplacePayout) -> MarketplacePayout:
-        payout_state = sa_inspect(payout)
-        if "purchases" in payout_state.unloaded:
-            loaded_payout = await self._repo.get_payout_by_id(payout.id, for_update=True)
-            if loaded_payout is None:
-                raise NotFoundError("marketplace_payout", str(payout.id))
-            payout = loaded_payout
-        eligible = self._eligible_payout_purchases(payout)
-        payout.purchase_count = len(eligible)
-        payout.total_amount = sum(
-            self._seller_amount_for_currency(purchase, payout.currency_code)
-            for purchase in eligible
-        )
-        if payout.status in {MarketplacePayoutStatus.requested, MarketplacePayoutStatus.processing} and payout.purchase_count == 0:
-            payout.status = MarketplacePayoutStatus.canceled
-        payout = await self._repo.save_payout(payout)
-        loaded_payout = await self._repo.get_payout_by_id(payout.id, for_update=True)
-        if loaded_payout is None:
-            raise NotFoundError("marketplace_payout", str(payout.id))
-        return loaded_payout
+        return await self._payouts.sync_reserved_payout(payout)
 
     async def _release_payout_reservations(self, payout: MarketplacePayout) -> None:
-        for purchase in payout.purchases:
-            if purchase.payout_id != payout.id:
-                continue
-            if purchase.settlement_status == MarketplaceSettlementStatus.paid_out:
-                continue
-            purchase.payout_id = None
-            await self._repo.save_purchase(purchase)
+        await self._payouts.release_payout_reservations(payout)
 
     def _price_to_read(self, price: PromptPrice | None) -> PromptPriceRead | None:
         if price is None or not price.is_active:
@@ -434,27 +310,10 @@ class MarketplaceService:
         seller_user_id: uuid.UUID | None = None,
         now: datetime | None = None,
     ) -> int:
-        now = now or datetime.now(timezone.utc)
-        released = 0
-        rows = await self._repo.list_settlement_ready_purchases(
+        return await self._payouts.refresh_settlement_states(
             seller_user_id=seller_user_id,
             now=now,
-            for_update=True,
         )
-        for purchase in rows:
-            purchase.settlement_status = MarketplaceSettlementStatus.available
-            await self._repo.save_purchase(purchase)
-            await self._repo.create_marketplace_transaction(
-                prompt_purchase_id=purchase.id,
-                prompt_id=purchase.prompt_id,
-                actor_user_id=purchase.seller_user_id,
-                kind=MarketplaceTransactionKind.seller_available,
-                currency_code="LMN" if purchase.seller_amount_lumens > 0 else "RUB",
-                amount=max(purchase.seller_amount_lumens, purchase.seller_amount_rub),
-                meta={"purchase_id": str(purchase.id)},
-            )
-            released += 1
-        return released
 
     async def create_payout_batch(
         self,
@@ -463,85 +322,20 @@ class MarketplaceService:
         currency_code: str,
         notes: str | None = None,
     ) -> MarketplacePayoutRead:
-        normalized_currency = self._normalize_payout_currency(currency_code)
-        await self.refresh_settlement_states(seller_user_id=seller_user_id)
-        purchases = await self._repo.list_available_purchases_for_payout(
+        return await self._payouts.create_payout_batch(
             seller_user_id=seller_user_id,
-            currency_code=normalized_currency,
-            for_update=True,
-        )
-        if not purchases:
-            raise AppError(
-                code="no_payout_balance",
-                message="There are no available earnings ready for payout.",
-                status_code=409,
-            )
-        total_amount = sum(self._seller_amount_for_currency(purchase, normalized_currency) for purchase in purchases)
-        payout = await self._repo.create_payout(
-            seller_user_id=seller_user_id,
-            currency_code=normalized_currency,
-            total_amount=total_amount,
-            purchase_count=len(purchases),
+            currency_code=currency_code,
             notes=notes,
         )
-        for purchase in purchases:
-            purchase.payout_id = payout.id
-            await self._repo.save_purchase(purchase)
-        payout = await self._sync_reserved_payout(payout)
-        return self._payout_to_read(payout)
 
     async def mark_payout_processing(self, *, payout_id: uuid.UUID) -> MarketplacePayoutRead:
-        payout = await self._repo.get_payout_by_id(payout_id, for_update=True)
-        if payout is None:
-            raise NotFoundError("marketplace_payout", str(payout_id))
-        if payout.status == MarketplacePayoutStatus.paid:
-            return self._payout_to_read(payout)
-        if payout.status in {MarketplacePayoutStatus.failed, MarketplacePayoutStatus.canceled}:
-            raise AppError(
-                code="payout_not_processable",
-                message="This payout can no longer be processed.",
-                status_code=409,
-            )
-        payout = await self._sync_reserved_payout(payout)
-        if payout.purchase_count <= 0:
-            raise AppError(
-                code="payout_empty",
-                message="This payout no longer has eligible earnings attached.",
-                status_code=409,
-            )
-        payout.status = MarketplacePayoutStatus.processing
-        await self._repo.save_payout(payout)
-        return self._payout_to_read(payout)
+        return await self._payouts.mark_payout_processing(payout_id=payout_id)
 
     async def fail_payout(self, *, payout_id: uuid.UUID) -> MarketplacePayoutRead:
-        payout = await self._repo.get_payout_by_id(payout_id, for_update=True)
-        if payout is None:
-            raise NotFoundError("marketplace_payout", str(payout_id))
-        if payout.status == MarketplacePayoutStatus.paid:
-            raise AppError(
-                code="payout_already_paid",
-                message="A paid payout cannot be failed.",
-                status_code=409,
-            )
-        payout.status = MarketplacePayoutStatus.failed
-        await self._release_payout_reservations(payout)
-        await self._repo.save_payout(payout)
-        return self._payout_to_read(payout)
+        return await self._payouts.fail_payout(payout_id=payout_id)
 
     async def cancel_payout(self, *, payout_id: uuid.UUID) -> MarketplacePayoutRead:
-        payout = await self._repo.get_payout_by_id(payout_id, for_update=True)
-        if payout is None:
-            raise NotFoundError("marketplace_payout", str(payout_id))
-        if payout.status == MarketplacePayoutStatus.paid:
-            raise AppError(
-                code="payout_already_paid",
-                message="A paid payout cannot be canceled.",
-                status_code=409,
-            )
-        payout.status = MarketplacePayoutStatus.canceled
-        await self._release_payout_reservations(payout)
-        await self._repo.save_payout(payout)
-        return self._payout_to_read(payout)
+        return await self._payouts.cancel_payout(payout_id=payout_id)
 
     async def finalize_payout(
         self,
@@ -550,59 +344,11 @@ class MarketplaceService:
         reference: str | None = None,
         now: datetime | None = None,
     ) -> MarketplacePayoutRead:
-        now = now or datetime.now(timezone.utc)
-        payout = await self._repo.get_payout_by_id(payout_id, for_update=True)
-        if payout is None:
-            raise NotFoundError("marketplace_payout", str(payout_id))
-        if payout.status == MarketplacePayoutStatus.paid:
-            return self._payout_to_read(payout)
-        if payout.status in {MarketplacePayoutStatus.failed, MarketplacePayoutStatus.canceled}:
-            raise AppError(
-                code="payout_not_payable",
-                message="This payout is no longer payable.",
-                status_code=409,
-            )
-        payout = await self._sync_reserved_payout(payout)
-        eligible_purchases = self._eligible_payout_purchases(payout)
-        if not eligible_purchases:
-            raise AppError(
-                code="payout_empty",
-                message="This payout no longer has eligible earnings attached.",
-                status_code=409,
-            )
-        payout.status = MarketplacePayoutStatus.paid
-        payout.external_reference = reference
-        payout.paid_at = now
-        payout.purchase_count = len(eligible_purchases)
-        payout.total_amount = sum(
-            self._seller_amount_for_currency(purchase, payout.currency_code)
-            for purchase in eligible_purchases
+        return await self._payouts.finalize_payout(
+            payout_id=payout_id,
+            reference=reference,
+            now=now,
         )
-        for purchase in eligible_purchases:
-            purchase.settlement_status = MarketplaceSettlementStatus.paid_out
-            purchase.paid_out_at = now
-            await self._repo.save_purchase(purchase)
-            await self._repo.create_marketplace_transaction(
-                prompt_purchase_id=purchase.id,
-                prompt_id=purchase.prompt_id,
-                actor_user_id=purchase.seller_user_id,
-                kind=MarketplaceTransactionKind.seller_payout,
-                currency_code=payout.currency_code,
-                amount=self._seller_amount_for_currency(purchase, payout.currency_code),
-                meta={"purchase_id": str(purchase.id), "payout_id": str(payout.id)},
-            )
-        await self._repo.save_payout(payout)
-        if payout.currency_code.upper() == "LMN" and payout.seller_user_id is not None and payout.total_amount > 0:
-            await self._wallet.adjust_balance(
-                user_id=payout.seller_user_id,
-                amount=payout.total_amount,
-                reason=CurrencyTransactionType.marketplace_sale,
-                context=f"marketplace:payout:{payout.id}",
-                source_id=payout.id,
-                metadata={"payout_id": str(payout.id), "currency_code": payout.currency_code},
-                now=now,
-            )
-        return self._payout_to_read(payout)
 
     async def _resolve_usage_window(self, *, user_id: uuid.UUID, plan_tier: PlanTier) -> tuple[datetime, datetime]:
         latest = await self._billing.get_latest_subscription_for_user(user_id)
@@ -612,11 +358,11 @@ class MarketplaceService:
             and latest.plan.tier == plan_tier
             and latest.status in {SubscriptionStatus.active, SubscriptionStatus.trialing, SubscriptionStatus.past_due}
         ):
-            start = _ensure_aware(latest.current_period_start)
-            end = _ensure_aware(latest.current_period_end)
+            start = ensure_aware(latest.current_period_start)
+            end = ensure_aware(latest.current_period_end)
             if start is not None and end is not None and end > start:
                 return start, end
-        return _start_of_current_month(datetime.now(timezone.utc))
+        return start_of_current_month(datetime.now(timezone.utc))
 
     async def _get_or_create_plan_usage_window(
         self,
@@ -923,14 +669,14 @@ class MarketplaceService:
                 prompt_id=prompt.id,
                 price_rub=price_rub_value,
                 price_lumens=price_lumens_value,
-                commission_percent=_MARKETPLACE_COMMISSION_PERCENT,
+                commission_percent=MARKETPLACE_COMMISSION_PERCENT,
                 is_active=True,
             )
             prompt.pricing = pricing
         else:
             pricing.price_rub = price_rub_value
             pricing.price_lumens = price_lumens_value
-            pricing.commission_percent = _MARKETPLACE_COMMISSION_PERCENT
+            pricing.commission_percent = MARKETPLACE_COMMISSION_PERCENT
             pricing.is_active = True
         prompt.is_premium = True
         return pricing
@@ -974,8 +720,8 @@ class MarketplaceService:
 
         effective_client_token = self._scoped_client_token(user_id, payload.client_token, prefix=token_prefix)
         plan_context = await self.get_plan_access_context(user)
-        effective_price_lumens = _apply_discount(base_price_lumens, plan_context.lumen_discount_percent)
-        fee_lumens = _fee(effective_price_lumens)
+        effective_price_lumens = apply_discount(base_price_lumens, plan_context.lumen_discount_percent)
+        fee_lumens = fee(effective_price_lumens)
         seller_lumens = max(effective_price_lumens - fee_lumens, 0)
         now = datetime.now(timezone.utc)
         settlement_status, settlement_available_at = self._initial_settlement_status(
@@ -1108,8 +854,8 @@ class MarketplaceService:
             raise ConflictError("A purchase for this prompt is already being processed.")
         effective_client_token = self._scoped_client_token(user_id, payload.client_token, prefix=token_prefix)
         plan_context = await self.get_plan_access_context(user)
-        effective_price_rub = _apply_discount(base_price_rub, plan_context.money_discount_percent)
-        fee_rub = _fee(effective_price_rub)
+        effective_price_rub = apply_discount(base_price_rub, plan_context.money_discount_percent)
+        fee_rub = fee(effective_price_rub)
         seller_rub = max(effective_price_rub - fee_rub, 0)
         purchase = await self._repo.try_create_purchase(
             user_id=user_id,
@@ -1131,7 +877,7 @@ class MarketplaceService:
             raise ConflictError("A purchase for this prompt is already being processed.")
         success_url = self._resolve_checkout_redirect_url(
             payload.success_url,
-            default_url=_append_query(self._settings.billing_checkout_success_url, prompt=prompt_slug),
+            default_url=append_query(self._settings.billing_checkout_success_url, prompt=prompt_slug),
         )
         cancel_url = self._resolve_checkout_redirect_url(
             payload.cancel_url,
@@ -1428,7 +1174,7 @@ class MarketplaceService:
             raise ConflictError("You already reported this review.") from exc
         review.reported_count = await self._repo.count_review_reports(review.id)
         review.last_reported_at = datetime.now(timezone.utc)
-        if review.reported_count >= _REVIEW_HIDE_REPORT_THRESHOLD:
+        if review.reported_count >= REVIEW_HIDE_REPORT_THRESHOLD:
             review.is_visible = False
             review.moderation_status = ReviewModerationStatus.hidden
             review.moderation_reason = "reported_by_users"
@@ -1447,14 +1193,14 @@ class MarketplaceService:
         existing_review: PromptReview | None = None,
     ) -> tuple[ReviewModerationStatus, str | None]:
         normalized_text = review_text.strip() if review_text else ""
-        if existing_review is not None and existing_review.edit_count >= _MAX_REVIEW_EDITS:
+        if existing_review is not None and existing_review.edit_count >= MAX_REVIEW_EDITS:
             raise AppError(
                 code="review_edit_limit_reached",
                 message="This review has reached the edit limit.",
                 status_code=409,
             )
         if existing_review is not None and existing_review.updated_at is not None:
-            cooldown_until = existing_review.updated_at + timedelta(minutes=_REVIEW_EDIT_COOLDOWN_MINUTES)
+            cooldown_until = existing_review.updated_at + timedelta(minutes=REVIEW_EDIT_COOLDOWN_MINUTES)
             if datetime.now(timezone.utc) < cooldown_until:
                 raise AppError(
                     code="review_edit_cooldown",
@@ -1462,20 +1208,20 @@ class MarketplaceService:
                     status_code=429,
                 )
         recent_reviews = await self._repo.count_recent_reviews_by_author(author_user_id=author_user_id, hours=24)
-        if recent_reviews >= _MAX_AUTHOR_REVIEWS_PER_24H:
+        if recent_reviews >= MAX_AUTHOR_REVIEWS_PER_24H:
             return ReviewModerationStatus.pending, "review_velocity"
         same_seller_reviews = await self._repo.count_reviews_for_seller_by_author(
             seller_user_id=seller_user_id,
             author_user_id=author_user_id,
         )
-        if same_seller_reviews >= _SUSPICIOUS_SELLER_REVIEW_THRESHOLD:
+        if same_seller_reviews >= SUSPICIOUS_SELLER_REVIEW_THRESHOLD:
             return ReviewModerationStatus.pending, "repeat_buyer_seller_pattern"
         recent_purchases_same_seller = await self._repo.count_recent_completed_purchases_between_users(
             buyer_user_id=author_user_id,
             seller_user_id=seller_user_id,
             hours=24,
         )
-        if recent_purchases_same_seller >= _SUSPICIOUS_SELLER_REVIEW_THRESHOLD:
+        if recent_purchases_same_seller >= SUSPICIOUS_SELLER_REVIEW_THRESHOLD:
             return ReviewModerationStatus.pending, "dense_buyer_seller_activity"
         if normalized_text and await self._repo.has_duplicate_review_text(
             author_user_id=author_user_id,
@@ -1563,7 +1309,7 @@ class MarketplaceService:
         rating_average = summary["rating_average"]
         return SellerMarketplaceSummaryRead(
             rating_average=rating_average,
-            rating_display=_round_rating(rating_average if isinstance(rating_average, float) else None),
+            rating_display=round_rating(rating_average if isinstance(rating_average, float) else None),
             review_count=int(summary["review_count"] or 0),
             sold_prompts_count=int(summary["sold_prompts_count"] or 0),
             purchases_count=int(summary["purchases_count"] or 0),
@@ -1613,7 +1359,7 @@ class MarketplaceService:
         return PromptReviewListRead(
             seller_user_id=seller_user_id,
             rating_average=rating_average,
-            rating_display=_round_rating(rating_average),
+            rating_display=round_rating(rating_average),
             review_count=review_count,
             sort=sort,
             items=items,

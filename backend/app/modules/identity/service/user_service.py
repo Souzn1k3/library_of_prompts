@@ -7,10 +7,12 @@ from app.modules.identity.model.user import UserRead
 from app.modules.identity.model.user_update import UserUpdateMe
 from app.modules.contributors.service.contributor_service import ContributorService
 from app.modules.marketplace.service.marketplace_service import MarketplaceService
+from app.modules.identity.service.display_name_policy import DisplayNamePolicy
 
 
 class UserRepositoryProtocol(Protocol):
     async def get_by_id(self, user_id: uuid.UUID) -> User | None: ...
+    async def get_by_display_name(self, display_name: str) -> User | None: ...
 
     async def save(self, user: User) -> User: ...
 
@@ -25,10 +27,12 @@ class UserService:
         repo: UserRepositoryProtocol,
         contributors: ContributorService | None = None,
         marketplace: MarketplaceService | None = None,
+        display_names: DisplayNamePolicy | None = None,
     ) -> None:
         self._repo = repo
         self._contributors = contributors
         self._marketplace = marketplace
+        self._display_names = display_names or DisplayNamePolicy()
 
     async def _to_enriched_read(self, row: User) -> UserRead:
         base = UserRead.model_validate(row)
@@ -66,7 +70,13 @@ class UserService:
             raise NotFoundError("user", str(user_id))
         payload = data.model_dump(exclude_unset=True)
         if "display_name" in payload and payload["display_name"] is not None:
-            row.display_name = payload["display_name"].strip()
+            display_name = self._display_names.normalize_required(payload["display_name"])
+            await self._display_names.ensure_available(
+                self._repo,
+                display_name,
+                exclude_user_id=row.id,
+            )
+            row.display_name = display_name
         saved = await self._repo.save(row)
         if self._contributors is not None:
             await self._contributors.ensure_profile(saved)

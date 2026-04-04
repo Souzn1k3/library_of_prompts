@@ -53,11 +53,6 @@ class PromptRepository:
     def _insert(self, model):
         return pg_insert(model) if self._is_postgresql() else sqlite_insert(model)
 
-    def _greatest(self, left, right):
-        if self._is_postgresql():
-            return func.greatest(left, right)
-        return case((left >= right, left), else_=right)
-
     def _prompt_relation_load_options(self):
         return (
             selectinload(Prompt.use_case_links).selectinload(PromptUseCase.use_case),
@@ -143,13 +138,7 @@ class PromptRepository:
         )
         age_days = func.extract("epoch", func.now() - Prompt.created_at) / 86400.0
         recency_score = 1.0 / (1.0 + age_days / 14.0)
-        quality_score = (
-            self._greatest(
-                func.coalesce(PromptQualityMetric.quality_score, 0),
-                func.coalesce(PromptStats.quality_score, 0),
-            )
-            / 100.0
-        )
+        quality_score = func.coalesce(PromptQualityMetric.quality_score, 0) / 100.0
         contributor_score = (
             func.coalesce(ContributorProfile.reputation_score, 0) / 100.0
             if include_contributor_score
@@ -596,7 +585,7 @@ class PromptRepository:
             save_count=0,
             copy_count=0,
             view_count=0,
-            quality_score=40,
+            quality_score=0,
         )
         stmt = stmt.on_conflict_do_nothing(index_elements=["prompt_id"])
         await self._session.execute(stmt)

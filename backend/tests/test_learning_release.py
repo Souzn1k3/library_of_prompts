@@ -25,10 +25,17 @@ def _auth_headers(token: str, language: str | None = None) -> dict[str, str]:
     return headers
 
 
-async def _register(async_client, unique_email: str, display_name: str = "Learning User") -> str:
+def _default_display_name(unique_email: str) -> str:
+    local = unique_email.split("@", 1)[0]
+    suffix = local[-8:] if len(local) >= 8 else local
+    return f"Learning User {suffix}"
+
+
+async def _register(async_client, unique_email: str, display_name: str | None = None) -> str:
+    resolved_display_name = display_name or _default_display_name(unique_email)
     response = await async_client.post(
         "/api/v1/auth/register",
-        json={"email": unique_email, "password": "password123", "display_name": display_name},
+        json={"email": unique_email, "password": "password123", "display_name": resolved_display_name},
     )
     assert response.status_code == 201
     return response.json()["access_token"]
@@ -258,3 +265,27 @@ async def test_learning_catalog_localization_en_ru_tt(async_client):
     assert tt_title
     assert en_title != ru_title
     assert tt_title != en_title
+
+
+@pytest.mark.asyncio
+async def test_lessons_localization_and_cache_is_language_aware(async_client):
+    def title_for_slug(rows: list[dict], slug: str) -> str:
+        item = next((entry for entry in rows if entry.get("slug") == slug), None)
+        assert item is not None, f"Lesson {slug} should exist"
+        return str(item["title"])
+
+    en_first = await async_client.get("/api/v1/lessons", headers={"Accept-Language": "en"})
+    ru = await async_client.get("/api/v1/lessons", headers={"Accept-Language": "ru"})
+    en_second = await async_client.get("/api/v1/lessons", headers={"Accept-Language": "en"})
+
+    assert en_first.status_code == 200
+    assert ru.status_code == 200
+    assert en_second.status_code == 200
+
+    en_first_title = title_for_slug(en_first.json(), "pe-foundations")
+    ru_title = title_for_slug(ru.json(), "pe-foundations")
+    en_second_title = title_for_slug(en_second.json(), "pe-foundations")
+
+    assert en_first_title == "What Makes a Prompt Work"
+    assert ru_title == "Что делает промпт рабочим"
+    assert en_second_title == "What Makes a Prompt Work"

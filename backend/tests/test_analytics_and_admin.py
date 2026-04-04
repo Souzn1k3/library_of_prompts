@@ -72,7 +72,7 @@ async def test_analytics_ingest_accepts_event(async_client, unique_email: str):
         json={
             "email": unique_email,
             "password": "password123",
-            "display_name": "A",
+            "display_name": f"A {unique_email.split('@', 1)[0][-8:]}",
         },
     )
     assert reg.status_code == 201
@@ -105,7 +105,7 @@ async def test_analytics_ingest_rejects_oversized_metadata(async_client, unique_
         json={
             "email": unique_email,
             "password": "password123",
-            "display_name": "A",
+            "display_name": f"A {unique_email.split('@', 1)[0][-8:]}",
         },
     )
     assert reg.status_code == 201
@@ -127,3 +127,5 @@ async def test_analytics_ingest_rejects_oversized_metadata(async_client, unique_
         json=payload,
     )
     assert r.status_code == 422
+
+

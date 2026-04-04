@@ -13,6 +13,7 @@ from app.modules.analytics.service.analytics_service import AnalyticsService
 from app.modules.identity.model.auth import LoginRequest, RegisterRequest, SessionTokens
 from app.modules.identity.repository.refresh_token_repository import RefreshTokenRepository
 from app.modules.identity.repository.user_repository import UserRepository
+from app.modules.identity.service.display_name_policy import DisplayNamePolicy
 
 log = get_logger(__name__)
 
@@ -40,11 +41,13 @@ class AuthService:
         refresh_tokens: RefreshTokenRepository,
         settings: Settings,
         analytics: AnalyticsService | None = None,
+        display_names: DisplayNamePolicy | None = None,
     ) -> None:
         self._repo = repo
         self._refresh_tokens = refresh_tokens
         self._settings = settings
         self._analytics = analytics
+        self._display_names = display_names or DisplayNamePolicy()
 
     async def _issue_session_tokens(
         self,
@@ -82,18 +85,20 @@ class AuthService:
         user_agent: str | None,
     ) -> SessionTokens:
         email = data.email.lower()
+        display_name = self._display_names.normalize_required(data.display_name)
         existing = await self._repo.get_by_email(email)
         if existing is not None:
             raise ConflictError(
                 "Email already registered",
                 message_key="errors.email_already_registered",
             )
+        await self._display_names.ensure_available(self._repo, display_name)
 
         user = User(
             id=uuid.uuid4(),
             email=email,
             hashed_password=hash_password(data.password),
-            display_name=data.display_name.strip(),
+            display_name=display_name,
             role=UserRole.user,
         )
         created = await self._repo.create(user)

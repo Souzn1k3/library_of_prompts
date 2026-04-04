@@ -62,3 +62,58 @@ async def test_invalid_credentials(async_client, unique_email: str):
     )
     assert r.status_code == 401
     assert r.json().get("code") == "invalid_credentials"
+
+
+@pytest.mark.asyncio
+async def test_register_rejects_duplicate_display_name_case_insensitive(async_client, unique_email: str):
+    first = await async_client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": unique_email,
+            "password": "password123",
+            "display_name": "Prompts Vault Team",
+        },
+    )
+    assert first.status_code == 201
+
+    second = await async_client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": unique_email.replace("@", ".other@"),
+            "password": "password123",
+            "display_name": "prompts vault team",
+        },
+    )
+    assert second.status_code == 409
+    assert second.json().get("code") == "conflict"
+
+
+@pytest.mark.asyncio
+async def test_update_me_rejects_duplicate_display_name(async_client, unique_email: str):
+    first = await async_client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": unique_email,
+            "password": "password123",
+            "display_name": "Nickname Alpha",
+        },
+    )
+    assert first.status_code == 201
+
+    second = await async_client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": unique_email.replace("@", ".second@"),
+            "password": "password123",
+            "display_name": "Nickname Beta",
+        },
+    )
+    assert second.status_code == 201
+
+    patch = await async_client.patch(
+        "/api/v1/users/me",
+        headers={"Authorization": f"Bearer {second.json()['access_token']}"},
+        json={"display_name": "nickname alpha"},
+    )
+    assert patch.status_code == 409
+    assert patch.json().get("code") == "conflict"

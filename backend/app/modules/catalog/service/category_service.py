@@ -4,6 +4,7 @@ from typing import Protocol
 
 from sqlalchemy.exc import IntegrityError
 
+from app.core.i18n import SupportedLanguage
 from app.core.errors import AppError, ConflictError, NotFoundError
 from app.infrastructure.db.models import Category
 from app.modules.catalog.model.category import CategoryCreate, CategoryRead, CategoryUpdate
@@ -31,7 +32,78 @@ class CategoryRepositoryProtocol(Protocol):
     async def get_by_id_or_raise(self, category_id: uuid.UUID) -> Category: ...
 
 
-def _to_read(row: Category) -> CategoryRead:
+_CATEGORY_NAME_OVERRIDES: dict[str, dict[SupportedLanguage, str]] = {
+    "development": {"en": "Development", "ru": "Разработка", "tt": "Әзерләү"},
+    "it": {
+        "en": "Information Technology and Software Development",
+        "ru": "Информационные технологии и разработка ПО",
+        "tt": "Информацион технологияләр һәм ПО эшләү",
+    },
+    "marketing": {
+        "en": "Marketing, Advertising and PR",
+        "ru": "Маркетинг, реклама и PR",
+        "tt": "Маркетинг, реклама һәм PR",
+    },
+    "business": {
+        "en": "Business, Management and Entrepreneurship",
+        "ru": "Бизнес, менеджмент и предпринимательство",
+        "tt": "Бизнес, менеджмент һәм эшмәкәрлек",
+    },
+    "education": {"en": "Education and Science", "ru": "Образование и наука", "tt": "Мәгариф һәм фән"},
+    "arts": {"en": "Creativity, Arts and Media", "ru": "Творчество, искусство и медиа", "tt": "Иҗат, сәнгать һәм медиа"},
+    "engineering": {
+        "en": "Engineering, Construction and Manufacturing",
+        "ru": "Инженерия, строительство и производство",
+        "tt": "Инженерия, төзелеш һәм җитештерү",
+    },
+    "finance": {"en": "Finance, Banking and Insurance", "ru": "Финансы, банкинг и страхование", "tt": "Финанс, банкинг һәм иминият"},
+    "law": {"en": "Government and Law", "ru": "Государственное управление и право", "tt": "Дәүләт идарәсе һәм хокук"},
+    "agro": {"en": "Agriculture and Ecology", "ru": "Сельское хозяйство и экология", "tt": "Авыл хуҗалыгы һәм экология"},
+    "logistics": {
+        "en": "Logistics, Transport and Tourism",
+        "ru": "Логистика, транспорт и туризм",
+        "tt": "Логистика, транспорт һәм туризм",
+    },
+    "real-estate": {"en": "Real Estate", "ru": "Недвижимость", "tt": "Күчемсез милек"},
+    "lifestyle": {
+        "en": "Personal Productivity and Lifestyle",
+        "ru": "Персональная эффективность и lifestyle",
+        "tt": "Шәхси нәтиҗәлелек һәм lifestyle",
+    },
+    "niche": {"en": "Specialized and Niche Fields", "ru": "Специализированные и нишевые области", "tt": "Махсуслашкан һәм ниша өлкәләре"},
+}
+
+
+def _looks_cyrillic(value: str) -> bool:
+    return any("а" <= ch.lower() <= "я" or ch.lower() == "ё" for ch in value)
+
+
+def _slug_title(slug: str) -> str:
+    return " ".join(part.capitalize() for part in slug.replace("_", "-").split("-") if part)
+
+
+def _localized_name(row: Category, language: SupportedLanguage) -> str:
+    by_slug = _CATEGORY_NAME_OVERRIDES.get(row.slug)
+    if by_slug:
+        return by_slug.get(language) or by_slug.get("en") or row.name
+
+    if language == "en" and _looks_cyrillic(row.name):
+        return _slug_title(row.slug)
+    return row.name
+
+
+def _to_read(row: Category, *, language: SupportedLanguage) -> CategoryRead:
+    return CategoryRead(
+        id=row.id,
+        parent_id=row.parent_id,
+        slug=row.slug,
+        name=_localized_name(row, language),
+        sort_order=row.sort_order,
+        is_restricted=row.is_restricted,
+    )
+
+
+def _to_read_raw(row: Category) -> CategoryRead:
     return CategoryRead(
         id=row.id,
         parent_id=row.parent_id,
@@ -51,21 +123,22 @@ class CategoryService:
         *,
         parent_id: uuid.UUID | None = None,
         roots_only: bool = False,
+        language: SupportedLanguage = "ru",
     ) -> list[CategoryRead]:
         rows = await self._repo.list(parent_id=parent_id, roots_only=roots_only)
-        return [_to_read(r) for r in rows]
+        return [_to_read(r, language=language) for r in rows]
 
-    async def get_by_id(self, category_id: uuid.UUID) -> CategoryRead:
+    async def get_by_id(self, category_id: uuid.UUID, *, language: SupportedLanguage = "ru") -> CategoryRead:
         row = await self._repo.get_by_id(category_id)
         if row is None:
             raise NotFoundError("category", str(category_id))
-        return _to_read(row)
+        return _to_read(row, language=language)
 
-    async def get_by_slug(self, slug: str) -> CategoryRead:
+    async def get_by_slug(self, slug: str, *, language: SupportedLanguage = "ru") -> CategoryRead:
         row = await self._repo.get_by_slug(slug)
         if row is None:
             raise NotFoundError("category", slug)
-        return _to_read(row)
+        return _to_read(row, language=language)
 
     async def create(self, data: CategoryCreate) -> CategoryRead:
         if data.parent_id is not None:
@@ -85,7 +158,7 @@ class CategoryService:
                 "We couldn't create this category. Check the name and parent category.",
                 message_key="errors.category_create_conflict",
             ) from e
-        return _to_read(created)
+        return _to_read_raw(created)
 
     async def update(self, category_id: uuid.UUID, data: CategoryUpdate) -> CategoryRead:
         row = await self._repo.get_by_id_or_raise(category_id)
@@ -120,7 +193,7 @@ class CategoryService:
                 "We couldn't update this category. Check the name and parent category.",
                 message_key="errors.category_update_conflict",
             ) from e
-        return _to_read(updated)
+        return _to_read_raw(updated)
 
     async def delete(self, category_id: uuid.UUID) -> None:
         row = await self._repo.get_by_id_or_raise(category_id)

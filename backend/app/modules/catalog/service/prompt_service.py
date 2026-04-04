@@ -1,5 +1,5 @@
 import uuid
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from typing import Protocol
 
 from app.core.errors import NotFoundError
@@ -104,11 +104,7 @@ def _to_list_item(
     access: PromptAccessRead | None = None,
 ) -> PromptListItem:
     contributor = row.author.contributor_profile if row.author and row.author.contributor_profile else None
-    quality_score = 0
-    if row.quality_metrics is not None:
-        quality_score = row.quality_metrics.quality_score
-    elif row.stats is not None:
-        quality_score = row.stats.quality_score
+    quality_score = row.quality_metrics.quality_score if row.quality_metrics is not None else 0
     price = (
         PromptPriceRead(
             price_rub=row.pricing.price_rub,
@@ -177,6 +173,60 @@ class PromptService:
 
     def _restrict_catalog(self, viewer: User | None) -> bool:
         return not can_view_restricted_category(viewer)
+
+    @staticmethod
+    def _contributor_tier_value(row: Prompt) -> str | None:
+        if row.author is None or row.author.contributor_profile is None:
+            return None
+        return row.author.contributor_profile.reputation_tier.value
+
+    async def _attach_author_rating(self, read: PromptRead, row: Prompt) -> None:
+        if self._marketplace is None or row.author_id is None:
+            return
+        summary = await self._marketplace.seller_summary(
+            seller_user_id=row.author_id,
+            reputation_tier=self._contributor_tier_value(row),
+            review_limit=3,
+        )
+        read.author_rating_average = summary.rating_average
+        read.author_rating_count = summary.review_count
+
+    @staticmethod
+    def _published_or_not_found(row: Prompt | None, *, key: str) -> Prompt:
+        if row is None or row.status != PromptStatus.published:
+            raise NotFoundError("prompt", key)
+        return row
+
+    async def _load_published_prompt(
+        self,
+        *,
+        loader: Callable[[], Awaitable[Prompt | None]],
+        key: str,
+    ) -> Prompt:
+        row = await loader()
+        return self._published_or_not_found(row, key=key)
+
+    async def _build_prompt_read(
+        self,
+        row: Prompt,
+        viewer: User | None,
+        *,
+        auto_grant_included_unlock: bool,
+    ) -> PromptRead:
+        if self._marketplace is not None and row.pricing is not None and row.pricing.is_active:
+            access = await self._marketplace.resolve_prompt_access(
+                row,
+                viewer,
+                auto_grant_included_unlock=auto_grant_included_unlock,
+            )
+            read = _apply_read_gating(row, viewer=viewer, locked=not access.has_access, access=access)
+        else:
+            locked, unlock_offer = await self._resolve_unlock_offer(row, viewer)
+            read = _apply_read_gating(row, viewer=viewer, locked=locked, unlock_offer=unlock_offer, access=None)
+
+        await self._attach_author_rating(read, row)
+        await self._repo.increment_view_count(row.id)
+        return read
 
     async def _resolve_unlock_offer(
         self,
@@ -278,38 +328,12 @@ class PromptService:
         *,
         auto_grant_included_unlock: bool = True,
     ) -> PromptRead:
-        row = await self._repo.get_by_slug(slug)
-        if row is None or row.status != PromptStatus.published:
-            raise NotFoundError("prompt", slug)
-        if self._marketplace is not None and row.pricing is not None and row.pricing.is_active:
-            access = await self._marketplace.resolve_prompt_access(
-                row,
-                viewer,
-                auto_grant_included_unlock=auto_grant_included_unlock,
-            )
-            read = _apply_read_gating(row, viewer=viewer, locked=not access.has_access, access=access)
-            if row.author_id is not None:
-                summary = await self._marketplace.seller_summary(
-                    seller_user_id=row.author_id,
-                    reputation_tier=contributor.reputation_tier.value if (contributor := row.author.contributor_profile if row.author and row.author.contributor_profile else None) else None,
-                    review_limit=3,
-                )
-                read.author_rating_average = summary.rating_average
-                read.author_rating_count = summary.review_count
-            await self._repo.increment_view_count(row.id)
-            return read
-        locked, unlock_offer = await self._resolve_unlock_offer(row, viewer)
-        read = _apply_read_gating(row, viewer=viewer, locked=locked, unlock_offer=unlock_offer, access=None)
-        if self._marketplace is not None and row.author_id is not None:
-            summary = await self._marketplace.seller_summary(
-                seller_user_id=row.author_id,
-                reputation_tier=contributor.reputation_tier.value if (contributor := row.author.contributor_profile if row.author and row.author.contributor_profile else None) else None,
-                review_limit=3,
-            )
-            read.author_rating_average = summary.rating_average
-            read.author_rating_count = summary.review_count
-        await self._repo.increment_view_count(row.id)
-        return read
+        row = await self._load_published_prompt(loader=lambda: self._repo.get_by_slug(slug), key=slug)
+        return await self._build_prompt_read(
+            row,
+            viewer,
+            auto_grant_included_unlock=auto_grant_included_unlock,
+        )
 
     async def get_by_id(
         self,
@@ -318,38 +342,13 @@ class PromptService:
         *,
         auto_grant_included_unlock: bool = True,
     ) -> PromptRead:
-        row = await self._repo.get_by_id(prompt_id)
-        if row is None or row.status != PromptStatus.published:
-            raise NotFoundError("prompt", str(prompt_id))
-        if self._marketplace is not None and row.pricing is not None and row.pricing.is_active:
-            access = await self._marketplace.resolve_prompt_access(
-                row,
-                viewer,
-                auto_grant_included_unlock=auto_grant_included_unlock,
-            )
-            read = _apply_read_gating(row, viewer=viewer, locked=not access.has_access, access=access)
-            if row.author_id is not None:
-                summary = await self._marketplace.seller_summary(
-                    seller_user_id=row.author_id,
-                    reputation_tier=contributor.reputation_tier.value if (contributor := row.author.contributor_profile if row.author and row.author.contributor_profile else None) else None,
-                    review_limit=3,
-                )
-                read.author_rating_average = summary.rating_average
-                read.author_rating_count = summary.review_count
-            await self._repo.increment_view_count(row.id)
-            return read
-        locked, unlock_offer = await self._resolve_unlock_offer(row, viewer)
-        read = _apply_read_gating(row, viewer=viewer, locked=locked, unlock_offer=unlock_offer, access=None)
-        if self._marketplace is not None and row.author_id is not None:
-            summary = await self._marketplace.seller_summary(
-                seller_user_id=row.author_id,
-                reputation_tier=contributor.reputation_tier.value if (contributor := row.author.contributor_profile if row.author and row.author.contributor_profile else None) else None,
-                review_limit=3,
-            )
-            read.author_rating_average = summary.rating_average
-            read.author_rating_count = summary.review_count
-        await self._repo.increment_view_count(row.id)
-        return read
+        key = str(prompt_id)
+        row = await self._load_published_prompt(loader=lambda: self._repo.get_by_id(prompt_id), key=key)
+        return await self._build_prompt_read(
+            row,
+            viewer,
+            auto_grant_included_unlock=auto_grant_included_unlock,
+        )
 
     async def discovery_filters(self) -> PromptDiscoveryFilters:
         use_cases = await self._repo.list_use_cases()

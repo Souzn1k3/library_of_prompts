@@ -1,4 +1,3 @@
-import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
@@ -6,6 +5,7 @@ from typing import Any
 
 from sqlalchemy.exc import IntegrityError
 
+from app.core.client_tokens import candidate_scoped_tokens, scoped_client_token, scoped_or_random_token
 from app.core.errors import AppError
 from app.infrastructure.db.models import CurrencyTransactionType, StoreItem, StoreItemKind, User
 from app.modules.analytics.model.analytics import AnalyticsEventName
@@ -65,8 +65,7 @@ class StoreService:
         }
 
     def _scoped_client_token(self, user_id: uuid.UUID, raw_token: str, *, prefix: str = "store") -> str:
-        digest = sha256(raw_token.encode("utf-8")).hexdigest()[:32]
-        return f"{prefix}:{user_id.hex}:{digest}"[:80]
+        return scoped_client_token(user_id, raw_token, prefix=prefix)
 
     def _effective_client_token(self, *, user_id: uuid.UUID, item: StoreItem, client_token: str | None) -> str:
         raw = (client_token or "").strip()
@@ -74,13 +73,10 @@ class StoreService:
             return self._scoped_client_token(user_id, f"one-time:{item.id}")
         if raw:
             return self._scoped_client_token(user_id, raw)
-        return f"store:{user_id.hex}:{secrets.token_hex(8)}"[:80]
+        return scoped_or_random_token(user_id, None, prefix="store")
 
     async def _find_purchase_by_client_token(self, *, user_id: uuid.UUID, client_token: str) -> Any | None:
-        raw = client_token.strip()
-        if not raw:
-            return None
-        candidates = [self._scoped_client_token(user_id, raw), raw]
+        candidates = candidate_scoped_tokens(user_id, client_token, prefix="store")
         seen: set[str] = set()
         for token in candidates:
             if token in seen:

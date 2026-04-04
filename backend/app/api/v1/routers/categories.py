@@ -1,11 +1,12 @@
 import uuid
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.api.deps import get_optional_user, require_admin
 from app.api.service_deps import get_category_service
 from app.core.cache import get_cache
 from app.core.errors import NotFoundError
+from app.core.i18n import SupportedLanguage, resolve_language_from_header
 from app.core.tiers import can_view_restricted_category
 from app.infrastructure.db.models import User
 from app.modules.catalog.model.category import CategoryCreate, CategoryRead, CategoryUpdate
@@ -19,20 +20,26 @@ def _category_visibility(viewer: User | None) -> str:
     return "all" if can_view_restricted_category(viewer) else "public"
 
 
+def _language(request: Request) -> SupportedLanguage:
+    return resolve_language_from_header(request.headers.get("accept-language"))
+
+
 @router.get("", response_model=list[CategoryRead])
 async def list_categories(
+    request: Request,
     parent_id: uuid.UUID | None = None,
     roots_only: bool = Query(default=False),
     viewer: User | None = Depends(get_optional_user),
     svc: CategoryService = Depends(get_category_service),
 ) -> list[CategoryRead]:
     visibility = _category_visibility(viewer)
+    language = _language(request)
     cache = get_cache()
     parent = str(parent_id) if parent_id is not None else "none"
-    suffix = f"list:parent={parent}:roots={int(roots_only)}:visibility={visibility}"
+    suffix = f"list:parent={parent}:roots={int(roots_only)}:visibility={visibility}:language={language}"
 
     async def loader() -> list[CategoryRead]:
-        rows = await svc.list(parent_id=parent_id, roots_only=roots_only)
+        rows = await svc.list(parent_id=parent_id, roots_only=roots_only, language=language)
         if visibility == "all":
             return rows
         return [r for r in rows if not r.is_restricted]
@@ -47,16 +54,18 @@ async def list_categories(
 
 @router.get("/{category_id}", response_model=CategoryRead)
 async def get_category(
+    request: Request,
     category_id: uuid.UUID,
     viewer: User | None = Depends(get_optional_user),
     svc: CategoryService = Depends(get_category_service),
 ) -> CategoryRead:
     visibility = _category_visibility(viewer)
+    language = _language(request)
     cache = get_cache()
-    suffix = f"get:id={category_id}:visibility={visibility}"
+    suffix = f"get:id={category_id}:visibility={visibility}:language={language}"
 
     async def loader() -> CategoryRead:
-        row = await svc.get_by_id(category_id)
+        row = await svc.get_by_id(category_id, language=language)
         if row.is_restricted and visibility != "all":
             raise NotFoundError("category", str(category_id))
         return row

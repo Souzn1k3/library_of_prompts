@@ -1,11 +1,12 @@
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 
 from app.api.deps import get_current_user, get_optional_user
 from app.api.service_deps import get_lesson_service, get_mission_service, get_store_service
 from app.core.cache import get_cache
 from app.core.errors import AppError
+from app.core.i18n import SupportedLanguage, resolve_language_from_header
 from app.infrastructure.db.models import User
 from app.modules.economy.model.store import EconomyActionRead
 from app.modules.economy.service.store_service import StoreService
@@ -23,45 +24,54 @@ def _lesson_visibility(viewer: User | None) -> str:
     return f"{viewer.role.value}:{viewer.plan_tier.value}"
 
 
+def _language(request: Request) -> SupportedLanguage:
+    return resolve_language_from_header(request.headers.get("accept-language"))
+
+
 @router.get("", response_model=list[LessonListItem])
 async def list_lessons(
+    request: Request,
     viewer: User | None = Depends(get_optional_user),
     svc: LessonService = Depends(get_lesson_service),
 ) -> list[LessonListItem]:
     cache = get_cache()
     visibility = _lesson_visibility(viewer)
+    language = _language(request)
     return await cache.get_or_set_json(
         namespace="lessons",
-        suffix=f"list:visibility={visibility}",
-        loader=lambda: svc.list_lessons(viewer),
+        suffix=f"list:visibility={visibility}:language={language}",
+        loader=lambda: svc.list_lessons(viewer, language=language),
         ttl_seconds=_LESSON_CACHE_TTL,
     )
 
 
 @router.get("/popular", response_model=list[PopularLessonItem])
 async def popular_lessons(
+    request: Request,
     limit: int = Query(default=8, ge=1, le=24),
     viewer: User | None = Depends(get_optional_user),
     svc: LessonService = Depends(get_lesson_service),
 ) -> list[PopularLessonItem]:
     cache = get_cache()
     visibility = _lesson_visibility(viewer)
+    language = _language(request)
     return await cache.get_or_set_json(
         namespace="lessons",
-        suffix=f"popular:visibility={visibility}:limit={limit}",
-        loader=lambda: svc.list_popular_lessons(viewer, limit=limit),
+        suffix=f"popular:visibility={visibility}:limit={limit}:language={language}",
+        loader=lambda: svc.list_popular_lessons(viewer, limit=limit, language=language),
         ttl_seconds=_LESSON_CACHE_TTL,
     )
 
 
 @router.get("/by-slug/{slug}", response_model=LessonRead)
 async def get_lesson(
+    request: Request,
     slug: str,
     viewer: User | None = Depends(get_optional_user),
     svc: LessonService = Depends(get_lesson_service),
     missions: MissionService = Depends(get_mission_service),
 ) -> LessonRead:
-    lesson = await svc.get_by_slug(slug, viewer)
+    lesson = await svc.get_by_slug(slug, viewer, language=_language(request))
     if viewer is not None and not lesson.body_locked:
         await missions.record_event(
             user=viewer,
@@ -74,13 +84,14 @@ async def get_lesson(
 
 @router.post("/by-slug/{slug}/complete", response_model=EconomyActionRead)
 async def complete_lesson(
+    request: Request,
     slug: str,
     current_user: User = Depends(get_current_user),
     svc: LessonService = Depends(get_lesson_service),
     missions: MissionService = Depends(get_mission_service),
     store: StoreService = Depends(get_store_service),
 ) -> EconomyActionRead:
-    lesson = await svc.get_by_slug(slug, current_user)
+    lesson = await svc.get_by_slug(slug, current_user, language=_language(request))
     if lesson.body_locked:
         raise AppError(
             code="lesson_locked",

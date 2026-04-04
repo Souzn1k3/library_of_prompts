@@ -12,7 +12,7 @@ async def test_mock_checkout_session_upgrades_plan_tier(async_client, unique_ema
         json={
             "email": unique_email,
             "password": "password123",
-            "display_name": "Billing User",
+            "display_name": f"Billing User {unique_email.split('@', 1)[0][-8:]}",
         },
     )
     assert reg.status_code == 201
@@ -52,7 +52,7 @@ async def test_mock_checkout_rejects_external_redirect_url(async_client, unique_
         json={
             "email": unique_email,
             "password": "password123",
-            "display_name": "Billing User",
+            "display_name": f"Billing User {unique_email.split('@', 1)[0][-8:]}",
         },
     )
     assert reg.status_code == 201
@@ -77,7 +77,7 @@ async def test_mock_billing_portal_rejects_external_return_url(async_client, uni
         json={
             "email": unique_email,
             "password": "password123",
-            "display_name": "Billing User",
+            "display_name": f"Billing User {unique_email.split('@', 1)[0][-8:]}",
         },
     )
     assert reg.status_code == 201
@@ -92,3 +92,5 @@ async def test_mock_billing_portal_rejects_external_return_url(async_client, uni
     )
     assert portal.status_code == 400
     assert portal.json()["code"] == "invalid_redirect_url"
+
+

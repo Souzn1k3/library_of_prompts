@@ -632,8 +632,7 @@ class RecommendationService:
         copies = float(stats.copy_count if stats else 0)
         views = float(stats.view_count if stats else 0)
         quality_metric = row.quality_metrics.quality_score if row.quality_metrics is not None else 0
-        quality_stats = row.stats.quality_score if row.stats is not None else 0
-        quality = min(max(float(max(quality_metric, quality_stats)), 0.0) / 100.0, 1.0)
+        quality = min(max(float(quality_metric), 0.0) / 100.0, 1.0)
         engagement = min(math.log1p(saves * 3.2 + copies * 2.4 + views * 0.35) / 6.0, 1.0)
         created_at = row.created_at if row.created_at.tzinfo is not None else row.created_at.replace(tzinfo=timezone.utc)
         age_days = max((datetime.now(timezone.utc) - created_at).total_seconds() / 86400.0, 0.0)

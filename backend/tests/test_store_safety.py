@@ -22,12 +22,13 @@ async def _credit_lumens(user_id: str, amount: int) -> None:
 
 
 async def _register_store_user(async_client, email: str) -> tuple[str, str]:
+    display_name = f"Store User {email.split('@', 1)[0][-12:]}"
     reg = await async_client.post(
         "/api/v1/auth/register",
         json={
             "email": email,
             "password": "password123",
-            "display_name": "Store User",
+            "display_name": display_name,
         },
     )
     assert reg.status_code == 201
@@ -54,7 +55,7 @@ async def test_store_list_returns_seeded_items(async_client, unique_email: str):
         json={
             "email": unique_email,
             "password": "password123",
-            "display_name": "Store User",
+            "display_name": f"Store User {unique_email.split('@', 1)[0][-8:]}",
         },
     )
     assert reg.status_code == 201
@@ -159,3 +160,4 @@ async def test_store_client_token_is_scoped_per_user(async_client, unique_email:
     )
 
     assert first["purchase"]["id"] != second["purchase"]["id"]
+
