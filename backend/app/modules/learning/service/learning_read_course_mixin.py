@@ -32,6 +32,11 @@ class LearningReadCourseMixin:
 
         lesson_row_map = {item.lesson_slug: item for item in lesson_rows}
         completed_lessons = {item.lesson_slug for item in lesson_rows if item.status == "completed"}
+        ordered_lessons = self._ordered_lessons(course)
+        lesson_unlock_map = self._lesson_unlock_map(
+            ordered_lessons=ordered_lessons,
+            completed_lessons=completed_lessons,
+        )
         status = self._status_from_row(row)
         total_lessons = self._total_lessons(course)
         progress_percent = int(row.progress_percent) if row is not None else safe_percent(len(completed_lessons), total_lessons)
@@ -49,7 +54,7 @@ class LearningReadCourseMixin:
                 )
                 if lesson_status == "completed":
                     module_completed += 1
-                unlocked = self._lesson_unlocked(lesson, completed_lessons)
+                unlocked = lesson_unlock_map.get(lesson["slug"], False)
                 lesson_out.append(
                     LearningLessonOutlineRead(
                         slug=lesson["slug"],

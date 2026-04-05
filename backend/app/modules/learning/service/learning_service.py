@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
 
 from app.core.i18n import SupportedLanguage
 from app.infrastructure.db.models import (
@@ -52,14 +51,6 @@ class LearningService(LearningReadMixin, LearningLessonMixin, LearningSubmission
     def _total_steps(self, lesson: dict) -> int:
         return len(lesson["steps"])
 
-    def _lesson_unlocked(self, lesson: dict, completed_lessons: set[str]) -> bool:
-        if not lesson.get("is_final_assessment", False):
-            return True
-        for req_slug in lesson.get("unlock_after_lessons", []):
-            if req_slug not in completed_lessons:
-                return False
-        return True
-
     def _step_unlocked(self, lesson: dict, step_slug: str, completed_steps: set[str]) -> bool:
         can_unlock_next_step = True
         for step in lesson["steps"]:
@@ -74,6 +65,24 @@ class LearningService(LearningReadMixin, LearningLessonMixin, LearningSubmission
                 can_unlock_next_step = False
 
         return False
+
+    def _lesson_unlock_map(
+        self,
+        *,
+        ordered_lessons: list[tuple[int, dict, int, dict, int]],
+        completed_lessons: set[str],
+    ) -> dict[str, bool]:
+        can_unlock_next_lesson = True
+        unlock_map: dict[str, bool] = {}
+        for _, _, _, lesson, _ in ordered_lessons:
+            slug = str(lesson["slug"])
+            explicit_requirements = [str(item) for item in lesson.get("unlock_after_lessons", [])]
+            explicit_ready = all(req in completed_lessons for req in explicit_requirements)
+            unlocked = (can_unlock_next_lesson and explicit_ready) or slug in completed_lessons
+            unlock_map[slug] = unlocked
+            if slug not in completed_lessons:
+                can_unlock_next_lesson = False
+        return unlock_map
 
     def _status_from_row(self, row: LearningCourseProgress | None) -> LearningProgressStatus:
         if row is None:
@@ -169,17 +178,6 @@ class LearningService(LearningReadMixin, LearningLessonMixin, LearningSubmission
                 )
                 sort_order += 1
 
-    def _new_course_progress(self, *, user_id: uuid.UUID, course_slug: str, total_lessons: int) -> LearningCourseProgress:
-        return LearningCourseProgress(
-            user_id=user_id,
-            course_slug=course_slug,
-            status="active",
-            total_lessons=total_lessons,
-            completed_lessons=0,
-            progress_percent=0,
-            started_at=datetime.now(timezone.utc),
-        )
-
     async def _ensure_course_progress(
         self,
         *,
@@ -187,11 +185,10 @@ class LearningService(LearningReadMixin, LearningLessonMixin, LearningSubmission
         course_slug: str,
         total_lessons: int,
     ) -> LearningCourseProgress:
-        row = await self._repo.get_course_progress(user_id, course_slug)
-        if row is not None:
-            return row
-        return await self._repo.create_course_progress(
-            self._new_course_progress(user_id=user_id, course_slug=course_slug, total_lessons=total_lessons)
+        return await self._repo.ensure_course_progress(
+            user_id=user_id,
+            course_slug=course_slug,
+            total_lessons=total_lessons,
         )
 
     async def _ensure_step_progress(
@@ -204,24 +201,13 @@ class LearningService(LearningReadMixin, LearningLessonMixin, LearningSubmission
         step_slug: str,
         step_kind: str,
     ) -> LearningStepProgress:
-        row = await self._repo.get_step_progress(
+        return await self._repo.ensure_step_progress(
             user_id=user_id,
             course_slug=course_slug,
+            module_slug=module_slug,
             lesson_slug=lesson_slug,
             step_slug=step_slug,
-        )
-        if row is not None:
-            return row
-        return await self._repo.create_step_progress(
-            LearningStepProgress(
-                user_id=user_id,
-                course_slug=course_slug,
-                module_slug=module_slug,
-                lesson_slug=lesson_slug,
-                step_slug=step_slug,
-                step_kind=step_kind,
-                status="not_started",
-            )
+            step_kind=step_kind,
         )
 
     async def _ensure_lesson_progress(
@@ -233,21 +219,11 @@ class LearningService(LearningReadMixin, LearningLessonMixin, LearningSubmission
         lesson_slug: str,
         total_steps: int,
     ) -> LearningLessonProgress:
-        row = await self._repo.get_lesson_progress(
+        return await self._repo.ensure_lesson_progress(
             user_id=user_id,
             course_slug=course_slug,
+            module_slug=module_slug,
             lesson_slug=lesson_slug,
-        )
-        if row is not None:
-            return row
-        return await self._repo.create_lesson_progress(
-            LearningLessonProgress(
-                user_id=user_id,
-                course_slug=course_slug,
-                module_slug=module_slug,
-                lesson_slug=lesson_slug,
-                total_steps=total_steps,
-                status="in_progress",
-            )
+            total_steps=total_steps,
         )
 

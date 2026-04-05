@@ -33,12 +33,16 @@ class LearningLessonRuntimeMixin:
 
         lesson_progress_map = {row.lesson_slug: row for row in lesson_progress_rows}
         completed_lessons = {row.lesson_slug for row in lesson_progress_rows if row.status == "completed"}
-        if not self._lesson_unlocked(lesson_resolution.lesson_row, completed_lessons):
+        lesson_unlock_map = self._lesson_unlock_map(
+            ordered_lessons=lesson_resolution.ordered_lessons,
+            completed_lessons=completed_lessons,
+        )
+        if not lesson_unlock_map.get(lesson_slug, False):
             raise AppError(
                 code="lesson_locked",
-                message="Complete prerequisite lessons to open this assessment.",
+                message="Complete previous lessons to open this lesson.",
                 status_code=409,
-                message_key="errors.lesson_locked",
+                message_key="errors.learning_lesson_locked",
             )
 
         steps_out, completed_steps = self._build_lesson_steps(

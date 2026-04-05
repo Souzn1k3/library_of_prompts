@@ -51,7 +51,7 @@ export function LearningLessonStepView({ language, data }: LearningLessonStepVie
                   <T k="learn.previousLesson" />
                 </Link>
               ) : null}
-              {lesson.next_lesson_href ? (
+              {lesson.next_lesson_href && lesson.status === "completed" ? (
                 <Link href={lesson.next_lesson_href} className="pv-button-primary !w-auto">
                   <T k="learn.nextLesson" />
                 </Link>

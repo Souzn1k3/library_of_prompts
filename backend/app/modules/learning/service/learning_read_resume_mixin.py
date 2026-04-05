@@ -19,8 +19,12 @@ class LearningReadResumeMixin:
         lesson_by_slug = {row.lesson_slug: row for row in lesson_rows}
 
         ordered = self._ordered_lessons(course)
+        unlock_map = self._lesson_unlock_map(
+            ordered_lessons=ordered,
+            completed_lessons=completed_lessons,
+        )
         for _, module, _, lesson, _ in ordered:
-            if not self._lesson_unlocked(lesson, completed_lessons):
+            if not unlock_map.get(lesson["slug"], False):
                 continue
             lesson_row = lesson_by_slug.get(lesson["slug"])
             if lesson_row is None or lesson_row.status != "completed":

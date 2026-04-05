@@ -27,10 +27,20 @@ class LearningLessonProjectionMixin:
         for step in lesson["steps"]:
             submission = step.get("submission", {"type": "none"})
             submission_type = submission.get("type", "none")
+            pass_score = 100 if submission_type == "none" else int(submission.get("pass_score", 0))
             row = step_progress_map.get(step["slug"])
             feedback = None
             if row is not None and isinstance(row.feedback_json, dict):
                 feedback = LearningStepFeedbackRead.model_validate(row.feedback_json)
+            last_answer_text = None
+            last_choice_id = None
+            if row is not None and isinstance(row.answer_json, dict):
+                raw_text = row.answer_json.get("text")
+                raw_choice = row.answer_json.get("choice_id")
+                if isinstance(raw_text, str):
+                    last_answer_text = raw_text
+                if isinstance(raw_choice, str):
+                    last_choice_id = raw_choice
             completed = bool(row.passed) if row is not None else False
             unlocked = can_unlock_next_step or completed
 
@@ -52,7 +62,7 @@ class LearningLessonProjectionMixin:
                         )
                         for choice in submission.get("choices", [])
                     ],
-                    pass_score=int(submission.get("pass_score", 0)),
+                    pass_score=pass_score,
                     min_words=int(submission["min_words"]) if submission.get("min_words") is not None else None,
                     required_markers=[str(marker) for marker in submission.get("required_markers", [])],
                     bonus_markers=[str(marker) for marker in submission.get("bonus_markers", [])],
@@ -62,6 +72,8 @@ class LearningLessonProjectionMixin:
                     completed=completed,
                     attempts=int(row.attempts) if row is not None else 0,
                     last_score=int(row.last_score) if row is not None else None,
+                    last_answer_text=last_answer_text,
+                    last_choice_id=last_choice_id,
                     feedback=feedback,
                 )
             )
@@ -79,6 +91,10 @@ class LearningLessonProjectionMixin:
     ) -> list[LearningLessonOutlineRead]:
         lesson_progress_map = {row.lesson_slug: row for row in lesson_progress_rows}
         completed_lessons = {row.lesson_slug for row in lesson_progress_rows if row.status == "completed"}
+        lesson_unlock_map = self._lesson_unlock_map(
+            ordered_lessons=ordered_lessons,
+            completed_lessons=completed_lessons,
+        )
         outline: list[LearningLessonOutlineRead] = []
         for _, _module, lesson_pos, lesson, _global_pos in ordered_lessons:
             row = lesson_progress_map.get(lesson["slug"])
@@ -95,7 +111,7 @@ class LearningLessonProjectionMixin:
                     estimated_minutes=int(lesson["estimated_minutes"]),
                     position=lesson_pos,
                     status=status,
-                    unlocked=self._lesson_unlocked(lesson, completed_lessons),
+                    unlocked=lesson_unlock_map.get(lesson["slug"], False),
                     is_final_assessment=bool(lesson.get("is_final_assessment", False)),
                     progress_percent=int(row.progress_percent) if row is not None else 0,
                     continue_href=f"/learn/course/{course_slug}/lesson/{lesson['slug']}",

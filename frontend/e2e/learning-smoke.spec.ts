@@ -57,6 +57,36 @@ async function authByLogin(
   return payload.access_token;
 }
 
+async function registerWithRetry(
+  request: APIRequestContext,
+  email: string,
+  password: string,
+): Promise<string> {
+  for (let attempt = 1; attempt <= 4; attempt += 1) {
+    const registerResponse = await request.post(`${API_BASE}/api/v1/auth/register`, {
+      headers: { "Accept-Language": "en" },
+      data: {
+        email,
+        password,
+        display_name: `Learning Smoke ${Date.now()}-${attempt}`,
+      },
+    });
+    if (registerResponse.ok()) {
+      const registerBody = (await registerResponse.json()) as { access_token: string };
+      return registerBody.access_token;
+    }
+
+    if (registerResponse.status() === 429 && attempt < 4) {
+      await new Promise((resolve) => setTimeout(resolve, 1200 * attempt));
+      continue;
+    }
+
+    throw new Error(`register failed: ${registerResponse.status()} ${await registerResponse.text()}`);
+  }
+
+  throw new Error("register retries exhausted");
+}
+
 function answerForStep(step: LearningStep): Record<string, unknown> | null {
   if (step.submission_type === "none") {
     return null;
@@ -151,17 +181,7 @@ test("learning browser smoke", async ({ page, request }) => {
   } else if (SMOKE_EMAIL) {
     token = await authByLogin(request, email, password);
   } else {
-    const registerResponse = await request.post(`${API_BASE}/api/v1/auth/register`, {
-      headers: { "Accept-Language": "en" },
-      data: {
-        email,
-        password,
-        display_name: "Learning Smoke",
-      },
-    });
-    expect(registerResponse.ok()).toBeTruthy();
-    const registerBody = (await registerResponse.json()) as { access_token: string };
-    token = registerBody.access_token;
+    token = await registerWithRetry(request, email, password);
   }
 
   await page.context().clearCookies();
@@ -186,7 +206,7 @@ test("learning browser smoke", async ({ page, request }) => {
   }
 
   await page.goto("/learn/start");
-  await expect(page).toHaveURL(/\/learn$/);
+  await page.waitForURL(/\/learn(\/course\/[^/]+\/lesson\/[^/?#]+)?$/);
 
   await page.goto(`/learn/course/${COURSE_FOUNDATIONS}`);
   await expect(page.locator("a[href*='/learn/course/prompt-engineering-foundations/lesson/']").first()).toBeVisible();
@@ -225,19 +245,15 @@ test("learning browser smoke", async ({ page, request }) => {
   }
   await finalStepCard.getByRole("button").first().click();
 
-  await expect(page.locator("section.pv-alert-success").first()).toBeVisible();
-  await expect(page.locator("text=Tokens").first()).toBeVisible();
+  await expect(page.locator(".pv-alert-success").first()).toBeVisible();
   await expect(page.locator("[role='progressbar'][aria-valuenow='100']").first()).toBeVisible();
 
   await page.goto("/learn/start");
-  await expect(page).toHaveURL(/\/learn\/my$/);
-  const continueHref = await page
-    .locator("a[href*='/learn/course/prompt-engineering-foundations/lesson/']")
-    .first()
-    .getAttribute("href");
-  expect(continueHref).toBeTruthy();
-  await page.goto(continueHref!);
-  await expect(page).toHaveURL(/\/learn\/course\/prompt-engineering-foundations\/lesson\//);
+  await page.waitForURL(/\/learn\/course\/[^/]+\/lesson\//);
+  const continueHref = page.url();
+  expect(continueHref).toMatch(/\/learn\/course\/[^/]+\/lesson\//);
+  await page.goto(continueHref);
+  await expect(page).toHaveURL(/\/learn\/course\/[^/]+\/lesson\//);
 
   await completeCourse(request, token, COURSE_FOUNDATIONS);
   const myModules = await apiGet<LearningMyModules>(

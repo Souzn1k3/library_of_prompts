@@ -175,6 +175,8 @@ export type LearningLessonStep = {
   completed: boolean;
   attempts: number;
   last_score?: number | null;
+  last_answer_text?: string | null;
+  last_choice_id?: string | null;
   feedback?: LearningStepFeedback | null;
 };
 

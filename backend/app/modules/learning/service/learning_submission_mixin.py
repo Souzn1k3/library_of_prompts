@@ -43,12 +43,16 @@ class LearningSubmissionMixin(
         )
         lesson_rows = await self._repo.list_lesson_progress(user_id=user.id, course_slug=course_slug)
         completed_lessons = {row.lesson_slug for row in lesson_rows if row.status == "completed"}
-        if not self._lesson_unlocked(ctx.lesson, completed_lessons):
+        lesson_unlock_map = self._lesson_unlock_map(
+            ordered_lessons=self._ordered_lessons(ctx.course),
+            completed_lessons=completed_lessons,
+        )
+        if not lesson_unlock_map.get(lesson_slug, False):
             raise AppError(
                 code="lesson_locked",
-                message="Complete prerequisite lessons to open this assessment.",
+                message="Complete previous lessons to open this lesson.",
                 status_code=409,
-                message_key="errors.lesson_locked",
+                message_key="errors.learning_lesson_locked",
             )
 
         step_rows_for_lesson = await self._repo.list_step_progress(

@@ -5,7 +5,15 @@ import type { LearningLessonStep } from "@/lib/types";
 import type { LearningTranslation, StepState } from "@/components/learning/runtime/types";
 
 export function buildInitialTextAnswers(steps: LearningLessonStep[]): Record<string, string> {
-  return Object.fromEntries(steps.map((step) => [step.slug, ""]));
+  return Object.fromEntries(
+    steps.map((step) => [step.slug, step.last_answer_text && typeof step.last_answer_text === "string" ? step.last_answer_text : ""]),
+  );
+}
+
+export function buildInitialChoiceAnswers(steps: LearningLessonStep[]): Record<string, string> {
+  return Object.fromEntries(
+    steps.map((step) => [step.slug, step.last_choice_id && typeof step.last_choice_id === "string" ? step.last_choice_id : ""]),
+  );
 }
 
 export function extractErrorMessage(error: unknown): string {

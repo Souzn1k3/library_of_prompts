@@ -1,0 +1,77 @@
+{
+  "generatedAt": "2026-04-05T20:25:31.014Z",
+  "baseUrl": "http://127.0.0.1:3000",
+  "apiBase": "http://127.0.0.1:8000",
+  "screenshots": [
+    {
+      "id": "01-entry-start-target",
+      "route": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-task-briefing",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\artifacts\\screenshots\\learning-deep-debug\\01-entry-start-target.png"
+    },
+    {
+      "id": "03-learning-catalog",
+      "route": "http://127.0.0.1:3000/learn",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\artifacts\\screenshots\\learning-deep-debug\\03-learning-catalog.png"
+    },
+    {
+      "id": "04-my-learning",
+      "route": "http://127.0.0.1:3000/learn/my",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\artifacts\\screenshots\\learning-deep-debug\\04-my-learning.png"
+    },
+    {
+      "id": "05-course-overview",
+      "route": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\artifacts\\screenshots\\learning-deep-debug\\05-course-overview.png"
+    },
+    {
+      "id": "06-lesson-initial",
+      "route": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-foundations",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\artifacts\\screenshots\\learning-deep-debug\\06-lesson-initial.png"
+    },
+    {
+      "id": "07-step-theory",
+      "route": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-foundations/step/pe-foundations-theory",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\artifacts\\screenshots\\learning-deep-debug\\07-step-theory.png"
+    },
+    {
+      "id": "09-step-guided",
+      "route": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-foundations/step/pe-foundations-guided",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\artifacts\\screenshots\\learning-deep-debug\\09-step-guided.png"
+    },
+    {
+      "id": "12-step-quiz",
+      "route": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-foundations/step/pe-foundations-quiz",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\artifacts\\screenshots\\learning-deep-debug\\12-step-quiz.png"
+    },
+    {
+      "id": "15-step-applied",
+      "route": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-foundations/step/pe-foundations-applied",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\artifacts\\screenshots\\learning-deep-debug\\15-step-applied.png"
+    },
+    {
+      "id": "17-step-reflection",
+      "route": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-foundations/step/pe-foundations-reflection",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\artifacts\\screenshots\\learning-deep-debug\\17-step-reflection.png"
+    },
+    {
+      "id": "19-course-progress-after-lesson",
+      "route": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\artifacts\\screenshots\\learning-deep-debug\\19-course-progress-after-lesson.png"
+    },
+    {
+      "id": "20-my-learning-course-complete",
+      "route": "http://127.0.0.1:3000/learn/my",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\artifacts\\screenshots\\learning-deep-debug\\20-my-learning-course-complete.png"
+    },
+    {
+      "id": "21-step-final-checkpoint",
+      "route": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-final-studio/step/pe-final-checkpoint",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\artifacts\\screenshots\\learning-deep-debug\\21-step-final-checkpoint.png"
+    },
+    {
+      "id": "22-start-after-course-complete",
+      "route": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-task-briefing",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\artifacts\\screenshots\\learning-deep-debug\\22-start-after-course-complete.png"
+    }
+  ]
+}

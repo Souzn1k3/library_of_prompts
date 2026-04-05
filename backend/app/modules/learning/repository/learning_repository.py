@@ -57,6 +57,41 @@ class LearningRepository:
         self._session.add(row)
         return await self.save_course_progress(row)
 
+    async def ensure_course_progress(
+        self,
+        *,
+        user_id: uuid.UUID,
+        course_slug: str,
+        total_lessons: int,
+    ) -> LearningCourseProgress:
+        existing = await self.get_course_progress(user_id, course_slug)
+        if existing is not None:
+            return existing
+
+        now = datetime.now(timezone.utc)
+        stmt = (
+            self._insert(LearningCourseProgress)
+            .values(
+                id=uuid.uuid4(),
+                user_id=user_id,
+                course_slug=course_slug,
+                status="active",
+                completed_lessons=0,
+                total_lessons=total_lessons,
+                progress_percent=0,
+                started_at=now,
+                updated_at=now,
+            )
+            .on_conflict_do_nothing(index_elements=["user_id", "course_slug"])
+        )
+        await self._session.execute(stmt)
+        await self._session.flush()
+
+        row = await self.get_course_progress(user_id, course_slug)
+        if row is None:
+            raise RuntimeError("failed to ensure course progress row")
+        return row
+
     async def get_lesson_progress(
         self,
         *,
@@ -90,6 +125,55 @@ class LearningRepository:
     async def create_lesson_progress(self, row: LearningLessonProgress) -> LearningLessonProgress:
         self._session.add(row)
         return await self.save_lesson_progress(row)
+
+    async def ensure_lesson_progress(
+        self,
+        *,
+        user_id: uuid.UUID,
+        course_slug: str,
+        module_slug: str,
+        lesson_slug: str,
+        total_steps: int,
+    ) -> LearningLessonProgress:
+        existing = await self.get_lesson_progress(
+            user_id=user_id,
+            course_slug=course_slug,
+            lesson_slug=lesson_slug,
+        )
+        if existing is not None:
+            return existing
+
+        now = datetime.now(timezone.utc)
+        stmt = (
+            self._insert(LearningLessonProgress)
+            .values(
+                id=uuid.uuid4(),
+                user_id=user_id,
+                course_slug=course_slug,
+                module_slug=module_slug,
+                lesson_slug=lesson_slug,
+                status="in_progress",
+                completed_steps=0,
+                total_steps=total_steps,
+                progress_percent=0,
+                attempts_count=0,
+                lmn_reward_granted=False,
+                started_at=now,
+                updated_at=now,
+            )
+            .on_conflict_do_nothing(index_elements=["user_id", "course_slug", "lesson_slug"])
+        )
+        await self._session.execute(stmt)
+        await self._session.flush()
+
+        row = await self.get_lesson_progress(
+            user_id=user_id,
+            course_slug=course_slug,
+            lesson_slug=lesson_slug,
+        )
+        if row is None:
+            raise RuntimeError("failed to ensure lesson progress row")
+        return row
 
     async def get_step_progress(
         self,
@@ -133,6 +217,59 @@ class LearningRepository:
     async def create_step_progress(self, row: LearningStepProgress) -> LearningStepProgress:
         self._session.add(row)
         return await self.save_step_progress(row)
+
+    async def ensure_step_progress(
+        self,
+        *,
+        user_id: uuid.UUID,
+        course_slug: str,
+        module_slug: str,
+        lesson_slug: str,
+        step_slug: str,
+        step_kind: str,
+    ) -> LearningStepProgress:
+        existing = await self.get_step_progress(
+            user_id=user_id,
+            course_slug=course_slug,
+            lesson_slug=lesson_slug,
+            step_slug=step_slug,
+        )
+        if existing is not None:
+            return existing
+
+        now = datetime.now(timezone.utc)
+        stmt = (
+            self._insert(LearningStepProgress)
+            .values(
+                id=uuid.uuid4(),
+                user_id=user_id,
+                course_slug=course_slug,
+                module_slug=module_slug,
+                lesson_slug=lesson_slug,
+                step_slug=step_slug,
+                step_kind=step_kind,
+                status="not_started",
+                attempts=0,
+                passed=False,
+                last_score=0,
+                best_score=0,
+                created_at=now,
+                updated_at=now,
+            )
+            .on_conflict_do_nothing(index_elements=["user_id", "course_slug", "lesson_slug", "step_slug"])
+        )
+        await self._session.execute(stmt)
+        await self._session.flush()
+
+        row = await self.get_step_progress(
+            user_id=user_id,
+            course_slug=course_slug,
+            lesson_slug=lesson_slug,
+            step_slug=step_slug,
+        )
+        if row is None:
+            raise RuntimeError("failed to ensure step progress row")
+        return row
 
     async def grant_reward(
         self,

@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { submitLearningStep } from "@/lib/client-api";
 import { appRoute } from "@/lib/constants/routes";
 import type { EconomyAction, LearningLessonDetail, LearningStepSubmitResponse } from "@/lib/types";
 
 import {
+  buildInitialChoiceAnswers,
   buildInitialTextAnswers,
   buildSubmissionAnswer,
   extractErrorMessage,
@@ -40,13 +41,14 @@ export function useLearningLessonRuntime({
   const [lessonProgressPercent, setLessonProgressPercent] = useState<number>(lesson.progress_percent);
   const [courseProgressPercent, setCourseProgressPercent] = useState<number>(lesson.course_progress_percent);
   const [textAnswers, setTextAnswers] = useState<Record<string, string>>(buildInitialTextAnswers(lesson.steps));
-  const [choiceAnswers, setChoiceAnswers] = useState<Record<string, string>>({});
+  const [choiceAnswers, setChoiceAnswers] = useState<Record<string, string>>(buildInitialChoiceAnswers(lesson.steps));
   const [submittingStepSlug, setSubmittingStepSlug] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [statusTone, setStatusTone] = useState<RuntimeStatusTone | null>(null);
   const [economy, setEconomy] = useState<EconomyAction | null>(null);
   const [weakAreas, setWeakAreas] = useState<LearningStepSubmitResponse["weak_areas"]>([]);
+  const submittingStepRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (activeStepSlugProp) {
@@ -60,13 +62,14 @@ export function useLearningLessonRuntime({
     setLessonProgressPercent(lesson.progress_percent);
     setCourseProgressPercent(lesson.course_progress_percent);
     setTextAnswers(buildInitialTextAnswers(lesson.steps));
-    setChoiceAnswers({});
+    setChoiceAnswers(buildInitialChoiceAnswers(lesson.steps));
     setSubmittingStepSlug(null);
     setSubmitError(null);
     setStatusMessage(null);
     setStatusTone(null);
     setEconomy(null);
     setWeakAreas([]);
+    submittingStepRef.current = null;
   }, [activeStepSlugProp, lesson]);
 
   const activeStepIndex = useMemo(() => {
@@ -102,7 +105,11 @@ export function useLearningLessonRuntime({
         setSubmitError(t("learn.stepLockedLocal"));
         return;
       }
+      if (submittingStepRef.current === step.slug) {
+        return;
+      }
 
+      submittingStepRef.current = step.slug;
       setSubmittingStepSlug(step.slug);
       setSubmitError(null);
       setStatusMessage(null);
@@ -162,6 +169,7 @@ export function useLearningLessonRuntime({
       } catch (error) {
         setSubmitError(extractErrorMessage(error));
       } finally {
+        submittingStepRef.current = null;
         setSubmittingStepSlug(null);
       }
     },

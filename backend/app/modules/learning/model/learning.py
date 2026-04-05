@@ -165,6 +165,8 @@ class LearningLessonStepRead(BaseModel):
     completed: bool = False
     attempts: int = 0
     last_score: int | None = None
+    last_answer_text: str | None = None
+    last_choice_id: str | None = None
     feedback: LearningStepFeedbackRead | None = None
 
 

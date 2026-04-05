@@ -33,21 +33,24 @@ async def register(
     body: RegisterRequest,
     request: Request,
     response: Response,
+    session: AsyncSession = Depends(get_db),
     svc: AuthService = Depends(get_auth_service),
 ) -> TokenResponse:
     ip = await enforce_request_rate_limits(request, _REGISTER_LIMITS)
-    session = await svc.register(
+    tokens = await svc.register(
         body,
         client_ip=ip,
         user_agent=request.headers.get("user-agent"),
     )
+    # Ensure newly created user/session rows are committed before issuing tokens.
+    await session.commit()
     set_auth_cookies(
         response,
-        access_token=session.access_token,
-        refresh_token=session.refresh_token,
+        access_token=tokens.access_token,
+        refresh_token=tokens.refresh_token,
         settings=get_settings(),
     )
-    return TokenResponse(access_token=session.access_token)
+    return TokenResponse(access_token=tokens.access_token)
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -55,6 +58,7 @@ async def login(
     body: LoginRequest,
     request: Request,
     response: Response,
+    session: AsyncSession = Depends(get_db),
     svc: AuthService = Depends(get_auth_service),
 ) -> TokenResponse:
     ip = await enforce_request_rate_limits(
@@ -62,18 +66,20 @@ async def login(
         _LOGIN_LIMITS,
         values={"email": body.email.lower()},
     )
-    session = await svc.login(
+    tokens = await svc.login(
         body,
         client_ip=ip,
         user_agent=request.headers.get("user-agent"),
     )
+    # Commit refresh-token rotation/state before returning an access token to clients.
+    await session.commit()
     set_auth_cookies(
         response,
-        access_token=session.access_token,
-        refresh_token=session.refresh_token,
+        access_token=tokens.access_token,
+        refresh_token=tokens.refresh_token,
         settings=get_settings(),
     )
-    return TokenResponse(access_token=session.access_token)
+    return TokenResponse(access_token=tokens.access_token)
 
 
 @router.post("/refresh", response_model=TokenResponse)
