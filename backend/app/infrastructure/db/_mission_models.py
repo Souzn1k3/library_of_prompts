@@ -6,8 +6,8 @@ from datetime import datetime, timezone
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base
-from .models import (
+from ._catalog_models import Prompt
+from ._enums import (
     MissionActionType,
     MissionDifficulty,
     MissionProgressStatus,
@@ -16,9 +16,9 @@ from .models import (
     OnboardingGoal,
     OnboardingRole,
     PlanTier,
-    Prompt,
-    User,
 )
+from ._user_model import User
+from .base import Base
 
 
 def utc_now() -> datetime:

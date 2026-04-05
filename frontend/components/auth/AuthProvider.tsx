@@ -4,23 +4,22 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
 
+import {
+  useAuthBootstrapSync,
+  useAuthForegroundRevalidate,
+  useAuthMountLifecycle,
+  useAuthStateChangeSync,
+} from "@/components/auth/authProviderEffects";
 import { ApiRequestError } from "@/lib/api";
-import { clearLegacyAccessToken, subscribeAuthStateChange } from "@/lib/auth";
 import { fetchMe, logoutRequest } from "@/lib/client-api";
 import type { UserProfile } from "@/lib/types";
 
 export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
-
-const ACCESS_TOKEN_COOKIE =
-  process.env.NEXT_PUBLIC_ACCESS_TOKEN_COOKIE_NAME ?? "pv_access_token";
-const REFRESH_TOKEN_COOKIE =
-  process.env.NEXT_PUBLIC_REFRESH_TOKEN_COOKIE_NAME ?? "pv_refresh_token";
 
 type AuthContextValue = {
   status: AuthStatus;
@@ -31,17 +30,6 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-
-function hasAuthCookieInBrowser() {
-  if (typeof document === "undefined") {
-    return false;
-  }
-  const pairs = document.cookie.split(";").map((item) => item.trim());
-  return pairs.some((pair) => {
-    const [name] = pair.split("=");
-    return name === ACCESS_TOKEN_COOKIE || name === REFRESH_TOKEN_COOKIE;
-  });
-}
 
 export function AuthProvider({
   children,
@@ -119,59 +107,16 @@ export function AuthProvider({
     }
   }, [applyUnauthenticated]);
 
-  useEffect(() => {
-    mountedRef.current = true;
-    clearLegacyAccessToken();
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!initialHasAuthCookie) {
-      return;
-    }
-    if (serverBootstrapDoneRef.current) {
-      return;
-    }
-    serverBootstrapDoneRef.current = true;
-    void refreshAuth();
-  }, [initialHasAuthCookie, refreshAuth]);
-
-  useEffect(() => {
-    if (initialHasAuthCookie) {
-      return;
-    }
-    if (clientBootstrapDoneRef.current) {
-      return;
-    }
-    if (!hasAuthCookieInBrowser()) {
-      return;
-    }
-    clientBootstrapDoneRef.current = true;
-    setStatus((current) => (current === "authenticated" ? current : "loading"));
-    void refreshAuth();
-  }, [initialHasAuthCookie, refreshAuth]);
-
-  useEffect(() => {
-    return subscribeAuthStateChange(() => applyUnauthenticated());
-  }, [applyUnauthenticated]);
-
-  useEffect(() => {
-    const revalidate = () => {
-      if (typeof document !== "undefined" && document.visibilityState === "hidden") {
-        return;
-      }
-      void refreshAuth({ background: true });
-    };
-
-    window.addEventListener("focus", revalidate);
-    document.addEventListener("visibilitychange", revalidate);
-    return () => {
-      window.removeEventListener("focus", revalidate);
-      document.removeEventListener("visibilitychange", revalidate);
-    };
-  }, [refreshAuth]);
+  useAuthMountLifecycle(mountedRef);
+  useAuthBootstrapSync({
+    initialHasAuthCookie,
+    refreshAuth,
+    serverBootstrapDoneRef,
+    clientBootstrapDoneRef,
+    setStatusLoading: () => setStatus((current) => (current === "authenticated" ? current : "loading")),
+  });
+  useAuthStateChangeSync(applyUnauthenticated);
+  useAuthForegroundRevalidate(refreshAuth);
 
   const value = useMemo<AuthContextValue>(
     () => ({

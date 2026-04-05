@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export type WorkspaceStatusTone = "neutral" | "info" | "success" | "warning";
 
-type WorkspaceMapCardProps = {
+export type WorkspaceMapCardProps = {
   title: string;
   description: string;
   href: string;

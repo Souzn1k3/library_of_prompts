@@ -3,9 +3,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_optional_user
 from app.api.service_deps import get_auth_service
+from app.api.support.rate_limit import RateLimitRule, enforce_request_rate_limits
 from app.config import get_settings
 from app.core.errors import AppError
-from app.core.rate_limit import enforce_rate_limit, resolve_rate_limit_ip
 from app.infrastructure.db.session import get_db
 from app.infrastructure.db.models import User
 from app.modules.identity.model.auth import LoginRequest, RegisterRequest, TokenResponse
@@ -13,6 +13,19 @@ from app.modules.identity.service.auth_cookies import clear_auth_cookies, set_au
 from app.modules.identity.service.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+_REGISTER_LIMITS = (
+    RateLimitRule(key_template="auth:register:ip:{ip}", limit=5, window_seconds=15 * 60),
+)
+
+_LOGIN_LIMITS = (
+    RateLimitRule(key_template="auth:login:ip:{ip}", limit=10, window_seconds=5 * 60),
+    RateLimitRule(key_template="auth:login:email:{email}", limit=8, window_seconds=10 * 60),
+)
+
+_REFRESH_LIMITS = (
+    RateLimitRule(key_template="auth:refresh:ip:{ip}", limit=30, window_seconds=5 * 60),
+)
 
 
 @router.post("/register", response_model=TokenResponse, status_code=201)
@@ -22,12 +35,7 @@ async def register(
     response: Response,
     svc: AuthService = Depends(get_auth_service),
 ) -> TokenResponse:
-    ip = resolve_rate_limit_ip(request)
-    await enforce_rate_limit(
-        key=f"auth:register:ip:{ip}",
-        limit=5,
-        window_seconds=15 * 60,
-    )
+    ip = await enforce_request_rate_limits(request, _REGISTER_LIMITS)
     session = await svc.register(
         body,
         client_ip=ip,
@@ -49,17 +57,10 @@ async def login(
     response: Response,
     svc: AuthService = Depends(get_auth_service),
 ) -> TokenResponse:
-    ip = resolve_rate_limit_ip(request)
-    email_key = body.email.lower()
-    await enforce_rate_limit(
-        key=f"auth:login:ip:{ip}",
-        limit=10,
-        window_seconds=5 * 60,
-    )
-    await enforce_rate_limit(
-        key=f"auth:login:email:{email_key}",
-        limit=8,
-        window_seconds=10 * 60,
+    ip = await enforce_request_rate_limits(
+        request,
+        _LOGIN_LIMITS,
+        values={"email": body.email.lower()},
     )
     session = await svc.login(
         body,
@@ -82,12 +83,7 @@ async def refresh(
     svc: AuthService = Depends(get_auth_service),
     session: AsyncSession = Depends(get_db),
 ) -> TokenResponse:
-    ip = resolve_rate_limit_ip(request)
-    await enforce_rate_limit(
-        key=f"auth:refresh:ip:{ip}",
-        limit=30,
-        window_seconds=5 * 60,
-    )
+    ip = await enforce_request_rate_limits(request, _REFRESH_LIMITS)
     refresh_token = request.cookies.get(get_settings().refresh_token_cookie_name)
     if not refresh_token:
         raise AppError(

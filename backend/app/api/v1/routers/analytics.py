@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Query, Request, status
 
 from app.api.deps import get_optional_user
 from app.api.service_deps import get_analytics_service
-from app.core.rate_limit import enforce_rate_limit, resolve_rate_limit_ip
+from app.api.support.rate_limit import RateLimitRule, enforce_request_rate_limits
 from app.infrastructure.db.models import User
 from app.modules.analytics.model.analytics import (
     AnalyticsEventName,
@@ -16,6 +16,22 @@ from app.modules.analytics.service.analytics_service import AnalyticsService
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
+_INGEST_USER_LIMITS = (
+    RateLimitRule(
+        key_template="analytics:ingest:user:{user_id}",
+        limit=180,
+        window_seconds=5 * 60,
+    ),
+)
+
+_INGEST_IP_LIMITS = (
+    RateLimitRule(
+        key_template="analytics:ingest:ip:{ip}",
+        limit=180,
+        window_seconds=5 * 60,
+    ),
+)
+
 
 @router.post("/events", response_model=AnalyticsIngestResponse, status_code=status.HTTP_202_ACCEPTED)
 async def ingest_events(
@@ -24,13 +40,10 @@ async def ingest_events(
     viewer: User | None = Depends(get_optional_user),
     svc: AnalyticsService = Depends(get_analytics_service),
 ) -> AnalyticsIngestResponse:
-    ip = resolve_rate_limit_ip(request)
-    principal = str(viewer.id) if viewer is not None else ip
-    await enforce_rate_limit(
-        key=f"analytics:ingest:{principal}",
-        limit=180,
-        window_seconds=5 * 60,
-    )
+    if viewer is None:
+        await enforce_request_rate_limits(request, _INGEST_IP_LIMITS)
+    else:
+        await enforce_request_rate_limits(request, _INGEST_USER_LIMITS, values={"user_id": viewer.id})
     events = body.normalized_events()
     return await svc.ingest(events, user=viewer)
 

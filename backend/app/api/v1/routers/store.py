@@ -2,13 +2,26 @@ from fastapi import APIRouter, Depends, Request
 
 from app.api.deps import get_current_user
 from app.api.service_deps import get_mission_service, get_store_service
-from app.core.rate_limit import enforce_rate_limit, resolve_rate_limit_ip
+from app.api.support.rate_limit import RateLimitRule, enforce_request_rate_limits
 from app.infrastructure.db.models import User
 from app.modules.economy.model.store import PurchaseResult, StoreItemRead, StorePurchaseRequest
 from app.modules.economy.service.store_service import StoreService
 from app.modules.missions.service.mission_service import MissionService
 
 router = APIRouter(prefix="/store", tags=["store"])
+
+_PURCHASE_LIMITS = (
+    RateLimitRule(
+        key_template="store:purchase:user:{user_id}",
+        limit=30,
+        window_seconds=10 * 60,
+    ),
+    RateLimitRule(
+        key_template="store:purchase:ip:{ip}",
+        limit=45,
+        window_seconds=10 * 60,
+    ),
+)
 
 
 @router.get("", response_model=list[StoreItemRead])
@@ -28,16 +41,10 @@ async def purchase_item(
     svc: StoreService = Depends(get_store_service),
     missions: MissionService = Depends(get_mission_service),
 ) -> PurchaseResult:
-    ip = resolve_rate_limit_ip(request)
-    await enforce_rate_limit(
-        key=f"store:purchase:user:{current_user.id}",
-        limit=30,
-        window_seconds=10 * 60,
-    )
-    await enforce_rate_limit(
-        key=f"store:purchase:ip:{ip}",
-        limit=45,
-        window_seconds=10 * 60,
+    await enforce_request_rate_limits(
+        request,
+        _PURCHASE_LIMITS,
+        values={"user_id": current_user.id},
     )
     result = await svc.purchase(
         user=current_user,

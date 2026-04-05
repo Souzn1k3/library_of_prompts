@@ -1,14 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import type { AuthStatus } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/LanguageProvider";
-import { ApiRequestError } from "@/lib/api";
 import {
   completeOnboardingFirstWin,
-  fetchOnboardingProfile,
   fetchOnboardingStarterPack,
   skipOnboarding,
   updateOnboardingProfile,
@@ -23,6 +21,10 @@ import type {
 } from "@/lib/types";
 
 import { getContextOptions, getGoalOptions, getRoleOptions } from "./options";
+import {
+  loadOnboardingWizardBootstrap,
+  mapOnboardingLoadError,
+} from "./onboardingWizardLoader";
 
 export function useOnboardingWizard(status: AuthStatus) {
   const { t, language } = useI18n();
@@ -47,6 +49,13 @@ export function useOnboardingWizard(status: AuthStatus) {
   const goalOptions = useMemo(() => getGoalOptions(t), [t]);
   const contextOptions = useMemo(() => getContextOptions(t), [t]);
 
+  const applyProfile = useCallback((profileData: OnboardingProfile) => {
+    setProfile(profileData);
+    setRole(profileData.role);
+    setGoal(profileData.goal);
+    setAiContext(profileData.ai_context);
+  }, []);
+
   useEffect(() => {
     if (status !== "authenticated") {
       setLoading(false);
@@ -59,27 +68,25 @@ export function useOnboardingWizard(status: AuthStatus) {
 
     setLoading(true);
     setLoadError(null);
-    Promise.all([fetchOnboardingProfile(), fetchOnboardingStarterPack()])
-      .then(([profileData, starterPack]) => {
-        setProfile(profileData);
-        setRole(profileData.role);
-        setGoal(profileData.goal);
-        setAiContext(profileData.ai_context);
-        setStarter(starterPack);
-        setFirstWinDone(Boolean(profileData.first_win_completed_at));
+    loadOnboardingWizardBootstrap()
+      .then((bootstrap) => {
+        applyProfile(bootstrap.profile);
+        setStarter(bootstrap.starter);
+        setFirstWinDone(bootstrap.firstWinDone);
         setFirstWinEconomy(null);
         setLoadError(null);
         setLoading(false);
       })
       .catch((e) => {
-        if (e instanceof ApiRequestError && e.status === 401) {
+        const message = mapOnboardingLoadError(e, t);
+        if (!message) {
           setLoading(false);
           return;
         }
-        setLoadError(e instanceof Error ? e.message : t("api.requestFailed"));
+        setLoadError(message);
         setLoading(false);
       });
-  }, [language, loadAttempt, status, t]);
+  }, [applyProfile, language, loadAttempt, status, t]);
 
   useEffect(() => {
     if (!profile?.needs_onboarding) return;
@@ -106,7 +113,7 @@ export function useOnboardingWizard(status: AuthStatus) {
     try {
       const profileData = await updateOnboardingProfile({ role, goal, ai_context: aiContext });
       const starterPack = await fetchOnboardingStarterPack();
-      setProfile(profileData);
+      applyProfile(profileData);
       setStarter(starterPack);
       setStep(3);
       trackEvent({

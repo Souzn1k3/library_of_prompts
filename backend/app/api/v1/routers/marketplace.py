@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Request
 
 from app.api.deps import get_current_user
 from app.api.service_deps import get_marketplace_service
-from app.core.rate_limit import enforce_rate_limit, resolve_rate_limit_ip
+from app.api.support.rate_limit import RateLimitRule, enforce_request_rate_limits
 from app.infrastructure.db.models import User
 from app.modules.marketplace.model.marketplace import (
     MarketplacePayoutRead,
@@ -21,6 +21,31 @@ from app.modules.marketplace.model.marketplace import (
 from app.modules.marketplace.service.marketplace_service import MarketplaceService
 
 router = APIRouter(prefix="/marketplace", tags=["marketplace"])
+
+_PAYOUT_LIMITS = (
+    RateLimitRule(key_template="marketplace:payout:user:{user_id}", limit=8, window_seconds=10 * 60),
+    RateLimitRule(key_template="marketplace:payout:ip:{ip}", limit=16, window_seconds=10 * 60),
+)
+
+_LUMEN_PURCHASE_LIMITS = (
+    RateLimitRule(key_template="marketplace:lumen:user:{user_id}", limit=20, window_seconds=10 * 60),
+    RateLimitRule(key_template="marketplace:lumen:ip:{ip}", limit=35, window_seconds=10 * 60),
+)
+
+_CHECKOUT_LIMITS = (
+    RateLimitRule(key_template="marketplace:checkout:user:{user_id}", limit=20, window_seconds=10 * 60),
+    RateLimitRule(key_template="marketplace:checkout:ip:{ip}", limit=35, window_seconds=10 * 60),
+)
+
+_REVIEW_LIMITS = (
+    RateLimitRule(key_template="marketplace:review:user:{user_id}", limit=30, window_seconds=10 * 60),
+    RateLimitRule(key_template="marketplace:review:ip:{ip}", limit=45, window_seconds=10 * 60),
+)
+
+_REPORT_LIMITS = (
+    RateLimitRule(key_template="marketplace:report:user:{user_id}", limit=20, window_seconds=10 * 60),
+    RateLimitRule(key_template="marketplace:report:ip:{ip}", limit=35, window_seconds=10 * 60),
+)
 
 
 @router.get("/me", response_model=MarketplaceOverviewRead)
@@ -39,9 +64,7 @@ async def request_marketplace_payout(
     current_user: User = Depends(get_current_user),
     svc: MarketplaceService = Depends(get_marketplace_service),
 ) -> MarketplacePayoutRead:
-    ip = resolve_rate_limit_ip(request)
-    await enforce_rate_limit(key=f"marketplace:payout:user:{current_user.id}", limit=8, window_seconds=10 * 60)
-    await enforce_rate_limit(key=f"marketplace:payout:ip:{ip}", limit=16, window_seconds=10 * 60)
+    await enforce_request_rate_limits(request, _PAYOUT_LIMITS, values={"user_id": current_user.id})
     return await svc.create_payout_batch(
         seller_user_id=current_user.id,
         currency_code=body.currency_code,
@@ -57,9 +80,7 @@ async def buy_prompt_with_lumens(
     current_user: User = Depends(get_current_user),
     svc: MarketplaceService = Depends(get_marketplace_service),
 ) -> PromptPurchaseActionResponse:
-    ip = resolve_rate_limit_ip(request)
-    await enforce_rate_limit(key=f"marketplace:lumen:user:{current_user.id}", limit=20, window_seconds=10 * 60)
-    await enforce_rate_limit(key=f"marketplace:lumen:ip:{ip}", limit=35, window_seconds=10 * 60)
+    await enforce_request_rate_limits(request, _LUMEN_PURCHASE_LIMITS, values={"user_id": current_user.id})
     prompt = await svc.get_prompt_or_404(prompt_id)
     return await svc.purchase_with_lumens(
         user=current_user,
@@ -75,9 +96,7 @@ async def create_prompt_checkout_session(
     current_user: User = Depends(get_current_user),
     svc: MarketplaceService = Depends(get_marketplace_service),
 ) -> PromptCheckoutSessionResponse:
-    ip = resolve_rate_limit_ip(request)
-    await enforce_rate_limit(key=f"marketplace:checkout:user:{current_user.id}", limit=20, window_seconds=10 * 60)
-    await enforce_rate_limit(key=f"marketplace:checkout:ip:{ip}", limit=35, window_seconds=10 * 60)
+    await enforce_request_rate_limits(request, _CHECKOUT_LIMITS, values={"user_id": current_user.id})
     return await svc.create_checkout_session(user=current_user, payload=body)
 
 
@@ -89,9 +108,7 @@ async def upsert_prompt_review(
     current_user: User = Depends(get_current_user),
     svc: MarketplaceService = Depends(get_marketplace_service),
 ) -> PromptReviewRead:
-    ip = resolve_rate_limit_ip(request)
-    await enforce_rate_limit(key=f"marketplace:review:user:{current_user.id}", limit=30, window_seconds=10 * 60)
-    await enforce_rate_limit(key=f"marketplace:review:ip:{ip}", limit=45, window_seconds=10 * 60)
+    await enforce_request_rate_limits(request, _REVIEW_LIMITS, values={"user_id": current_user.id})
     return await svc.upsert_review(user=current_user, prompt_id=prompt_id, payload=body)
 
 
@@ -103,7 +120,5 @@ async def report_prompt_review(
     current_user: User = Depends(get_current_user),
     svc: MarketplaceService = Depends(get_marketplace_service),
 ) -> PromptReviewRead:
-    ip = resolve_rate_limit_ip(request)
-    await enforce_rate_limit(key=f"marketplace:report:user:{current_user.id}", limit=20, window_seconds=10 * 60)
-    await enforce_rate_limit(key=f"marketplace:report:ip:{ip}", limit=35, window_seconds=10 * 60)
+    await enforce_request_rate_limits(request, _REPORT_LIMITS, values={"user_id": current_user.id})
     return await svc.report_review(user=current_user, review_id=review_id, payload=body)

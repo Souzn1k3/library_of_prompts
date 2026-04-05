@@ -6,28 +6,17 @@ import { useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/LanguageProvider";
+import {
+  HeaderNavAuthenticatedDesktop,
+  HeaderNavAuthenticatedMobile,
+} from "@/components/layout/HeaderNavAuthenticated";
+import { getInitials } from "@/components/layout/headerNavUtils";
 import { getAccountMenuItems, isAccountMenuItemActive } from "@/lib/navigation";
 
 type HeaderNavProps = {
   mobile?: boolean;
   onNavigate?: () => void;
 };
-
-function getInitials(value: string) {
-  const parts = value
-    .split(/\s+/)
-    .map((chunk) => chunk.trim())
-    .filter(Boolean);
-
-  if (parts.length === 0) {
-    return "PV";
-  }
-
-  return parts
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
-}
 
 export function HeaderNav({ mobile = false, onNavigate }: HeaderNavProps) {
   const router = useRouter();
@@ -90,96 +79,33 @@ export function HeaderNav({ mobile = false, onNavigate }: HeaderNavProps) {
   if (status === "authenticated") {
     if (mobile) {
       return (
-        <div className="rounded-[1.25rem] border border-[rgba(15,23,42,0.08)] bg-white/72 p-3.5 shadow-[0_14px_28px_rgba(15,23,42,0.04)]">
-          <div className="flex items-center gap-3">
-            <span className="pv-header-avatar pv-header-avatar-lg">{userInitials}</span>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-zinc-950">{userLabel}</p>
-            </div>
-          </div>
-
-          <div className="mt-3 grid gap-1">
-            {menuItems.map((item) => {
-              const active = item.isActive(pathname);
-              return (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  onClick={onNavigate}
-                  className={`pv-header-mobile-link ${active ? "pv-header-mobile-link-active" : ""}`}
-                >
-                  {t(item.labelKey)}
-                </Link>
-              );
-            })}
-          </div>
-
-          <button type="button" onClick={handleLogout} className="pv-header-mobile-logout">
-            {t("nav.logout")}
-          </button>
-        </div>
+        <HeaderNavAuthenticatedMobile
+          userLabel={userLabel}
+          userInitials={userInitials}
+          pathname={pathname}
+          menuItems={menuItems}
+          onNavigate={onNavigate}
+          onLogout={handleLogout}
+          t={t}
+        />
       );
     }
 
     return (
-      <div ref={menuRef} className="pv-header-account-wrap relative">
-        <button
-          type="button"
-          onClick={() => setOpen((value) => !value)}
-          aria-expanded={open}
-          aria-haspopup="menu"
-          aria-label={t("header.accountMenu")}
-          className={`pv-header-user-trigger ${
-            open || accountActive ? "pv-header-user-trigger-active" : ""
-          }`}
-        >
-          <span className="pv-header-avatar">{userInitials}</span>
-          <span className="max-w-[10rem] truncate text-[0.92rem] font-semibold text-zinc-950 xl:max-w-[12rem]">
-            {userLabel}
-          </span>
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 20 20"
-            className={`h-4 w-4 text-zinc-400 transition ${open ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="m5.5 8 4.5 4 4.5-4" />
-          </svg>
-        </button>
-
-        {open ? (
-          <div className="pv-header-dropdown absolute right-0 top-full mt-2.5 w-[15rem]">
-            <div className="grid gap-1">
-              {menuItems.map((item) => {
-                const active = item.isActive(pathname);
-                return (
-                  <Link
-                    key={item.id}
-                    href={item.href}
-                    onClick={() => {
-                      setOpen(false);
-                      onNavigate?.();
-                    }}
-                    className={`pv-header-menu-link ${active ? "pv-header-menu-link-active" : ""}`}
-                  >
-                    {t(item.labelKey)}
-                  </Link>
-                );
-              })}
-            </div>
-
-            <div className="mt-2 border-t border-[rgba(15,23,42,0.08)] pt-2">
-              <button type="button" onClick={handleLogout} className="pv-header-menu-link w-full">
-                {t("nav.logout")}
-              </button>
-            </div>
-          </div>
-        ) : null}
-      </div>
+      <HeaderNavAuthenticatedDesktop
+        menuRef={menuRef}
+        userLabel={userLabel}
+        userInitials={userInitials}
+        pathname={pathname}
+        menuItems={menuItems}
+        open={open}
+        accountActive={accountActive}
+        onToggle={() => setOpen((value) => !value)}
+        onNavigate={onNavigate}
+        onClose={() => setOpen(false)}
+        onLogout={handleLogout}
+        t={t}
+      />
     );
   }
 

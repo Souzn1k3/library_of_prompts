@@ -4,14 +4,27 @@ from fastapi import APIRouter, Depends, Request, status
 
 from app.api.deps import get_current_user
 from app.api.service_deps import get_mission_service, get_submission_service
+from app.api.support.rate_limit import RateLimitRule, enforce_request_rate_limits
 from app.core.cache import get_cache
-from app.core.rate_limit import enforce_rate_limit, resolve_rate_limit_ip
 from app.infrastructure.db.models import User
 from app.modules.catalog.model.prompt import PromptSubmissionResult, PromptSubmit
 from app.modules.contributions.service.submission_service import SubmissionService
 from app.modules.missions.service.mission_service import MissionService
 
 router = APIRouter(prefix="/contributions", tags=["contributions"])
+
+_SUBMIT_LIMITS = (
+    RateLimitRule(
+        key_template="contributions:submit:user:{user_id}",
+        limit=20,
+        window_seconds=60 * 60,
+    ),
+    RateLimitRule(
+        key_template="contributions:submit:ip:{ip}",
+        limit=30,
+        window_seconds=60 * 60,
+    ),
+)
 
 
 @router.post(
@@ -26,16 +39,10 @@ async def submit_prompt(
     svc: SubmissionService = Depends(get_submission_service),
     missions: MissionService = Depends(get_mission_service),
 ) -> PromptSubmissionResult:
-    ip = resolve_rate_limit_ip(request)
-    await enforce_rate_limit(
-        key=f"contributions:submit:user:{current_user.id}",
-        limit=20,
-        window_seconds=60 * 60,
-    )
-    await enforce_rate_limit(
-        key=f"contributions:submit:ip:{ip}",
-        limit=30,
-        window_seconds=60 * 60,
+    await enforce_request_rate_limits(
+        request,
+        _SUBMIT_LIMITS,
+        values={"user_id": current_user.id},
     )
     result = await svc.submit(current_user, body)
     today_key = datetime.now(timezone.utc).date().isoformat()

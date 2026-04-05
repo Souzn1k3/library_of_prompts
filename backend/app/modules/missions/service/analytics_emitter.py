@@ -5,9 +5,7 @@ from app.modules.analytics.model.analytics import AnalyticsEventName
 from app.modules.analytics.service.analytics_service import AnalyticsService
 from app.modules.economy.repository.wallet_repository import WalletRepository
 from app.modules.economy.service.experiment_service import economy_experiment_metadata
-
-
-STREAK_RECOVERY_MISSION_SLUG = "streak-recovery-window"
+from app.modules.missions.service.mission_constants import STREAK_RECOVERY_MISSION_SLUG
 
 
 class MissionAnalyticsEmitter:
