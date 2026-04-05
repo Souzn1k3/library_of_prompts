@@ -91,7 +91,7 @@ services:
               awk '!/^[[:space:]]*(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD) \\/.*$/ && !/\\[\\?25h/ { print; fflush(); }'"
     environment:
       API_URL: http://api:8000
-      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_API_URL: /api-proxy
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
     ports:
       - "3000:3000"
