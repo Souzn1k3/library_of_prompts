@@ -132,6 +132,7 @@ class LearningCourseRead(BaseModel):
 class LearningStepChoiceRead(BaseModel):
     id: str
     text: str
+    explanation: str | None = None
 
 
 class LearningStepFeedbackRead(BaseModel):
@@ -155,6 +156,10 @@ class LearningLessonStepRead(BaseModel):
     question: str | None = None
     choices: list[LearningStepChoiceRead] = Field(default_factory=list)
     pass_score: int = 0
+    min_words: int | None = None
+    required_markers: list[str] = Field(default_factory=list)
+    bonus_markers: list[str] = Field(default_factory=list)
+    forbidden_phrases: list[str] = Field(default_factory=list)
     submission_type: Literal["none", "text", "choice"] = "none"
     unlocked: bool = True
     completed: bool = False

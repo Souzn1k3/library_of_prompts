@@ -12,6 +12,23 @@ type LessonOutlineSidebarProps = {
   courseProgressPercent: number;
 };
 
+function lessonStateLabel(
+  item: LearningLessonDetail["lesson_list"][number],
+  currentSlug: string,
+  t: (key: string) => string,
+): string {
+  if (item.slug === currentSlug) {
+    return t("learn.current");
+  }
+  if (item.status === "completed") {
+    return t("learn.completed");
+  }
+  if (!item.unlocked) {
+    return t("learn.locked");
+  }
+  return t("learn.open");
+}
+
 export function LessonOutlineSidebar({
   lesson,
   courseTitle,
@@ -19,23 +36,38 @@ export function LessonOutlineSidebar({
   courseProgressPercent,
 }: LessonOutlineSidebarProps) {
   const { t } = useI18n();
+  const completedLessons = lesson.lesson_list.filter((item) => item.status === "completed").length;
+  const remainingLessons = Math.max(lesson.lesson_list.length - completedLessons, 0);
 
   return (
-    <aside className="pv-panel px-5 py-5">
+    <aside className="pv-panel px-5 py-5 lg:sticky lg:top-24">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">{t("learn.course")}</p>
           <p className="mt-1 truncate text-sm font-semibold text-zinc-900" title={courseTitle}>
             {courseTitle}
           </p>
-          <Link href={returnToCourseHref} className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[var(--pv-brand-strong)] hover:underline">
+          <Link
+            href={returnToCourseHref}
+            className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-[var(--pv-brand-strong)] hover:underline"
+          >
             <span aria-hidden="true">←</span>
             {t("learn.returnToCourse")}
           </Link>
         </div>
         <span className="pv-chip-brand shrink-0">{courseProgressPercent}%</span>
       </div>
-      <p className="mt-4 text-sm font-semibold text-zinc-900">{t("learn.lessonList")}</p>
+
+      <div className="mt-4 rounded-[1rem] border border-[var(--pv-border)] bg-white/85 px-3 py-3 text-xs text-zinc-700">
+        <p className="font-semibold text-zinc-900">
+          {t("learn.lessonPositionLabel", { current: lesson.position_in_course, total: lesson.total_lessons })}
+        </p>
+        <p className="mt-1">
+          {t("learn.remainingLessonsHint", {
+            count: remainingLessons,
+          })}
+        </p>
+      </div>
 
       <div
         className="mt-3 pv-progress"
@@ -47,29 +79,36 @@ export function LessonOutlineSidebar({
         <div className="pv-progress-fill" style={{ width: `${courseProgressPercent}%` }} />
       </div>
 
-      <ol className="mt-4 grid gap-2">
-        {lesson.lesson_list.map((item) => (
-          <li key={item.slug}>
-            <Link
-              href={item.continue_href}
-              className={`block rounded-[1rem] border px-3 py-2 text-sm transition ${
-                item.slug === lesson.lesson_slug
-                  ? "border-[var(--pv-brand)] bg-[var(--pv-brand-soft)] text-zinc-900"
-                  : item.unlocked
-                    ? "border-[var(--pv-border)] bg-white/90 text-zinc-700 hover:border-zinc-300"
-                    : "pointer-events-none border-[var(--pv-border)] bg-zinc-100/60 text-zinc-400"
-              }`}
-            >
-              <div className="flex items-center justify-between gap-2">
-                <span className="truncate">
-                  {item.position}. {item.title}
-                </span>
-                <span className="text-xs">{item.progress_percent}%</span>
-              </div>
-            </Link>
-          </li>
-        ))}
-      </ol>
+      <details className="mt-4 rounded-[1rem] border border-[var(--pv-border)] bg-white/85 px-3 py-3">
+        <summary className="cursor-pointer select-none text-sm font-semibold text-zinc-900">
+          {t("learn.lessonList")}
+        </summary>
+        <ol className="mt-3 grid gap-2">
+          {lesson.lesson_list.map((item) => {
+            const isCurrent = item.slug === lesson.lesson_slug;
+            const label = lessonStateLabel(item, lesson.lesson_slug, t);
+            const className = isCurrent
+              ? "border-[var(--pv-brand)] bg-[var(--pv-brand-soft)] text-zinc-900"
+              : item.unlocked
+                ? "border-[var(--pv-border)] bg-white/90 text-zinc-700 hover:border-zinc-300"
+                : "pointer-events-none border-[var(--pv-border)] bg-zinc-100/60 text-zinc-400";
+
+            return (
+              <li key={item.slug}>
+                <Link href={item.continue_href} className={`block rounded-[1rem] border px-3 py-2 text-sm transition ${className}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate">
+                      {item.position}. {item.title}
+                    </span>
+                    <span className="text-[11px] uppercase tracking-[0.08em]">{label}</span>
+                  </div>
+                  <p className="mt-1 text-xs">{item.progress_percent}%</p>
+                </Link>
+              </li>
+            );
+          })}
+        </ol>
+      </details>
     </aside>
   );
 }

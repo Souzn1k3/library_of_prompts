@@ -60,6 +60,21 @@ class LearningService(LearningReadMixin, LearningLessonMixin, LearningSubmission
                 return False
         return True
 
+    def _step_unlocked(self, lesson: dict, step_slug: str, completed_steps: set[str]) -> bool:
+        can_unlock_next_step = True
+        for step in lesson["steps"]:
+            current_slug = str(step["slug"])
+            completed = current_slug in completed_steps
+            unlocked = can_unlock_next_step or completed
+
+            if current_slug == step_slug:
+                return unlocked
+
+            if not completed:
+                can_unlock_next_step = False
+
+        return False
+
     def _status_from_row(self, row: LearningCourseProgress | None) -> LearningProgressStatus:
         if row is None:
             return "not_started"

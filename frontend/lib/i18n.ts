@@ -83,7 +83,16 @@ function detectLanguage(value: string | null | undefined): Language | null {
 }
 
 export function getTranslation(lang: Language, key: TranslationKey): string {
-  return translations[lang][key] ?? translations[DEFAULT_LANGUAGE][key] ?? key;
+  const localized = translations[lang][key];
+  const fallback = translations[DEFAULT_LANGUAGE][key];
+
+  if (localized && localized !== key) {
+    return localized;
+  }
+  if (fallback) {
+    return fallback;
+  }
+  return localized ?? key;
 }
 
 export function formatTranslation(

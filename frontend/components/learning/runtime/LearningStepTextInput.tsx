@@ -24,6 +24,23 @@ export function LearningStepTextInput({
 
   return (
     <div className="mt-4 space-y-3">
+      {(step.required_markers.length > 0 || step.min_words) ? (
+        <div className="rounded-[1rem] border border-[var(--pv-border)] bg-white/80 px-4 py-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">{t("learn.formatChecklist")}</p>
+          <div className="mt-2 flex flex-wrap gap-2 text-xs text-zinc-700">
+            {step.required_markers.map((marker) => (
+              <span key={`${step.slug}-marker-${marker}`} className="rounded-full border border-[var(--pv-border)] bg-zinc-50 px-2 py-1">
+                {marker}
+              </span>
+            ))}
+            {step.min_words ? (
+              <span className="rounded-full border border-[var(--pv-border)] bg-zinc-50 px-2 py-1">
+                {t("learn.minWords")}: {step.min_words}
+              </span>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       {template ? (
         <details className="rounded-[1rem] border border-[var(--pv-border)] bg-white/80 px-4 py-3">
           <summary className="cursor-pointer select-none text-sm font-semibold text-zinc-900">

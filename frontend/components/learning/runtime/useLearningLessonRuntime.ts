@@ -10,6 +10,7 @@ import {
   buildInitialTextAnswers,
   buildSubmissionAnswer,
   extractErrorMessage,
+  recomputeStepUnlocks,
 } from "@/components/learning/runtime/helpers";
 import type { LearningTranslation, StepState } from "@/components/learning/runtime/types";
 
@@ -32,7 +33,7 @@ export function useLearningLessonRuntime({
   activeStepSlugProp,
   t,
 }: UseLearningLessonRuntimeArgs) {
-  const [steps, setSteps] = useState<StepState[]>(lesson.steps);
+  const [steps, setSteps] = useState<StepState[]>(recomputeStepUnlocks(lesson.steps));
   const [activeStepSlug, setActiveStepSlug] = useState<string>(
     buildInitialActiveStepSlug(lesson, activeStepSlugProp),
   );
@@ -54,7 +55,7 @@ export function useLearningLessonRuntime({
   }, [activeStepSlugProp]);
 
   useEffect(() => {
-    setSteps(lesson.steps);
+    setSteps(recomputeStepUnlocks(lesson.steps));
     setActiveStepSlug(buildInitialActiveStepSlug(lesson, activeStepSlugProp));
     setLessonProgressPercent(lesson.progress_percent);
     setCourseProgressPercent(lesson.course_progress_percent);
@@ -76,6 +77,7 @@ export function useLearningLessonRuntime({
   const activeStep = steps[activeStepIndex] ?? null;
   const previousStep = activeStepIndex > 0 ? steps[activeStepIndex - 1] : null;
   const nextStep = activeStepIndex < steps.length - 1 ? steps[activeStepIndex + 1] : null;
+  const completedStepsCount = useMemo(() => steps.filter((step) => step.completed).length, [steps]);
 
   const stepHref = useCallback(
     (stepSlug: string) => appRoute.learnCourseLessonStep(lesson.course_slug, lesson.lesson_slug, stepSlug),
@@ -96,6 +98,10 @@ export function useLearningLessonRuntime({
         setSubmitError(t("learn.signInToSubmit"));
         return;
       }
+      if (!step.unlocked) {
+        setSubmitError(t("learn.stepLockedLocal"));
+        return;
+      }
 
       setSubmittingStepSlug(step.slug);
       setSubmitError(null);
@@ -111,16 +117,18 @@ export function useLearningLessonRuntime({
         );
 
         setSteps((prev) =>
-          prev.map((item) =>
-            item.slug === step.slug
-              ? {
-                  ...item,
-                  completed: result.completed,
-                  attempts: result.attempts,
-                  last_score: result.score,
-                  feedback: result.feedback,
-                }
-              : item,
+          recomputeStepUnlocks(
+            prev.map((item) =>
+              item.slug === step.slug
+                ? {
+                    ...item,
+                    completed: result.completed,
+                    attempts: result.attempts,
+                    last_score: result.score,
+                    feedback: result.feedback,
+                  }
+                : item,
+            ),
           ),
         );
 
@@ -139,7 +147,17 @@ export function useLearningLessonRuntime({
           setStatusMessage(t("learn.lessonCompleted"));
         } else {
           setStatusTone(result.passed ? "success" : "warning");
-          setStatusMessage(result.passed ? t("learn.stepPassed") : t("learn.stepNeedsRevision"));
+          setStatusMessage(
+            result.passed
+              ? t("learn.stepPassedDetailed", {
+                  score: result.score,
+                  target: result.feedback.pass_score,
+                })
+              : t("learn.stepNeedsRevisionDetailed", {
+                  score: result.score,
+                  target: result.feedback.pass_score,
+                }),
+          );
         }
       } catch (error) {
         setSubmitError(extractErrorMessage(error));
@@ -156,6 +174,7 @@ export function useLearningLessonRuntime({
     activeStep,
     previousStep,
     nextStep,
+    completedStepsCount,
     lessonProgressPercent,
     courseProgressPercent,
     textAnswers,

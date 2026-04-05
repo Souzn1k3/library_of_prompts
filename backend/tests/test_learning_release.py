@@ -137,9 +137,7 @@ async def test_learning_start_target_active_redirect_and_resume(async_client, un
         headers=_auth_headers(token),
     )
     assert lesson_response.status_code == 200
-    first_step = next(
-        step for step in lesson_response.json()["steps"] if step["slug"] == "pe-foundations-guided"
-    )
+    first_step = lesson_response.json()["steps"][0]
 
     submit = await async_client.post(
         f"/api/v1/learning/courses/{COURSE_FOUNDATIONS}/lessons/pe-foundations/steps/{first_step['slug']}/submit",
@@ -186,6 +184,19 @@ async def test_learning_resume_moves_to_next_lesson_after_current_completed(asyn
 async def test_learning_step_validation_returns_meaningful_feedback(async_client, unique_email: str):
     token = await _register(async_client, unique_email)
 
+    lesson_response = await async_client.get(
+        f"/api/v1/learning/courses/{COURSE_FOUNDATIONS}/lessons/pe-foundations",
+        headers=_auth_headers(token),
+    )
+    assert lesson_response.status_code == 200
+    theory_step = lesson_response.json()["steps"][0]
+    theory_submit = await async_client.post(
+        f"/api/v1/learning/courses/{COURSE_FOUNDATIONS}/lessons/pe-foundations/steps/{theory_step['slug']}/submit",
+        headers=_auth_headers(token),
+        json={"answer": _answer_for_step(theory_step)},
+    )
+    assert theory_submit.status_code == 200
+
     fail_submit = await async_client.post(
         f"/api/v1/learning/courses/{COURSE_FOUNDATIONS}/lessons/pe-foundations/steps/pe-foundations-guided/submit",
         headers=_auth_headers(token),
@@ -201,6 +212,19 @@ async def test_learning_step_validation_returns_meaningful_feedback(async_client
 
 
 @pytest.mark.asyncio
+async def test_learning_step_blocks_out_of_order_submission(async_client, unique_email: str):
+    token = await _register(async_client, unique_email)
+
+    submit = await async_client.post(
+        f"/api/v1/learning/courses/{COURSE_FOUNDATIONS}/lessons/pe-foundations/steps/pe-foundations-guided/submit",
+        headers=_auth_headers(token),
+        json={"answer": {"text": UNIVERSAL_TEXT}},
+    )
+
+    assert submit.status_code == 409
+
+
+@pytest.mark.asyncio
 async def test_learning_step_rejects_verbatim_template_copy(async_client, unique_email: str):
     token = await _register(async_client, unique_email)
 
@@ -209,6 +233,13 @@ async def test_learning_step_rejects_verbatim_template_copy(async_client, unique
         headers=_auth_headers(token),
     )
     assert lesson_response.status_code == 200
+    theory_step = lesson_response.json()["steps"][0]
+    theory_submit = await async_client.post(
+        f"/api/v1/learning/courses/{COURSE_FOUNDATIONS}/lessons/pe-foundations/steps/{theory_step['slug']}/submit",
+        headers=_auth_headers(token),
+        json={"answer": _answer_for_step(theory_step)},
+    )
+    assert theory_submit.status_code == 200
     guided_step = next(step for step in lesson_response.json()["steps"] if step["slug"] == "pe-foundations-guided")
     template_text = str(guided_step.get("placeholder") or "").strip()
     assert template_text
@@ -247,7 +278,7 @@ async def test_learning_completion_rewards_and_my_modules_sorting(async_client, 
     first_workflow_step = next(
         step
         for step in workflow_lesson_response.json()["steps"]
-        if step["slug"] == "wf-brief-guided"
+        if step["slug"] == "wf-brief-theory"
     )
 
     workflow_submit = await async_client.post(

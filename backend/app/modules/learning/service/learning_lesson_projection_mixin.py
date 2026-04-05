@@ -23,6 +23,7 @@ class LearningLessonProjectionMixin:
         step_progress_map = {row.step_slug: row for row in step_progress_rows}
         completed_steps = {row.step_slug for row in step_progress_rows if row.passed}
         steps_out: list[LearningLessonStepRead] = []
+        can_unlock_next_step = True
         for step in lesson["steps"]:
             submission = step.get("submission", {"type": "none"})
             submission_type = submission.get("type", "none")
@@ -30,6 +31,9 @@ class LearningLessonProjectionMixin:
             feedback = None
             if row is not None and isinstance(row.feedback_json, dict):
                 feedback = LearningStepFeedbackRead.model_validate(row.feedback_json)
+            completed = bool(row.passed) if row is not None else False
+            unlocked = can_unlock_next_step or completed
+
             steps_out.append(
                 LearningLessonStepRead(
                     slug=step["slug"],
@@ -41,18 +45,28 @@ class LearningLessonProjectionMixin:
                     placeholder=pick_text(step["placeholder"], language) if step.get("placeholder") else None,
                     question=pick_text(submission["question"], language) if submission.get("question") else None,
                     choices=[
-                        LearningStepChoiceRead(id=choice["id"], text=pick_text(choice["text"], language))
+                        LearningStepChoiceRead(
+                            id=choice["id"],
+                            text=pick_text(choice["text"], language),
+                            explanation=pick_text(choice["explanation"], language) if choice.get("explanation") else None,
+                        )
                         for choice in submission.get("choices", [])
                     ],
                     pass_score=int(submission.get("pass_score", 0)),
+                    min_words=int(submission["min_words"]) if submission.get("min_words") is not None else None,
+                    required_markers=[str(marker) for marker in submission.get("required_markers", [])],
+                    bonus_markers=[str(marker) for marker in submission.get("bonus_markers", [])],
+                    forbidden_phrases=[str(marker) for marker in submission.get("forbidden_phrases", [])],
                     submission_type=submission_type,
-                    unlocked=True,
-                    completed=bool(row.passed) if row is not None else False,
+                    unlocked=unlocked,
+                    completed=completed,
                     attempts=int(row.attempts) if row is not None else 0,
                     last_score=int(row.last_score) if row is not None else None,
                     feedback=feedback,
                 )
             )
+            if not completed:
+                can_unlock_next_step = False
         return steps_out, completed_steps
 
     def _build_lesson_outline(

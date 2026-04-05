@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import { LearningLessonRuntime } from "@/components/learning/LearningLessonRuntime";
 import { T } from "@/components/i18n/T";
-import { APP_ROUTES, appRoute } from "@/lib/constants/routes";
+import { APP_ROUTES } from "@/lib/constants/routes";
 import { getTranslation, type Language } from "@/lib/i18n";
 
 import type { LearningLessonStepPageData } from "./learning-step-page-data";
@@ -13,7 +13,7 @@ type LearningLessonStepViewProps = {
 };
 
 export function LearningLessonStepView({ language, data }: LearningLessonStepViewProps) {
-  const { lesson, course, step, previousStep, nextStep, canSubmit } = data;
+  const { lesson, course, step, canSubmit } = data;
 
   return (
     <article className="pv-page">
@@ -38,37 +38,24 @@ export function LearningLessonStepView({ language, data }: LearningLessonStepVie
         activeStepSlug={step.slug}
       />
 
-      <section className="pv-panel px-6 py-5 sm:px-7">
-        <div className="flex flex-wrap items-center justify-end gap-3">
-          {previousStep ? (
-            <Link
-              href={appRoute.learnCourseLessonStep(lesson.course_slug, lesson.lesson_slug, previousStep.slug)}
-              className="pv-button-secondary !w-auto"
-            >
-              <T k="learn.previousStep" />
+      <section className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
+        <div className="hidden lg:block" aria-hidden="true" />
+        <div className="pv-panel px-6 py-5 sm:px-7">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Link href={lesson.return_to_course_href} className="pv-button-secondary !w-auto">
+              <T k="learn.returnToCourse" />
             </Link>
-          ) : lesson.previous_lesson_href ? (
-            <Link href={lesson.previous_lesson_href} className="pv-button-secondary !w-auto">
-              <T k="learn.previousLesson" />
-            </Link>
-          ) : null}
-
-          {nextStep ? (
-            <Link
-              href={appRoute.learnCourseLessonStep(lesson.course_slug, lesson.lesson_slug, nextStep.slug)}
-              className="pv-button-primary !w-auto"
-            >
-              <T k="learn.nextStep" />
-            </Link>
-          ) : lesson.next_lesson_href ? (
-            <Link href={lesson.next_lesson_href} className="pv-button-primary !w-auto">
-              <T k="learn.nextLesson" />
-            </Link>
-          ) : (
-            <Link href={lesson.return_to_course_href} className="pv-button-primary !w-auto">
-              <T k="learn.courseCompleteState" />
-            </Link>
-          )}
+            {lesson.previous_lesson_href ? (
+              <Link href={lesson.previous_lesson_href} className="pv-button-secondary !w-auto">
+                <T k="learn.previousLesson" />
+              </Link>
+            ) : null}
+            {lesson.next_lesson_href ? (
+              <Link href={lesson.next_lesson_href} className="pv-button-primary !w-auto">
+                <T k="learn.nextLesson" />
+              </Link>
+            ) : null}
+          </div>
         </div>
       </section>
     </article>

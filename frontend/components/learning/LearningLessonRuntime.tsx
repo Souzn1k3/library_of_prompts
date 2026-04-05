@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { LearningProgressSummary } from "@/components/learning/runtime/LearningProgressSummary";
 import { LearningStepArticle } from "@/components/learning/runtime/LearningStepArticle";
@@ -25,12 +27,14 @@ export function LearningLessonRuntime({
   activeStepSlug: activeStepSlugProp,
 }: LearningLessonRuntimeProps) {
   const { t } = useI18n();
+  const [isStepFlowOpen, setIsStepFlowOpen] = useState<boolean>(false);
   const {
     steps,
     activeStepIndex,
     activeStep,
     previousStep,
     nextStep,
+    completedStepsCount,
     lessonProgressPercent,
     courseProgressPercent,
     textAnswers,
@@ -74,7 +78,11 @@ export function LearningLessonRuntime({
       <section className="space-y-4">
         <LearningProgressSummary
           lessonProgressPercent={lessonProgressPercent}
+          courseProgressPercent={courseProgressPercent}
           estimatedMinutes={lesson.estimated_minutes}
+          stepsCount={steps.length}
+          completedStepsCount={completedStepsCount}
+          activeStepIndex={activeStepIndex}
         />
 
         {statusMessage ? (
@@ -83,14 +91,11 @@ export function LearningLessonRuntime({
           </div>
         ) : null}
         {submitError ? <div className="pv-alert pv-alert-warning">{submitError}</div> : null}
-        <EconomyActionBanner summary={economy} ctaHref={APP_ROUTES.store} />
-
-        <LearningStepNavigation steps={steps} activeStepIndex={activeStepIndex} stepHref={stepHref} />
-
         <LearningStepArticle
           activeStep={activeStep}
           activeStepIndex={activeStepIndex}
           stepsCount={steps.length}
+          completedStepsCount={completedStepsCount}
           previousStep={previousStep}
           nextStep={nextStep}
           canSubmit={canSubmit}
@@ -102,6 +107,33 @@ export function LearningLessonRuntime({
           onTextChange={(value) => setTextAnswer(activeStep.slug, value)}
           onSubmitStep={() => void handleSubmit(activeStep)}
         />
+
+        <section className="pv-panel px-4 py-4 sm:px-5">
+          <button
+            type="button"
+            onClick={() => setIsStepFlowOpen((prev) => !prev)}
+            className="flex w-full items-center justify-between rounded-[0.9rem] border border-[var(--pv-border)] bg-white/85 px-3 py-2 text-sm font-semibold text-zinc-900"
+            aria-expanded={isStepFlowOpen}
+            aria-controls="lesson-flow-panel"
+          >
+            <span>{t("learn.lessonFlow")}</span>
+            <span
+              className={`text-xs text-zinc-500 transition-transform ${
+                isStepFlowOpen ? "rotate-180" : ""
+              }`}
+              aria-hidden="true"
+            >
+              ▼
+            </span>
+          </button>
+          {isStepFlowOpen ? (
+            <div id="lesson-flow-panel" className="mt-3">
+              <LearningStepNavigation steps={steps} activeStepIndex={activeStepIndex} stepHref={stepHref} />
+            </div>
+          ) : null}
+        </section>
+
+        <EconomyActionBanner summary={economy} ctaHref={APP_ROUTES.store} />
 
         <LearningWeakAreasPanel weakAreas={weakAreas} />
       </section>

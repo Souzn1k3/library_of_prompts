@@ -23,7 +23,11 @@ export function LearningStepChoiceInput({
       {step.choices.map((choice) => (
         <label
           key={choice.id}
-          className="flex cursor-pointer items-start gap-2 rounded-[0.9rem] border border-[var(--pv-border)] bg-white/80 px-3 py-2 text-sm text-zinc-700"
+          className={`flex cursor-pointer items-start gap-2 rounded-[0.9rem] border px-3 py-2 text-sm transition ${
+            selectedChoiceId === choice.id
+              ? "border-[var(--pv-brand)] bg-[var(--pv-brand-soft)] text-zinc-900"
+              : "border-[var(--pv-border)] bg-white/80 text-zinc-700"
+          }`}
         >
           <input
             type="radio"
@@ -33,7 +37,10 @@ export function LearningStepChoiceInput({
             onChange={() => onSelectChoice(choice.id)}
             disabled={!canSubmit || isSubmitting}
           />
-          <span>{choice.text}</span>
+          <span>
+            <span>{choice.text}</span>
+            {choice.explanation ? <span className="mt-1 block text-xs text-zinc-500">{choice.explanation}</span> : null}
+          </span>
         </label>
       ))}
     </fieldset>

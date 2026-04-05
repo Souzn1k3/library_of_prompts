@@ -51,6 +51,20 @@ class LearningSubmissionMixin(
                 message_key="errors.lesson_locked",
             )
 
+        step_rows_for_lesson = await self._repo.list_step_progress(
+            user_id=user.id,
+            course_slug=course_slug,
+            lesson_slug=lesson_slug,
+        )
+        completed_steps = {row.step_slug for row in step_rows_for_lesson if row.passed}
+        if not self._step_unlocked(ctx.lesson, step_slug, completed_steps):
+            raise AppError(
+                code="step_locked",
+                message="Complete the current practice step before moving to the next one.",
+                status_code=409,
+                message_key="errors.step_locked",
+            )
+
         step_progress = await self._ensure_step_progress(
             user_id=user.id,
             course_slug=course_slug,

@@ -5,7 +5,12 @@ import { T } from "@/components/i18n/T";
 import { PageIntro } from "@/components/navigation/PageIntro";
 import { TokenAmount } from "@/components/ui/TokenAmount";
 import { APP_ROUTES } from "@/lib/constants/routes";
-import { getTranslation, type Language } from "@/lib/i18n";
+import {
+  getDifficultyTranslationKey,
+  getTranslation,
+  type Language,
+} from "@/lib/i18n";
+import type { LearningLessonOutline } from "@/lib/types";
 
 import type { LearningCoursePageData } from "./learning-course-page-data";
 
@@ -14,13 +19,32 @@ type LearningCoursePageViewProps = {
   data: LearningCoursePageData;
 };
 
-function CourseStatCard({ label, value }: { label: ReactNode; value: ReactNode }) {
+function CourseStatCard({
+  label,
+  value,
+}: {
+  label: ReactNode;
+  value: ReactNode;
+}) {
   return (
     <div className="pv-card p-4">
       <p className="text-xs uppercase tracking-[0.08em] text-zinc-500">{label}</p>
       <p className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{value}</p>
     </div>
   );
+}
+
+function lessonStateLabel(language: Language, lesson: LearningLessonOutline): string {
+  if (lesson.status === "completed") {
+    return getTranslation(language, "learn.completed");
+  }
+  if (lesson.status === "in_progress") {
+    return getTranslation(language, "learn.inProgress");
+  }
+  if (!lesson.unlocked) {
+    return getTranslation(language, "learn.locked");
+  }
+  return getTranslation(language, "learn.open");
 }
 
 export function LearningCoursePageView({ language, data }: LearningCoursePageViewProps) {
@@ -58,8 +82,21 @@ export function LearningCoursePageView({ language, data }: LearningCoursePageVie
           <CourseStatCard label={<T k="learn.estimatedEffort" />} value={`${course.estimated_minutes}m`} />
         </div>
 
-        <div className="mt-5 pv-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={course.progress_percent}>
+        <div
+          className="mt-5 pv-progress"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={course.progress_percent}
+        >
           <div className="pv-progress-fill" style={{ width: `${course.progress_percent}%` }} />
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-zinc-600">
+          <span className="pv-chip">
+            {getTranslation(language, getDifficultyTranslationKey(course.difficulty))}
+          </span>
+          <span className="pv-chip-brand">{course.status === "completed" ? getTranslation(language, "learn.completed") : getTranslation(language, "learn.inProgress")}</span>
         </div>
       </section>
 
@@ -67,17 +104,39 @@ export function LearningCoursePageView({ language, data }: LearningCoursePageVie
         <div className="pv-section-head">
           <div className="pv-section-copy">
             <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
-              <T k="learn.whatYouWillLearn" />
+              <T k="learn.outcomeAndMethod" />
             </h2>
+            <p className="mt-2 text-sm text-zinc-600">
+              <T k="learn.outcomeAndMethodBody" />
+            </p>
           </div>
         </div>
-        <ul className="mt-6 grid gap-3">
-          {course.what_you_will_learn.map((item) => (
-            <li key={item} className="pv-card p-4 text-sm leading-relaxed text-zinc-700">
-              {item}
-            </li>
-          ))}
-        </ul>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <article className="rounded-[1.2rem] border border-[var(--pv-border)] bg-white/85 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
+              <T k="learn.whatYouWillLearn" />
+            </p>
+            <ul className="mt-3 grid gap-2 text-sm text-zinc-700">
+              {course.what_you_will_learn.map((item) => (
+                <li key={item}>• {item}</li>
+              ))}
+            </ul>
+          </article>
+
+          <article className="rounded-[1.2rem] border border-[var(--pv-border)] bg-white/85 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
+              <T k="learn.learningLoopTitle" />
+            </p>
+            <ol className="mt-3 grid gap-2 text-sm text-zinc-700">
+              <li>1. <T k="learn.learningLoopTheory" /></li>
+              <li>2. <T k="learn.learningLoopPractice" /></li>
+              <li>3. <T k="learn.learningLoopCheck" /></li>
+              <li>4. <T k="learn.learningLoopFeedback" /></li>
+              <li>5. <T k="learn.learningLoopReinforce" /></li>
+            </ol>
+          </article>
+        </div>
       </section>
 
       <section className="pv-panel px-6 py-6 sm:px-7">
@@ -86,6 +145,9 @@ export function LearningCoursePageView({ language, data }: LearningCoursePageVie
             <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
               <T k="learn.moduleStructure" />
             </h2>
+            <p className="mt-2 text-sm text-zinc-600">
+              <T k="learn.moduleStructureBody" />
+            </p>
           </div>
         </div>
 
@@ -100,22 +162,37 @@ export function LearningCoursePageView({ language, data }: LearningCoursePageVie
                 <span className="pv-chip-brand">{module.progress_percent}%</span>
               </div>
 
-              <div className="mt-4 pv-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={module.progress_percent}>
+              <div
+                className="mt-4 pv-progress"
+                role="progressbar"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={module.progress_percent}
+              >
                 <div className="pv-progress-fill" style={{ width: `${module.progress_percent}%` }} />
               </div>
 
-              <ol className="mt-5 grid gap-3">
+              <ol className="mt-4 grid gap-3">
                 {module.lessons.map((lesson) => (
-                  <li key={lesson.slug} className="rounded-[1.2rem] border border-[var(--pv-border)] bg-white/80 px-4 py-3">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
+                  <li
+                    key={lesson.slug}
+                    className="rounded-[1.1rem] border border-[var(--pv-border)] bg-white/85 px-4 py-3"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-2">
                       <div>
-                        <p className="text-sm font-semibold text-zinc-950">{lesson.position}. {lesson.title}</p>
+                        <p className="text-sm font-semibold text-zinc-950">
+                          {lesson.position}. {lesson.title}
+                        </p>
                         <p className="mt-1 text-sm text-zinc-600">{lesson.summary}</p>
-                        <p className="mt-2 text-xs text-zinc-500">{lesson.estimated_minutes}m</p>
+                        <p className="mt-2 text-xs text-zinc-500">
+                          {lesson.estimated_minutes}m · {lessonStateLabel(language, lesson)}
+                        </p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className={`pv-chip ${lesson.is_final_assessment ? "pv-chip-brand" : ""}`}>
-                          {lesson.is_final_assessment ? getTranslation(language, "learn.finalAssessment") : getTranslation(language, "learn.lesson")}
+                          {lesson.is_final_assessment
+                            ? getTranslation(language, "learn.finalAssessment")
+                            : getTranslation(language, "learn.lesson")}
                         </span>
                         <span className="pv-chip-brand">{lesson.progress_percent}%</span>
                       </div>
@@ -126,7 +203,9 @@ export function LearningCoursePageView({ language, data }: LearningCoursePageVie
                         href={lesson.continue_href}
                         className={`pv-button-secondary !w-auto ${lesson.unlocked ? "" : "pointer-events-none opacity-50"}`}
                       >
-                        {lesson.unlocked ? getTranslation(language, "learn.openLesson") : getTranslation(language, "learn.locked")}
+                        {lesson.unlocked
+                          ? getTranslation(language, "learn.openLesson")
+                          : getTranslation(language, "learn.locked")}
                       </Link>
                     </div>
                   </li>
@@ -136,6 +215,19 @@ export function LearningCoursePageView({ language, data }: LearningCoursePageVie
           ))}
         </div>
       </section>
+
+      {course.weak_areas.length > 0 ? (
+        <section className="pv-panel px-6 py-6 sm:px-7">
+          <p className="text-sm font-semibold text-zinc-900">
+            <T k="learn.recommendedFocus" />
+          </p>
+          <ul className="mt-3 grid gap-2 text-sm text-zinc-700">
+            {course.weak_areas.map((area) => (
+              <li key={`${area.tag}-${area.lesson_slug ?? "none"}`}>• {area.recommendation}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section className="pv-panel px-6 py-6 sm:px-7">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -158,10 +250,13 @@ export function LearningCoursePageView({ language, data }: LearningCoursePageVie
             </p>
           </div>
           <span className={`pv-chip-brand ${course.rewards.course_completed ? "" : "opacity-80"}`}>
-            {course.rewards.course_completed ? getTranslation(language, "learn.completed") : getTranslation(language, "learn.inProgress")}
+            {course.rewards.course_completed
+              ? getTranslation(language, "learn.completed")
+              : getTranslation(language, "learn.inProgress")}
           </span>
         </div>
       </section>
     </div>
   );
 }
+

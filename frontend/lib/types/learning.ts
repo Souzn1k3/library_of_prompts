@@ -142,6 +142,7 @@ export type LearningCourseDetail = {
 export type LearningStepChoice = {
   id: string;
   text: string;
+  explanation?: string | null;
 };
 
 export type LearningStepFeedback = {
@@ -165,6 +166,10 @@ export type LearningLessonStep = {
   question?: string | null;
   choices: LearningStepChoice[];
   pass_score: number;
+  min_words?: number | null;
+  required_markers: string[];
+  bonus_markers: string[];
+  forbidden_phrases: string[];
   submission_type: "none" | "text" | "choice";
   unlocked: boolean;
   completed: boolean;

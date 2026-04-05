@@ -44,3 +44,60 @@ export function buildSubmissionAnswer(
   }
   return null;
 }
+
+export type TextDraftDiagnostics = {
+  wordCount: number;
+  minWords: number;
+  missingMarkers: string[];
+  bonusHits: string[];
+  forbiddenHits: string[];
+};
+
+function countWords(value: string): number {
+  return value
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+}
+
+export function evaluateTextDraft(step: LearningLessonStep, value: string): TextDraftDiagnostics {
+  const normalized = value.toLowerCase();
+  const minWords = step.min_words ?? 0;
+  const requiredMarkers = step.required_markers ?? [];
+  const bonusMarkers = step.bonus_markers ?? [];
+  const forbiddenPhrases = step.forbidden_phrases ?? [];
+  const missingMarkers = requiredMarkers.filter(
+    (marker) => marker.trim().length > 0 && !normalized.includes(marker.toLowerCase()),
+  );
+  const bonusHits = bonusMarkers.filter(
+    (marker) => marker.trim().length > 0 && normalized.includes(marker.toLowerCase()),
+  );
+  const forbiddenHits = forbiddenPhrases.filter(
+    (phrase) => phrase.trim().length > 0 && normalized.includes(phrase.toLowerCase()),
+  );
+
+  return {
+    wordCount: countWords(value),
+    minWords,
+    missingMarkers,
+    bonusHits,
+    forbiddenHits,
+  };
+}
+
+export function recomputeStepUnlocks(steps: StepState[]): StepState[] {
+  let canUnlockNextStep = true;
+  return steps.map((step) => {
+    const normalizedStep: StepState = {
+      ...step,
+      required_markers: step.required_markers ?? [],
+      bonus_markers: step.bonus_markers ?? [],
+      forbidden_phrases: step.forbidden_phrases ?? [],
+    };
+    const unlocked = canUnlockNextStep || normalizedStep.completed;
+    if (!normalizedStep.completed) {
+      canUnlockNextStep = false;
+    }
+    return { ...normalizedStep, unlocked };
+  });
+}

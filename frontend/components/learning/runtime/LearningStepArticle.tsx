@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
+import { evaluateTextDraft } from "@/components/learning/runtime/helpers";
 import { LearningStepChoiceInput } from "@/components/learning/runtime/LearningStepChoiceInput";
 import { LearningStepFeedbackPanel } from "@/components/learning/runtime/LearningStepFeedbackPanel";
 import { LearningStepTextInput } from "@/components/learning/runtime/LearningStepTextInput";
@@ -12,6 +13,7 @@ type LearningStepArticleProps = {
   activeStep: StepState;
   activeStepIndex: number;
   stepsCount: number;
+  completedStepsCount: number;
   previousStep: StepState | null;
   nextStep: StepState | null;
   canSubmit: boolean;
@@ -24,10 +26,46 @@ type LearningStepArticleProps = {
   onSubmitStep: () => void;
 };
 
+function CriteriaItem({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <li className="flex items-start justify-between gap-2 rounded-[0.9rem] border border-[var(--pv-border)] bg-white/80 px-3 py-2 text-xs text-zinc-700">
+      <span className="font-medium text-zinc-900">{label}</span>
+      <span className="text-right">{value}</span>
+    </li>
+  );
+}
+
+function ChecklistRow({
+  ok,
+  label,
+}: {
+  ok: boolean;
+  label: string;
+}) {
+  return (
+    <li
+      className={`rounded-[0.85rem] border px-3 py-2 text-xs ${
+        ok
+          ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+          : "border-amber-200 bg-amber-50 text-amber-900"
+      }`}
+    >
+      {ok ? "✓" : "•"} {label}
+    </li>
+  );
+}
+
 export function LearningStepArticle({
   activeStep,
   activeStepIndex,
   stepsCount,
+  completedStepsCount,
   previousStep,
   nextStep,
   canSubmit,
@@ -40,61 +78,147 @@ export function LearningStepArticle({
   onSubmitStep,
 }: LearningStepArticleProps) {
   const { t } = useI18n();
+  const textDiagnostics =
+    activeStep.submission_type === "text" ? evaluateTextDraft(activeStep, textAnswer) : null;
+  const submitDisabled =
+    isSubmitting ||
+    !canSubmit ||
+    !activeStep.unlocked ||
+    (activeStep.submission_type === "choice" && selectedChoiceId.trim().length === 0) ||
+    (activeStep.submission_type === "text" && textAnswer.trim().length === 0);
+
+  const submitLabel = isSubmitting
+    ? t("learn.checking")
+    : activeStep.submission_type === "none"
+      ? t("learn.markStepLearned")
+      : activeStep.completed
+        ? t("learn.retryStep")
+        : t("learn.checkStep");
 
   return (
-    <article className="pv-panel px-6 py-6 sm:px-7 ring-1 ring-[var(--pv-brand)]/40">
+    <article className="pv-panel px-6 py-6 sm:px-7 ring-1 ring-[var(--pv-brand)]/35">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="pv-kicker">{t(`learn.stepKind.${activeStep.kind}`)}</p>
           <p className="mt-1 text-xs text-zinc-500">
-            {t("learn.stepPosition", { current: activeStepIndex + 1, total: stepsCount })}
+            {t("learn.stepPosition", { current: activeStepIndex + 1, total: stepsCount })} ·{" "}
+            {t("learn.stepCompletionValue", { done: completedStepsCount, total: stepsCount })}
           </p>
-          <h3 className="mt-2 text-xl font-bold tracking-[-0.04em] text-zinc-950">
-            {activeStep.title}
-          </h3>
+          <h3 className="mt-2 text-xl font-bold tracking-[-0.04em] text-zinc-950">{activeStep.title}</h3>
         </div>
-        <span className="pv-chip-brand">
-          {t("learn.stepMinutesLabel", { count: activeStep.estimated_minutes })}
-        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="pv-chip-brand">{t("learn.stepMinutesLabel", { count: activeStep.estimated_minutes })}</span>
+          <span className="pv-chip">{t("learn.passScoreLabel", { score: activeStep.pass_score })}</span>
+        </div>
       </div>
 
-      {activeStep.content.length > 0 ? (
-        <div className="mt-4 space-y-3 text-sm leading-relaxed text-zinc-700">
-          {activeStep.content.map((line, lineIdx) => (
-            <p key={`${activeStep.slug}-content-${lineIdx}`}>{line}</p>
-          ))}
+      {!activeStep.unlocked ? (
+        <div className="mt-4 rounded-[1rem] border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-950">
+          {t("learn.completePreviousStepFirst")}
         </div>
       ) : null}
 
-      {activeStep.task ? (
-        <div className="mt-4 rounded-[1.1rem] border border-[var(--pv-border)] bg-white/80 p-4 text-sm text-zinc-700">
-          {activeStep.task}
+      <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div>
+          {activeStep.content.length > 0 ? (
+            <section>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("learn.theoryShort")}</p>
+              <div className="mt-2 space-y-3 text-sm leading-relaxed text-zinc-700">
+                {activeStep.content.map((line, lineIdx) => (
+                  <p key={`${activeStep.slug}-content-${lineIdx}`}>{line}</p>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {activeStep.task ? (
+            <section className="mt-4 rounded-[1.1rem] border border-[var(--pv-border)] bg-white/80 p-4 text-sm text-zinc-700">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("learn.practiceAction")}</p>
+              <p className="mt-2">{activeStep.task}</p>
+            </section>
+          ) : null}
+
+          {activeStep.submission_type === "choice" ? (
+            <LearningStepChoiceInput
+              step={activeStep}
+              selectedChoiceId={selectedChoiceId}
+              canSubmit={canSubmit}
+              isSubmitting={isSubmitting}
+              onSelectChoice={onChoiceChange}
+            />
+          ) : null}
+
+          {activeStep.submission_type === "text" ? (
+            <LearningStepTextInput
+              step={activeStep}
+              textAnswer={textAnswer}
+              canSubmit={canSubmit}
+              isSubmitting={isSubmitting}
+              onTextChange={onTextChange}
+            />
+          ) : null}
+
+          <LearningStepFeedbackPanel step={activeStep} />
         </div>
-      ) : null}
 
-      {activeStep.submission_type === "choice" ? (
-        <LearningStepChoiceInput
-          step={activeStep}
-          selectedChoiceId={selectedChoiceId}
-          canSubmit={canSubmit}
-          isSubmitting={isSubmitting}
-          onSelectChoice={onChoiceChange}
-        />
-      ) : null}
+        <aside className="space-y-3">
+          <section className="rounded-[1rem] border border-[var(--pv-border)] bg-white/85 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("learn.successCriteria")}</p>
+            <ul className="mt-3 grid gap-2">
+              <CriteriaItem label={t("learn.passScoreShort")} value={`${activeStep.pass_score}/100`} />
+              {activeStep.submission_type === "text" && activeStep.min_words ? (
+                <CriteriaItem label={t("learn.minWords")} value={String(activeStep.min_words)} />
+              ) : null}
+              {activeStep.submission_type === "choice" ? (
+                <CriteriaItem label={t("learn.answerType")} value={t("learn.singleChoice")} />
+              ) : null}
+              {activeStep.required_markers.length > 0 ? (
+                <CriteriaItem label={t("learn.requiredMarkers")} value={activeStep.required_markers.join(", ")} />
+              ) : null}
+              {activeStep.forbidden_phrases.length > 0 ? (
+                <CriteriaItem label={t("learn.avoidPhrases")} value={activeStep.forbidden_phrases.join(", ")} />
+              ) : null}
+            </ul>
+          </section>
 
-      {activeStep.submission_type === "text" ? (
-        <LearningStepTextInput
-          step={activeStep}
-          textAnswer={textAnswer}
-          canSubmit={canSubmit}
-          isSubmitting={isSubmitting}
-          onTextChange={onTextChange}
-        />
-      ) : null}
+          {textDiagnostics ? (
+            <section className="rounded-[1rem] border border-[var(--pv-border)] bg-white/85 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("learn.precheck")}</p>
+              <ul className="mt-3 grid gap-2">
+                <ChecklistRow
+                  ok={textDiagnostics.wordCount >= textDiagnostics.minWords}
+                  label={t("learn.precheckWords", {
+                    current: textDiagnostics.wordCount,
+                    min: textDiagnostics.minWords,
+                  })}
+                />
+                <ChecklistRow
+                  ok={textDiagnostics.missingMarkers.length === 0}
+                  label={
+                    textDiagnostics.missingMarkers.length === 0
+                      ? t("learn.precheckMarkersOk")
+                      : t("learn.precheckMarkersMissing", {
+                          markers: textDiagnostics.missingMarkers.join(", "),
+                        })
+                  }
+                />
+                <ChecklistRow
+                  ok={textDiagnostics.forbiddenHits.length === 0}
+                  label={
+                    textDiagnostics.forbiddenHits.length === 0
+                      ? t("learn.precheckForbiddenOk")
+                      : t("learn.precheckForbiddenHit", {
+                          markers: textDiagnostics.forbiddenHits.join(", "),
+                        })
+                  }
+                />
+              </ul>
+            </section>
+          ) : null}
+        </aside>
+      </div>
 
-      <LearningStepFeedbackPanel step={activeStep} />
-
-      <div className="mt-5 flex flex-wrap items-center gap-3">
+      <div className="mt-6 flex flex-wrap items-center gap-3">
         {previousStep ? (
           <Link href={stepHref(previousStep.slug)} className="pv-button-secondary !w-auto">
             {t("learn.previousStep")}
@@ -104,20 +228,22 @@ export function LearningStepArticle({
         <button
           type="button"
           onClick={onSubmitStep}
-          disabled={isSubmitting || !canSubmit}
+          disabled={submitDisabled}
           className="pv-button-primary !w-auto disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isSubmitting
-            ? t("learn.checking")
-            : activeStep.completed
-              ? t("learn.retryStep")
-              : t("learn.checkStep")}
+          {submitLabel}
         </button>
 
         {nextStep ? (
-          <Link href={stepHref(nextStep.slug)} className="pv-button-secondary !w-auto">
-            {t("learn.nextStep")}
-          </Link>
+          nextStep.unlocked ? (
+            <Link href={stepHref(nextStep.slug)} className="pv-button-secondary !w-auto">
+              {t("learn.nextStep")}
+            </Link>
+          ) : (
+            <span className="rounded-full border border-zinc-200 bg-zinc-100 px-4 py-2 text-xs font-semibold text-zinc-500">
+              {t("learn.completeCurrentStepFirst")}
+            </span>
+          )
         ) : null}
 
         <span className="text-xs text-zinc-500">
@@ -127,3 +253,4 @@ export function LearningStepArticle({
     </article>
   );
 }
+
