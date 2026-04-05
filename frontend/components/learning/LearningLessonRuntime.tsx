@@ -112,7 +112,7 @@ export function LearningLessonRuntime({
           <button
             type="button"
             onClick={() => setIsStepFlowOpen((prev) => !prev)}
-            className="flex w-full items-center justify-between rounded-[0.9rem] border border-[var(--pv-border)] bg-white/85 px-3 py-2 text-sm font-semibold text-zinc-900"
+            className="flex w-full items-center justify-between rounded-[0.9rem] border border-[var(--pv-border)] bg-white/85 px-3 py-2 text-sm font-semibold text-zinc-900 focus-visible:shadow-none focus-visible:ring-2 focus-visible:ring-[var(--pv-brand)]/25"
             aria-expanded={isStepFlowOpen}
             aria-controls="lesson-flow-panel"
           >

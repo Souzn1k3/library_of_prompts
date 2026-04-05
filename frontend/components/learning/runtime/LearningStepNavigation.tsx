@@ -45,15 +45,18 @@ export function LearningStepNavigation({
 
           const body = (
             <div className={`rounded-[1rem] border px-3 py-3 transition ${cardClass}`} aria-current={isActive ? "step" : undefined}>
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold">
+              <div className="flex min-w-0 items-start justify-between gap-2">
+                <p className="min-w-0 flex-1 text-sm font-semibold leading-snug">
                   {index + 1}. {step.title}
                 </p>
-                <span className="text-[11px] uppercase tracking-[0.1em]">{stateLabel}</span>
+                <span className="hidden shrink-0 text-[11px] uppercase tracking-[0.1em] sm:inline">{stateLabel}</span>
               </div>
               <p className="mt-1 text-xs">
                 {t(`learn.stepKind.${step.kind}`)} · {t("learn.stepMinutesLabel", { count: step.estimated_minutes })}
               </p>
+              <span className="mt-2 inline-flex rounded-full border border-[var(--pv-border)] bg-white/75 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-500 sm:hidden">
+                {stateLabel}
+              </span>
             </div>
           );
 

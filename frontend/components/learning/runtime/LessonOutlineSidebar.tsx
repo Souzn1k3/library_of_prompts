@@ -79,7 +79,7 @@ export function LessonOutlineSidebar({
         <div className="pv-progress-fill" style={{ width: `${courseProgressPercent}%` }} />
       </div>
 
-      <details className="mt-4 rounded-[1rem] border border-[var(--pv-border)] bg-white/85 px-3 py-3">
+      <details className="mt-4 overflow-hidden rounded-[1rem] border border-[var(--pv-border)] bg-white/85 px-3 py-3">
         <summary className="cursor-pointer select-none text-sm font-semibold text-zinc-900">
           {t("learn.lessonList")}
         </summary>
@@ -95,12 +95,15 @@ export function LessonOutlineSidebar({
 
             return (
               <li key={item.slug}>
-                <Link href={item.continue_href} className={`block rounded-[1rem] border px-3 py-2 text-sm transition ${className}`}>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="truncate">
+                <Link
+                  href={item.continue_href}
+                  className={`block min-w-0 rounded-[1rem] border px-3 py-2 text-sm transition ${className}`}
+                >
+                  <div className="flex min-w-0 items-start justify-between gap-2">
+                    <span className="min-w-0 flex-1 truncate" title={`${item.position}. ${item.title}`}>
                       {item.position}. {item.title}
                     </span>
-                    <span className="text-[11px] uppercase tracking-[0.08em]">{label}</span>
+                    <span className="hidden shrink-0 text-[11px] uppercase tracking-[0.08em] sm:inline">{label}</span>
                   </div>
                   <p className="mt-1 text-xs">{item.progress_percent}%</p>
                 </Link>
