@@ -1,5 +1,1 @@
-import { permanentRedirect } from "next/navigation";
-
-export default function PlansPage() {
-  permanentRedirect("/pricing");
-}
+export { default, generateMetadata, revalidate } from "../pricing/page";

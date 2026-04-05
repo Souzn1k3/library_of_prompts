@@ -32,7 +32,7 @@ export async function loadLearningLessonStepPageData({
 }: {
   courseSlug: string;
   lessonSlug: string;
-  stepSlug: string;
+  stepSlug?: string | null;
   accessToken: string | null | undefined;
   language: Language;
 }): Promise<LearningLessonStepPageData | null> {
@@ -41,7 +41,12 @@ export async function loadLearningLessonStepPageData({
     fetchLearningCourse(courseSlug, accessToken, language),
   ]);
 
-  const stepIndex = lesson.steps.findIndex((step) => step.slug === stepSlug);
+  const resolvedStepSlug = stepSlug || lesson.current_step_slug || lesson.steps[0]?.slug;
+  if (!resolvedStepSlug) {
+    return null;
+  }
+
+  const stepIndex = lesson.steps.findIndex((step) => step.slug === resolvedStepSlug);
   if (stepIndex < 0) {
     return null;
   }

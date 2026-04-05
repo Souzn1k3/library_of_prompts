@@ -28,11 +28,10 @@ export function LoginForm() {
       await refreshAuth().catch(() => null);
       try {
         const onboarding = await fetchOnboardingProfile();
-        router.push(onboarding.needs_onboarding ? "/onboarding" : "/dashboard");
+        router.replace(onboarding.needs_onboarding ? "/onboarding" : "/dashboard");
       } catch {
-        router.push("/dashboard");
+        router.replace("/dashboard");
       }
-      router.refresh();
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : t("login.failed"));
     } finally {

@@ -30,7 +30,7 @@ export const appRoute = {
     `${APP_ROUTES.learn}/course/${encodeURIComponent(courseSlug)}/lesson/${encodeURIComponent(lessonSlug)}`,
   learnCourseLessonStep: (courseSlug: string, lessonSlug: string, stepSlug: string) =>
     `${APP_ROUTES.learn}/course/${encodeURIComponent(courseSlug)}/lesson/${encodeURIComponent(lessonSlug)}/step/${encodeURIComponent(stepSlug)}`,
-  plansWithTier: (tier: string) => `${APP_ROUTES.plans}?tier=${encodeURIComponent(tier)}`,
+  plansWithTier: (tier: string) => `${APP_ROUTES.pricing}?tier=${encodeURIComponent(tier)}`,
   contributorBySlug: (slug: string) => `${APP_ROUTES.contributors}/${encodeURIComponent(slug)}`,
   contributorBySlugReviewSort: (slug: string, reviewSort: string) =>
     `${APP_ROUTES.contributors}/${encodeURIComponent(slug)}?review_sort=${encodeURIComponent(reviewSort)}`,

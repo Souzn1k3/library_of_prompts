@@ -62,8 +62,7 @@ export function HeaderNav({ mobile = false, onNavigate }: HeaderNavProps) {
     await logout();
     setOpen(false);
     onNavigate?.();
-    router.push("/");
-    router.refresh();
+    router.replace("/");
   }
 
   if (status === "loading") {

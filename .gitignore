@@ -12,10 +12,19 @@ main_task
 # Python
 .venv/
 venv/
+**/.venv/
+**/venv/
 __pycache__/
+**/__pycache__/
 *.pyc
 *.pyo
 *.pyd
+.pytest_cache/
+**/.pytest_cache/
+.mypy_cache/
+**/.mypy_cache/
+.ruff_cache/
+**/.ruff_cache/
 
 # Env files
 .env
@@ -25,6 +34,8 @@ __pycache__/
 # Node / Next
 node_modules/
 .next/
+**/node_modules/
+**/.next/
 *.tsbuildinfo
 
 # Logs

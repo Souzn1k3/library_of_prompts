@@ -138,8 +138,7 @@ export function useOnboardingWizard(status: AuthStatus) {
     setSkipPending(true);
     try {
       await skipOnboarding();
-      router.push("/dashboard");
-      router.refresh();
+      router.replace("/dashboard");
     } catch (e) {
       setError(e instanceof Error ? e.message : t("onboardingWizard.skipFailed"));
     } finally {

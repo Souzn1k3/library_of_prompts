@@ -64,25 +64,32 @@ export function PlansClient({ plans, error }: PlansClientProps) {
         </div>
       ) : null}
 
-      <section aria-label={t("plans.title")} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <section
+        aria-label={t("plans.title")}
+        className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory [scrollbar-gutter:stable]"
+      >
         {sortedPlans.map((plan) => (
-          <PlanPricingCard
+          <div
             key={plan.tier}
-            plan={plan}
-            preferredTier={preferredTier}
-            locale={locale}
-            status={status}
-            isAuthenticated={isAuthenticated}
-            currentTier={currentTier}
-            pendingTier={pendingTier}
-            expanded={expandedTier === plan.tier}
-            t={t}
-            onToggleExpanded={() =>
-              setExpandedTier((current) => (current === plan.tier ? null : plan.tier))
-            }
-            onUpgrade={(tier) => void upgrade(tier)}
-            isLowerOrEqualTier={isLowerOrEqualTier}
-          />
+            className="w-[min(22rem,calc(100vw-2.5rem))] shrink-0 snap-start lg:w-[min(24rem,calc(100vw-6rem))]"
+          >
+            <PlanPricingCard
+              plan={plan}
+              preferredTier={preferredTier}
+              locale={locale}
+              status={status}
+              isAuthenticated={isAuthenticated}
+              currentTier={currentTier}
+              pendingTier={pendingTier}
+              expanded={expandedTier === plan.tier}
+              t={t}
+              onToggleExpanded={() =>
+                setExpandedTier((current) => (current === plan.tier ? null : plan.tier))
+              }
+              onUpgrade={(tier) => void upgrade(tier)}
+              isLowerOrEqualTier={isLowerOrEqualTier}
+            />
+          </div>
         ))}
       </section>
 
@@ -134,10 +141,10 @@ export function PlansClient({ plans, error }: PlansClientProps) {
           <Link href={APP_ROUTES.catalog} className="pv-button-secondary">
             {t("home.explorePrompts")}
           </Link>
-          <Link href={APP_ROUTES.learnStart} className="pv-button-secondary">
-            {t("home.startLearning")}
-          </Link>
         </div>
+        <Link href={APP_ROUTES.learnStart} className="mt-3 pv-button-secondary sm:w-auto">
+          {t("home.startLearning")}
+        </Link>
       </section>
     </div>
   );

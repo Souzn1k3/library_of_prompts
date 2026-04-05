@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 import { SubmitPromptForm } from "@/components/SubmitPromptForm";
 import { T } from "@/components/i18n/T";
@@ -8,31 +7,47 @@ import { getServerAuthCookieState } from "@/lib/server-auth";
 
 export default async function SubmitPage() {
   const authState = await getServerAuthCookieState();
-  if (!authState.hasAnyAuthCookie) {
-    redirect("/login");
-  }
+  const isAuthenticated = authState.hasAnyAuthCookie;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <PageIntro
-        breadcrumbs={[
-          { label: <T k="nav.dashboard" />, href: "/dashboard" },
-          { label: <T k="submit.pageTitle" /> },
-        ]}
+        breadcrumbs={
+          isAuthenticated
+            ? [
+                { label: <T k="nav.dashboard" />, href: "/dashboard" },
+                { label: <T k="submit.pageTitle" /> },
+              ]
+            : [
+                { label: <T k="brand.name" />, href: "/" },
+                { label: <T k="submit.pageTitle" /> },
+              ]
+        }
         eyebrow={<T k="submit.pageTitle" />}
         title={<T k="submit.pageTitle" />}
         description={<T k="submit.pageSubtitle" />}
-        hint={<T k="dashboard.submitAnother" />}
+        hint={isAuthenticated ? <T k="dashboard.submitAnother" /> : <T k="submit.authRequired" />}
         actions={
-          <>
-            <Link href="/dashboard" className="pv-button-secondary">
-              <T k="nav.dashboard" />
-            </Link>
-            <Link href="/catalog" className="pv-inline-link">
-              <T k="nav.catalog" />
-              <span aria-hidden="true">↗</span>
-            </Link>
-          </>
+          isAuthenticated ? (
+            <>
+              <Link href="/dashboard" className="pv-button-secondary">
+                <T k="nav.dashboard" />
+              </Link>
+              <Link href="/catalog" className="pv-inline-link">
+                <T k="nav.catalog" />
+                <span aria-hidden="true">↗</span>
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="pv-button-secondary">
+                <T k="nav.login" />
+              </Link>
+              <Link href="/signup" className="pv-button-primary">
+                <T k="nav.signup" />
+              </Link>
+            </>
+          )
         }
       >
         <div className="flex flex-wrap gap-2">
