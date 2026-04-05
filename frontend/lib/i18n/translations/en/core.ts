@@ -20,6 +20,8 @@ export const enCore = {
   "header.searchPlaceholder": "Search prompts, lessons, or techniques",
   "header.searchAction": "Search",
   "header.accountMenu": "Account menu",
+  "header.openMenu": "Open navigation menu",
+  "header.closeMenu": "Close navigation menu",
   "footer.browsePrompts": "Browse prompts",
   "footer.description": "Prompt library, lessons, and AI workflows in one clean workspace.",
   "footer.projectNote":

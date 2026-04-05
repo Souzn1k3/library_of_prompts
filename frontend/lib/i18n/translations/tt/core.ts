@@ -20,6 +20,8 @@ export const ttCore = {
   "header.searchPlaceholder": "Промптлар, дәресләр һәм техникалар эзләү",
   "header.searchAction": "Эзләү",
   "header.accountMenu": "Аккаунт менюсы",
+  "header.openMenu": "Навигация менюсын ачу",
+  "header.closeMenu": "Навигация менюсын ябу",
   "footer.browsePrompts": "Промптлар карау",
   "footer.description": "Промптлар, дәресләр һәм AI эш агымнары бер җайлы киңлектә.",
   "footer.projectNote":

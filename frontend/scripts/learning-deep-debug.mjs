@@ -57,7 +57,8 @@ async function registerUser() {
   const displayName = `Learning Deep Debug ${nonce}`;
 
   let response = null;
-  for (let attempt = 1; attempt <= 4; attempt += 1) {
+  const maxAttempts = 8;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     response = await fetch(`${API_BASE}/api/v1/auth/register`, {
       method: "POST",
       headers: {
@@ -74,10 +75,14 @@ async function registerUser() {
     if (response.ok) {
       break;
     }
-    if (response.status !== 429 || attempt === 4) {
+    if (response.status !== 429 || attempt === maxAttempts) {
       throw new Error(`Register failed: ${response.status} ${await response.text()}`);
     }
-    await new Promise((resolve) => setTimeout(resolve, 1200 * attempt));
+    const retryAfterHeader = response.headers.get("retry-after");
+    const retryAfterSeconds = Number.parseInt(retryAfterHeader ?? "", 10);
+    const retryAfterMs = Number.isFinite(retryAfterSeconds) ? retryAfterSeconds * 1000 : 0;
+    const backoffMs = Math.min(12000, 1500 * attempt);
+    await new Promise((resolve) => setTimeout(resolve, Math.max(retryAfterMs, backoffMs)));
   }
 
   if (!response || !response.ok) {
@@ -304,8 +309,10 @@ async function main() {
   const report = [];
 
   await gotoAndShot(page, "/learn/start", "01-entry-start-target", report);
-  await page.waitForURL(/\/learn\/course\/[^/]+\/lesson\/[^/?#]+/);
-  await shot(page, "02-entry-resolved-lesson");
+  await page.waitForURL(/\/learn\/course\/[^/]+\/lesson\/[^/?#]+/, { timeout: 12000 }).catch(() => null);
+  await waitAfterNavigation(page);
+  const entryResolvedShot = await shot(page, "02-entry-resolved-lesson");
+  report.push({ id: "02-entry-resolved-lesson", route: page.url(), file: entryResolvedShot });
 
   await gotoAndShot(page, "/learn", "03-learning-catalog", report);
   await gotoAndShot(page, "/learn/my", "04-my-learning", report);

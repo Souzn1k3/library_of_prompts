@@ -20,6 +20,8 @@ export const ruCore = {
   "header.searchPlaceholder": "Ищите промпты, уроки и техники",
   "header.searchAction": "Найти",
   "header.accountMenu": "Меню аккаунта",
+  "header.openMenu": "Открыть меню навигации",
+  "header.closeMenu": "Закрыть меню навигации",
   "footer.browsePrompts": "Смотреть промпты",
   "footer.description": "Библиотека промптов, уроков и AI-воркфлоу в одном аккуратном пространстве.",
   "footer.projectNote":

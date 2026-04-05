@@ -1,12 +1,17 @@
 {
-  "generatedAt": "2026-04-05T20:25:31.014Z",
+  "generatedAt": "2026-04-05T21:00:13.873Z",
   "baseUrl": "http://127.0.0.1:3000",
   "apiBase": "http://127.0.0.1:8000",
   "screenshots": [
     {
       "id": "01-entry-start-target",
-      "route": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-task-briefing",
+      "route": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-foundations",
       "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\artifacts\\screenshots\\learning-deep-debug\\01-entry-start-target.png"
+    },
+    {
+      "id": "02-entry-resolved-lesson",
+      "route": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-foundations",
+      "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\artifacts\\screenshots\\learning-deep-debug\\02-entry-resolved-lesson.png"
     },
     {
       "id": "03-learning-catalog",
@@ -70,7 +75,7 @@
     },
     {
       "id": "22-start-after-course-complete",
-      "route": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-task-briefing",
+      "route": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-foundations",
       "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\artifacts\\screenshots\\learning-deep-debug\\22-start-after-course-complete.png"
     }
   ]

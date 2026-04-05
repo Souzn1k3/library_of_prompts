@@ -62,7 +62,8 @@ async function registerWithRetry(
   email: string,
   password: string,
 ): Promise<string> {
-  for (let attempt = 1; attempt <= 4; attempt += 1) {
+  const maxAttempts = 8;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const registerResponse = await request.post(`${API_BASE}/api/v1/auth/register`, {
       headers: { "Accept-Language": "en" },
       data: {
@@ -76,8 +77,12 @@ async function registerWithRetry(
       return registerBody.access_token;
     }
 
-    if (registerResponse.status() === 429 && attempt < 4) {
-      await new Promise((resolve) => setTimeout(resolve, 1200 * attempt));
+    if (registerResponse.status() === 429 && attempt < maxAttempts) {
+      const retryAfterHeader = registerResponse.headers()["retry-after"];
+      const retryAfterSeconds = Number.parseInt(retryAfterHeader ?? "", 10);
+      const retryAfterMs = Number.isFinite(retryAfterSeconds) ? retryAfterSeconds * 1000 : 0;
+      const backoffMs = Math.min(12000, 1500 * attempt);
+      await new Promise((resolve) => setTimeout(resolve, Math.max(retryAfterMs, backoffMs)));
       continue;
     }
 
