@@ -15,3 +15,11 @@ export function getInitials(value: string) {
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("");
 }
+
+export function truncateWithEllipsis(value: string, maxChars: number) {
+  const normalized = value.trim();
+  if (!normalized) return normalized;
+  if (normalized.length <= maxChars) return normalized;
+  if (maxChars <= 1) return "…";
+  return `${normalized.slice(0, maxChars - 1).trimEnd()}…`;
+}

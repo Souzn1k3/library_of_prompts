@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from collections import Counter
+from difflib import SequenceMatcher
 from typing import Any
 
 from app.core.i18n import SupportedLanguage
@@ -29,6 +30,7 @@ class LearningStepTextEvaluationMixin:
         bonus_markers = [str(marker) for marker in submission.get("bonus_markers", [])]
         forbidden = [str(marker) for marker in submission.get("forbidden_phrases", [])]
         pass_score = int(submission.get("pass_score", 70))
+        reference_text = str(submission.get("reference_text") or "").strip()
 
         wc = word_count(text)
         missing_markers = [marker for marker in required_markers if marker.lower() not in normalized]
@@ -69,6 +71,21 @@ class LearningStepTextEvaluationMixin:
             if cue in normalized
         )
         has_numbering = bool(re.search(r"\b\d+[\).:\-]?", text))
+        copied_template = False
+        if reference_text and normalized:
+            reference_normalized = normalize_text(reference_text)
+            if reference_normalized:
+                template_similarity = SequenceMatcher(None, reference_normalized, normalized).ratio()
+                markers_for_compare = required_markers or sorted(set(re.findall(r"\[[A-Z_]+\]", reference_text)))
+                identical_marker_payloads = 0
+                for marker in markers_for_compare:
+                    expected_payload = normalize_text(extract_marker_payload(reference_text, marker))
+                    actual_payload = normalize_text(extract_marker_payload(text, marker))
+                    if expected_payload and actual_payload and expected_payload == actual_payload:
+                        identical_marker_payloads += 1
+                copied_template = template_similarity >= 0.96 or (
+                    len(markers_for_compare) >= 3 and identical_marker_payloads == len(markers_for_compare)
+                )
 
         length_score = 25 if wc >= min_words else round((wc / max(min_words, 1)) * 25)
         if required_markers:
@@ -104,12 +121,15 @@ class LearningStepTextEvaluationMixin:
                 length_score + structure_score + completeness_score + specificity_score + bonus_score - penalty,
             ),
         )
+        if copied_template:
+            score = min(score, max(0, pass_score - 1))
         passed = (
             score >= pass_score
             and not missing_markers
             and not empty_markers
             and wc >= min_words
             and not forbidden_hits
+            and not copied_template
         )
 
         strengths: list[str] = []
@@ -183,6 +203,22 @@ class LearningStepTextEvaluationMixin:
                     "en": "Review constraints and output format specificity.",
                     "ru": "Повторите раздел про ограничения и точность формата.",
                     "tt": "Чикләү һәм формат төгәллеге бүлеген кабатлагыз.",
+                }[language]
+            )
+
+        if copied_template:
+            improvements.append(
+                {
+                    "en": "The answer is too close to the example template. Rewrite it for your own task and context.",
+                    "ru": "Ответ слишком близок к примеру шаблона. Перепишите его под свою задачу и контекст.",
+                    "tt": "Җавап үрнәк шаблонга артык охшаш. Үз бурычыгыз һәм контекст өчен яңадан языгыз.",
+                }[language]
+            )
+            revisit.append(
+                {
+                    "en": "Use the example as a reference only. Replace goal, audience, constraints, and output details.",
+                    "ru": "Используйте пример только как ориентир: замените цель, аудиторию, ограничения и формат результата.",
+                    "tt": "Үрнәкне бары тик ориентир итеп кулланыгыз: максат, аудитория, чикләү һәм нәтиҗә форматын үзгәртегез.",
                 }[language]
             )
 

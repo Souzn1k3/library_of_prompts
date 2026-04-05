@@ -55,3 +55,37 @@ async def test_submission_lists_in_me_submissions(async_client, unique_email: st
     rows = mine.json()
     slugs = {r["slug"] for r in rows}
     assert slug in slugs
+
+
+@pytest.mark.asyncio
+async def test_new_contributor_can_submit_when_total_details_are_sufficient(
+    async_client,
+    unique_email: str,
+) -> None:
+    cat_id = await _first_category_id(async_client)
+    slug = f"contrib-total-{uuid.uuid4().hex[:12]}"
+
+    reg = await async_client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": unique_email,
+            "password": "password123",
+            "display_name": "Contributor2",
+        },
+    )
+    assert reg.status_code == 201
+    token = reg.json()["access_token"]
+
+    sub = await async_client.post(
+        "/api/v1/contributions/submit",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "slug": slug,
+            "title": "t" * 30,
+            "summary": "s" * 30,
+            "body": "b" * 70,
+            "category_id": str(cat_id),
+            "technique": "other",
+        },
+    )
+    assert sub.status_code == 201

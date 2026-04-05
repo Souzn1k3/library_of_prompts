@@ -118,26 +118,23 @@ export function PromptPageAside({
 function VerifiedContributorBadge({ label }: { label: string }) {
   return (
     <span
-      className="inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center bg-[#4a8df6] shadow-[0_1px_2px_rgba(15,23,42,0.18)]"
-      style={{
-        clipPath: "polygon(50% 0%, 82% 18%, 100% 50%, 82% 82%, 50% 100%, 18% 82%, 0% 50%, 18% 18%)",
-      }}
+      className="inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center"
       aria-label={label}
       title={label}
     >
       <svg
         viewBox="0 0 20 20"
-        className="h-3 w-3 text-white"
+        className="h-full w-full drop-shadow-[0_1px_2px_rgba(15,23,42,0.18)]"
         aria-hidden="true"
         focusable="false"
       >
         <path
-          d="M5.1 10.2 8.2 13.25l6.7-6.55"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="3.2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          d="M10 0 16.4 3.6 20 10 16.4 16.4 10 20 3.6 16.4 0 10 3.6 3.6Z"
+          fill="#4a8df6"
+        />
+        <path
+          d="M8.6 14.1a1 1 0 0 1-.71-.29L4.8 10.7a1 1 0 1 1 1.41-1.41l2.39 2.39 5.23-5.23a1 1 0 1 1 1.41 1.41l-5.94 5.94a1 1 0 0 1-.71.29Z"
+          fill="#fff"
         />
       </svg>
     </span>

@@ -30,11 +30,8 @@
 .pv-panel {
   border: 1px solid var(--pv-border);
   border-radius: 1.75rem;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 249, 255, 0.86)),
-    var(--pv-surface-strong);
+  background: var(--pv-surface-strong);
   box-shadow: var(--pv-shadow);
-  backdrop-filter: blur(18px);
 }
 
 .pv-panel::before,
@@ -54,12 +51,8 @@
   border-radius: 2rem;
   overflow: visible;
   z-index: 3;
-  background:
-    radial-gradient(circle at top right, rgba(37, 92, 255, 0.08), transparent 26%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 255, 0.94));
-  box-shadow:
-    0 24px 64px rgba(15, 23, 42, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(251, 250, 247, 0.96));
+  box-shadow: var(--pv-shadow);
 }
 
 .pv-hero::after {
@@ -69,9 +62,7 @@
 .pv-card {
   border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 1.35rem;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 249, 255, 0.92)),
-    var(--pv-surface-strong);
+  background: var(--pv-surface-strong);
   box-shadow: var(--pv-card-shadow);
 }
 
@@ -118,9 +109,7 @@
 .pv-card-muted {
   border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 1.35rem;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(244, 247, 253, 0.9)),
-    var(--pv-surface-muted);
+  background: var(--pv-surface-muted);
   box-shadow: none;
 }
 

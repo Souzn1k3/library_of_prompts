@@ -14,7 +14,7 @@ export function LearningStepFeedbackPanel({ step }: LearningStepFeedbackPanelPro
   return (
     <div className="mt-4 rounded-[1rem] border border-emerald-200 bg-emerald-50/70 p-4 text-sm text-emerald-950">
       <p className="font-semibold">
-        {step.feedback.verdict} · {step.feedback.score}/{step.feedback.pass_score}
+        {step.feedback.verdict} · {step.feedback.score}/100
       </p>
       {step.feedback.strengths.length > 0 ? (
         <ul className="mt-2 grid gap-1 text-emerald-900">

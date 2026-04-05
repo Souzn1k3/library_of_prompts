@@ -34,20 +34,17 @@
   --pv-lmn-earned-soft: rgba(57, 200, 141, 0.2);
   --pv-lmn-spent: #f97316;
   --pv-lmn-spent-soft: rgba(249, 115, 22, 0.18);
-  --pv-shadow: 0 22px 70px rgba(15, 23, 42, 0.08), 0 6px 24px rgba(37, 92, 255, 0.06);
-  --pv-card-shadow: 0 14px 36px rgba(15, 23, 42, 0.08), 0 2px 10px rgba(15, 23, 42, 0.04);
+  --pv-shadow: 0 12px 28px rgba(15, 23, 42, 0.06), 0 2px 8px rgba(15, 23, 42, 0.04);
+  --pv-card-shadow: 0 8px 20px rgba(15, 23, 42, 0.06), 0 1px 4px rgba(15, 23, 42, 0.03);
   --pv-card-shadow-hover:
-    0 26px 52px rgba(15, 23, 42, 0.12),
-    0 12px 30px rgba(37, 92, 255, 0.1);
+    0 14px 28px rgba(15, 23, 42, 0.09),
+    0 4px 12px rgba(15, 23, 42, 0.05);
 }
 
 html {
   min-height: 100%;
   overflow-x: clip;
-  background:
-    radial-gradient(circle at top left, rgba(200, 162, 74, 0.14), transparent 35%),
-    radial-gradient(circle at top right, rgba(31, 41, 55, 0.08), transparent 30%),
-    linear-gradient(180deg, #fdfcf9 0%, #f8f7f4 55%, #f5f3ee 100%);
+  background: linear-gradient(180deg, #faf8f3 0%, #f7f4ed 100%);
 }
 
 body {
@@ -57,33 +54,6 @@ body {
   text-rendering: optimizeLegibility;
   background: transparent;
   color: var(--pv-text);
-}
-
-body::before,
-body::after {
-  content: "";
-  position: fixed;
-  z-index: -1;
-  inset: auto;
-  border-radius: 999px;
-  pointer-events: none;
-  filter: blur(32px);
-}
-
-body::before {
-  top: 5rem;
-  left: -7rem;
-  width: 18rem;
-  height: 18rem;
-  background: rgba(200, 162, 74, 0.13);
-}
-
-body::after {
-  right: -5rem;
-  bottom: 6rem;
-  width: 14rem;
-  height: 14rem;
-  background: rgba(31, 41, 55, 0.08);
 }
 
 ::selection {

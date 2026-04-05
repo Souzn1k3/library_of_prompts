@@ -10,7 +10,7 @@ import {
   HeaderNavAuthenticatedDesktop,
   HeaderNavAuthenticatedMobile,
 } from "@/components/layout/HeaderNavAuthenticated";
-import { getInitials } from "@/components/layout/headerNavUtils";
+import { getInitials, truncateWithEllipsis } from "@/components/layout/headerNavUtils";
 import { getAccountMenuItems, isAccountMenuItemActive } from "@/lib/navigation";
 
 type HeaderNavProps = {
@@ -28,6 +28,7 @@ export function HeaderNav({ mobile = false, onNavigate }: HeaderNavProps) {
   const menuItems = getAccountMenuItems();
   const accountActive = isAccountMenuItemActive(pathname);
   const userLabel = user?.display_name?.trim() || t("nav.profile");
+  const userDesktopLabel = truncateWithEllipsis(userLabel, 18);
   const userInitials = getInitials(userLabel);
 
   useEffect(() => {
@@ -94,7 +95,8 @@ export function HeaderNav({ mobile = false, onNavigate }: HeaderNavProps) {
     return (
       <HeaderNavAuthenticatedDesktop
         menuRef={menuRef}
-        userLabel={userLabel}
+        userLabel={userDesktopLabel}
+        userLabelFull={userLabel}
         userInitials={userInitials}
         pathname={pathname}
         menuItems={menuItems}

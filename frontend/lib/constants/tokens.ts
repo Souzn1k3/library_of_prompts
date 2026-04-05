@@ -1,6 +1,6 @@
 export const TOKEN_NAME_SINGULAR = "Token";
 export const TOKEN_NAME_PLURAL = "Tokens";
-export const TOKEN_SHORT_CODE = "TKN";
+export const TOKEN_SHORT_CODE = TOKEN_NAME_PLURAL;
 export const TOKEN_FORMAL_NAME = "Platform Tokens";
 export const TOKEN_HELP_TEXT = "Tokens — внутренняя валюта платформы для оплаты и расчетов";
 

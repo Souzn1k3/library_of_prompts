@@ -29,7 +29,12 @@ class SubmissionService:
         self._analytics = analytics
 
     async def submit(self, user: User, data: PromptSubmit) -> PromptSubmissionResult:
-        await self._contributors.apply_submission_guardrails(user, title=data.title, body=data.body)
+        await self._contributors.apply_submission_guardrails(
+            user,
+            title=data.title,
+            body=data.body,
+            summary=data.summary,
+        )
         cat = await self._categories.get_by_id(data.category_id)
         if cat is None:
             raise NotFoundError("category", str(data.category_id))

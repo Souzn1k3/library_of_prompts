@@ -201,6 +201,32 @@ async def test_learning_step_validation_returns_meaningful_feedback(async_client
 
 
 @pytest.mark.asyncio
+async def test_learning_step_rejects_verbatim_template_copy(async_client, unique_email: str):
+    token = await _register(async_client, unique_email)
+
+    lesson_response = await async_client.get(
+        f"/api/v1/learning/courses/{COURSE_FOUNDATIONS}/lessons/pe-foundations",
+        headers=_auth_headers(token),
+    )
+    assert lesson_response.status_code == 200
+    guided_step = next(step for step in lesson_response.json()["steps"] if step["slug"] == "pe-foundations-guided")
+    template_text = str(guided_step.get("placeholder") or "").strip()
+    assert template_text
+
+    submit = await async_client.post(
+        f"/api/v1/learning/courses/{COURSE_FOUNDATIONS}/lessons/pe-foundations/steps/{guided_step['slug']}/submit",
+        headers=_auth_headers(token),
+        json={"answer": {"text": template_text}},
+    )
+    assert submit.status_code == 200
+    payload = submit.json()
+
+    assert payload["passed"] is False
+    assert payload["feedback"]["improvements"]
+    assert payload["score"] < payload["feedback"]["pass_score"]
+
+
+@pytest.mark.asyncio
 async def test_learning_completion_rewards_and_my_modules_sorting(async_client, unique_email: str):
     token = await _register(async_client, unique_email)
 

@@ -6,6 +6,7 @@ from typing import Any
 
 from app.core.i18n import SupportedLanguage
 from app.infrastructure.db.models import LearningCourseProgress, LearningLessonProgress, LearningStepProgress, User
+from app.modules.learning.content.common import pick_text
 from app.modules.learning.model.learning import LearningStepFeedbackRead
 from app.modules.learning.service.learning_types import StepEvaluationResult
 from app.modules.learning.service.learning_utils import safe_percent
@@ -21,8 +22,17 @@ class LearningSubmissionProgressMixin:
         language: SupportedLanguage,
     ) -> StepEvaluationResult:
         submission = step.get("submission", {"type": "none"})
+        submission_for_eval = dict(submission)
+        placeholder = step.get("placeholder")
+        reference_text = ""
+        if isinstance(placeholder, dict):
+            reference_text = pick_text(placeholder, language).strip()
+        elif isinstance(placeholder, str):
+            reference_text = placeholder.strip()
+        if reference_text:
+            submission_for_eval["reference_text"] = reference_text
         passed, score, feedback = self._step_evaluator.evaluate(
-            submission=submission,
+            submission=submission_for_eval,
             answer=answer,
             language=language,
         )

@@ -38,7 +38,7 @@ export function getFooterSections(status: string, t: Translate): FooterSection[]
       title: t("footer.company"),
       links: [
         { href: "/", label: t("footer.about") },
-        { href: "/submit", label: t("footer.contribute") },
+        { href: status === "authenticated" ? "/submit" : "/login", label: t("footer.contribute") },
       ],
     },
     {

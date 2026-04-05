@@ -1,7 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { LearningProgressSummary } from "@/components/learning/runtime/LearningProgressSummary";
 import { LearningStepArticle } from "@/components/learning/runtime/LearningStepArticle";
@@ -15,17 +13,18 @@ import type { LearningLessonDetail } from "@/lib/types";
 
 type LearningLessonRuntimeProps = {
   lesson: LearningLessonDetail;
+  courseTitle: string;
   canSubmit: boolean;
   activeStepSlug: string;
 };
 
 export function LearningLessonRuntime({
   lesson,
+  courseTitle,
   canSubmit,
   activeStepSlug: activeStepSlugProp,
 }: LearningLessonRuntimeProps) {
   const { t } = useI18n();
-  const router = useRouter();
   const {
     steps,
     activeStepIndex,
@@ -39,6 +38,7 @@ export function LearningLessonRuntime({
     submittingStepSlug,
     submitError,
     statusMessage,
+    statusTone,
     economy,
     weakAreas,
     stepHref,
@@ -50,7 +50,6 @@ export function LearningLessonRuntime({
     canSubmit,
     activeStepSlugProp,
     t,
-    onNavigate: (href) => router.push(href),
   });
 
   if (!activeStep) {
@@ -65,7 +64,12 @@ export function LearningLessonRuntime({
 
   return (
     <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start">
-      <LessonOutlineSidebar lesson={lesson} courseProgressPercent={courseProgressPercent} />
+      <LessonOutlineSidebar
+        lesson={lesson}
+        courseTitle={courseTitle}
+        returnToCourseHref={lesson.return_to_course_href}
+        courseProgressPercent={courseProgressPercent}
+      />
 
       <section className="space-y-4">
         <LearningProgressSummary
@@ -73,7 +77,11 @@ export function LearningLessonRuntime({
           estimatedMinutes={lesson.estimated_minutes}
         />
 
-        {statusMessage ? <div className="pv-alert pv-alert-success">{statusMessage}</div> : null}
+        {statusMessage ? (
+          <div className={statusTone === "warning" ? "pv-alert pv-alert-warning" : "pv-alert pv-alert-success"}>
+            {statusMessage}
+          </div>
+        ) : null}
         {submitError ? <div className="pv-alert pv-alert-warning">{submitError}</div> : null}
         <EconomyActionBanner summary={economy} ctaHref={APP_ROUTES.store} />
 

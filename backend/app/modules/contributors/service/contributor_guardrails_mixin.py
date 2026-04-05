@@ -5,7 +5,14 @@ from app.infrastructure.db.models import ContributorTier, User
 
 
 class ContributorGuardrailsMixin:
-    async def apply_submission_guardrails(self, user: User, *, title: str, body: str) -> None:
+    async def apply_submission_guardrails(
+        self,
+        user: User,
+        *,
+        title: str,
+        body: str,
+        summary: str | None = None,
+    ) -> None:
         profile = await self.ensure_profile(user)
         if profile.reputation_tier == ContributorTier.top:
             daily_limit = 20
@@ -48,12 +55,22 @@ class ContributorGuardrailsMixin:
                 status_code=409,
             )
 
-        if profile.reputation_tier == ContributorTier.new and len(body.strip()) < 120:
+        normalized_title = title.strip()
+        normalized_body = body.strip()
+        normalized_summary = summary.strip() if summary else ""
+        submission_chars = len(normalized_title) + len(normalized_summary) + len(normalized_body)
+
+        if profile.reputation_tier == ContributorTier.new and submission_chars < 120:
             raise AppError(
                 code="submission_too_short",
                 message="Please add more detail before submitting.",
                 status_code=400,
-                details={"minimum_body_chars": 120},
+                details={
+                    # Keep legacy key for compatibility with existing clients.
+                    "minimum_body_chars": 120,
+                    "minimum_submission_chars": 120,
+                    "submission_chars": submission_chars,
+                },
             )
 
     async def should_auto_approve(self, user: User) -> bool:

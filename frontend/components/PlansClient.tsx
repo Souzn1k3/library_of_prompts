@@ -51,47 +51,12 @@ export function PlansClient({ plans, error }: PlansClientProps) {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {error ? (
         <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           {error}
         </div>
       ) : null}
-
-      {status === "loading" ? (
-        <p className="text-sm text-zinc-600">{t("dashboard.loading")}</p>
-      ) : isAuthenticated ? (
-        <div className="pv-panel px-5 py-5 text-sm text-zinc-700 sm:px-6">
-          <p>
-            {t("plans.currentTier")}:{" "}
-            <span className={`font-medium ${currentTierClass}`}>{t(getTierTranslationKey(currentTier))}</span>
-            {currentBillingStatusLabel ? (
-              <>
-                {" "}
-                · {t("plans.subscriptionStatus")}:{" "}
-                <span className={`font-medium ${currentStatusClass}`}>{currentBillingStatusLabel}</span>
-              </>
-            ) : null}
-          </p>
-          <div className="mt-3">
-            <button
-              type="button"
-              onClick={() => void openBillingPortal()}
-              disabled={portalPending}
-              className="pv-button-secondary disabled:opacity-60"
-            >
-              {portalPending ? t("plans.openingCheckout") : t("plans.manageBilling")}
-            </button>
-          </div>
-        </div>
-      ) : (
-        <p className="text-sm text-zinc-600">
-          <Link href={APP_ROUTES.signup} className="font-medium text-zinc-900 underline">
-            {t("plans.createAccount")}
-          </Link>{" "}
-          {t("plans.createAccountSuffix")}
-        </p>
-      )}
 
       {actionError ?? portalError ? (
         <div className="rounded-[1.5rem] border border-red-200 bg-red-50 p-4 text-sm text-red-800">
@@ -99,7 +64,7 @@ export function PlansClient({ plans, error }: PlansClientProps) {
         </div>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <section aria-label={t("plans.title")} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {sortedPlans.map((plan) => (
           <PlanPricingCard
             key={plan.tier}
@@ -119,7 +84,61 @@ export function PlansClient({ plans, error }: PlansClientProps) {
             isLowerOrEqualTier={isLowerOrEqualTier}
           />
         ))}
-      </div>
+      </section>
+
+      {status === "loading" ? (
+        <p className="text-sm text-zinc-600">{t("dashboard.loading")}</p>
+      ) : isAuthenticated ? (
+        <section className="pv-panel px-5 py-5 text-sm text-zinc-700 sm:px-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p>
+              {t("plans.currentTier")}:{" "}
+              <span className={`font-medium ${currentTierClass}`}>{t(getTierTranslationKey(currentTier))}</span>
+              {currentBillingStatusLabel ? (
+                <>
+                  {" "}
+                  · {t("plans.subscriptionStatus")}:{" "}
+                  <span className={`font-medium ${currentStatusClass}`}>{currentBillingStatusLabel}</span>
+                </>
+              ) : null}
+            </p>
+            <button
+              type="button"
+              onClick={() => void openBillingPortal()}
+              disabled={portalPending}
+              className="pv-button-secondary disabled:opacity-60"
+            >
+              {portalPending ? t("plans.openingCheckout") : t("plans.manageBilling")}
+            </button>
+          </div>
+        </section>
+      ) : (
+        <section className="pv-card-muted px-5 py-4 text-sm text-zinc-700">
+          <p>
+            <Link href={APP_ROUTES.signup} className="font-medium text-zinc-900 underline">
+              {t("plans.createAccount")}
+            </Link>{" "}
+            {t("plans.createAccountSuffix")}
+          </p>
+        </section>
+      )}
+
+      <section className="pv-card-muted px-4 py-4 sm:px-5">
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href={isAuthenticated ? APP_ROUTES.dashboard : APP_ROUTES.signup}
+            className="pv-button-secondary"
+          >
+            {isAuthenticated ? t("nav.dashboard") : t("nav.signup")}
+          </Link>
+          <Link href={APP_ROUTES.catalog} className="pv-button-secondary">
+            {t("home.explorePrompts")}
+          </Link>
+          <Link href={APP_ROUTES.learnStart} className="pv-button-secondary">
+            {t("home.startLearning")}
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }

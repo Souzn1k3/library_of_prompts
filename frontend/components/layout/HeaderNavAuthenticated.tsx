@@ -62,6 +62,7 @@ export function HeaderNavAuthenticatedMobile({
 type HeaderNavAuthenticatedDesktopProps = {
   menuRef: RefObject<HTMLDivElement | null>;
   userLabel: string;
+  userLabelFull: string;
   userInitials: string;
   pathname: string;
   menuItems: AccountMenuItem[];
@@ -77,6 +78,7 @@ type HeaderNavAuthenticatedDesktopProps = {
 export function HeaderNavAuthenticatedDesktop({
   menuRef,
   userLabel,
+  userLabelFull,
   userInitials,
   pathname,
   menuItems,
@@ -96,16 +98,21 @@ export function HeaderNavAuthenticatedDesktop({
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label={t("header.accountMenu")}
-        className={`pv-header-user-trigger ${open || accountActive ? "pv-header-user-trigger-active" : ""}`}
+        className={`pv-header-user-trigger min-w-0 max-w-[10.5rem] xl:max-w-[12.5rem] ${
+          open || accountActive ? "pv-header-user-trigger-active" : ""
+        }`}
       >
         <span className="pv-header-avatar">{userInitials}</span>
-        <span className="max-w-[10rem] truncate text-[0.92rem] font-semibold text-zinc-950 xl:max-w-[12rem]">
+        <span
+          className="min-w-0 flex-1 truncate text-[0.92rem] font-semibold text-zinc-950"
+          title={userLabelFull}
+        >
           {userLabel}
         </span>
         <svg
           aria-hidden="true"
           viewBox="0 0 20 20"
-          className={`h-4 w-4 text-zinc-400 transition ${open ? "rotate-180" : ""}`}
+          className={`h-4 w-4 shrink-0 text-zinc-400 transition ${open ? "rotate-180" : ""}`}
           fill="none"
           stroke="currentColor"
           strokeWidth="1.7"

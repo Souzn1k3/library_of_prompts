@@ -18,8 +18,9 @@ type UseLearningLessonRuntimeArgs = {
   canSubmit: boolean;
   activeStepSlugProp: string;
   t: LearningTranslation;
-  onNavigate: (href: string) => void;
 };
+
+type RuntimeStatusTone = "success" | "warning";
 
 function buildInitialActiveStepSlug(lesson: LearningLessonDetail, activeStepSlugProp: string): string {
   return activeStepSlugProp || lesson.current_step_slug || lesson.steps[0]?.slug || "";
@@ -30,7 +31,6 @@ export function useLearningLessonRuntime({
   canSubmit,
   activeStepSlugProp,
   t,
-  onNavigate,
 }: UseLearningLessonRuntimeArgs) {
   const [steps, setSteps] = useState<StepState[]>(lesson.steps);
   const [activeStepSlug, setActiveStepSlug] = useState<string>(
@@ -43,6 +43,7 @@ export function useLearningLessonRuntime({
   const [submittingStepSlug, setSubmittingStepSlug] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [statusTone, setStatusTone] = useState<RuntimeStatusTone | null>(null);
   const [economy, setEconomy] = useState<EconomyAction | null>(null);
   const [weakAreas, setWeakAreas] = useState<LearningStepSubmitResponse["weak_areas"]>([]);
 
@@ -62,6 +63,7 @@ export function useLearningLessonRuntime({
     setSubmittingStepSlug(null);
     setSubmitError(null);
     setStatusMessage(null);
+    setStatusTone(null);
     setEconomy(null);
     setWeakAreas([]);
   }, [activeStepSlugProp, lesson]);
@@ -98,6 +100,7 @@ export function useLearningLessonRuntime({
       setSubmittingStepSlug(step.slug);
       setSubmitError(null);
       setStatusMessage(null);
+      setStatusTone(null);
 
       try {
         const result = await submitLearningStep(
@@ -126,18 +129,16 @@ export function useLearningLessonRuntime({
         setEconomy(result.economy ?? null);
         setWeakAreas(result.weak_areas ?? []);
 
-        if (result.next_step_slug) {
-          setActiveStepSlug(result.next_step_slug);
-          onNavigate(stepHref(result.next_step_slug));
-        }
-
         if (result.course_completed) {
+          setStatusTone("success");
           setStatusMessage(
             `${t("learn.courseCompleted")} ${result.awarded_badge ? `(${result.awarded_badge})` : ""}`.trim(),
           );
         } else if (result.lesson_completed) {
+          setStatusTone("success");
           setStatusMessage(t("learn.lessonCompleted"));
         } else {
+          setStatusTone(result.passed ? "success" : "warning");
           setStatusMessage(result.passed ? t("learn.stepPassed") : t("learn.stepNeedsRevision"));
         }
       } catch (error) {
@@ -146,7 +147,7 @@ export function useLearningLessonRuntime({
         setSubmittingStepSlug(null);
       }
     },
-    [canSubmit, choiceAnswers, lesson.course_slug, lesson.lesson_slug, onNavigate, stepHref, t, textAnswers],
+    [canSubmit, choiceAnswers, lesson.course_slug, lesson.lesson_slug, t, textAnswers],
   );
 
   return {
@@ -162,6 +163,7 @@ export function useLearningLessonRuntime({
     submittingStepSlug,
     submitError,
     statusMessage,
+    statusTone,
     economy,
     weakAreas,
     stepHref,

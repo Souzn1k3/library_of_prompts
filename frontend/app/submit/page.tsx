@@ -1,10 +1,17 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 import { SubmitPromptForm } from "@/components/SubmitPromptForm";
 import { T } from "@/components/i18n/T";
 import { PageIntro } from "@/components/navigation/PageIntro";
+import { getServerAuthCookieState } from "@/lib/server-auth";
 
-export default function SubmitPage() {
+export default async function SubmitPage() {
+  const authState = await getServerAuthCookieState();
+  if (!authState.hasAnyAuthCookie) {
+    redirect("/login");
+  }
+
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <PageIntro
