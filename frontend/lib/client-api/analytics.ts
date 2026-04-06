@@ -1,5 +1,10 @@
 import type { Attribution } from "@/lib/analytics/types";
-import type { ChannelSpendUpsertRead, ChannelSpendUpsertWrite, RevenueDashboard } from "@/lib/types";
+import type {
+  ChannelSpendUpsertRead,
+  ChannelSpendUpsertWrite,
+  GtmDashboard,
+  RevenueDashboard,
+} from "@/lib/types";
 import { withQuery } from "@/lib/http";
 
 import { API_ENDPOINTS } from "@/lib/constants/api";
@@ -64,6 +69,17 @@ export async function fetchRevenueDashboard({
     window_days: Math.max(7, Math.min(90, Math.trunc(windowDays))),
   });
   return authFetch<RevenueDashboard>(path);
+}
+
+export async function fetchGtmDashboard({
+  windowDays = 30,
+}: {
+  windowDays?: number;
+} = {}): Promise<GtmDashboard> {
+  const path = withQuery(API_ENDPOINTS.analyticsGtmDashboard, {
+    window_days: Math.max(7, Math.min(90, Math.trunc(windowDays))),
+  });
+  return authFetch<GtmDashboard>(path);
 }
 
 export async function upsertGtmChannelSpend(

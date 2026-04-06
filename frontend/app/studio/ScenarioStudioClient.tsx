@@ -18,6 +18,8 @@ import {
 } from "@/lib/client-api";
 import type { ScenarioBlueprintRead, ScenarioWorkflowRunRead } from "@/lib/types";
 
+import { ScenarioGeneratorLab } from "./ScenarioGeneratorLab";
+
 type StudioFormState = {
   slug: string;
   title: string;
@@ -325,6 +327,8 @@ export function ScenarioStudioClient() {
           <p className="mt-2 text-sm text-zinc-600">Start a workflow run to see multi-step execution state.</p>
         )}
       </section>
+
+      <ScenarioGeneratorLab />
     </div>
   );
 }

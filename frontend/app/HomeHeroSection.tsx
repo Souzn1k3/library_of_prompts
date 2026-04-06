@@ -1,6 +1,6 @@
 import type { PromptListItem } from "@/lib/types";
 
-import { HomeActionWorkbench } from "./HomeActionWorkbench";
+import { HomeWorkbenchRuntime } from "./HomeWorkbenchRuntime";
 
 type HomeHeroSectionProps = {
   entryPrompts: PromptListItem[];
@@ -13,11 +13,7 @@ export function HomeHeroSection({
   heroPromptBody,
   quickUseCases,
 }: HomeHeroSectionProps) {
-  return (
-    <HomeActionWorkbench
-      prompts={entryPrompts}
-      heroPromptBody={heroPromptBody}
-      quickUseCases={quickUseCases}
-    />
-  );
+  void heroPromptBody;
+  void quickUseCases;
+  return <HomeWorkbenchRuntime prompts={entryPrompts} />;
 }
