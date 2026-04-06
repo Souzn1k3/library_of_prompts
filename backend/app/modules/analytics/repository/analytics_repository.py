@@ -3,7 +3,7 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -75,3 +75,66 @@ class AnalyticsRepository:
         stmt = stmt.order_by(AnalyticsEvent.occurred_at.desc()).limit(limit)
         result = await self._session.execute(stmt)
         return result.scalars().all()
+
+    async def list_event_rows(
+        self,
+        *,
+        from_ts: datetime,
+        to_ts: datetime | None = None,
+        event_names: Sequence[str] | None = None,
+        user_only: bool = False,
+    ) -> Sequence[tuple[uuid.UUID | None, str, str, datetime, dict[str, Any]]]:
+        stmt = (
+            select(
+                AnalyticsEvent.user_id,
+                AnalyticsEvent.session_id,
+                AnalyticsEvent.event_name,
+                AnalyticsEvent.occurred_at,
+                AnalyticsEvent.metadata_json,
+            )
+            .where(AnalyticsEvent.occurred_at >= from_ts)
+            .order_by(AnalyticsEvent.occurred_at.asc())
+        )
+        if to_ts is not None:
+            stmt = stmt.where(AnalyticsEvent.occurred_at < to_ts)
+        if event_names:
+            stmt = stmt.where(AnalyticsEvent.event_name.in_(list(event_names)))
+        if user_only:
+            stmt = stmt.where(AnalyticsEvent.user_id.is_not(None))
+        result = await self._session.execute(stmt)
+        return result.all()
+
+    async def count_distinct_users(
+        self,
+        *,
+        from_ts: datetime,
+        to_ts: datetime | None = None,
+        event_names: Sequence[str] | None = None,
+    ) -> int:
+        stmt = select(func.count(func.distinct(AnalyticsEvent.user_id))).where(
+            AnalyticsEvent.occurred_at >= from_ts,
+            AnalyticsEvent.user_id.is_not(None),
+        )
+        if to_ts is not None:
+            stmt = stmt.where(AnalyticsEvent.occurred_at < to_ts)
+        if event_names:
+            stmt = stmt.where(AnalyticsEvent.event_name.in_(list(event_names)))
+        result = await self._session.execute(stmt)
+        return int(result.scalar_one() or 0)
+
+    async def count_distinct_sessions(
+        self,
+        *,
+        from_ts: datetime,
+        to_ts: datetime | None = None,
+        event_names: Sequence[str] | None = None,
+    ) -> int:
+        stmt = select(func.count(func.distinct(AnalyticsEvent.session_id))).where(
+            AnalyticsEvent.occurred_at >= from_ts,
+        )
+        if to_ts is not None:
+            stmt = stmt.where(AnalyticsEvent.occurred_at < to_ts)
+        if event_names:
+            stmt = stmt.where(AnalyticsEvent.event_name.in_(list(event_names)))
+        result = await self._session.execute(stmt)
+        return int(result.scalar_one() or 0)

@@ -2,6 +2,8 @@ export const API_V1_PREFIX = "/api/v1";
 
 export const API_ENDPOINTS = {
   analyticsEvents: `${API_V1_PREFIX}/analytics/events`,
+  analyticsGrowthRuntime: `${API_V1_PREFIX}/analytics/growth/runtime`,
+  analyticsGrowthDashboard: `${API_V1_PREFIX}/analytics/growth/dashboard`,
   auth: {
     refresh: `${API_V1_PREFIX}/auth/refresh`,
     login: `${API_V1_PREFIX}/auth/login`,

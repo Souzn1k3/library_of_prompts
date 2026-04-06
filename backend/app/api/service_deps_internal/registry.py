@@ -11,6 +11,7 @@ class ServiceBinding:
 
 SERVICE_BINDINGS: tuple[ServiceBinding, ...] = (
     ServiceBinding(name="analytics", container_attr="analytics_service"),
+    ServiceBinding(name="growth_ops", container_attr="growth_ops_service"),
     ServiceBinding(name="auth", container_attr="auth_service"),
     ServiceBinding(name="billing", container_attr="billing_service"),
     ServiceBinding(name="category", container_attr="category_service"),

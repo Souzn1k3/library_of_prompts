@@ -1,6 +1,7 @@
 export * from "./client-api/auth";
 export * from "./client-api/billing";
 export * from "./client-api/contributors";
+export * from "./client-api/growth";
 export * from "./client-api/learning";
 export * from "./client-api/marketplace";
 export * from "./client-api/missions";

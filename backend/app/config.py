@@ -61,6 +61,12 @@ class Settings(BaseSettings):
     scenario_creator_publish_reward_tokens: int = 20
     scenario_creator_fork_reward_tokens: int = 5
     scenario_creator_like_reward_tokens: int = 1
+    growth_dashboard_default_window_days: int = 28
+    growth_flag_dashboard_rollout_percent: int = 100
+    growth_flag_chain_recommendations_rollout_percent: int = 100
+    growth_flag_showcase_share_rollout_percent: int = 100
+    growth_experiment_homepage_rollout_percent: int = 50
+    growth_experiment_upgrade_rollout_percent: int = 50
     legacy_bot_database_url: str | None = None
 
     jwt_secret_key: str = Field(
@@ -182,6 +188,20 @@ class Settings(BaseSettings):
             raise ValueError("SCENARIO_CREATOR_FORK_REWARD_TOKENS must be greater or equal to 0.")
         if self.scenario_creator_like_reward_tokens < 0:
             raise ValueError("SCENARIO_CREATOR_LIKE_REWARD_TOKENS must be greater or equal to 0.")
+        if self.growth_dashboard_default_window_days < 7 or self.growth_dashboard_default_window_days > 90:
+            raise ValueError("GROWTH_DASHBOARD_DEFAULT_WINDOW_DAYS must be between 7 and 90.")
+        for name, value in (
+            ("GROWTH_FLAG_DASHBOARD_ROLLOUT_PERCENT", self.growth_flag_dashboard_rollout_percent),
+            (
+                "GROWTH_FLAG_CHAIN_RECOMMENDATIONS_ROLLOUT_PERCENT",
+                self.growth_flag_chain_recommendations_rollout_percent,
+            ),
+            ("GROWTH_FLAG_SHOWCASE_SHARE_ROLLOUT_PERCENT", self.growth_flag_showcase_share_rollout_percent),
+            ("GROWTH_EXPERIMENT_HOMEPAGE_ROLLOUT_PERCENT", self.growth_experiment_homepage_rollout_percent),
+            ("GROWTH_EXPERIMENT_UPGRADE_ROLLOUT_PERCENT", self.growth_experiment_upgrade_rollout_percent),
+        ):
+            if value < 0 or value > 100:
+                raise ValueError(f"{name} must be between 0 and 100.")
 
         url = self.parsed_database_url
         driver = url.drivername.lower()

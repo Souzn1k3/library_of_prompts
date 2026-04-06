@@ -53,6 +53,12 @@ os.environ.setdefault("SCENARIO_RUN_BOOST_BONUS_RUNS", "3")
 os.environ.setdefault("SCENARIO_CREATOR_PUBLISH_REWARD_TOKENS", "20")
 os.environ.setdefault("SCENARIO_CREATOR_FORK_REWARD_TOKENS", "5")
 os.environ.setdefault("SCENARIO_CREATOR_LIKE_REWARD_TOKENS", "1")
+os.environ.setdefault("GROWTH_DASHBOARD_DEFAULT_WINDOW_DAYS", "28")
+os.environ.setdefault("GROWTH_FLAG_DASHBOARD_ROLLOUT_PERCENT", "100")
+os.environ.setdefault("GROWTH_FLAG_CHAIN_RECOMMENDATIONS_ROLLOUT_PERCENT", "100")
+os.environ.setdefault("GROWTH_FLAG_SHOWCASE_SHARE_ROLLOUT_PERCENT", "100")
+os.environ.setdefault("GROWTH_EXPERIMENT_HOMEPAGE_ROLLOUT_PERCENT", "50")
+os.environ.setdefault("GROWTH_EXPERIMENT_UPGRADE_ROLLOUT_PERCENT", "50")
 os.environ.setdefault("ECONOMY_KPI_JOB_ENABLED", "false")
 
 

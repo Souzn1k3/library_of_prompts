@@ -43,6 +43,8 @@ class AnalyticsEventName(str, enum.Enum):
     scenario_shared = "scenario_shared"
     scenario_pack_started = "scenario_pack_started"
     scenario_chain_next_clicked = "scenario_chain_next_clicked"
+    growth_experiment_assigned = "growth_experiment_assigned"
+    feature_flag_exposed = "feature_flag_exposed"
     economy_experiment_assigned = "economy_experiment_assigned"
     store_offer_viewed = "store_offer_viewed"
     store_purchase_completed = "store_purchase_completed"

@@ -2,6 +2,7 @@ export * from "./types/account";
 export * from "./types/catalog";
 export * from "./types/contributors";
 export * from "./types/economy";
+export * from "./types/growth";
 export * from "./types/learning";
 export * from "./types/marketplace";
 export * from "./types/missions";

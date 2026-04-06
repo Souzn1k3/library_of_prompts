@@ -29,7 +29,9 @@ export type AnalyticsEventName =
   | "scenario_completed"
   | "scenario_shared"
   | "scenario_pack_started"
-  | "scenario_chain_next_clicked";
+  | "scenario_chain_next_clicked"
+  | "growth_experiment_assigned"
+  | "feature_flag_exposed";
 
 export type Attribution = {
   utm_source?: string;
