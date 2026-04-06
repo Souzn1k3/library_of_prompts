@@ -11,6 +11,7 @@ import { LayoutEngine } from "./layout-engine";
 import { LogicEngine } from "./logic-engine";
 import { SandboxExecutor } from "./sandbox-executor";
 import { StateEngine, type ScenarioPersistenceAdapter } from "./state-engine";
+import { getByPath } from "./utils";
 
 type ScenarioEngineCoreOptions = {
   definition: ScenarioDefinition;
@@ -116,6 +117,7 @@ export class ScenarioEngineCore {
 
       this.state.recordEvent(event);
       const emitted = await this.logic.handleEvent(event);
+      this.applyCompositionBindings();
       queue.push(...emitted);
     }
 
@@ -210,5 +212,21 @@ export class ScenarioEngineCore {
 
     this.processedEventsInMinute += 1;
     return this.processedEventsInMinute > maxEventsPerMinute;
+  }
+
+  private applyCompositionBindings(): void {
+    const bindings = this.options.definition.composition?.sharedState ?? [];
+    if (!bindings.length) {
+      return;
+    }
+
+    const snapshot = this.state.getSnapshot();
+    for (const binding of bindings) {
+      const value = getByPath(snapshot, binding.from);
+      if (value === undefined) {
+        continue;
+      }
+      this.state.setValue(binding.to, value);
+    }
   }
 }

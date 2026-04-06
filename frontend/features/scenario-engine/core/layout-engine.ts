@@ -36,34 +36,91 @@ export function composeScenarioDefinitions(
     return parent;
   }
 
+  const chain = [parent, ...children];
   const merged: ScenarioDefinition = {
     ...parent,
     layout: {
       ...parent.layout,
-      panels: [...parent.layout.panels],
+      panels: dedupeByKey(chain.flatMap((definition) => definition.layout.panels), (node) => node.id),
+      canvas: dedupeByKey(
+        chain.flatMap((definition) => definition.layout.canvas ?? []),
+        (node) => node.id,
+      ),
+      controls: dedupeByKey(
+        chain.flatMap((definition) => definition.layout.controls ?? []),
+        (node) => node.id,
+      ),
     },
     inputs: {
-      fields: [...parent.inputs.fields],
-      interactions: [...parent.inputs.interactions],
+      fields: dedupeByKey(chain.flatMap((definition) => definition.inputs.fields), (field) => field.id),
+      interactions: dedupeByKey(
+        chain.flatMap((definition) => definition.inputs.interactions),
+        (interaction) => interaction.id,
+      ),
     },
     logic: {
-      entryEvents: [...parent.logic.entryEvents],
-      steps: [...parent.logic.steps],
+      entryEvents: dedupeStrings(chain.flatMap((definition) => definition.logic.entryEvents)),
+      steps: dedupeByKey(chain.flatMap((definition) => definition.logic.steps), (step) => step.id),
     },
     state: {
       ...parent.state,
-      variables: [...parent.state.variables],
+      variables: dedupeByKey(
+        chain.flatMap((definition) => definition.state.variables),
+        (variable) => `${variable.scope}:${variable.key}`,
+      ),
+    },
+    permissions: {
+      ...parent.permissions,
+      gates: dedupeByKey(chain.flatMap((definition) => definition.permissions.gates), (gate) => gate.id),
+      usageLimits: dedupeByKey(
+        chain.flatMap((definition) => definition.permissions.usageLimits),
+        (limit) => limit.id,
+      ),
+    },
+    sandbox: {
+      ...parent.sandbox,
+      allowedActions: dedupeStrings(
+        chain.flatMap((definition) => definition.sandbox?.allowedActions ?? []),
+      ),
+    },
+    composition: {
+      pipeline: dedupeStrings(chain.flatMap((definition) => definition.composition?.pipeline ?? [])),
+      sharedState: dedupeByKey(
+        chain.flatMap((definition) => definition.composition?.sharedState ?? []),
+        (binding) => `${binding.from}->${binding.to}`,
+      ),
     },
   };
 
-  for (const child of children) {
-    merged.layout.panels.push(...child.layout.panels);
-    merged.inputs.fields.push(...child.inputs.fields);
-    merged.inputs.interactions.push(...child.inputs.interactions);
-    merged.logic.entryEvents.push(...child.logic.entryEvents);
-    merged.logic.steps.push(...child.logic.steps);
-    merged.state.variables.push(...child.state.variables);
-  }
-
   return merged;
+}
+
+function dedupeStrings(values: string[]): string[] {
+  const seen = new Set<string>();
+  const deduped: string[] = [];
+  for (const value of values) {
+    if (seen.has(value)) {
+      continue;
+    }
+    seen.add(value);
+    deduped.push(value);
+  }
+  return deduped;
+}
+
+function dedupeByKey<T>(
+  values: T[],
+  keySelector: (value: T) => string,
+): T[] {
+  const seen = new Set<string>();
+  const deduped: T[] = [];
+  for (const value of values) {
+    const key = keySelector(value);
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    deduped.push(value);
+  }
+  return deduped;
 }

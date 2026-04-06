@@ -4,7 +4,7 @@ import { useMemo } from "react";
 
 import {
   ScenarioAppRuntime,
-  getScenarioDefinition,
+  getComposedScenarioDefinition,
   scenarioPlatformActions,
   type ScenarioTier,
 } from "@/features/scenario-engine";
@@ -15,7 +15,7 @@ type ScenarioRouteRuntimeProps = {
 };
 
 export function ScenarioRouteRuntime({ scenarioId, tier }: ScenarioRouteRuntimeProps) {
-  const definition = useMemo(() => getScenarioDefinition(scenarioId), [scenarioId]);
+  const definition = useMemo(() => getComposedScenarioDefinition(scenarioId), [scenarioId]);
 
   if (!definition) {
     return (

@@ -101,6 +101,9 @@ const TEST_DEFINITION: ScenarioDefinition = {
     gates: [],
     usageLimits: [],
   },
+  composition: {
+    sharedState: [{ from: "local.forms.main.value", to: "global.shared.form_value" }],
+  },
   sandbox: {
     allowedActions: ["test.submit"],
     maxActionMs: 1000,
@@ -131,6 +134,7 @@ describe("ScenarioEngineCore", () => {
       value: "hello runtime",
     });
     expect(core.getSnapshot().local.forms.main.value).toBe("hello runtime");
+    expect(core.getSnapshot().global.shared).toEqual({ form_value: "hello runtime" });
 
     await core.triggerInteraction("form.submit", { formId: "main" });
     expect(submitAction).toHaveBeenCalledTimes(1);
