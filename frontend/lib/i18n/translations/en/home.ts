@@ -84,6 +84,8 @@ export const enHome = {
   "home.entryDemoRunsLeft": "Demo runs left: {count}",
   "home.entryDemoCapReached": "Demo run cap reached. Unlock PRO for unlimited runs.",
   "home.entryDemoIpCapReached": "Guest daily run limit reached for this scenario.",
+  "home.entryDemoFingerprintCapReached": "Guest fingerprint daily run limit reached for this scenario.",
+  "home.entryDemoRotationCapReached": "Too many guest sessions detected on this network for this scenario. Please sign in.",
   "home.entryDemoRunsUnlimited": "PRO: unlimited scenario runs",
   "home.entryRunUnavailable": "Run is unavailable right now. Try again.",
   "home.entrySaveAction": "Save scenario",

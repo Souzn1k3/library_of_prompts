@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import pytest
 from sqlalchemy import select
 
+from app.config import get_settings
 from app.infrastructure.db.models import Category, ModerationState, PlanTier, Prompt, PromptStatus, PromptTechnique, User
 from app.infrastructure.db.session import async_session_maker
 
@@ -167,3 +168,79 @@ async def test_demo_run_guest_persists_after_reload_and_respects_cap(async_clien
     assert blocked_payload["executed"] is False
     assert blocked_payload["status"]["cap_reached"] is True
     assert blocked_payload["status"]["remaining_runs"] == 0
+
+
+@pytest.mark.asyncio
+async def test_demo_run_guest_fingerprint_cap_blocks_rotating_sessions(async_client):
+    settings = get_settings()
+    original_fingerprint_cap = settings.scenario_guest_fingerprint_daily_prompt_cap
+    original_rotation_cap = settings.scenario_guest_ip_rotation_prompt_cap
+    settings.scenario_guest_fingerprint_daily_prompt_cap = 1
+    settings.scenario_guest_ip_rotation_prompt_cap = 50
+    try:
+        slug = "demo-cap-guest-fingerprint"
+        await _create_published_prompt(slug)
+
+        first = await async_client.post(
+            "/api/v1/scenarios/demo-run/track",
+            headers={"Cookie": "pv_guest_sid=guest-fingerprint-a"},
+            json={"prompt_slug": slug, "task_input": "Guest fingerprint first run"},
+        )
+        assert first.status_code == 200
+        assert first.json()["executed"] is True
+
+        blocked = await async_client.post(
+            "/api/v1/scenarios/demo-run/track",
+            headers={"Cookie": "pv_guest_sid=guest-fingerprint-b"},
+            json={"prompt_slug": slug, "task_input": "Guest fingerprint second run"},
+        )
+        assert blocked.status_code == 200
+        payload = blocked.json()
+        assert payload["executed"] is False
+        assert payload["status"]["reason"] == "guest_fingerprint_prompt_daily_cap_reached"
+        assert payload["status"]["cap_reached"] is True
+    finally:
+        settings.scenario_guest_fingerprint_daily_prompt_cap = original_fingerprint_cap
+        settings.scenario_guest_ip_rotation_prompt_cap = original_rotation_cap
+
+
+@pytest.mark.asyncio
+async def test_demo_run_guest_rotation_detection_blocks_cookie_rotation(async_client):
+    settings = get_settings()
+    original_rotation_cap = settings.scenario_guest_ip_rotation_prompt_cap
+    original_fingerprint_cap = settings.scenario_guest_fingerprint_daily_prompt_cap
+    settings.scenario_guest_ip_rotation_prompt_cap = 2
+    settings.scenario_guest_fingerprint_daily_prompt_cap = 100
+    try:
+        slug = "demo-cap-guest-rotation"
+        await _create_published_prompt(slug)
+
+        first = await async_client.post(
+            "/api/v1/scenarios/demo-run/track",
+            headers={"Cookie": "pv_guest_sid=guest-rotation-a"},
+            json={"prompt_slug": slug, "task_input": "Guest rotation first"},
+        )
+        assert first.status_code == 200
+        assert first.json()["executed"] is True
+
+        second = await async_client.post(
+            "/api/v1/scenarios/demo-run/track",
+            headers={"Cookie": "pv_guest_sid=guest-rotation-b"},
+            json={"prompt_slug": slug, "task_input": "Guest rotation second"},
+        )
+        assert second.status_code == 200
+        assert second.json()["executed"] is True
+
+        blocked = await async_client.post(
+            "/api/v1/scenarios/demo-run/track",
+            headers={"Cookie": "pv_guest_sid=guest-rotation-c"},
+            json={"prompt_slug": slug, "task_input": "Guest rotation third"},
+        )
+        assert blocked.status_code == 200
+        payload = blocked.json()
+        assert payload["executed"] is False
+        assert payload["status"]["reason"] == "guest_ip_rotation_detected"
+        assert payload["status"]["cap_reached"] is True
+    finally:
+        settings.scenario_guest_ip_rotation_prompt_cap = original_rotation_cap
+        settings.scenario_guest_fingerprint_daily_prompt_cap = original_fingerprint_cap

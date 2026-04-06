@@ -67,6 +67,12 @@ export function useScenarioGameLedger() {
               ? "Challenge cooldown is active."
               : result.reason === "daily_cap_reached"
                 ? "Daily demo reward cap reached."
+                : result.reason === "guest_ip_daily_cap_reached"
+                  ? "Network daily reward cap reached for guests."
+                  : result.reason === "guest_fingerprint_daily_cap_reached"
+                    ? "Device daily reward cap reached for guests."
+                    : result.reason === "guest_rate_limited"
+                      ? "Too many reward attempts. Try again later."
                 : "Reward not granted.",
       }));
       return result;

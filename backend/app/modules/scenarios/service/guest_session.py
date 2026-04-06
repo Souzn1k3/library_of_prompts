@@ -53,3 +53,16 @@ def request_ip_hash(request: Request) -> str:
 
 def request_user_agent_hash(request: Request) -> str:
     return sha256_hex(request.headers.get("user-agent", "unknown-agent"))
+
+
+def request_device_fingerprint_hash(request: Request) -> str:
+    # Pragmatic (not tamper-proof) fingerprint baseline for guest anti-abuse.
+    parts = [
+        request.headers.get("user-agent", ""),
+        request.headers.get("accept-language", ""),
+        request.headers.get("sec-ch-ua", ""),
+        request.headers.get("sec-ch-ua-platform", ""),
+        request.headers.get("sec-ch-ua-mobile", ""),
+    ]
+    canonical = "|".join(part.strip().lower()[:180] for part in parts)
+    return sha256_hex(canonical or "unknown-fingerprint")

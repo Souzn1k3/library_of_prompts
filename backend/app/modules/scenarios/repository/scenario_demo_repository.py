@@ -4,7 +4,7 @@ import uuid
 from collections.abc import Sequence
 from datetime import datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import distinct, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.db.models import GuestScenarioRunUsage, ScenarioGameTokenClaim, ScenarioGameTokenEvent
@@ -43,6 +43,40 @@ class ScenarioDemoRepository:
     ) -> int:
         result = await self._session.execute(
             select(func.coalesce(func.sum(GuestScenarioRunUsage.run_count), 0)).where(
+                GuestScenarioRunUsage.prompt_id == prompt_id,
+                GuestScenarioRunUsage.last_ip_hash == ip_hash,
+                GuestScenarioRunUsage.last_run_at.is_not(None),
+                GuestScenarioRunUsage.last_run_at >= since,
+            )
+        )
+        return int(result.scalar_one() or 0)
+
+    async def sum_guest_runs_for_prompt_fingerprint_since(
+        self,
+        *,
+        prompt_id: uuid.UUID,
+        fingerprint_hash: str,
+        since: datetime,
+    ) -> int:
+        result = await self._session.execute(
+            select(func.coalesce(func.sum(GuestScenarioRunUsage.run_count), 0)).where(
+                GuestScenarioRunUsage.prompt_id == prompt_id,
+                GuestScenarioRunUsage.last_fingerprint_hash == fingerprint_hash,
+                GuestScenarioRunUsage.last_run_at.is_not(None),
+                GuestScenarioRunUsage.last_run_at >= since,
+            )
+        )
+        return int(result.scalar_one() or 0)
+
+    async def count_distinct_guest_sessions_for_prompt_ip_since(
+        self,
+        *,
+        prompt_id: uuid.UUID,
+        ip_hash: str,
+        since: datetime,
+    ) -> int:
+        result = await self._session.execute(
+            select(func.count(distinct(GuestScenarioRunUsage.guest_id))).where(
                 GuestScenarioRunUsage.prompt_id == prompt_id,
                 GuestScenarioRunUsage.last_ip_hash == ip_hash,
                 GuestScenarioRunUsage.last_run_at.is_not(None),
@@ -150,6 +184,47 @@ class ScenarioDemoRepository:
             )
 
         result = await self._session.execute(stmt)
+        return int(result.scalar_one() or 0)
+
+    async def sum_game_tokens_for_guest_ip_since(self, *, ip_hash: str, since: datetime) -> int:
+        result = await self._session.execute(
+            select(func.coalesce(func.sum(ScenarioGameTokenEvent.reward_tokens), 0)).where(
+                ScenarioGameTokenEvent.source == "web_demo",
+                ScenarioGameTokenEvent.user_id.is_(None),
+                ScenarioGameTokenEvent.ip_hash == ip_hash,
+                ScenarioGameTokenEvent.status.in_(["pending", "claimed"]),
+                ScenarioGameTokenEvent.occurred_at >= since,
+            )
+        )
+        return int(result.scalar_one() or 0)
+
+    async def sum_game_tokens_for_guest_fingerprint_since(self, *, fingerprint_hash: str, since: datetime) -> int:
+        result = await self._session.execute(
+            select(func.coalesce(func.sum(ScenarioGameTokenEvent.reward_tokens), 0)).where(
+                ScenarioGameTokenEvent.source == "web_demo",
+                ScenarioGameTokenEvent.user_id.is_(None),
+                ScenarioGameTokenEvent.fingerprint_hash == fingerprint_hash,
+                ScenarioGameTokenEvent.status.in_(["pending", "claimed"]),
+                ScenarioGameTokenEvent.occurred_at >= since,
+            )
+        )
+        return int(result.scalar_one() or 0)
+
+    async def count_game_events_for_guest_fingerprint_since(
+        self,
+        *,
+        fingerprint_hash: str,
+        since: datetime,
+    ) -> int:
+        result = await self._session.execute(
+            select(func.count(ScenarioGameTokenEvent.id)).where(
+                ScenarioGameTokenEvent.source == "web_demo",
+                ScenarioGameTokenEvent.user_id.is_(None),
+                ScenarioGameTokenEvent.fingerprint_hash == fingerprint_hash,
+                ScenarioGameTokenEvent.status.in_(["pending", "claimed"]),
+                ScenarioGameTokenEvent.occurred_at >= since,
+            )
+        )
         return int(result.scalar_one() or 0)
 
     async def list_pending_game_events_for_claim(

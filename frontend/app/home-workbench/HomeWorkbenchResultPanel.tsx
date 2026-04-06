@@ -88,6 +88,10 @@ export function HomeWorkbenchResultPanel({
       ? t("home.entryDemoCapReached")
       : runGuardMessage === "guest_ip_prompt_daily_cap_reached"
         ? t("home.entryDemoIpCapReached")
+        : runGuardMessage === "guest_fingerprint_prompt_daily_cap_reached"
+          ? t("home.entryDemoFingerprintCapReached")
+          : runGuardMessage === "guest_ip_rotation_detected"
+            ? t("home.entryDemoRotationCapReached")
         : runGuardMessage === "run_unavailable"
           ? t("home.entryRunUnavailable")
           : runGuardMessage;

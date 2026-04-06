@@ -6,6 +6,7 @@ from app.api.service_deps import (
     get_scenario_game_service,
     get_scenario_service,
 )
+from app.api.support.rate_limit import RateLimitRule, enforce_request_rate_limits
 from app.infrastructure.db.models import User
 from app.modules.scenarios.model.scenario import (
     ScenarioDemoRunStatusRead,
@@ -26,6 +27,16 @@ from app.modules.scenarios.service.scenario_game_service import ScenarioGameServ
 from app.modules.scenarios.service.scenario_service import ScenarioService
 
 router = APIRouter(prefix="/scenarios", tags=["scenarios"])
+
+_DEMO_RUN_TRACK_LIMITS: tuple[RateLimitRule, ...] = (
+    RateLimitRule(key_template="scenarios:demo-run:track:ip:{ip}", limit=45, window_seconds=60),
+    RateLimitRule(key_template="scenarios:demo-run:track:ip:{ip}", limit=300, window_seconds=3600),
+)
+
+_GAME_EARN_LIMITS: tuple[RateLimitRule, ...] = (
+    RateLimitRule(key_template="scenarios:game:earn:ip:{ip}", limit=60, window_seconds=60),
+    RateLimitRule(key_template="scenarios:game:earn:ip:{ip}", limit=400, window_seconds=3600),
+)
 
 
 @router.get("/aggregate", response_model=ScenarioHomeAggregateRead)
@@ -86,6 +97,7 @@ async def scenarios_demo_run_track(
     viewer: User | None = Depends(get_optional_user),
     svc: ScenarioDemoRunService = Depends(get_scenario_demo_run_service),
 ) -> ScenarioDemoRunTrackRead:
+    await enforce_request_rate_limits(request, _DEMO_RUN_TRACK_LIMITS)
     return await svc.track_run(
         body=body,
         viewer=viewer,
@@ -116,6 +128,7 @@ async def scenarios_game_earn(
     viewer: User | None = Depends(get_optional_user),
     svc: ScenarioGameService = Depends(get_scenario_game_service),
 ) -> ScenarioGameEarnRead:
+    await enforce_request_rate_limits(request, _GAME_EARN_LIMITS)
     return await svc.earn(
         body=body,
         viewer=viewer,

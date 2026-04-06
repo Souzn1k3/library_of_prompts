@@ -17,6 +17,7 @@ from app.modules.scenarios.model.scenario import (
 from app.modules.scenarios.repository.scenario_demo_repository import ScenarioDemoRepository
 from app.modules.scenarios.repository.scenario_workspace_repository import ScenarioWorkspaceRepository
 from app.modules.scenarios.service.guest_session import (
+    request_device_fingerprint_hash,
     get_or_set_guest_session_id,
     request_ip_hash,
     request_user_agent_hash,
@@ -238,18 +239,40 @@ class ScenarioDemoRunService:
 
         ip_hash = request_ip_hash(request)
         ua_hash = request_user_agent_hash(request)
+        fingerprint_hash = request_device_fingerprint_hash(request)
+        anti_abuse_since = now - timedelta(hours=int(self._settings.scenario_guest_anti_abuse_window_hours))
         ip_daily_runs = await self._demo_repo.sum_guest_runs_for_prompt_ip_since(
             prompt_id=prompt_id,
             ip_hash=ip_hash,
-            since=now - timedelta(days=1),
+            since=anti_abuse_since,
+        )
+        fingerprint_daily_runs = await self._demo_repo.sum_guest_runs_for_prompt_fingerprint_since(
+            prompt_id=prompt_id,
+            fingerprint_hash=fingerprint_hash,
+            since=anti_abuse_since,
+        )
+        distinct_guest_sessions = await self._demo_repo.count_distinct_guest_sessions_for_prompt_ip_since(
+            prompt_id=prompt_id,
+            ip_hash=ip_hash,
+            since=anti_abuse_since,
         )
         ip_cap_reached = ip_daily_runs >= int(self._settings.scenario_guest_ip_daily_prompt_cap)
+        fingerprint_cap_reached = (
+            fingerprint_daily_runs >= int(self._settings.scenario_guest_fingerprint_daily_prompt_cap)
+        )
+        rotation_detected = (
+            distinct_guest_sessions >= int(self._settings.scenario_guest_ip_rotation_prompt_cap)
+        )
 
         cap_reached = used_runs >= free_cap
-        allowed = not cap_reached and not ip_cap_reached
+        allowed = not cap_reached and not ip_cap_reached and not fingerprint_cap_reached and not rotation_detected
         reason: str | None = None
-        if ip_cap_reached:
+        if rotation_detected:
+            reason = "guest_ip_rotation_detected"
+        elif ip_cap_reached:
             reason = "guest_ip_prompt_daily_cap_reached"
+        elif fingerprint_cap_reached:
+            reason = "guest_fingerprint_prompt_daily_cap_reached"
         elif cap_reached:
             reason = "free_demo_cap_reached"
 
@@ -268,12 +291,27 @@ class ScenarioDemoRunService:
             usage.last_run_at = now
             usage.last_ip_hash = ip_hash
             usage.last_user_agent_hash = ua_hash
+            usage.last_fingerprint_hash = fingerprint_hash
             await self._demo_repo.save_guest_run_usage(usage)
             used_runs = int(usage.run_count)
+            ip_daily_runs += 1
+            fingerprint_daily_runs += 1
             cap_reached = used_runs >= free_cap
-            allowed = not cap_reached and not ip_cap_reached
+            ip_cap_reached = ip_daily_runs >= int(self._settings.scenario_guest_ip_daily_prompt_cap)
+            fingerprint_cap_reached = (
+                fingerprint_daily_runs >= int(self._settings.scenario_guest_fingerprint_daily_prompt_cap)
+            )
+            allowed = not cap_reached and not ip_cap_reached and not fingerprint_cap_reached and not rotation_detected
             if cap_reached:
                 reason = "free_demo_cap_reached"
+            elif rotation_detected:
+                reason = "guest_ip_rotation_detected"
+            elif ip_cap_reached:
+                reason = "guest_ip_prompt_daily_cap_reached"
+            elif fingerprint_cap_reached:
+                reason = "guest_fingerprint_prompt_daily_cap_reached"
+            else:
+                reason = None
 
         remaining = max(free_cap - used_runs, 0)
         return ScenarioDemoRunStatusRead(
@@ -283,10 +321,10 @@ class ScenarioDemoRunService:
             free_cap=free_cap,
             used_runs=used_runs,
             remaining_runs=remaining,
-            cap_reached=cap_reached or ip_cap_reached,
+            cap_reached=cap_reached or ip_cap_reached or fingerprint_cap_reached or rotation_detected,
             allowed=allowed,
             reason=reason,
-            upgrade_hint=upgrade_hint if (cap_reached or ip_cap_reached) else None,
+            upgrade_hint=upgrade_hint if (cap_reached or ip_cap_reached or fingerprint_cap_reached or rotation_detected) else None,
             guest_session_id=guest_id,
         )
 

@@ -80,6 +80,7 @@ class GuestScenarioRunUsage(Base):
     last_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
     last_ip_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     last_user_agent_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    last_fingerprint_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -117,6 +118,9 @@ class ScenarioGameTokenEvent(Base):
     reward_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[str] = mapped_column(String(24), nullable=False, default="pending", index=True)
     rejection_reason: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    ip_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    user_agent_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    fingerprint_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     claimed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     claim_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)

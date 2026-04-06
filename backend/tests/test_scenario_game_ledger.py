@@ -122,6 +122,101 @@ async def test_web_demo_game_cooldown_and_daily_cap(async_client):
 
 
 @pytest.mark.asyncio
+async def test_web_demo_game_guest_fingerprint_and_rate_limit_guards(async_client):
+    settings = get_settings()
+    original_fp_cap = settings.web_demo_game_guest_fingerprint_daily_token_cap
+    original_ip_cap = settings.web_demo_game_guest_ip_daily_token_cap
+    original_window_minutes = settings.web_demo_game_guest_fingerprint_window_minutes
+    original_window_cap = settings.web_demo_game_guest_fingerprint_window_event_cap
+    settings.web_demo_game_guest_fingerprint_daily_token_cap = 6
+    settings.web_demo_game_guest_ip_daily_token_cap = 100
+    settings.web_demo_game_guest_fingerprint_window_minutes = 30
+    settings.web_demo_game_guest_fingerprint_window_event_cap = 10
+    try:
+        headers = {
+            "User-Agent": "pytest-guest-fp-cap/1.0",
+            "Cookie": "pv_guest_sid=guest-fp-cap-a",
+        }
+        first = await async_client.post(
+            "/api/v1/scenarios/game/earn",
+            headers=headers,
+            json={
+                "event_id": "web-game-fp-cap-1",
+                "challenge_id": "challenge-1",
+                "choice_index": 1,
+            },
+        )
+        assert first.status_code == 200
+        assert first.json()["accepted"] is True
+
+        blocked_headers = {
+            "User-Agent": "pytest-guest-fp-cap/1.0",
+            "Cookie": "pv_guest_sid=guest-fp-cap-b",
+        }
+        blocked = await async_client.post(
+            "/api/v1/scenarios/game/earn",
+            headers=blocked_headers,
+            json={
+                "event_id": "web-game-fp-cap-2",
+                "challenge_id": "challenge-2",
+                "choice_index": 0,
+            },
+        )
+        assert blocked.status_code == 200
+        assert blocked.json()["accepted"] is False
+        assert blocked.json()["reason"] == "guest_fingerprint_daily_cap_reached"
+    finally:
+        settings.web_demo_game_guest_fingerprint_daily_token_cap = original_fp_cap
+        settings.web_demo_game_guest_ip_daily_token_cap = original_ip_cap
+        settings.web_demo_game_guest_fingerprint_window_minutes = original_window_minutes
+        settings.web_demo_game_guest_fingerprint_window_event_cap = original_window_cap
+
+
+@pytest.mark.asyncio
+async def test_web_demo_game_guest_rate_limit_window(async_client):
+    settings = get_settings()
+    original_window_minutes = settings.web_demo_game_guest_fingerprint_window_minutes
+    original_window_cap = settings.web_demo_game_guest_fingerprint_window_event_cap
+    original_fp_cap = settings.web_demo_game_guest_fingerprint_daily_token_cap
+    settings.web_demo_game_guest_fingerprint_window_minutes = 20
+    settings.web_demo_game_guest_fingerprint_window_event_cap = 1
+    settings.web_demo_game_guest_fingerprint_daily_token_cap = 100
+    try:
+        headers = {
+            "User-Agent": "pytest-guest-rate-limit/1.0",
+            "Cookie": "pv_guest_sid=guest-rate-limit",
+        }
+        first = await async_client.post(
+            "/api/v1/scenarios/game/earn",
+            headers=headers,
+            json={
+                "event_id": "web-game-rate-1",
+                "challenge_id": "challenge-1",
+                "choice_index": 1,
+            },
+        )
+        assert first.status_code == 200
+        assert first.json()["accepted"] is True
+
+        second = await async_client.post(
+            "/api/v1/scenarios/game/earn",
+            headers=headers,
+            json={
+                "event_id": "web-game-rate-2",
+                "challenge_id": "challenge-3",
+                "choice_index": 0,
+            },
+        )
+        assert second.status_code == 200
+        assert second.json()["accepted"] is False
+        assert second.json()["reason"] == "guest_rate_limited"
+    finally:
+        settings.web_demo_game_guest_fingerprint_window_minutes = original_window_minutes
+        settings.web_demo_game_guest_fingerprint_window_event_cap = original_window_cap
+        settings.web_demo_game_guest_fingerprint_daily_token_cap = original_fp_cap
+
+
+@pytest.mark.asyncio
 async def test_web_demo_game_pending_vs_wallet_and_claim(async_client, unique_email: str):
     token = await _register(async_client, unique_email)
 

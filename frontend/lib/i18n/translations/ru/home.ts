@@ -84,6 +84,8 @@ export const ruHome = {
   "home.entryDemoRunsLeft": "Осталось демо-запусков: {count}",
   "home.entryDemoCapReached": "Лимит демо-запусков достигнут. Разблокируйте PRO для безлимитных запусков.",
   "home.entryDemoIpCapReached": "Достигнут дневной лимит гостевых запусков для этого сценария.",
+  "home.entryDemoFingerprintCapReached": "Достигнут дневной лимит гостевых запусков по отпечатку устройства для этого сценария.",
+  "home.entryDemoRotationCapReached": "Обнаружено слишком много гостевых сессий для этого сценария из вашей сети. Войдите в аккаунт.",
   "home.entryDemoRunsUnlimited": "PRO: безлимитные запуски сценариев",
   "home.entryRunUnavailable": "Запуск временно недоступен. Попробуйте снова.",
   "home.entrySaveAction": "Сохранить сценарий",

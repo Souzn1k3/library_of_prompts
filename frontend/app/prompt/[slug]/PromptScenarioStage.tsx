@@ -25,6 +25,7 @@ export function PromptScenarioStage({ language, prompt }: PromptScenarioStagePro
   const localized = getLocalizedCopy(language);
   const scenarioDefinition = useMemo(() => mapPromptToScenario(prompt), [prompt]);
   const demoRun = useScenarioDemoRun(prompt.slug);
+  const runGuardMessage = formatRunGuardMessage(demoRun.latestMessage, localized);
 
   const liveResult = useMemo(
     () =>
@@ -140,7 +141,7 @@ export function PromptScenarioStage({ language, prompt }: PromptScenarioStagePro
               <p className="text-xs text-emerald-700">{localized.demoUnlimited}</p>
             )}
             {demoRun.capReached ? <p className="text-xs text-amber-700">{localized.demoCapReached}</p> : null}
-            {demoRun.latestMessage ? <p className="text-xs text-zinc-500">{demoRun.latestMessage}</p> : null}
+            {runGuardMessage ? <p className="text-xs text-zinc-500">{runGuardMessage}</p> : null}
           </div>
 
           <div className="space-y-3 rounded-[1rem] border border-[var(--pv-border)] bg-white/85 p-4">
@@ -204,6 +205,10 @@ function getLocalizedCopy(language: Language) {
       demoRunsLeft: "Осталось демо-запусков: {count}",
       demoUnlimited: "PRO: лимитов на запуски нет",
       demoCapReached: "Лимит демо-запусков достигнут. Перейдите на PRO.",
+      demoIpCapReached: "Достигнут дневной лимит гостевых запусков для этого сценария.",
+      demoFingerprintCapReached: "Достигнут дневной лимит по отпечатку устройства для этого сценария.",
+      demoRotationCapReached: "Слишком много гостевых сессий в этой сети. Войдите в аккаунт.",
+      runUnavailable: "Запуск временно недоступен. Попробуйте снова.",
     };
   }
 
@@ -228,5 +233,34 @@ function getLocalizedCopy(language: Language) {
     demoRunsLeft: "Demo runs left: {count}",
     demoUnlimited: "PRO: unlimited runs",
     demoCapReached: "Demo run cap reached. Upgrade to PRO.",
+    demoIpCapReached: "Guest daily run limit reached for this scenario.",
+    demoFingerprintCapReached: "Guest fingerprint daily run limit reached for this scenario.",
+    demoRotationCapReached: "Too many guest sessions detected on this network. Please sign in.",
+    runUnavailable: "Run is temporarily unavailable. Please try again.",
   };
+}
+
+function formatRunGuardMessage(
+  reason: string | null,
+  localized: ReturnType<typeof getLocalizedCopy>,
+): string | null {
+  if (!reason) {
+    return null;
+  }
+  if (reason === "free_demo_cap_reached") {
+    return localized.demoCapReached;
+  }
+  if (reason === "guest_ip_prompt_daily_cap_reached") {
+    return localized.demoIpCapReached;
+  }
+  if (reason === "guest_fingerprint_prompt_daily_cap_reached") {
+    return localized.demoFingerprintCapReached;
+  }
+  if (reason === "guest_ip_rotation_detected") {
+    return localized.demoRotationCapReached;
+  }
+  if (reason === "run_unavailable") {
+    return localized.runUnavailable;
+  }
+  return reason;
 }

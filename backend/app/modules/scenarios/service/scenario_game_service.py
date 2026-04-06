@@ -17,7 +17,12 @@ from app.modules.scenarios.model.scenario import (
     ScenarioGameStateRead,
 )
 from app.modules.scenarios.repository.scenario_demo_repository import ScenarioDemoRepository
-from app.modules.scenarios.service.guest_session import get_or_set_guest_session_id
+from app.modules.scenarios.service.guest_session import (
+    get_or_set_guest_session_id,
+    request_device_fingerprint_hash,
+    request_ip_hash,
+    request_user_agent_hash,
+)
 
 WEB_DEMO_REWARD_MATRIX: dict[str, dict[int, int]] = {
     "challenge-1": {0: 1, 1: 6, 2: 2},
@@ -49,6 +54,8 @@ class ScenarioGameService:
         now = datetime.now(timezone.utc)
         day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         daily_cap = int(self._settings.web_demo_game_daily_token_cap)
+        ip_hash = request_ip_hash(request)
+        fingerprint_hash = request_device_fingerprint_hash(request)
 
         earned_today = await self._repo.sum_game_tokens_for_actor_since(
             user_id=viewer.id if viewer is not None else None,
@@ -65,13 +72,32 @@ class ScenarioGameService:
             if viewer is not None
             else 0
         )
+        daily_cap_remaining = max(daily_cap - earned_today, 0)
+        if viewer is None:
+            guest_ip_earned_today = await self._repo.sum_game_tokens_for_guest_ip_since(
+                ip_hash=ip_hash,
+                since=day_start,
+            )
+            guest_fingerprint_earned_today = await self._repo.sum_game_tokens_for_guest_fingerprint_since(
+                fingerprint_hash=fingerprint_hash,
+                since=day_start,
+            )
+            guest_ip_remaining = max(
+                int(self._settings.web_demo_game_guest_ip_daily_token_cap) - guest_ip_earned_today,
+                0,
+            )
+            guest_fingerprint_remaining = max(
+                int(self._settings.web_demo_game_guest_fingerprint_daily_token_cap) - guest_fingerprint_earned_today,
+                0,
+            )
+            daily_cap_remaining = min(daily_cap_remaining, guest_ip_remaining, guest_fingerprint_remaining)
 
         return ScenarioGameStateRead(
             pending_tokens=pending_tokens,
             claimable_tokens=pending_tokens,
             claimed_tokens_today=claimed_today,
             daily_cap=daily_cap,
-            daily_cap_remaining=max(daily_cap - earned_today, 0),
+            daily_cap_remaining=daily_cap_remaining,
             cooldown_minutes=int(self._settings.web_demo_game_challenge_cooldown_minutes),
             needs_auth_to_claim=True,
         )
@@ -88,6 +114,9 @@ class ScenarioGameService:
         now = datetime.now(timezone.utc)
         daily_cap = int(self._settings.web_demo_game_daily_token_cap)
         cooldown = timedelta(minutes=int(self._settings.web_demo_game_challenge_cooldown_minutes))
+        ip_hash = request_ip_hash(request)
+        user_agent_hash = request_user_agent_hash(request)
+        fingerprint_hash = request_device_fingerprint_hash(request)
 
         reward_tokens = self._reward_for(challenge_id=body.challenge_id, choice_index=body.choice_index)
         if reward_tokens is None:
@@ -167,6 +196,75 @@ class ScenarioGameService:
                 cooldown_seconds=None,
             )
 
+        if viewer is None:
+            guest_ip_earned_today = await self._repo.sum_game_tokens_for_guest_ip_since(
+                ip_hash=ip_hash,
+                since=day_start,
+            )
+            if guest_ip_earned_today + reward_tokens > int(self._settings.web_demo_game_guest_ip_daily_token_cap):
+                pending_tokens = await self._repo.sum_game_pending_tokens(
+                    user_id=None,
+                    guest_id=guest_id,
+                    include_guest_for_user=False,
+                )
+                return ScenarioGameEarnRead(
+                    accepted=False,
+                    reason="guest_ip_daily_cap_reached",
+                    reward_tokens=0,
+                    pending_tokens=pending_tokens,
+                    daily_cap_remaining=max(
+                        int(self._settings.web_demo_game_guest_ip_daily_token_cap) - guest_ip_earned_today,
+                        0,
+                    ),
+                    cooldown_seconds=None,
+                )
+
+            guest_fingerprint_earned_today = await self._repo.sum_game_tokens_for_guest_fingerprint_since(
+                fingerprint_hash=fingerprint_hash,
+                since=day_start,
+            )
+            if guest_fingerprint_earned_today + reward_tokens > int(
+                self._settings.web_demo_game_guest_fingerprint_daily_token_cap
+            ):
+                pending_tokens = await self._repo.sum_game_pending_tokens(
+                    user_id=None,
+                    guest_id=guest_id,
+                    include_guest_for_user=False,
+                )
+                return ScenarioGameEarnRead(
+                    accepted=False,
+                    reason="guest_fingerprint_daily_cap_reached",
+                    reward_tokens=0,
+                    pending_tokens=pending_tokens,
+                    daily_cap_remaining=max(
+                        int(self._settings.web_demo_game_guest_fingerprint_daily_token_cap)
+                        - guest_fingerprint_earned_today,
+                        0,
+                    ),
+                    cooldown_seconds=None,
+                )
+
+            window_minutes = int(self._settings.web_demo_game_guest_fingerprint_window_minutes)
+            window_since = now - timedelta(minutes=window_minutes)
+            recent_event_count = await self._repo.count_game_events_for_guest_fingerprint_since(
+                fingerprint_hash=fingerprint_hash,
+                since=window_since,
+            )
+            if recent_event_count >= int(self._settings.web_demo_game_guest_fingerprint_window_event_cap):
+                pending_tokens = await self._repo.sum_game_pending_tokens(
+                    user_id=None,
+                    guest_id=guest_id,
+                    include_guest_for_user=False,
+                )
+                return ScenarioGameEarnRead(
+                    accepted=False,
+                    reason="guest_rate_limited",
+                    reward_tokens=0,
+                    pending_tokens=pending_tokens,
+                    daily_cap_remaining=max(daily_cap - earned_today, 0),
+                    cooldown_seconds=window_minutes * 60,
+                )
+
         event = ScenarioGameTokenEvent(
             event_id=body.event_id,
             source="web_demo",
@@ -176,6 +274,9 @@ class ScenarioGameService:
             choice_index=body.choice_index,
             reward_tokens=reward_tokens,
             status="pending",
+            ip_hash=ip_hash,
+            user_agent_hash=user_agent_hash,
+            fingerprint_hash=fingerprint_hash,
             occurred_at=now,
             created_at=now,
             meta={"mode": "demo_game"},
