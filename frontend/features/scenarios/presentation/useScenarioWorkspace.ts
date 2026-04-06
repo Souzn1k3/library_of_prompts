@@ -1,5 +1,8 @@
 "use client";
 
+import { useAuth } from "@/components/auth/AuthProvider";
+import { fetchScenarioWorkspace, trackScenarioWorkspaceAction } from "@/lib/client-api";
+import type { ScenarioWorkspaceAction, ScenarioWorkspaceRead } from "@/lib/types";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 const STORAGE_KEY = "pv_scenario_workspace_v1";
@@ -65,85 +68,183 @@ function uniqueTrimmed(values: string[], limit: number): string[] {
   return unique.slice(0, limit);
 }
 
+function fromServerWorkspace(workspace: ScenarioWorkspaceRead): WorkspaceSnapshot {
+  return {
+    recentSlugs: uniqueTrimmed(
+      workspace.recent.map((item) => item.prompt.slug),
+      MAX_RECENT,
+    ),
+    savedSlugs: uniqueTrimmed(
+      workspace.saved.map((item) => item.prompt.slug),
+      64,
+    ),
+    unfinished: workspace.unfinished
+      .filter((item) => Boolean(item.unfinished_task))
+      .slice(0, MAX_UNFINISHED)
+      .map((item) => ({
+        slug: item.prompt.slug,
+        task: item.unfinished_task ?? "",
+        updatedAt: item.last_used_at,
+      })),
+  };
+}
+
+function applyLocalAction(
+  snapshot: WorkspaceSnapshot,
+  *,
+  action: ScenarioWorkspaceAction,
+  slug: string,
+  task: string | null,
+): WorkspaceSnapshot {
+  const cleanSlug = slug.trim();
+  if (!cleanSlug) {
+    return snapshot;
+  }
+
+  const now = new Date().toISOString();
+  const nextRecent = uniqueTrimmed([cleanSlug, ...snapshot.recentSlugs.filter((item) => item !== cleanSlug)], MAX_RECENT);
+  let nextSaved = [...snapshot.savedSlugs];
+  let nextUnfinished = [...snapshot.unfinished];
+
+  if (action === "save") {
+    nextSaved = uniqueTrimmed([cleanSlug, ...nextSaved], 64);
+  }
+  if (action === "unsave") {
+    nextSaved = nextSaved.filter((item) => item !== cleanSlug);
+  }
+  if (action === "unfinished_update") {
+    const cleanTask = (task ?? "").trim();
+    if (cleanTask) {
+      nextUnfinished = [{ slug: cleanSlug, task: cleanTask, updatedAt: now }, ...nextUnfinished.filter((item) => item.slug !== cleanSlug)].slice(0, MAX_UNFINISHED);
+    }
+  }
+  if (action === "unfinished_clear") {
+    nextUnfinished = nextUnfinished.filter((item) => item.slug !== cleanSlug);
+  }
+  if (action === "open" || action === "run") {
+    const cleanTask = (task ?? "").trim();
+    if (cleanTask) {
+      nextUnfinished = [{ slug: cleanSlug, task: cleanTask, updatedAt: now }, ...nextUnfinished.filter((item) => item.slug !== cleanSlug)].slice(0, MAX_UNFINISHED);
+    }
+  }
+
+  return {
+    recentSlugs: nextRecent,
+    savedSlugs: nextSaved,
+    unfinished: nextUnfinished,
+  };
+}
+
 export function useScenarioWorkspace() {
+  const { isAuthenticated, status } = useAuth();
   const [snapshot, setSnapshot] = useState<WorkspaceSnapshot>(EMPTY_SNAPSHOT);
 
-  useEffect(() => {
-    setSnapshot(readSnapshot());
-  }, []);
-
-  const persist = useCallback((next: WorkspaceSnapshot) => {
+  const persistLocal = useCallback((next: WorkspaceSnapshot) => {
     setSnapshot(next);
     writeSnapshot(next);
   }, []);
 
-  const markRecent = useCallback(
-    (slug: string) => {
-      const cleanSlug = slug.trim();
-      if (!cleanSlug) {
+  const syncFromServer = useCallback(async () => {
+    try {
+      const workspace = await fetchScenarioWorkspace();
+      const next = fromServerWorkspace(workspace);
+      setSnapshot(next);
+      writeSnapshot(next);
+    } catch {
+      const local = readSnapshot();
+      setSnapshot(local);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (status === "loading") {
+      return;
+    }
+    if (isAuthenticated) {
+      void syncFromServer();
+      return;
+    }
+    setSnapshot(readSnapshot());
+  }, [isAuthenticated, status, syncFromServer]);
+
+  const applyAction = useCallback(
+    (action: ScenarioWorkspaceAction, slug: string, task?: string | null) => {
+      const optimistic = applyLocalAction(snapshot, {
+        action,
+        slug,
+        task: task ?? null,
+      });
+      persistLocal(optimistic);
+
+      if (!isAuthenticated) {
         return;
       }
 
-      const next: WorkspaceSnapshot = {
-        ...snapshot,
-        recentSlugs: uniqueTrimmed([cleanSlug, ...snapshot.recentSlugs.filter((item) => item !== cleanSlug)], MAX_RECENT),
-      };
-      persist(next);
+      void trackScenarioWorkspaceAction({
+        prompt_slug: slug,
+        action,
+        task_input: task ?? undefined,
+      })
+        .then((result) => {
+          const next = fromServerWorkspace(result.workspace);
+          setSnapshot(next);
+          writeSnapshot(next);
+        })
+        .catch(() => {
+          // Keep optimistic local state if server sync fails.
+        });
     },
-    [persist, snapshot],
+    [isAuthenticated, persistLocal, snapshot],
+  );
+
+  const markRecent = useCallback(
+    (slug: string) => {
+      applyAction("open", slug, null);
+    },
+    [applyAction],
   );
 
   const toggleSaved = useCallback(
     (slug: string) => {
-      const cleanSlug = slug.trim();
-      if (!cleanSlug) {
-        return;
-      }
-
-      const exists = snapshot.savedSlugs.includes(cleanSlug);
-      const nextSaved = exists
-        ? snapshot.savedSlugs.filter((item) => item !== cleanSlug)
-        : uniqueTrimmed([cleanSlug, ...snapshot.savedSlugs], 64);
-
-      persist({
-        ...snapshot,
-        savedSlugs: nextSaved,
-      });
+      const isSaved = snapshot.savedSlugs.includes(slug);
+      applyAction(isSaved ? "unsave" : "save", slug, null);
     },
-    [persist, snapshot],
+    [applyAction, snapshot.savedSlugs],
   );
 
   const saveUnfinished = useCallback(
     (slug: string, task: string) => {
-      const cleanSlug = slug.trim();
-      const cleanTask = task.trim();
-      if (!cleanSlug || !cleanTask) {
-        return;
-      }
-
-      const updatedAt = new Date().toISOString();
-      const nextItem = { slug: cleanSlug, task: cleanTask, updatedAt };
-      const nextUnfinished = [nextItem, ...snapshot.unfinished.filter((item) => item.slug !== cleanSlug)].slice(
-        0,
-        MAX_UNFINISHED,
-      );
-
-      persist({
-        ...snapshot,
-        unfinished: nextUnfinished,
-      });
+      applyAction("unfinished_update", slug, task);
     },
-    [persist, snapshot],
+    [applyAction],
   );
 
   const clearUnfinished = useCallback(
     (slug: string) => {
-      persist({
-        ...snapshot,
-        unfinished: snapshot.unfinished.filter((item) => item.slug !== slug),
-      });
+      applyAction("unfinished_clear", slug, null);
     },
-    [persist, snapshot],
+    [applyAction],
+  );
+
+  const trackRun = useCallback(
+    (slug: string, task?: string | null) => {
+      applyAction("run", slug, task ?? null);
+    },
+    [applyAction],
+  );
+
+  const trackCopy = useCallback(
+    (slug: string) => {
+      applyAction("copy", slug, null);
+    },
+    [applyAction],
+  );
+
+  const trackShare = useCallback(
+    (slug: string) => {
+      applyAction("share", slug, null);
+    },
+    [applyAction],
   );
 
   return useMemo(
@@ -155,7 +256,23 @@ export function useScenarioWorkspace() {
       toggleSaved,
       saveUnfinished,
       clearUnfinished,
+      trackRun,
+      trackCopy,
+      trackShare,
+      refresh: syncFromServer,
     }),
-    [clearUnfinished, markRecent, saveUnfinished, snapshot.recentSlugs, snapshot.savedSlugs, snapshot.unfinished, toggleSaved],
+    [
+      clearUnfinished,
+      markRecent,
+      saveUnfinished,
+      snapshot.recentSlugs,
+      snapshot.savedSlugs,
+      snapshot.unfinished,
+      syncFromServer,
+      toggleSaved,
+      trackRun,
+      trackCopy,
+      trackShare,
+    ],
   );
 }

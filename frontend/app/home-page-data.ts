@@ -1,7 +1,6 @@
 import {
-  fetchDiscoverySections,
   fetchPromptBySlug,
-  fetchPromptRecommendations,
+  fetchScenarioHomeAggregate,
 } from "@/lib/api";
 import type { Language } from "@/lib/i18n";
 import type { PromptListItem } from "@/lib/types";
@@ -21,39 +20,19 @@ export async function loadHomePageData({
   accessToken: string | null | undefined;
   language: Language;
 }): Promise<HomePageData> {
-  const [sections, homeRecommendations] = await Promise.all([
-    fetchDiscoverySections({ limit: 8, accessToken, language }).catch(() => ({
-      for_you: [],
-      trending: [],
-      best_for_beginners: [],
-      most_saved: [],
-    })),
-    fetchPromptRecommendations({ context: "home", limit: 8, accessToken, language }).catch(() => ({
-      context: "home" as const,
-      strategy: "cold_start" as const,
-      items: [],
-    })),
-  ]);
+  const aggregate = await fetchScenarioHomeAggregate({
+    accessToken,
+    language,
+    limit: 8,
+  }).catch(() => null);
 
-  const recommendedPrompts =
-    homeRecommendations.items.length > 0
-      ? homeRecommendations.items
-      : sections.for_you?.length
-        ? sections.for_you
-        : sections.trending;
-
+  const recommendedPrompts = aggregate?.recommended ?? [];
   const entryPrompts = dedupePrompts([
+    ...(aggregate?.featured ?? []),
     ...recommendedPrompts,
-    ...(sections.trending ?? []),
-    ...(sections.best_for_beginners ?? []),
-    ...(sections.most_saved ?? []),
+    ...(aggregate?.retention ?? []),
   ]).slice(0, 24);
-
-  const retentionPrompts = dedupePrompts([
-    ...(sections.most_saved ?? []),
-    ...(sections.for_you ?? []),
-    ...(sections.trending ?? []),
-  ]).slice(0, 8);
+  const retentionPrompts = dedupePrompts(aggregate?.retention ?? []).slice(0, 8);
 
   const heroPrompt = entryPrompts[0];
   const heroPromptBody = heroPrompt

@@ -5,17 +5,22 @@ from hmac import compare_digest
 from fastapi import APIRouter, Depends, Header, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.service_deps import get_wallet_service
 from app.config import get_settings
 from app.core.errors import AppError
 from app.infrastructure.db.session import get_db
+from app.modules.economy.service.wallet_service import WalletService
 from app.modules.telegram_sync.model.telegram import (
     TelegramActiveUserRead,
     TelegramProfileRead,
     TelegramPromptRead,
+    TelegramRewardClaimRead,
+    TelegramRewardClaimWrite,
     TelegramUserUpsert,
     normalize_language_code,
 )
 from app.modules.telegram_sync.repository.telegram_repository import TelegramSyncRepository
+from app.modules.telegram_sync.service.telegram_reward_service import TelegramRewardService
 from app.modules.telegram_sync.service.telegram_service import TelegramSyncService
 
 
@@ -46,6 +51,17 @@ router = APIRouter(
 
 def telegram_service(session: AsyncSession = Depends(get_db)) -> TelegramSyncService:
     return TelegramSyncService(TelegramSyncRepository(session))
+
+
+def telegram_reward_service(
+    session: AsyncSession = Depends(get_db),
+    wallet: WalletService = Depends(get_wallet_service),
+) -> TelegramRewardService:
+    return TelegramRewardService(
+        repo=TelegramSyncRepository(session),
+        wallet=wallet,
+        settings=get_settings(),
+    )
 
 
 @router.post("/users/upsert", response_model=TelegramProfileRead)
@@ -83,3 +99,11 @@ async def telegram_prompts_by_subcategory(
         language=normalize_language_code(language),
         telegram_user_id=telegram_user_id,
     )
+
+
+@router.post("/rewards/claim", response_model=TelegramRewardClaimRead)
+async def telegram_claim_reward(
+    body: TelegramRewardClaimWrite,
+    svc: TelegramRewardService = Depends(telegram_reward_service),
+) -> TelegramRewardClaimRead:
+    return await svc.claim_reward(body)

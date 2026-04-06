@@ -81,3 +81,29 @@ class TelegramPromptRead(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class TelegramRewardClaimWrite(BaseModel):
+    claim_id: str = Field(min_length=8, max_length=120)
+    telegram_user_id: int = Field(gt=0)
+    reward_tokens: int = Field(ge=1, le=1000)
+    reason: str = Field(min_length=1, max_length=200)
+    challenge_key: str | None = Field(default=None, max_length=120)
+    occurred_at: datetime
+    signature: str = Field(min_length=32, max_length=128)
+
+    @field_validator("claim_id", "reason", "challenge_key", mode="before")
+    @classmethod
+    def normalize_claim_strings(cls, value: str | None) -> str | None:
+        return _normalize_optional(value)
+
+
+class TelegramRewardClaimRead(BaseModel):
+    claim_id: str
+    telegram_user_id: int
+    reward_tokens: int
+    verified: bool
+    applied: bool
+    verification_error: str | None = None
+    applied_at: datetime | None = None
+    balance_after: int | None = None

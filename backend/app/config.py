@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     economy_kpi_job_interval_minutes: int = 60
     economy_kpi_job_lookback_days: int = 35
     telegram_bot_api_key: str | None = None
+    telegram_reward_signing_secret: str | None = None
+    telegram_reward_max_tokens: int = 100
+    telegram_reward_max_age_hours: int = 48
     legacy_bot_database_url: str | None = None
 
     jwt_secret_key: str = Field(
@@ -127,6 +130,10 @@ class Settings(BaseSettings):
             raise ValueError("ECONOMY_KPI_JOB_INTERVAL_MINUTES must be greater than 0.")
         if self.economy_kpi_job_lookback_days <= 0:
             raise ValueError("ECONOMY_KPI_JOB_LOOKBACK_DAYS must be greater than 0.")
+        if self.telegram_reward_max_tokens <= 0:
+            raise ValueError("TELEGRAM_REWARD_MAX_TOKENS must be greater than 0.")
+        if self.telegram_reward_max_age_hours <= 0:
+            raise ValueError("TELEGRAM_REWARD_MAX_AGE_HOURS must be greater than 0.")
 
         url = self.parsed_database_url
         driver = url.drivername.lower()

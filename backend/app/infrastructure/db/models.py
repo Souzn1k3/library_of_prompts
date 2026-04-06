@@ -84,6 +84,10 @@ from ._economy_models import (  # noqa: F401
     UserLockedReward,
     UserPurchase,
 )
+from ._scenario_models import (  # noqa: F401
+    TelegramRewardClaim,
+    UserScenarioWorkspace,
+)
 from ._marketplace_models import (  # noqa: F401
     MarketplacePayout,
     MarketplaceTransaction,

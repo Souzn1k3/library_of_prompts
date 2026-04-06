@@ -6,4 +6,5 @@ export * from "./client-api/marketplace";
 export * from "./client-api/missions";
 export * from "./client-api/onboarding";
 export * from "./client-api/prompts";
+export * from "./client-api/scenarios";
 export * from "./client-api/wallet-store";

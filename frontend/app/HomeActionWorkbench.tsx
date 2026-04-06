@@ -168,10 +168,7 @@ export function HomeActionWorkbench({
       return;
     }
 
-    workspace.markRecent(selectedPrompt.slug);
-    if (taskInput.trim()) {
-      workspace.saveUnfinished(selectedPrompt.slug, taskInput);
-    }
+    workspace.trackRun(selectedPrompt.slug, taskInput.trim() ? taskInput : null);
     await engagement.markScenarioRun(selectedPrompt.id);
     setLastRunAt(new Date());
   }
@@ -185,7 +182,7 @@ export function HomeActionWorkbench({
     try {
       await navigator.clipboard.writeText(readyScript);
       await engagement.markScenarioCopy(selectedPrompt.id);
-      workspace.markRecent(selectedPrompt.slug);
+      workspace.trackCopy(selectedPrompt.slug);
       setCopyState("copied");
     } catch {
       setCopyState("error");
@@ -199,7 +196,7 @@ export function HomeActionWorkbench({
 
     try {
       await navigator.clipboard.writeText(`${window.location.origin}/prompt/${encodeURIComponent(selectedPrompt.slug)}`);
-      workspace.markRecent(selectedPrompt.slug);
+      workspace.trackShare(selectedPrompt.slug);
       setShareState("copied");
     } catch {
       setShareState("error");
@@ -222,7 +219,6 @@ export function HomeActionWorkbench({
     }
 
     workspace.toggleSaved(selectedPrompt.slug);
-    workspace.markRecent(selectedPrompt.slug);
   }
 
   function resumeUnfinished(slug: string, task: string) {

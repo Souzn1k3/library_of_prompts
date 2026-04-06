@@ -28,6 +28,9 @@ export const API_ENDPOINTS = {
   missionsCurrent: `${API_V1_PREFIX}/missions/current`,
   wallet: `${API_V1_PREFIX}/wallet`,
   walletCheckIn: `${API_V1_PREFIX}/wallet/check-in`,
+  scenariosAggregate: `${API_V1_PREFIX}/scenarios/aggregate`,
+  scenariosWorkspace: `${API_V1_PREFIX}/scenarios/workspace`,
+  scenariosWorkspaceTrack: `${API_V1_PREFIX}/scenarios/workspace/track`,
   store: `${API_V1_PREFIX}/store`,
   lessons: `${API_V1_PREFIX}/lessons`,
   lessonsPopular: `${API_V1_PREFIX}/lessons/popular`,
@@ -64,4 +67,5 @@ export const apiPath = {
   userSavedPromptById: (promptId: string) => `${API_ENDPOINTS.usersSavedPrompts}/${promptId}`,
   promptEventCopy: (promptId: string) => `${API_ENDPOINTS.prompts}/${promptId}/events/copy`,
   promptEventApply: (promptId: string) => `${API_ENDPOINTS.prompts}/${promptId}/events/apply`,
+  telegramRewardClaim: `${API_V1_PREFIX}/telegram/rewards/claim`,
 } as const;

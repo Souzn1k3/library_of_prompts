@@ -3,3 +3,4 @@ export * from "./api/catalog";
 export * from "./api/contributors";
 export * from "./api/billing";
 export * from "./api/learning";
+export * from "./api/scenarios";

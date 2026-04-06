@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from app.infrastructure.db.models import Category, Prompt, PromptStatus, SavedPrompt, User
+from app.infrastructure.db.models import Category, Prompt, PromptStatus, SavedPrompt, TelegramRewardClaim, User
 
 
 class TelegramSyncRepository:
@@ -101,3 +101,20 @@ class TelegramSyncRepository:
         await self._session.flush()
         await self._session.refresh(prompt)
         return prompt
+
+    async def get_reward_claim_by_claim_id(self, claim_id: str) -> TelegramRewardClaim | None:
+        result = await self._session.execute(
+            select(TelegramRewardClaim).where(TelegramRewardClaim.claim_id == claim_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def create_reward_claim(self, claim: TelegramRewardClaim) -> TelegramRewardClaim:
+        self._session.add(claim)
+        await self._session.flush()
+        await self._session.refresh(claim)
+        return claim
+
+    async def save_reward_claim(self, claim: TelegramRewardClaim) -> TelegramRewardClaim:
+        await self._session.flush()
+        await self._session.refresh(claim)
+        return claim
