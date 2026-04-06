@@ -45,6 +45,10 @@ class Settings(BaseSettings):
     telegram_reward_signing_secret: str | None = None
     telegram_reward_max_tokens: int = 100
     telegram_reward_max_age_hours: int = 48
+    scenario_free_demo_run_cap: int = 3
+    scenario_guest_ip_daily_prompt_cap: int = 12
+    web_demo_game_daily_token_cap: int = 24
+    web_demo_game_challenge_cooldown_minutes: int = 720
     legacy_bot_database_url: str | None = None
 
     jwt_secret_key: str = Field(
@@ -134,6 +138,14 @@ class Settings(BaseSettings):
             raise ValueError("TELEGRAM_REWARD_MAX_TOKENS must be greater than 0.")
         if self.telegram_reward_max_age_hours <= 0:
             raise ValueError("TELEGRAM_REWARD_MAX_AGE_HOURS must be greater than 0.")
+        if self.scenario_free_demo_run_cap <= 0:
+            raise ValueError("SCENARIO_FREE_DEMO_RUN_CAP must be greater than 0.")
+        if self.scenario_guest_ip_daily_prompt_cap <= 0:
+            raise ValueError("SCENARIO_GUEST_IP_DAILY_PROMPT_CAP must be greater than 0.")
+        if self.web_demo_game_daily_token_cap <= 0:
+            raise ValueError("WEB_DEMO_GAME_DAILY_TOKEN_CAP must be greater than 0.")
+        if self.web_demo_game_challenge_cooldown_minutes <= 0:
+            raise ValueError("WEB_DEMO_GAME_CHALLENGE_COOLDOWN_MINUTES must be greater than 0.")
 
         url = self.parsed_database_url
         driver = url.drivername.lower()

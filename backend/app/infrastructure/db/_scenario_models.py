@@ -65,6 +65,98 @@ class UserScenarioWorkspace(Base):
     )
 
 
+class GuestScenarioRunUsage(Base):
+    __tablename__ = "guest_scenario_run_usage"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    guest_id: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
+    prompt_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("prompts.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    run_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    last_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    last_ip_hash: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    last_user_agent_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    prompt: Mapped["Prompt"] = relationship()
+
+    __table_args__ = (
+        UniqueConstraint("guest_id", "prompt_id", name="uq_guest_scenario_run_usage_guest_prompt"),
+    )
+
+
+class ScenarioGameTokenEvent(Base):
+    __tablename__ = "scenario_game_token_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    event_id: Mapped[str] = mapped_column(String(120), nullable=False, unique=True, index=True)
+    source: Mapped[str] = mapped_column(String(40), nullable=False, default="web_demo", index=True)
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+    guest_id: Mapped[str | None] = mapped_column(String(80), nullable=True, index=True)
+    challenge_id: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
+    choice_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    reward_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="pending", index=True)
+    rejection_reason: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    claimed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    claim_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    meta: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    user: Mapped["User | None"] = relationship(back_populates="scenario_game_events")
+
+
+class ScenarioGameTokenClaim(Base):
+    __tablename__ = "scenario_game_token_claims"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    claim_id: Mapped[str] = mapped_column(String(120), nullable=False, unique=True, index=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    guest_id: Mapped[str | None] = mapped_column(String(80), nullable=True, index=True)
+    source: Mapped[str] = mapped_column(String(40), nullable=False, default="web_demo", index=True)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="completed", index=True)
+    claimed_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    pending_tokens_after: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    balance_after: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    meta: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    user: Mapped["User"] = relationship(back_populates="scenario_game_claims")
+
+
 class TelegramRewardClaim(Base):
     __tablename__ = "telegram_reward_claims"
 

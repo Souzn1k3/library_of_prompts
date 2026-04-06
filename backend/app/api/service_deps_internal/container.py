@@ -47,6 +47,9 @@ from app.modules.missions.service.mission_service import MissionService
 from app.modules.onboarding.repository.onboarding_repository import OnboardingRepository
 from app.modules.onboarding.service.onboarding_service import OnboardingService
 from app.modules.scenarios.repository.scenario_workspace_repository import ScenarioWorkspaceRepository
+from app.modules.scenarios.repository.scenario_demo_repository import ScenarioDemoRepository
+from app.modules.scenarios.service.scenario_demo_run_service import ScenarioDemoRunService
+from app.modules.scenarios.service.scenario_game_service import ScenarioGameService
 from app.modules.scenarios.service.scenario_service import ScenarioService
 
 
@@ -129,6 +132,10 @@ class ServiceContainer:
     @cached_property
     def scenario_workspace_repository(self) -> ScenarioWorkspaceRepository:
         return ScenarioWorkspaceRepository(self._session)
+
+    @cached_property
+    def scenario_demo_repository(self) -> ScenarioDemoRepository:
+        return ScenarioDemoRepository(self._session)
 
     @cached_property
     def display_name_policy(self) -> DisplayNamePolicy:
@@ -238,6 +245,24 @@ class ServiceContainer:
             prompt_repo=self.prompt_repository,
             recommendation_service=self.recommendation_service,
             marketplace=self.marketplace_service,
+            free_demo_run_cap=int(self.settings.scenario_free_demo_run_cap),
+        )
+
+    @cached_property
+    def scenario_demo_run_service(self) -> ScenarioDemoRunService:
+        return ScenarioDemoRunService(
+            prompt_repo=self.prompt_repository,
+            workspace_repo=self.scenario_workspace_repository,
+            demo_repo=self.scenario_demo_repository,
+            settings=self.settings,
+        )
+
+    @cached_property
+    def scenario_game_service(self) -> ScenarioGameService:
+        return ScenarioGameService(
+            repo=self.scenario_demo_repository,
+            wallet=self.wallet_service,
+            settings=self.settings,
         )
 
     @cached_property

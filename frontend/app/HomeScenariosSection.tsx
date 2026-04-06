@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { buildScenarioLiveResult } from "@/features/scenarios/application/scenarioRuntime";
 import { mapPromptListToScenarios } from "@/features/scenarios/infrastructure/promptScenarioMapper";
+import { useScenarioGameLedger } from "@/features/scenarios/presentation/useScenarioGameLedger";
 import { SCENARIO_GAME_CHALLENGES } from "@/lib/scenarios/game";
 import type { PromptListItem } from "@/lib/types";
 
@@ -40,7 +41,8 @@ export function HomeScenariosSection({
   const [scenarioInput, setScenarioInput] = useState("");
   const [gameStep, setGameStep] = useState(0);
   const [selectedChoiceIndex, setSelectedChoiceIndex] = useState<number | null>(null);
-  const [gameTokens, setGameTokens] = useState(0);
+  const [previewTokens, setPreviewTokens] = useState(0);
+  const gameLedger = useScenarioGameLedger();
 
   const activeScenario = useMemo(
     () => featuredScenarios.find((scenario) => scenario.id === activeScenarioId) ?? featuredScenarios[0] ?? null,
@@ -58,13 +60,14 @@ export function HomeScenariosSection({
     return null;
   }
 
-  function runNextGameStep() {
+  async function runNextGameStep() {
     if (!gameChallenge) {
       return;
     }
 
-    if (selectedChoice) {
-      setGameTokens((current) => current + selectedChoice.reward);
+    if (selectedChoice && selectedChoiceIndex !== null) {
+      setPreviewTokens((current) => current + selectedChoice.reward);
+      await gameLedger.earn(gameChallenge.id, selectedChoiceIndex);
     }
 
     if (gameStep + 1 >= SCENARIO_GAME_CHALLENGES.length) {
@@ -80,7 +83,7 @@ export function HomeScenariosSection({
   function restartGame() {
     setGameStep(0);
     setSelectedChoiceIndex(null);
-    setGameTokens(0);
+    setPreviewTokens(0);
   }
 
   return (
@@ -200,7 +203,9 @@ export function HomeScenariosSection({
             </div>
             <div className="rounded-[0.9rem] border border-zinc-200 bg-white p-3">
               <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">{t("home.gameTokenUnit")}</p>
-              <p className="mt-1 text-xl font-semibold tracking-[-0.03em] text-zinc-950">{gameTokens}</p>
+              <p className="mt-1 text-xl font-semibold tracking-[-0.03em] text-zinc-950">
+                {gameLedger.gameState?.pending_tokens ?? 0}
+              </p>
             </div>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -224,7 +229,7 @@ export function HomeScenariosSection({
             <p className="mt-2 text-sm leading-relaxed text-zinc-600">{t("home.gameSubtitle")}</p>
           </div>
           <span className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900">
-            {t("home.gameTokensLabel", { count: gameTokens })}
+            {t("home.gameTokensLabel", { count: gameLedger.gameState?.pending_tokens ?? 0 })}
           </span>
         </div>
 
@@ -256,7 +261,7 @@ export function HomeScenariosSection({
                 <p className="text-xs font-semibold text-emerald-700">
                   +{selectedChoice.reward} {t("home.gameTokenUnit")}
                 </p>
-                <button type="button" onClick={runNextGameStep} className="pv-button-primary !w-auto">
+                <button type="button" onClick={() => void runNextGameStep()} className="pv-button-primary !w-auto" disabled={gameLedger.earnPending}>
                   {t("home.gameNextStep")}
                 </button>
               </div>
@@ -266,7 +271,22 @@ export function HomeScenariosSection({
           <div className="mt-4 space-y-3 rounded-[0.9rem] border border-emerald-200 bg-emerald-50/85 p-3">
             <p className="text-sm leading-relaxed text-emerald-900">{t("home.gameFinishedBody")}</p>
             <p className="text-xs leading-relaxed text-emerald-800">{t("home.gameTokenSpendHint")}</p>
+            <p className="text-xs leading-relaxed text-zinc-700">
+              {t("home.gamePendingServer", {
+                pending: gameLedger.gameState?.pending_tokens ?? 0,
+                preview: previewTokens,
+              })}
+            </p>
+            {gameLedger.latestMessage ? <p className="text-xs text-zinc-700">{gameLedger.latestMessage}</p> : null}
             <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void gameLedger.claim()}
+                className="pv-button-primary !w-auto"
+                disabled={gameLedger.claimPending}
+              >
+                {gameLedger.claimPending ? t("home.gameClaimPending") : t("home.gameClaimAction")}
+              </button>
               <a href={TELEGRAM_BOT_URL} target="_blank" rel="noreferrer" className="pv-button-primary !w-auto">
                 {t("home.gameOpenTelegram")}
               </a>

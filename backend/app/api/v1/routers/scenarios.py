@@ -1,14 +1,28 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request, Response
 
 from app.api.deps import get_current_user, get_optional_user
-from app.api.service_deps import get_scenario_service
+from app.api.service_deps import (
+    get_scenario_demo_run_service,
+    get_scenario_game_service,
+    get_scenario_service,
+)
 from app.infrastructure.db.models import User
 from app.modules.scenarios.model.scenario import (
+    ScenarioDemoRunStatusRead,
+    ScenarioDemoRunTrackRead,
+    ScenarioDemoRunTrackWrite,
+    ScenarioGameClaimRead,
+    ScenarioGameClaimWrite,
+    ScenarioGameEarnRead,
+    ScenarioGameEarnWrite,
+    ScenarioGameStateRead,
     ScenarioHomeAggregateRead,
     ScenarioRunEventRead,
     ScenarioWorkspaceRead,
     ScenarioWorkspaceTrackWrite,
 )
+from app.modules.scenarios.service.scenario_demo_run_service import ScenarioDemoRunService
+from app.modules.scenarios.service.scenario_game_service import ScenarioGameService
 from app.modules.scenarios.service.scenario_service import ScenarioService
 
 router = APIRouter(prefix="/scenarios", tags=["scenarios"])
@@ -46,3 +60,81 @@ async def scenarios_workspace_track(
     svc: ScenarioService = Depends(get_scenario_service),
 ) -> ScenarioRunEventRead:
     return await svc.track_workspace_action(current_user, body)
+
+
+@router.get("/demo-run/status", response_model=ScenarioDemoRunStatusRead)
+async def scenarios_demo_run_status(
+    request: Request,
+    response: Response,
+    prompt_slug: str = Query(min_length=1, max_length=200),
+    viewer: User | None = Depends(get_optional_user),
+    svc: ScenarioDemoRunService = Depends(get_scenario_demo_run_service),
+) -> ScenarioDemoRunStatusRead:
+    return await svc.get_status(
+        prompt_slug=prompt_slug,
+        viewer=viewer,
+        request=request,
+        response=response,
+    )
+
+
+@router.post("/demo-run/track", response_model=ScenarioDemoRunTrackRead)
+async def scenarios_demo_run_track(
+    request: Request,
+    response: Response,
+    body: ScenarioDemoRunTrackWrite,
+    viewer: User | None = Depends(get_optional_user),
+    svc: ScenarioDemoRunService = Depends(get_scenario_demo_run_service),
+) -> ScenarioDemoRunTrackRead:
+    return await svc.track_run(
+        body=body,
+        viewer=viewer,
+        request=request,
+        response=response,
+    )
+
+
+@router.get("/game/state", response_model=ScenarioGameStateRead)
+async def scenarios_game_state(
+    request: Request,
+    response: Response,
+    viewer: User | None = Depends(get_optional_user),
+    svc: ScenarioGameService = Depends(get_scenario_game_service),
+) -> ScenarioGameStateRead:
+    return await svc.get_state(
+        viewer=viewer,
+        request=request,
+        response=response,
+    )
+
+
+@router.post("/game/earn", response_model=ScenarioGameEarnRead)
+async def scenarios_game_earn(
+    request: Request,
+    response: Response,
+    body: ScenarioGameEarnWrite,
+    viewer: User | None = Depends(get_optional_user),
+    svc: ScenarioGameService = Depends(get_scenario_game_service),
+) -> ScenarioGameEarnRead:
+    return await svc.earn(
+        body=body,
+        viewer=viewer,
+        request=request,
+        response=response,
+    )
+
+
+@router.post("/game/claim", response_model=ScenarioGameClaimRead)
+async def scenarios_game_claim(
+    request: Request,
+    response: Response,
+    body: ScenarioGameClaimWrite,
+    viewer: User | None = Depends(get_optional_user),
+    svc: ScenarioGameService = Depends(get_scenario_game_service),
+) -> ScenarioGameClaimRead:
+    return await svc.claim(
+        body=body,
+        viewer=viewer,
+        request=request,
+        response=response,
+    )

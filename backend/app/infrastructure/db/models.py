@@ -85,6 +85,9 @@ from ._economy_models import (  # noqa: F401
     UserPurchase,
 )
 from ._scenario_models import (  # noqa: F401
+    GuestScenarioRunUsage,
+    ScenarioGameTokenClaim,
+    ScenarioGameTokenEvent,
     TelegramRewardClaim,
     UserScenarioWorkspace,
 )

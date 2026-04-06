@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from app.core.errors import NotFoundError
+from app.core.errors import AppError, NotFoundError
 from app.core.tiers import can_view_restricted_category
-from app.infrastructure.db.models import PromptStatus, User, UserScenarioWorkspace
+from app.infrastructure.db.models import PlanTier, PromptStatus, User, UserScenarioWorkspace
 from app.modules.catalog.model.prompt import PromptListItem
 from app.modules.catalog.model.recommendation import RecommendationContext
 from app.modules.catalog.repository.prompt_repository import PromptRepository
@@ -38,11 +38,13 @@ class ScenarioService:
         prompt_repo: PromptRepository,
         recommendation_service: RecommendationService,
         marketplace: MarketplaceService | None = None,
+        free_demo_run_cap: int = DEFAULT_DEMO_RUNS,
     ) -> None:
         self._workspace_repo = workspace_repo
         self._prompt_repo = prompt_repo
         self._recommendation_service = recommendation_service
         self._marketplace = marketplace
+        self._free_demo_run_cap = max(int(free_demo_run_cap), 1)
 
     async def get_workspace(
         self,
@@ -87,6 +89,24 @@ class ScenarioService:
                 updated_at=now,
             )
             await self._workspace_repo.create_workspace_entry(entry)
+
+        if (
+            body.action == ScenarioWorkspaceAction.run
+            and viewer.plan_tier == PlanTier.free
+            and int(entry.run_count) >= self._free_demo_run_cap
+        ):
+            raise AppError(
+                code="scenario_demo_cap_reached",
+                message="Free demo run limit reached for this scenario.",
+                status_code=403,
+                details={
+                    "prompt_slug": prompt.slug,
+                    "free_cap": self._free_demo_run_cap,
+                    "used_runs": int(entry.run_count),
+                    "remaining_runs": 0,
+                    "upgrade_hint": "Upgrade to PRO for unlimited runs.",
+                },
+            )
 
         self._apply_action(entry, action=body.action, now=now, task_input=body.task_input)
         await self._workspace_repo.save_workspace_entry(entry)

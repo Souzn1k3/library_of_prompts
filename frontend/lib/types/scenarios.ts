@@ -63,3 +63,68 @@ export type ScenarioHomeAggregateRead = {
   workspace_limits: ScenarioWorkspaceLimitsRead;
   loop_hints: ScenarioLoopHintsRead;
 };
+
+export type ScenarioDemoRunStatusRead = {
+  prompt_slug: string;
+  is_authenticated: boolean;
+  is_pro: boolean;
+  free_cap: number | null;
+  used_runs: number;
+  remaining_runs: number | null;
+  cap_reached: boolean;
+  allowed: boolean;
+  reason: string | null;
+  upgrade_hint: string | null;
+  guest_session_id: string | null;
+};
+
+export type ScenarioDemoRunTrackRequest = {
+  prompt_slug: string;
+  task_input?: string | null;
+};
+
+export type ScenarioDemoRunTrackRead = {
+  executed: boolean;
+  status: ScenarioDemoRunStatusRead;
+  workspace: ScenarioWorkspaceRead | null;
+};
+
+export type ScenarioGameStateRead = {
+  source: string;
+  pending_tokens: number;
+  claimable_tokens: number;
+  claimed_tokens_today: number;
+  daily_cap: number;
+  daily_cap_remaining: number;
+  cooldown_minutes: number;
+  needs_auth_to_claim: boolean;
+};
+
+export type ScenarioGameEarnRequest = {
+  event_id: string;
+  challenge_id: string;
+  choice_index: number;
+};
+
+export type ScenarioGameEarnRead = {
+  accepted: boolean;
+  reason: string;
+  reward_tokens: number;
+  pending_tokens: number;
+  daily_cap_remaining: number;
+  cooldown_seconds: number | null;
+  source: string;
+};
+
+export type ScenarioGameClaimRequest = {
+  claim_id?: string | null;
+};
+
+export type ScenarioGameClaimRead = {
+  claim_id: string;
+  source: string;
+  applied: boolean;
+  claimed_tokens: number;
+  pending_tokens_after: number;
+  balance_after: number | null;
+};

@@ -27,6 +27,8 @@ SERVICE_BINDINGS: tuple[ServiceBinding, ...] = (
     ServiceBinding(name="prompt", container_attr="prompt_service"),
     ServiceBinding(name="recommendation", container_attr="recommendation_service"),
     ServiceBinding(name="scenario", container_attr="scenario_service"),
+    ServiceBinding(name="scenario_demo_run", container_attr="scenario_demo_run_service"),
+    ServiceBinding(name="scenario_game", container_attr="scenario_game_service"),
     ServiceBinding(name="saved_prompt", container_attr="saved_prompt_service"),
     ServiceBinding(name="store", container_attr="store_service"),
     ServiceBinding(name="submission", container_attr="submission_service"),

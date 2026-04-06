@@ -72,3 +72,68 @@ class ScenarioRunEventRead(BaseModel):
     action: ScenarioWorkspaceAction
     tracked_at: datetime
     workspace: ScenarioWorkspaceRead
+
+
+class ScenarioDemoRunTrackWrite(BaseModel):
+    prompt_slug: str = Field(min_length=1, max_length=200)
+    task_input: str | None = Field(default=None, max_length=3000)
+
+
+class ScenarioDemoRunStatusRead(BaseModel):
+    prompt_slug: str
+    is_authenticated: bool
+    is_pro: bool
+    free_cap: int | None = None
+    used_runs: int
+    remaining_runs: int | None = None
+    cap_reached: bool
+    allowed: bool
+    reason: str | None = None
+    upgrade_hint: str | None = None
+    guest_session_id: str | None = None
+
+
+class ScenarioDemoRunTrackRead(BaseModel):
+    executed: bool = False
+    status: ScenarioDemoRunStatusRead
+    workspace: ScenarioWorkspaceRead | None = None
+
+
+class ScenarioGameEarnWrite(BaseModel):
+    event_id: str = Field(min_length=8, max_length=120)
+    challenge_id: str = Field(min_length=1, max_length=80)
+    choice_index: int = Field(ge=0, le=10)
+
+
+class ScenarioGameEarnRead(BaseModel):
+    accepted: bool
+    reason: str
+    reward_tokens: int = 0
+    pending_tokens: int = 0
+    daily_cap_remaining: int = 0
+    cooldown_seconds: int | None = None
+    source: str = "web_demo"
+
+
+class ScenarioGameStateRead(BaseModel):
+    source: str = "web_demo"
+    pending_tokens: int = 0
+    claimable_tokens: int = 0
+    claimed_tokens_today: int = 0
+    daily_cap: int
+    daily_cap_remaining: int
+    cooldown_minutes: int
+    needs_auth_to_claim: bool = True
+
+
+class ScenarioGameClaimWrite(BaseModel):
+    claim_id: str | None = Field(default=None, min_length=8, max_length=120)
+
+
+class ScenarioGameClaimRead(BaseModel):
+    claim_id: str
+    source: str = "web_demo"
+    applied: bool
+    claimed_tokens: int = 0
+    pending_tokens_after: int = 0
+    balance_after: int | None = None

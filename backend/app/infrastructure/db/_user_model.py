@@ -33,7 +33,12 @@ if TYPE_CHECKING:
         PromptReviewReport,
     )
     from ._mission_models import MissionCompletionEvent, UserMissionProgress, UserMissionRewardGrant
-    from ._scenario_models import TelegramRewardClaim, UserScenarioWorkspace
+    from ._scenario_models import (
+        ScenarioGameTokenClaim,
+        ScenarioGameTokenEvent,
+        TelegramRewardClaim,
+        UserScenarioWorkspace,
+    )
 
 
 class User(Base):
@@ -171,6 +176,14 @@ class User(Base):
         cascade="all, delete-orphan",
     )
     scenario_workspace_entries: Mapped[list["UserScenarioWorkspace"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    scenario_game_events: Mapped[list["ScenarioGameTokenEvent"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    scenario_game_claims: Mapped[list["ScenarioGameTokenClaim"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
     )

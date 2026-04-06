@@ -1,5 +1,13 @@
 import { API_ENDPOINTS } from "../constants/api";
 import type {
+  ScenarioDemoRunStatusRead,
+  ScenarioDemoRunTrackRead,
+  ScenarioDemoRunTrackRequest,
+  ScenarioGameClaimRead,
+  ScenarioGameClaimRequest,
+  ScenarioGameEarnRead,
+  ScenarioGameEarnRequest,
+  ScenarioGameStateRead,
   ScenarioHomeAggregateRead,
   ScenarioRunEventRead,
   ScenarioWorkspaceRead,
@@ -37,4 +45,25 @@ export async function trackScenarioWorkspaceAction(body: ScenarioWorkspaceTrackR
 export async function fetchScenarioHomeAggregateClient(limit = 8): Promise<ScenarioHomeAggregateRead> {
   const path = `${API_ENDPOINTS.scenariosAggregate}?limit=${encodeURIComponent(String(limit))}`;
   return authFetch<ScenarioHomeAggregateRead>(path);
+}
+
+export async function fetchScenarioDemoRunStatus(promptSlug: string): Promise<ScenarioDemoRunStatusRead> {
+  const path = `${API_ENDPOINTS.scenariosDemoRunStatus}?prompt_slug=${encodeURIComponent(promptSlug)}`;
+  return authFetch<ScenarioDemoRunStatusRead>(path);
+}
+
+export async function trackScenarioDemoRun(body: ScenarioDemoRunTrackRequest): Promise<ScenarioDemoRunTrackRead> {
+  return authFetch<ScenarioDemoRunTrackRead>(API_ENDPOINTS.scenariosDemoRunTrack, jsonInit("POST", body));
+}
+
+export async function fetchScenarioGameState(): Promise<ScenarioGameStateRead> {
+  return authFetch<ScenarioGameStateRead>(API_ENDPOINTS.scenariosGameState);
+}
+
+export async function earnScenarioGameTokens(body: ScenarioGameEarnRequest): Promise<ScenarioGameEarnRead> {
+  return authFetch<ScenarioGameEarnRead>(API_ENDPOINTS.scenariosGameEarn, jsonInit("POST", body));
+}
+
+export async function claimScenarioGameTokens(body?: ScenarioGameClaimRequest): Promise<ScenarioGameClaimRead> {
+  return authFetch<ScenarioGameClaimRead>(API_ENDPOINTS.scenariosGameClaim, jsonInit("POST", body ?? {}));
 }

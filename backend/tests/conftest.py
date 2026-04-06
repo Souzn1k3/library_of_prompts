@@ -37,6 +37,10 @@ os.environ.setdefault("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:30
 os.environ.setdefault("CACHE_ENABLED", "true")
 os.environ.setdefault("TELEGRAM_BOT_API_KEY", "pytest-telegram-bot-sync-key")
 os.environ.setdefault("TELEGRAM_REWARD_SIGNING_SECRET", "pytest-telegram-reward-signing-secret")
+os.environ.setdefault("SCENARIO_FREE_DEMO_RUN_CAP", "3")
+os.environ.setdefault("SCENARIO_GUEST_IP_DAILY_PROMPT_CAP", "12")
+os.environ.setdefault("WEB_DEMO_GAME_DAILY_TOKEN_CAP", "24")
+os.environ.setdefault("WEB_DEMO_GAME_CHALLENGE_COOLDOWN_MINUTES", "720")
 os.environ.setdefault("ECONOMY_KPI_JOB_ENABLED", "false")
 
 

@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 
 import { buildScenarioLiveResult, isRuFamilyLanguage } from "@/features/scenarios/application/scenarioRuntime";
 import { mapPromptToScenario } from "@/features/scenarios/infrastructure/promptScenarioMapper";
+import { useScenarioDemoRun } from "@/features/scenarios/presentation/useScenarioDemoRun";
 import type { ScenarioResultDepth } from "@/features/scenarios/domain/scenario";
 import type { Language } from "@/lib/i18n";
 import type { PromptDetail } from "@/lib/types";
@@ -16,24 +17,35 @@ type PromptScenarioStageProps = {
 
 export function PromptScenarioStage({ language, prompt }: PromptScenarioStageProps) {
   const [scenarioInput, setScenarioInput] = useState("");
+  const [committedInput, setCommittedInput] = useState("");
   const [outputMode, setOutputMode] = useState<ScenarioResultDepth>("detailed");
   const [refreshSeed, setRefreshSeed] = useState(0);
 
   const bodyLocked = Boolean(prompt.body_locked);
   const localized = getLocalizedCopy(language);
   const scenarioDefinition = useMemo(() => mapPromptToScenario(prompt), [prompt]);
+  const demoRun = useScenarioDemoRun(prompt.slug);
 
   const liveResult = useMemo(
     () =>
       buildScenarioLiveResult({
         language,
         scenario: scenarioDefinition,
-        taskInput: scenarioInput,
+        taskInput: committedInput,
         outputDepth: outputMode,
         variationSeed: refreshSeed,
       }),
-    [language, outputMode, refreshSeed, scenarioDefinition, scenarioInput],
+    [committedInput, language, outputMode, refreshSeed, scenarioDefinition],
   );
+
+  async function runScenarioNow() {
+    const run = await demoRun.run(scenarioInput.trim() ? scenarioInput : null);
+    if (!run?.executed) {
+      return;
+    }
+    setCommittedInput(scenarioInput);
+    setRefreshSeed((current) => current + 1);
+  }
 
   return (
     <section className="pv-panel overflow-hidden p-0">
@@ -105,11 +117,30 @@ export function PromptScenarioStage({ language, prompt }: PromptScenarioStagePro
 
             <button
               type="button"
-              onClick={() => setRefreshSeed((current) => current + 1)}
+              onClick={() => void runScenarioNow()}
+              className="pv-button-primary !w-auto"
+              disabled={demoRun.runPending || demoRun.capReached}
+            >
+              {demoRun.runPending ? localized.runPending : localized.runNow}
+            </button>
+            <button
+              type="button"
+              onClick={() => void runScenarioNow()}
               className="pv-button-secondary !w-auto"
+              disabled={demoRun.runPending || demoRun.capReached}
             >
               {localized.refreshResult}
             </button>
+
+            {!demoRun.isPro ? (
+              <p className="text-xs text-zinc-500">
+                {localized.demoRunsLeft.replace("{count}", String(demoRun.remainingRuns ?? 0))}
+              </p>
+            ) : (
+              <p className="text-xs text-emerald-700">{localized.demoUnlimited}</p>
+            )}
+            {demoRun.capReached ? <p className="text-xs text-amber-700">{localized.demoCapReached}</p> : null}
+            {demoRun.latestMessage ? <p className="text-xs text-zinc-500">{demoRun.latestMessage}</p> : null}
           </div>
 
           <div className="space-y-3 rounded-[1rem] border border-[var(--pv-border)] bg-white/85 p-4">
@@ -168,6 +199,11 @@ function getLocalizedCopy(language: Language) {
       telegramCta: "Продолжить в Telegram-боте",
       unlockedTitle: "Полный сценарий доступен",
       unlockedBody: "Вы можете копировать и адаптировать сценарий под свои данные прямо сейчас.",
+      runNow: "Запустить сценарий",
+      runPending: "Запуск...",
+      demoRunsLeft: "Осталось демо-запусков: {count}",
+      demoUnlimited: "PRO: лимитов на запуски нет",
+      demoCapReached: "Лимит демо-запусков достигнут. Перейдите на PRO.",
     };
   }
 
@@ -187,5 +223,10 @@ function getLocalizedCopy(language: Language) {
     telegramCta: "Continue in Telegram bot",
     unlockedTitle: "Full scenario is available",
     unlockedBody: "You can copy and customize this scenario right now.",
+    runNow: "Run scenario",
+    runPending: "Running...",
+    demoRunsLeft: "Demo runs left: {count}",
+    demoUnlimited: "PRO: unlimited runs",
+    demoCapReached: "Demo run cap reached. Upgrade to PRO.",
   };
 }
