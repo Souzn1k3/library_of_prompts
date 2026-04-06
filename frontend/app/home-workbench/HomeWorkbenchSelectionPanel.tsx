@@ -82,11 +82,7 @@ export function HomeWorkbenchSelectionPanel({
             <button
               type="button"
               onClick={() => onSelectTechnique("all")}
-              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                selectedTechnique === "all"
-                  ? "border-zinc-900 bg-zinc-900 text-white"
-                  : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-900"
-              }`}
+              className={`pv-segment-pill ${selectedTechnique === "all" ? "pv-segment-pill-active" : ""}`}
             >
               {t("home.entryFilterAll")}
             </button>
@@ -95,11 +91,7 @@ export function HomeWorkbenchSelectionPanel({
                 key={`home-technique-${technique}`}
                 type="button"
                 onClick={() => onSelectTechnique(technique)}
-                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                  selectedTechnique === technique
-                    ? "border-zinc-900 bg-zinc-900 text-white"
-                    : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-900"
-                }`}
+                className={`pv-segment-pill ${selectedTechnique === technique ? "pv-segment-pill-active" : ""}`}
               >
                 {t(getTechniqueTranslationKey(technique))}
               </button>
@@ -118,11 +110,7 @@ export function HomeWorkbenchSelectionPanel({
                   key={`home-use-case-${option.value}`}
                   type="button"
                   onClick={() => onToggleFacet(option.value)}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                    selectedFacet === option.value
-                      ? "border-[var(--pv-brand-strong)] bg-[var(--pv-brand-soft)] text-[var(--pv-brand-strong)]"
-                      : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-900"
-                  }`}
+                  className={`pv-segment-pill ${selectedFacet === option.value ? "pv-segment-pill-active" : ""}`}
                 >
                   {option.label}
                 </button>

@@ -71,6 +71,11 @@ export function PromptScenarioStage({ language, prompt }: PromptScenarioStagePro
     });
   }
 
+  function refreshLocalPreview() {
+    setCommittedInput(scenarioInput);
+    setRefreshSeed((current) => current + 1);
+  }
+
   async function purchaseBoost() {
     const purchase = await demoRun.purchaseBoost();
     if (!purchase) {
@@ -134,22 +139,14 @@ export function PromptScenarioStage({ language, prompt }: PromptScenarioStagePro
                 <button
                   type="button"
                   onClick={() => setOutputMode("detailed")}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                    outputMode === "detailed"
-                      ? "border-zinc-900 bg-zinc-900 text-white"
-                      : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-900"
-                  }`}
+                  className={`pv-segment-pill ${outputMode === "detailed" ? "pv-segment-pill-active" : ""}`}
                 >
                   {localized.modeDetailed}
                 </button>
                 <button
                   type="button"
                   onClick={() => setOutputMode("concise")}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                    outputMode === "concise"
-                      ? "border-zinc-900 bg-zinc-900 text-white"
-                      : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-900"
-                  }`}
+                  className={`pv-segment-pill ${outputMode === "concise" ? "pv-segment-pill-active" : ""}`}
                 >
                   {localized.modeConcise}
                 </button>
@@ -166,9 +163,9 @@ export function PromptScenarioStage({ language, prompt }: PromptScenarioStagePro
             </button>
             <button
               type="button"
-              onClick={() => void runScenarioNow()}
+              onClick={refreshLocalPreview}
               className="pv-button-secondary !w-auto"
-              disabled={demoRun.runPending || demoRun.capReached}
+              disabled={!scenarioInput.trim()}
             >
               {localized.refreshResult}
             </button>

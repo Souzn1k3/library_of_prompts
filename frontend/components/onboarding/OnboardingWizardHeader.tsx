@@ -41,7 +41,7 @@ export function OnboardingWizardHeader({
         type="button"
         onClick={() => void onSkip()}
         disabled={skipPending}
-        className="pv-button-ghost !w-auto px-0 py-0 text-sm text-zinc-600 disabled:opacity-60"
+        className="pv-button-ghost !w-auto px-3 py-2 text-sm text-zinc-600 disabled:opacity-60"
       >
         {skipPending ? t("onboardingWizard.skipping") : t("onboardingWizard.skipForNow")}
       </button>

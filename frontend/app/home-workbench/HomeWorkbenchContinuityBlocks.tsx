@@ -68,7 +68,7 @@ export function HomeWorkbenchContinuityBlocks({
                   key={`recent-${slug}`}
                   type="button"
                   onClick={() => onSelectRecent(slug)}
-                  className="rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700"
+                  className="pv-segment-pill"
                 >
                   {prompt.title}
                 </button>

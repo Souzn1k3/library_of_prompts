@@ -119,11 +119,15 @@ export function HomeScenariosSection({
           <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("home.scenarioTryTitle")}</h2>
           <p className="mt-2 text-sm leading-relaxed text-zinc-600">{t("home.scenarioTrySubtitle")}</p>
         </div>
+        <Link href="/scenarios" className="pv-inline-link">
+          {t("home.scenarioCardOpen")}
+          <span aria-hidden="true">↗</span>
+        </Link>
       </div>
 
       <div className="mt-5 grid gap-3 lg:grid-cols-2">
         {featuredScenarios.map((scenario) => (
-          <article key={`home-scenario-card-${scenario.id}`} className="pv-card p-4">
+          <article key={`home-scenario-card-${scenario.id}`} className="pv-card flex h-full flex-col p-4">
             <div className="flex items-start justify-between gap-2">
               <span className="pv-chip-brand">{scenario.category}</span>
               {scenario.qualityScore > 0 ? (
@@ -143,7 +147,7 @@ export function HomeScenariosSection({
               })}
             </pre>
 
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-auto flex flex-wrap gap-2 pt-3">
               <Link href={`/prompt/${encodeURIComponent(scenario.slug)}`} className="pv-button-primary !w-auto">
                 {t("home.scenarioCardOpen")}
               </Link>
@@ -193,7 +197,7 @@ export function HomeScenariosSection({
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">{t("home.packKicker")}</p>
           <div className="grid gap-3 lg:grid-cols-3">
             {packs.slice(0, 3).map((pack) => (
-              <article key={`home-pack-${pack.id}`} className="rounded-[1rem] border border-zinc-200 bg-white p-4">
+              <article key={`home-pack-${pack.id}`} className="rounded-[1rem] border border-zinc-200 bg-white p-4 flex h-full flex-col">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{pack.id}</p>
                 <h3 className="mt-2 text-base font-semibold text-zinc-950">{pack.title}</h3>
                 <p className="mt-1 text-xs leading-relaxed text-zinc-600">{pack.description}</p>
@@ -207,7 +211,7 @@ export function HomeScenariosSection({
                 </div>
                 <Link
                   href={`/prompt/${encodeURIComponent(pack.cta_prompt_slug ?? pack.prompt_slugs[0] ?? "")}`}
-                  className="pv-inline-link mt-3 text-sm"
+                  className="pv-inline-link mt-auto pt-3 text-sm"
                   onClick={() =>
                     trackEvent({
                       eventName: "scenario_pack_started",
@@ -226,7 +230,7 @@ export function HomeScenariosSection({
       ) : null}
 
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
-        <article className="rounded-[1.1rem] border border-[var(--pv-border)] bg-zinc-50/70 p-4">
+        <article className="rounded-[1.1rem] border border-[var(--pv-border)] bg-zinc-50/70 p-4 h-full">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">{t("home.scenarioChainKicker")}</p>
           <h3 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-zinc-950">{t("home.scenarioChainTitle")}</h3>
           <p className="mt-2 text-sm leading-relaxed text-zinc-600">{t("home.scenarioChainSubtitle")}</p>
@@ -254,7 +258,7 @@ export function HomeScenariosSection({
           </div>
         </article>
 
-        <article className="rounded-[1.1rem] border border-[var(--pv-border)] bg-zinc-50/70 p-4">
+        <article className="rounded-[1.1rem] border border-[var(--pv-border)] bg-zinc-50/70 p-4 h-full">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">{t("home.retentionKicker")}</p>
           <h3 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-zinc-950">{t("home.retentionTitle")}</h3>
           <p className="mt-2 text-sm leading-relaxed text-zinc-600">{t("home.retentionSubtitle")}</p>
@@ -290,7 +294,7 @@ export function HomeScenariosSection({
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
-        <article className="rounded-[1.1rem] border border-[var(--pv-border)] bg-zinc-50/70 p-4">
+        <article className="rounded-[1.1rem] border border-[var(--pv-border)] bg-zinc-50/70 p-4 h-full">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">{t("home.nextStepKicker")}</p>
           <h3 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-zinc-950">{t("home.nextStepTitle")}</h3>
           <div className="mt-3 space-y-2">
@@ -318,7 +322,7 @@ export function HomeScenariosSection({
           </div>
         </article>
 
-        <article className="rounded-[1.1rem] border border-[var(--pv-border)] bg-zinc-50/70 p-4">
+        <article className="rounded-[1.1rem] border border-[var(--pv-border)] bg-zinc-50/70 p-4 h-full">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">{t("home.returnKicker")}</p>
           <h3 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-zinc-950">{t("home.returnTitle")}</h3>
           <div className="mt-3 space-y-2">
@@ -339,7 +343,7 @@ export function HomeScenariosSection({
           <h3 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-zinc-950">{t("home.showcaseTitle")}</h3>
           <div className="mt-3 grid gap-3 md:grid-cols-3">
             {showcase.slice(0, 3).map((item) => (
-              <article key={item.share_id} className="rounded-[0.9rem] border border-zinc-200 bg-zinc-50 p-3">
+              <article key={item.share_id} className="rounded-[0.9rem] border border-zinc-200 bg-zinc-50 p-3 h-full">
                 <p className="text-xs font-semibold text-zinc-900">{item.title}</p>
                 <p className="mt-1 text-xs leading-relaxed text-zinc-600">{item.excerpt}</p>
                 <pre className="mt-2 max-h-[6rem] overflow-auto rounded-[0.7rem] border border-zinc-200 bg-white p-2 text-[11px] leading-relaxed text-zinc-700 whitespace-pre-wrap">
@@ -357,7 +361,7 @@ export function HomeScenariosSection({
           <h3 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-zinc-950">{t("home.pricingTitle")}</h3>
           <div className="mt-3 grid gap-3 md:grid-cols-4">
             {pricingPlans.map((plan) => (
-              <article key={plan.tier} className="rounded-[0.9rem] border border-zinc-200 bg-zinc-50 p-3">
+              <article key={plan.tier} className="rounded-[0.9rem] border border-zinc-200 bg-zinc-50 p-3 h-full">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{plan.tier}</p>
                 <p className="mt-1 text-lg font-semibold text-zinc-950">${plan.price_monthly_usd}</p>
                 <p className="mt-1 text-xs leading-relaxed text-zinc-600">{plan.headline}</p>

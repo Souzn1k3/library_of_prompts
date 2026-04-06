@@ -54,16 +54,16 @@ export default function ScenarioMarketplacePage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
-      <section className="pv-panel p-5">
+    <div className="pv-page mx-auto max-w-6xl">
+      <section className="pv-hero px-6 py-7 sm:px-8 sm:py-8">
         <p className="pv-kicker">Scenario Marketplace</p>
-        <h1 className="mt-2 text-3xl font-semibold tracking-[-0.04em] text-zinc-950">
+        <h1 className="pv-title max-w-4xl text-zinc-950">
           Discover creator scenarios and fork instantly.
         </h1>
-        <p className="mt-2 text-sm text-zinc-600">
-          Public blueprints, creator rewards, and shareable outputs are part of the core growth loop.
+        <p className="mt-3 pv-lead max-w-3xl">
+          Public blueprints, creator rewards, and shareable outputs in one workflow.
         </p>
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
           <Link href="/studio" className="pv-button-primary !w-auto">
             Open Studio
           </Link>
@@ -71,20 +71,23 @@ export default function ScenarioMarketplacePage() {
             Back to Home
           </Link>
         </div>
-        {message ? <p className="mt-3 text-sm text-emerald-700">{message}</p> : null}
+        {message ? <p className="mt-4 text-sm font-semibold text-emerald-700">{message}</p> : null}
       </section>
 
-      <section className="pv-panel p-5">
-        <h2 className="text-lg font-semibold text-zinc-950">Blueprints</h2>
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
+      <section className="pv-panel px-5 py-5 sm:px-7 sm:py-6">
+        <div className="pv-section-copy">
+          <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">Blueprints</h2>
+          <p className="mt-2 text-sm text-zinc-600">Fork proven templates and adapt them for your flow.</p>
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {items.map((item) => (
-            <article key={item.id} className="rounded-[0.9rem] border border-zinc-200 bg-zinc-50 p-3">
+            <article key={item.id} className="pv-card flex h-full flex-col p-4">
               <p className="text-sm font-semibold text-zinc-900">{item.title}</p>
               <p className="mt-1 text-xs text-zinc-600">{item.summary ?? "No summary"}</p>
-              <p className="mt-1 text-xs text-zinc-500">
+              <p className="mt-3 text-xs text-zinc-500">
                 forks: {item.fork_count} | likes: {item.like_count}
               </p>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-auto flex flex-wrap gap-2 pt-4">
                 <button type="button" className="pv-button-secondary !w-auto" onClick={() => void handleFork(item.id)}>
                   Fork
                 </button>
@@ -94,15 +97,22 @@ export default function ScenarioMarketplacePage() {
               </div>
             </article>
           ))}
-          {!items.length ? <p className="text-sm text-zinc-600">No published blueprints yet.</p> : null}
+          {!items.length ? (
+            <div className="pv-empty-state md:col-span-2 xl:col-span-3">
+              <p className="text-sm text-zinc-600">No published blueprints yet.</p>
+            </div>
+          ) : null}
         </div>
       </section>
 
-      <section className="pv-panel p-5">
-        <h2 className="text-lg font-semibold text-zinc-950">Showcase Outputs</h2>
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
+      <section className="pv-panel px-5 py-5 sm:px-7 sm:py-6">
+        <div className="pv-section-copy">
+          <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">Showcase Outputs</h2>
+          <p className="mt-2 text-sm text-zinc-600">Examples from top forks that gained traction.</p>
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {showcase.map((item) => (
-            <article key={item.share_id} className="rounded-[0.9rem] border border-zinc-200 bg-zinc-50 p-3">
+            <article key={item.share_id} className="pv-card p-4">
               <p className="text-sm font-semibold text-zinc-900">{item.title}</p>
               <p className="mt-1 text-xs text-zinc-600">{item.excerpt}</p>
               <pre className="mt-2 max-h-[6rem] overflow-auto rounded-[0.7rem] border border-zinc-200 bg-white p-2 text-[11px] leading-relaxed text-zinc-700 whitespace-pre-wrap">
@@ -110,7 +120,11 @@ export default function ScenarioMarketplacePage() {
               </pre>
             </article>
           ))}
-          {!showcase.length ? <p className="text-sm text-zinc-600">Showcase is empty.</p> : null}
+          {!showcase.length ? (
+            <div className="pv-empty-state md:col-span-2 xl:col-span-3">
+              <p className="text-sm text-zinc-600">Showcase is empty.</p>
+            </div>
+          ) : null}
         </div>
       </section>
     </div>
