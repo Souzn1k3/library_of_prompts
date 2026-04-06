@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { buildScenarioLiveResult, isRuFamilyLanguage } from "@/features/scenarios/application/scenarioRuntime";
+import { mapPromptToScenario } from "@/features/scenarios/infrastructure/promptScenarioMapper";
+import type { ScenarioResultDepth } from "@/features/scenarios/domain/scenario";
 import type { Language } from "@/lib/i18n";
-import { isRuFamilyLanguage } from "@/lib/scenarios/text";
 import type { PromptDetail } from "@/lib/types";
 
 type PromptScenarioStageProps = {
@@ -14,15 +16,23 @@ type PromptScenarioStageProps = {
 
 export function PromptScenarioStage({ language, prompt }: PromptScenarioStageProps) {
   const [scenarioInput, setScenarioInput] = useState("");
-  const [outputMode, setOutputMode] = useState<"concise" | "detailed">("detailed");
+  const [outputMode, setOutputMode] = useState<ScenarioResultDepth>("detailed");
   const [refreshSeed, setRefreshSeed] = useState(0);
 
   const bodyLocked = Boolean(prompt.body_locked);
   const localized = getLocalizedCopy(language);
+  const scenarioDefinition = useMemo(() => mapPromptToScenario(prompt), [prompt]);
 
   const liveResult = useMemo(
-    () => buildLiveResult({ language, prompt, scenarioInput, outputMode, refreshSeed }),
-    [language, outputMode, prompt, refreshSeed, scenarioInput],
+    () =>
+      buildScenarioLiveResult({
+        language,
+        scenario: scenarioDefinition,
+        taskInput: scenarioInput,
+        outputDepth: outputMode,
+        variationSeed: refreshSeed,
+      }),
+    [language, outputMode, refreshSeed, scenarioDefinition, scenarioInput],
   );
 
   return (
@@ -138,103 +148,6 @@ export function PromptScenarioStage({ language, prompt }: PromptScenarioStagePro
       </div>
     </section>
   );
-}
-
-function buildLiveResult({
-  language,
-  prompt,
-  scenarioInput,
-  outputMode,
-  refreshSeed,
-}: {
-  language: Language;
-  prompt: PromptDetail;
-  scenarioInput: string;
-  outputMode: "concise" | "detailed";
-  refreshSeed: number;
-}) {
-  const isRuFamily = isRuFamilyLanguage(language);
-  const summary = prompt.summary?.trim() || (isRuFamily ? "Описание отсутствует." : "No summary available.");
-  const focus = scenarioInput.trim() || summary;
-  const variant = refreshSeed % 3;
-
-  if (isRuFamily) {
-    const variantNote =
-      variant === 0 ? "Версия A: фокус на диагностику." : variant === 1 ? "Версия B: фокус на ускорение исполнения." : "Версия C: фокус на снижение рисков.";
-
-    if (outputMode === "concise") {
-      return [
-        "Смоделированный результат AI-сценария:",
-        "",
-        `Фокус: ${focus}`,
-        `Режим: Краткий`,
-        variantNote,
-        "",
-        "• Главный вывод: результат достижим за 1 рабочий цикл",
-        "• Следующий шаг: примените готовый сценарий ниже и адаптируйте входные данные",
-        "• Метрика успеха: измеримый output за 10 минут",
-      ].join("\n");
-    }
-
-    return [
-      "Смоделированный результат AI-сценария:",
-      "",
-      `Сценарий: ${prompt.title}`,
-      `Фокус: ${focus}`,
-      variantNote,
-      "",
-      "1) Диагностика",
-      "Определены главные ограничения, точки риска и быстрые возможности.",
-      "",
-      "2) План выполнения",
-      "- Шаг 1: уточнить входные параметры",
-      "- Шаг 2: запустить базовый сценарий",
-      "- Шаг 3: закрепить результат через повторяемый шаблон",
-      "",
-      "3) Готовый output",
-      "Результат структурирован так, чтобы его можно было сразу внедрить в работу команды.",
-    ].join("\n");
-  }
-
-  const variantNote =
-    variant === 0
-      ? "Variant A: diagnosis-focused."
-      : variant === 1
-        ? "Variant B: speed-focused."
-        : "Variant C: risk-control focused.";
-
-  if (outputMode === "concise") {
-    return [
-      "Simulated AI scenario output:",
-      "",
-      `Focus: ${focus}`,
-      "Mode: Concise",
-      variantNote,
-      "",
-      "• Core insight: you can reach usable output in one cycle",
-      "• Next step: run the full scenario blueprint below",
-      "• Success metric: measurable result within 10 minutes",
-    ].join("\n");
-  }
-
-  return [
-    "Simulated AI scenario output:",
-    "",
-    `Scenario: ${prompt.title}`,
-    `Focus: ${focus}`,
-    variantNote,
-    "",
-    "1) Diagnosis",
-    "Key constraints, risk points, and fast opportunities are identified.",
-    "",
-    "2) Execution plan",
-    "- Step 1: clarify missing inputs",
-    "- Step 2: run the base scenario",
-    "- Step 3: convert output into a repeatable playbook",
-    "",
-    "3) Ready output",
-    "The result is structured for immediate team execution.",
-  ].join("\n");
 }
 
 function getLocalizedCopy(language: Language) {

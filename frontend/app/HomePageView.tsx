@@ -1,28 +1,24 @@
 import { JsonLd } from "@/components/seo/JsonLd";
-import { getTranslation, type Language } from "@/lib/i18n";
 import { absoluteUrl } from "@/lib/seo";
 
 import { HomeHeroSection } from "./HomeHeroSection";
-import { HomePathsSection } from "./HomePathsSection";
 import { HomeScenariosSection } from "./HomeScenariosSection";
-import { HomeShelfSection } from "./HomeShelfSection";
 import type { HomePageData } from "./home-page-data";
 
 type HomePageViewProps = {
-  language: Language;
   initialAuthenticated: boolean;
   data: HomePageData;
 };
 
-export function HomePageView({ language, initialAuthenticated, data }: HomePageViewProps) {
+export function HomePageView({ initialAuthenticated, data }: HomePageViewProps) {
   const {
     entryPrompts,
     recommendedPrompts,
-    promptsTitle,
     heroPromptBody,
     quickUseCases,
+    retentionPrompts,
   } = data;
-  const shelfPrompts = recommendedPrompts.length ? recommendedPrompts : entryPrompts;
+  const scenarioPrompts = recommendedPrompts.length ? recommendedPrompts : entryPrompts;
 
   return (
     <div className="pv-page">
@@ -35,7 +31,7 @@ export function HomePageView({ language, initialAuthenticated, data }: HomePageV
           url: absoluteUrl("/"),
           mainEntity: {
             "@type": "ItemList",
-            itemListElement: shelfPrompts.slice(0, 6).map((prompt, index) => ({
+            itemListElement: scenarioPrompts.slice(0, 6).map((prompt, index) => ({
               "@type": "ListItem",
               position: index + 1,
               name: prompt.title,
@@ -54,21 +50,9 @@ export function HomePageView({ language, initialAuthenticated, data }: HomePageV
 
       <HomeScenariosSection
         prompts={entryPrompts}
+        recommendedPrompts={recommendedPrompts}
+        retentionPrompts={retentionPrompts}
         initialAuthenticated={initialAuthenticated}
-      />
-
-      <HomeShelfSection
-        title={promptsTitle}
-        href="/catalog"
-        hrefLabel={getTranslation(language, "home.seeAll")}
-        prompts={shelfPrompts}
-        idPrefix="home-recommended"
-      />
-
-      <HomePathsSection
-        initialAuthenticated={initialAuthenticated}
-        quickUseCases={quickUseCases}
-        entryPrompts={entryPrompts}
       />
     </div>
   );

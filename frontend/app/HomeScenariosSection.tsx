@@ -4,38 +4,57 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
-import { getTechniqueTranslationKey } from "@/lib/i18n";
+import { buildScenarioLiveResult } from "@/features/scenarios/application/scenarioRuntime";
+import { mapPromptListToScenarios } from "@/features/scenarios/infrastructure/promptScenarioMapper";
 import { SCENARIO_GAME_CHALLENGES } from "@/lib/scenarios/game";
-import { buildScenarioOutputPreview } from "@/lib/scenarios/text";
 import type { PromptListItem } from "@/lib/types";
 
 type HomeScenariosSectionProps = {
   prompts: PromptListItem[];
+  recommendedPrompts: PromptListItem[];
+  retentionPrompts: PromptListItem[];
   initialAuthenticated: boolean;
 };
 
 const TELEGRAM_BOT_URL = "https://t.me/prompts_souz_bot";
 
-export function HomeScenariosSection({ prompts, initialAuthenticated }: HomeScenariosSectionProps) {
+export function HomeScenariosSection({
+  prompts,
+  recommendedPrompts,
+  retentionPrompts,
+  initialAuthenticated,
+}: HomeScenariosSectionProps) {
   const { t, language } = useI18n();
-  const scenarios = prompts.slice(0, 4);
-  const [activeScenarioId, setActiveScenarioId] = useState<string | null>(scenarios[0]?.id ?? null);
+
+  const featuredScenarios = useMemo(
+    () => mapPromptListToScenarios(dedupePrompts([...recommendedPrompts, ...prompts]).slice(0, 4)),
+    [prompts, recommendedPrompts],
+  );
+
+  const chainScenarios = useMemo(
+    () => mapPromptListToScenarios(dedupePrompts([...retentionPrompts, ...prompts]).slice(0, 3)),
+    [prompts, retentionPrompts],
+  );
+
+  const [activeScenarioId, setActiveScenarioId] = useState<string | null>(featuredScenarios[0]?.id ?? null);
   const [scenarioInput, setScenarioInput] = useState("");
   const [gameStep, setGameStep] = useState(0);
   const [selectedChoiceIndex, setSelectedChoiceIndex] = useState<number | null>(null);
   const [gameTokens, setGameTokens] = useState(0);
 
   const activeScenario = useMemo(
-    () => scenarios.find((scenario) => scenario.id === activeScenarioId) ?? scenarios[0] ?? null,
-    [activeScenarioId, scenarios],
+    () => featuredScenarios.find((scenario) => scenario.id === activeScenarioId) ?? featuredScenarios[0] ?? null,
+    [activeScenarioId, featuredScenarios],
   );
 
   const gameChallenge = SCENARIO_GAME_CHALLENGES[gameStep] ?? null;
-  const selectedChoice = selectedChoiceIndex !== null && gameChallenge
-    ? gameChallenge.choices[selectedChoiceIndex] ?? null
-    : null;
+  const selectedChoice =
+    selectedChoiceIndex !== null && gameChallenge ? gameChallenge.choices[selectedChoiceIndex] ?? null : null;
 
-  if (!scenarios.length) {
+  const totalSaveSignals = featuredScenarios.reduce((acc, scenario) => acc + scenario.saveCount, 0);
+  const highQualityScenarios = featuredScenarios.filter((scenario) => scenario.qualityScore >= 70).length;
+
+  if (!featuredScenarios.length) {
     return null;
   }
 
@@ -75,22 +94,25 @@ export function HomeScenariosSection({ prompts, initialAuthenticated }: HomeScen
       </div>
 
       <div className="mt-5 grid gap-3 lg:grid-cols-2">
-        {scenarios.map((scenario) => (
+        {featuredScenarios.map((scenario) => (
           <article key={`home-scenario-card-${scenario.id}`} className="pv-card p-4">
             <div className="flex items-start justify-between gap-2">
-              <span className="pv-chip-brand">{t(getTechniqueTranslationKey(scenario.technique))}</span>
-              {scenario.quality_score ? (
-                <span className="pv-chip">{t("prompt.metricQuality", { count: scenario.quality_score })}</span>
+              <span className="pv-chip-brand">{scenario.category}</span>
+              {scenario.qualityScore > 0 ? (
+                <span className="pv-chip">{t("prompt.metricQuality", { count: scenario.qualityScore })}</span>
               ) : null}
             </div>
 
             <h3 className="mt-3 text-lg font-semibold tracking-[-0.03em] text-zinc-950">{scenario.title}</h3>
-            <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-zinc-600">
-              {scenario.summary ?? t("prompt.noSummary")}
-            </p>
+            <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-zinc-600">{scenario.summary}</p>
 
             <pre className="mt-3 line-clamp-4 rounded-[0.9rem] border border-zinc-200 bg-zinc-50 p-3 text-xs leading-relaxed text-zinc-700 whitespace-pre-wrap">
-              {buildScenarioOutputPreview(language, scenario, scenarioInput)}
+              {buildScenarioLiveResult({
+                language,
+                scenario,
+                taskInput: scenarioInput,
+                outputDepth: "concise",
+              })}
             </pre>
 
             <div className="mt-3 flex flex-wrap gap-2">
@@ -120,7 +142,12 @@ export function HomeScenariosSection({ prompts, initialAuthenticated }: HomeScen
             placeholder={t("home.scenarioLabPlaceholder")}
           />
           <pre className="mt-3 max-h-[13rem] overflow-auto rounded-[0.9rem] border border-zinc-200 bg-zinc-50 p-3 text-xs leading-relaxed text-zinc-700 whitespace-pre-wrap">
-            {buildScenarioOutputPreview(language, activeScenario, scenarioInput)}
+            {buildScenarioLiveResult({
+              language,
+              scenario: activeScenario,
+              taskInput: scenarioInput,
+              outputDepth: "detailed",
+            })}
           </pre>
           <div className="mt-3 flex flex-wrap gap-2">
             <Link href={`/prompt/${encodeURIComponent(activeScenario.slug)}`} className="pv-button-primary !w-auto">
@@ -132,6 +159,60 @@ export function HomeScenariosSection({ prompts, initialAuthenticated }: HomeScen
           </div>
         </div>
       ) : null}
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        <article className="rounded-[1.1rem] border border-[var(--pv-border)] bg-zinc-50/70 p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">{t("home.scenarioChainKicker")}</p>
+          <h3 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-zinc-950">{t("home.scenarioChainTitle")}</h3>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-600">{t("home.scenarioChainSubtitle")}</p>
+          <div className="mt-3 space-y-2">
+            {chainScenarios.map((scenario, index) => (
+              <div
+                key={`home-chain-${scenario.id}`}
+                className="rounded-[0.9rem] border border-zinc-200 bg-white p-3"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                  {t("home.scenarioChainStep", { count: index + 1 })}
+                </p>
+                <p className="mt-1 text-sm font-semibold text-zinc-900">{scenario.title}</p>
+                <p className="mt-1 text-xs leading-relaxed text-zinc-600">{scenario.summary}</p>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <article className="rounded-[1.1rem] border border-[var(--pv-border)] bg-zinc-50/70 p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">{t("home.retentionKicker")}</p>
+          <h3 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-zinc-950">{t("home.retentionTitle")}</h3>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-600">{t("home.retentionSubtitle")}</p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            <div className="rounded-[0.9rem] border border-zinc-200 bg-white p-3">
+              <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">{t("home.retentionMetricScenarios")}</p>
+              <p className="mt-1 text-xl font-semibold tracking-[-0.03em] text-zinc-950">{featuredScenarios.length}</p>
+            </div>
+            <div className="rounded-[0.9rem] border border-zinc-200 bg-white p-3">
+              <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">{t("home.retentionMetricSaves")}</p>
+              <p className="mt-1 text-xl font-semibold tracking-[-0.03em] text-zinc-950">{totalSaveSignals}</p>
+            </div>
+            <div className="rounded-[0.9rem] border border-zinc-200 bg-white p-3">
+              <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">{t("home.retentionMetricQuality")}</p>
+              <p className="mt-1 text-xl font-semibold tracking-[-0.03em] text-zinc-950">{highQualityScenarios}</p>
+            </div>
+            <div className="rounded-[0.9rem] border border-zinc-200 bg-white p-3">
+              <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">{t("home.gameTokenUnit")}</p>
+              <p className="mt-1 text-xl font-semibold tracking-[-0.03em] text-zinc-950">{gameTokens}</p>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link href={initialAuthenticated ? "/dashboard" : "/signup"} className="pv-button-secondary !w-auto">
+              {t(initialAuthenticated ? "home.retentionWorkspaceAuth" : "home.retentionWorkspaceGuest")}
+            </Link>
+            <Link href="/pricing?tier=starter" className="pv-button-primary !w-auto">
+              {t("home.retentionUpgrade")}
+            </Link>
+          </div>
+        </article>
+      </div>
 
       <div className="mt-5 rounded-[1.2rem] border border-[var(--pv-border)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(244,248,255,0.9))] p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -171,9 +252,7 @@ export function HomeScenariosSection({ prompts, initialAuthenticated }: HomeScen
             </div>
             {selectedChoice ? (
               <div className="space-y-2 rounded-[0.9rem] border border-zinc-200 bg-white/80 p-3">
-                <p className="text-sm text-zinc-700">
-                  {language === "ru" ? selectedChoice.feedbackRu : selectedChoice.feedbackEn}
-                </p>
+                <p className="text-sm text-zinc-700">{language === "ru" ? selectedChoice.feedbackRu : selectedChoice.feedbackEn}</p>
                 <p className="text-xs font-semibold text-emerald-700">
                   +{selectedChoice.reward} {t("home.gameTokenUnit")}
                 </p>
@@ -186,15 +265,14 @@ export function HomeScenariosSection({ prompts, initialAuthenticated }: HomeScen
         ) : (
           <div className="mt-4 space-y-3 rounded-[0.9rem] border border-emerald-200 bg-emerald-50/85 p-3">
             <p className="text-sm leading-relaxed text-emerald-900">{t("home.gameFinishedBody")}</p>
+            <p className="text-xs leading-relaxed text-emerald-800">{t("home.gameTokenSpendHint")}</p>
             <div className="flex flex-wrap gap-2">
-              <a
-                href={TELEGRAM_BOT_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="pv-button-primary !w-auto"
-              >
+              <a href={TELEGRAM_BOT_URL} target="_blank" rel="noreferrer" className="pv-button-primary !w-auto">
                 {t("home.gameOpenTelegram")}
               </a>
+              <Link href="/store" className="pv-button-secondary !w-auto">
+                {t("home.gameTokenSpendAction")}
+              </Link>
               <button type="button" onClick={restartGame} className="pv-button-secondary !w-auto">
                 {t("home.gameRestart")}
               </button>
@@ -204,4 +282,12 @@ export function HomeScenariosSection({ prompts, initialAuthenticated }: HomeScen
       </div>
     </section>
   );
+}
+
+function dedupePrompts(prompts: PromptListItem[]): PromptListItem[] {
+  const map = new Map<string, PromptListItem>();
+  for (const prompt of prompts) {
+    map.set(prompt.id, prompt);
+  }
+  return [...map.values()];
 }

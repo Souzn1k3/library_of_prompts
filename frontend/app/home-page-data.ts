@@ -3,13 +3,13 @@ import {
   fetchPromptBySlug,
   fetchPromptRecommendations,
 } from "@/lib/api";
-import { getTranslation, type Language } from "@/lib/i18n";
+import type { Language } from "@/lib/i18n";
 import type { PromptListItem } from "@/lib/types";
 
 export type HomePageData = {
   entryPrompts: PromptListItem[];
   recommendedPrompts: PromptListItem[];
-  promptsTitle: string;
+  retentionPrompts: PromptListItem[];
   heroPromptBody: string | null;
   quickUseCases: string[];
 };
@@ -42,17 +42,18 @@ export async function loadHomePageData({
         ? sections.for_you
         : sections.trending;
 
-  const promptsTitle =
-    accessToken && homeRecommendations.items.length > 0
-      ? getTranslation(language, "dashboard.recommendedForYou")
-      : getTranslation(language, "home.trendingPrompts");
-
   const entryPrompts = dedupePrompts([
     ...recommendedPrompts,
     ...(sections.trending ?? []),
     ...(sections.best_for_beginners ?? []),
     ...(sections.most_saved ?? []),
   ]).slice(0, 24);
+
+  const retentionPrompts = dedupePrompts([
+    ...(sections.most_saved ?? []),
+    ...(sections.for_you ?? []),
+    ...(sections.trending ?? []),
+  ]).slice(0, 8);
 
   const heroPrompt = entryPrompts[0];
   const heroPromptBody = heroPrompt
@@ -66,7 +67,7 @@ export async function loadHomePageData({
   return {
     entryPrompts,
     recommendedPrompts: recommendedPrompts.slice(0, 6),
-    promptsTitle,
+    retentionPrompts,
     heroPromptBody,
     quickUseCases,
   };

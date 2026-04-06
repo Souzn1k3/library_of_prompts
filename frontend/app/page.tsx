@@ -13,7 +13,6 @@ export default async function HomePage() {
 
   return (
     <HomePageView
-      language={language}
       initialAuthenticated={Boolean(accessToken)}
       data={data}
     />

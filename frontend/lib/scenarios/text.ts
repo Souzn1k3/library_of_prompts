@@ -1,9 +1,9 @@
 import type { Language } from "@/lib/i18n";
 import type { PromptListItem } from "@/lib/types";
+import { buildScenarioLiveResult, isRuFamilyLanguage } from "@/features/scenarios/application/scenarioRuntime";
+import { mapPromptToScenario } from "@/features/scenarios/infrastructure/promptScenarioMapper";
 
-export function isRuFamilyLanguage(language: Language): boolean {
-  return language === "ru" || language === "tt";
-}
+export { isRuFamilyLanguage };
 
 export function buildPromptFallbackTemplate(language: Language, prompt: PromptListItem): string {
   const isRuFamily = isRuFamilyLanguage(language);
@@ -62,33 +62,13 @@ export function buildScenarioOutputPreview(
   prompt: PromptListItem,
   userInput: string,
 ): string {
-  const isRuFamily = isRuFamilyLanguage(language);
-  const task = userInput.trim();
-  const summary = prompt.summary?.trim() || (isRuFamily ? "Описание сценария отсутствует." : "No scenario summary.");
-
-  if (isRuFamily) {
-    return [
-      "Результат AI-сценария:",
-      "",
-      `Сценарий: ${prompt.title}`,
-      `Фокус: ${task || summary}`,
-      "",
-      "1) Диагноз ситуации и ключевые риски",
-      "2) Пошаговый план действий на ближайший цикл",
-      "3) Готовый формат ответа, который можно сразу применять",
-    ].join("\n");
-  }
-
-  return [
-    "AI scenario output:",
-    "",
-    `Scenario: ${prompt.title}`,
-    `Focus: ${task || summary}`,
-    "",
-    "1) Situation diagnosis and key risks",
-    "2) Action plan for the next execution cycle",
-    "3) Ready-to-use output format you can run immediately",
-  ].join("\n");
+  const scenario = mapPromptToScenario(prompt);
+  return buildScenarioLiveResult({
+    language,
+    scenario,
+    taskInput: userInput,
+    outputDepth: "detailed",
+  });
 }
 
 export function formatScenarioFacetLabel(value: string): string {
