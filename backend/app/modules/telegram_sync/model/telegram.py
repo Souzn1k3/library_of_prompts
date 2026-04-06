@@ -90,7 +90,7 @@ class TelegramRewardClaimWrite(BaseModel):
     reason: str = Field(min_length=1, max_length=200)
     challenge_key: str | None = Field(default=None, max_length=120)
     occurred_at: datetime
-    signature: str = Field(min_length=32, max_length=128)
+    signature: str = Field(min_length=1, max_length=128)
 
     @field_validator("claim_id", "reason", "challenge_key", mode="before")
     @classmethod

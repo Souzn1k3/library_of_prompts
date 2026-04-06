@@ -91,10 +91,15 @@ function fromServerWorkspace(workspace: ScenarioWorkspaceRead): WorkspaceSnapsho
 
 function applyLocalAction(
   snapshot: WorkspaceSnapshot,
-  *,
-  action: ScenarioWorkspaceAction,
-  slug: string,
-  task: string | null,
+  {
+    action,
+    slug,
+    task,
+  }: {
+    action: ScenarioWorkspaceAction;
+    slug: string;
+    task: string | null;
+  },
 ): WorkspaceSnapshot {
   const cleanSlug = slug.trim();
   if (!cleanSlug) {

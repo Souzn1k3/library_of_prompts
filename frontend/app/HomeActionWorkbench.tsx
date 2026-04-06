@@ -221,8 +221,13 @@ export function HomeActionWorkbench({
     workspace.toggleSaved(selectedPrompt.slug);
   }
 
-  function resumeUnfinished(slug: string, task: string) {
+  function selectScenarioSlug(slug: string) {
     setSelectedSlug(slug);
+    workspace.markRecent(slug);
+  }
+
+  function resumeUnfinished(slug: string, task: string) {
+    selectScenarioSlug(slug);
     setTaskInput(task);
   }
 
@@ -357,7 +362,7 @@ export function HomeActionWorkbench({
                     <button
                       key={`home-match-${scenario.id}`}
                       type="button"
-                      onClick={() => setSelectedSlug(scenario.slug)}
+                      onClick={() => selectScenarioSlug(scenario.slug)}
                       className={`rounded-[1rem] border p-3 text-left transition ${
                         isActive
                           ? "border-[var(--pv-brand-strong)] bg-[var(--pv-brand-soft)] shadow-[0_8px_20px_rgba(37,92,255,0.12)]"
@@ -429,6 +434,17 @@ export function HomeActionWorkbench({
                   id="home-task-input"
                   value={taskInput}
                   onChange={(event) => setTaskInput(event.target.value)}
+                  onBlur={(event) => {
+                    if (!selectedPrompt) {
+                      return;
+                    }
+                    const cleaned = event.target.value.trim();
+                    if (!cleaned) {
+                      workspace.clearUnfinished(selectedPrompt.slug);
+                      return;
+                    }
+                    workspace.saveUnfinished(selectedPrompt.slug, cleaned);
+                  }}
                   className="pv-textarea min-h-[98px]"
                   placeholder={t("home.entryIntentPlaceholder")}
                 />
@@ -561,7 +577,7 @@ export function HomeActionWorkbench({
                         <button
                           key={`recent-${slug}`}
                           type="button"
-                          onClick={() => setSelectedSlug(slug)}
+                          onClick={() => selectScenarioSlug(slug)}
                           className="rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700"
                         >
                           {prompt.title}
