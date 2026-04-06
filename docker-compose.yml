@@ -87,7 +87,7 @@ services:
         NO_PROXY: ${NO_PROXY:-}
     command: >
       sh -lc "set -o pipefail;
-              rm -rf /app/.next;
+              find /app/.next -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true;
               npm run dev -- --hostname 0.0.0.0 --port 3000 2>&1 |
               awk '!/^[[:space:]]*(GET|POST|PUT|PATCH|DELETE|OPTIONS|HEAD) \\/.*$/ && !/\\[\\?25h/ { print; fflush(); }'"
     environment:

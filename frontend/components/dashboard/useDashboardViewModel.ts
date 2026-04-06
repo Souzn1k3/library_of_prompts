@@ -52,10 +52,8 @@ export function useDashboardViewModel({
     () => t(getTierTranslationKey(billing?.plan_tier ?? "free")),
     [billing?.plan_tier, t],
   );
-  const highlightedPlanClassName =
-    billing?.plan_tier === "enterprise" ? "text-emerald-700" : "text-zinc-900";
-  const highlightedStatusClassName =
-    billing?.status === "active" ? "text-emerald-700" : "text-zinc-700";
+  const highlightedPlanClassName = "text-zinc-900";
+  const highlightedStatusClassName = "text-zinc-700";
 
   const rejectedSubmissionsCount = useMemo(
     () => submissions.filter((submission) => submission.moderation_state === "rejected").length,

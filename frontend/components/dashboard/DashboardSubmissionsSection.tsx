@@ -38,7 +38,7 @@ export function DashboardSubmissionsSection({
       ) : (
         <div className="mt-6 space-y-3">
           {submissions.slice(0, 4).map((submission) => (
-            <div key={submission.id} className="pv-card-muted p-4">
+            <div key={submission.id} className="pv-card p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 {submission.moderation_state === "approved" ? (
                   <Link

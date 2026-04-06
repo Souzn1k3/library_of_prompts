@@ -29,7 +29,7 @@ export function DashboardSavedPromptsSection({
             {t("dashboard.savedPrompts")}
           </h2>
         </div>
-        <span className="pv-chip-brand">{items.length}</span>
+        <span className="pv-workspace-status">{items.length}</span>
       </div>
 
       {items.length === 0 ? (
@@ -50,4 +50,3 @@ export function DashboardSavedPromptsSection({
     </section>
   );
 }
-

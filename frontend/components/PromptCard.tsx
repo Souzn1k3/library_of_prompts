@@ -16,14 +16,12 @@ export function PromptCard({ prompt }: { prompt: PromptListItem }) {
       prefetch={false}
       className="pv-card pv-card-optimized group block p-5"
     >
-      <div className={`pv-prompt-card-glow ${tone.glow}`} />
-
-        <div className="relative flex h-full flex-col gap-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex flex-wrap gap-2">
-              <span className={`pv-badge ${tone.badge}`}>
-                <T k={getTechniqueTranslationKey(prompt.technique)} />
-              </span>
+      <div className="relative flex h-full flex-col gap-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
+            <span className={`pv-badge ${tone.badge}`}>
+              <T k={getTechniqueTranslationKey(prompt.technique)} />
+            </span>
             {prompt.difficulty ? (
               <span className="pv-badge">
                 <T k={getDifficultyTranslationKey(prompt.difficulty)} />
@@ -105,30 +103,9 @@ export function PromptCard({ prompt }: { prompt: PromptListItem }) {
 }
 
 function getTechniqueTone(technique: PromptListItem["technique"]) {
-  if (technique === "zero_shot") {
-    return {
-      badge: "border-[rgba(37,92,255,0.12)] bg-[rgba(37,92,255,0.06)] text-zinc-700",
-      glow: "bg-[rgba(37,92,255,0.08)]",
-    };
-  }
-
-  if (technique === "few_shot") {
-    return {
-      badge: "border-[rgba(17,184,164,0.14)] bg-[rgba(17,184,164,0.08)] text-zinc-700",
-      glow: "bg-[rgba(17,184,164,0.09)]",
-    };
-  }
-
-  if (technique === "chain_of_thought") {
-    return {
-      badge: "border-[rgba(99,102,241,0.12)] bg-[rgba(99,102,241,0.07)] text-zinc-700",
-      glow: "bg-[rgba(99,102,241,0.08)]",
-    };
-  }
-
+  void technique;
   return {
-    badge: "",
-    glow: "bg-[rgba(148,163,184,0.1)]",
+    badge: "border-[rgba(15,23,42,0.1)] bg-[rgba(248,250,252,0.92)] text-zinc-700",
   };
 }
 

@@ -5,10 +5,10 @@ import { getContributorTierTranslationKey } from "@/lib/i18n";
 import type { ContributorTier } from "@/lib/types";
 
 function tierClasses(tier: ContributorTier | null | undefined): string {
-  if (tier === "top") return "bg-amber-100 text-amber-900";
-  if (tier === "verified") return "bg-emerald-100 text-emerald-900";
-  if (tier === "new") return "bg-blue-100 text-blue-900";
-  return "bg-zinc-100 text-zinc-700";
+  if (tier === "top") return "border border-[#e9d8af] bg-[#f8f2e5] text-[#8a6119]";
+  if (tier === "verified") return "border border-[#cae5da] bg-[#edf8f2] text-[#1b6a53]";
+  if (tier === "new") return "border border-[#d8e4ff] bg-[#eff4ff] text-[#3d568d]";
+  return "border border-zinc-200 bg-zinc-100 text-zinc-700";
 }
 
 export function ContributorBadge({

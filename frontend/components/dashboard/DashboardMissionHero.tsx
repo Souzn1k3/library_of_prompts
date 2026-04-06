@@ -23,7 +23,7 @@ export function DashboardMissionHero(props: DashboardMissionHeroProps) {
       description={t("dashboard.subtitle")}
     >
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-12">
-        <div className="pv-card-muted pv-card-hover-lift flex h-full min-h-[12rem] flex-col gap-4 border-[rgba(37,92,255,0.14)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(237,244,255,0.92))] p-5 shadow-[0_18px_36px_rgba(37,92,255,0.08)] md:col-span-2 xl:col-span-6 sm:p-6">
+        <div className="pv-card pv-card-hover-lift flex h-full min-h-[12rem] flex-col gap-4 p-5 md:col-span-2 xl:col-span-6 sm:p-6">
           <p className="pv-kicker">{t("dashboard.opsNextStepLabel")}</p>
           <div className="space-y-2">
             <h2 className="text-xl font-bold tracking-[-0.035em] text-zinc-950 sm:text-2xl">
@@ -70,7 +70,7 @@ export function DashboardMissionHero(props: DashboardMissionHeroProps) {
                 {t("dashboard.opsPromptsEmptyShort")}
               </p>
             ) : (
-              <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-2">
                 <DashboardMiniMetric label={t("dashboard.opsMetricSaved")} value={props.savedPromptsCount} />
                 <DashboardMiniMetric label={t("dashboard.opsMetricSubmitted")} value={props.submissionCount} />
                 <DashboardMiniMetric label={t("dashboard.opsMetricNeedsFix")} value={props.rejectedSubmissionCount} />

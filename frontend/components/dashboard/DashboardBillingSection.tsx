@@ -36,20 +36,20 @@ export function DashboardBillingSection({
           <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("nav.billing")}</h2>
           <p className="mt-2 text-sm text-zinc-600">{t("dashboard.billingBody")}</p>
         </div>
-        <span className={`pv-chip-brand ${highlightedPlanClassName}`}>{planLabel}</span>
+        <span className={`pv-workspace-status ${highlightedPlanClassName}`}>{planLabel}</span>
       </div>
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
-        <div className="pv-card-muted p-4">
+        <div className="pv-card p-4">
           <p className="pv-kicker">{t("plans.currentTier")}</p>
           <p className={`mt-2 text-base font-semibold ${highlightedPlanClassName}`}>{planLabel}</p>
         </div>
-        <div className="pv-card-muted p-4">
+        <div className="pv-card p-4">
           <p className="pv-kicker">{t("plans.subscriptionStatus")}</p>
           <p className={`mt-2 text-base font-semibold ${highlightedStatusClassName}`}>
             {localizedBillingStatus ?? t("plans.billingStatus.unknown")}
           </p>
         </div>
-        <div className="pv-card-muted p-4">
+        <div className="pv-card p-4">
           <p className="pv-kicker">{t("dashboard.manageBilling")}</p>
           <p className="mt-2 pv-hint-badge">{t("common.hintBadge")}</p>
           <p className="mt-1 text-sm text-zinc-700">{t("dashboard.billingActionHint")}</p>

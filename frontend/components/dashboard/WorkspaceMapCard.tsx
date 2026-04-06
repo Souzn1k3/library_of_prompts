@@ -13,16 +13,8 @@ export type WorkspaceMapCardProps = {
 };
 
 function workspaceStatusClass(tone: WorkspaceStatusTone): string {
-  switch (tone) {
-    case "success":
-      return "pv-badge-success";
-    case "warning":
-      return "pv-badge-warning";
-    case "info":
-      return "pv-chip-brand";
-    default:
-      return "pv-badge";
-  }
+  void tone;
+  return "pv-workspace-status";
 }
 
 export function WorkspaceMapCard({
@@ -35,7 +27,7 @@ export function WorkspaceMapCard({
   actionLabel,
 }: WorkspaceMapCardProps) {
   return (
-    <Link href={href} className="pv-card-muted pv-card-hover-lift flex h-full min-h-[12rem] flex-col gap-3 p-5">
+    <Link href={href} className="pv-card pv-card-hover-lift flex h-full min-h-[12rem] flex-col gap-3 p-5">
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-lg font-semibold tracking-[-0.035em] text-zinc-950">{title}</h3>
         <span className={workspaceStatusClass(statusTone)}>{statusLabel}</span>

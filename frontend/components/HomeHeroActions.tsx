@@ -18,6 +18,9 @@ export function HomeHeroActions({ initialAuthenticated = false }: { initialAuthe
         </Link>
         <Link href="/catalog" className="pv-button-secondary pv-hero-button-secondary">
           {t("home.explorePrompts")}
+          <span className="pv-hero-button-secondary-icon" aria-hidden="true">
+            ↗
+          </span>
         </Link>
       </div>
     );
@@ -30,6 +33,9 @@ export function HomeHeroActions({ initialAuthenticated = false }: { initialAuthe
       </Link>
       <Link href="/catalog" className="pv-button-secondary pv-hero-button-secondary">
         {t("home.explorePrompts")}
+        <span className="pv-hero-button-secondary-icon" aria-hidden="true">
+          ↗
+        </span>
       </Link>
     </div>
   );

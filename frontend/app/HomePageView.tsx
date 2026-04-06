@@ -3,7 +3,10 @@ import { getTranslation, type Language } from "@/lib/i18n";
 import { absoluteUrl } from "@/lib/seo";
 
 import { HomeHeroSection } from "./HomeHeroSection";
+import { HomeFlowSection } from "./HomeFlowSection";
 import { HomeLessonsSection } from "./HomeLessonsSection";
+import { HomePathsSection } from "./HomePathsSection";
+import { HomeProofSection } from "./HomeProofSection";
 import { HomeShelfSection } from "./HomeShelfSection";
 import type { HomePageData } from "./home-page-data";
 
@@ -14,7 +17,7 @@ type HomePageViewProps = {
 };
 
 export function HomePageView({ language, initialAuthenticated, data }: HomePageViewProps) {
-  const { featuredPrompts, promptsTitle, popularLessons, heroPrompt, heroPromptBody } = data;
+  const { featuredPrompts, promptsTitle, popularLessons, heroPrompt, heroPromptBody, proof } = data;
 
   return (
     <div className="pv-page">
@@ -44,6 +47,10 @@ export function HomePageView({ language, initialAuthenticated, data }: HomePageV
         heroPromptBody={heroPromptBody}
       />
 
+      <HomeProofSection language={language} proof={proof} />
+
+      <HomeFlowSection initialAuthenticated={initialAuthenticated} heroPromptSlug={heroPrompt?.slug} />
+
       <HomeShelfSection
         title={promptsTitle}
         href="/catalog"
@@ -53,6 +60,8 @@ export function HomePageView({ language, initialAuthenticated, data }: HomePageV
       />
 
       <HomeLessonsSection language={language} lessons={popularLessons} />
+
+      <HomePathsSection initialAuthenticated={initialAuthenticated} />
     </div>
   );
 }

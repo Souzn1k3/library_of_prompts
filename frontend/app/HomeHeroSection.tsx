@@ -27,6 +27,20 @@ export function HomeHeroSection({ language, initialAuthenticated, heroPrompt, he
             <p className="pv-lead max-w-[35rem]">
               <T k="home.subtitle" />
             </p>
+            <p className="pv-hero-proof">
+              <T k="home.heroProof" />
+            </p>
+            <ul className="pv-hero-points">
+              <li>
+                <T k="home.heroPointOne" />
+              </li>
+              <li>
+                <T k="home.heroPointTwo" />
+              </li>
+              <li>
+                <T k="home.heroPointThree" />
+              </li>
+            </ul>
           </div>
 
           <HomeHeroActions initialAuthenticated={initialAuthenticated} />

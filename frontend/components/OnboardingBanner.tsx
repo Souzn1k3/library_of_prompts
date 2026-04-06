@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -12,6 +13,7 @@ export function OnboardingBanner() {
   const [visible, setVisible] = useState(false);
   const { status } = useAuth();
   const { t } = useI18n();
+  const pathname = usePathname();
 
   useEffect(() => {
     try {
@@ -30,7 +32,7 @@ export function OnboardingBanner() {
     setVisible(false);
   }
 
-  if (!visible || status !== "unauthenticated") {
+  if (!visible || status !== "unauthenticated" || pathname === "/") {
     return null;
   }
 
