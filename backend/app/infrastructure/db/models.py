@@ -89,6 +89,11 @@ from ._economy_models import (  # noqa: F401
 )
 from ._scenario_models import (  # noqa: F401
     GuestScenarioRunUsage,
+    ScenarioAutonomyCycle,
+    ScenarioAutonomyExperiment,
+    ScenarioAutonomyGrowthDecision,
+    ScenarioAutonomyGuardrailEvent,
+    ScenarioAutonomyPersonalizationProfile,
     ScenarioBlueprintComment,
     ScenarioBlueprintRating,
     ScenarioBlueprintSave,

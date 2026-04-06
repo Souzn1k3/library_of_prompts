@@ -175,6 +175,15 @@ def _blueprint_snapshot(row: UserScenarioBlueprint) -> dict[str, object]:
         "metadata": row.metadata_json if isinstance(row.metadata_json, dict) else None,
         "visibility": row.visibility,
         "monetization_mode": _resolve_monetization_mode(row),
+        "autonomous_mode": bool(getattr(row, "autonomous_mode", False)),
+        "autonomous_stage": str(getattr(row, "autonomous_stage", "manual") or "manual"),
+        "autonomous_quality_score": float(getattr(row, "autonomous_quality_score", 0.0) or 0.0),
+        "autonomous_target_segment": getattr(row, "autonomous_target_segment", None),
+        "autonomous_last_iteration_at": (
+            getattr(row, "autonomous_last_iteration_at", None).isoformat()
+            if getattr(row, "autonomous_last_iteration_at", None)
+            else None
+        ),
         "is_published": bool(row.is_published),
         "is_premium": bool(row.is_premium),
         "token_price": int(row.token_price) if row.token_price is not None else None,
@@ -217,6 +226,11 @@ def _blueprint_to_read(
         author_display_name=author_display_name,
         visibility=row.visibility,
         monetization_mode=_resolve_monetization_mode(row),
+        autonomous_mode=bool(getattr(row, "autonomous_mode", False)),
+        autonomous_stage=str(getattr(row, "autonomous_stage", "manual") or "manual"),
+        autonomous_quality_score=float(getattr(row, "autonomous_quality_score", 0.0) or 0.0),
+        autonomous_target_segment=getattr(row, "autonomous_target_segment", None),
+        autonomous_last_iteration_at=getattr(row, "autonomous_last_iteration_at", None),
         is_published=bool(row.is_published),
         is_premium=bool(row.is_premium),
         token_price=int(row.token_price) if row.token_price is not None else None,
@@ -921,6 +935,14 @@ class ScenarioPlatformService:
         if normalized_tags:
             tag_set = set(normalized_tags)
             rows = [row for row in rows if tag_set.intersection(set(_normalize_tags(row.tags)))]
+        rows = [
+            row
+            for row in rows
+            if not (
+                bool(getattr(row, "autonomous_mode", False))
+                and str(getattr(row, "autonomous_stage", "manual") or "manual") == "retired"
+            )
+        ]
 
         now = datetime.now(timezone.utc)
         section_key = (section or "trending").strip().lower()

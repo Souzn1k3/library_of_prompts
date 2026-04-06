@@ -70,6 +70,16 @@ class Settings(BaseSettings):
     growth_experiment_upgrade_rollout_percent: int = 50
     growth_experiment_paywall_rollout_percent: int = 50
     growth_experiment_pricing_rollout_percent: int = 50
+    scenario_autonomy_enabled: bool = True
+    scenario_autonomy_scheduler_enabled: bool = True
+    scenario_autonomy_interval_minutes: int = 45
+    scenario_autonomy_signal_window_days: int = 30
+    scenario_autonomy_max_new_scenarios_per_cycle: int = 3
+    scenario_autonomy_min_improvement_percent: float = 3.0
+    scenario_autonomy_guardrail_min_retention_percent: float = 25.0
+    scenario_autonomy_guardrail_max_cac_usd: float = 150.0
+    scenario_autonomy_guardrail_min_roi_percent: float = -10.0
+    scenario_autonomy_marketplace_prune_threshold: float = 18.0
     legacy_bot_database_url: str | None = None
 
     jwt_secret_key: str = Field(
@@ -208,6 +218,23 @@ class Settings(BaseSettings):
         ):
             if value < 0 or value > 100:
                 raise ValueError(f"{name} must be between 0 and 100.")
+        if self.scenario_autonomy_interval_minutes <= 0:
+            raise ValueError("SCENARIO_AUTONOMY_INTERVAL_MINUTES must be greater than 0.")
+        if self.scenario_autonomy_signal_window_days <= 0:
+            raise ValueError("SCENARIO_AUTONOMY_SIGNAL_WINDOW_DAYS must be greater than 0.")
+        if self.scenario_autonomy_max_new_scenarios_per_cycle <= 0:
+            raise ValueError("SCENARIO_AUTONOMY_MAX_NEW_SCENARIOS_PER_CYCLE must be greater than 0.")
+        if self.scenario_autonomy_min_improvement_percent < 0 or self.scenario_autonomy_min_improvement_percent > 100:
+            raise ValueError("SCENARIO_AUTONOMY_MIN_IMPROVEMENT_PERCENT must be between 0 and 100.")
+        if (
+            self.scenario_autonomy_guardrail_min_retention_percent < 0
+            or self.scenario_autonomy_guardrail_min_retention_percent > 100
+        ):
+            raise ValueError("SCENARIO_AUTONOMY_GUARDRAIL_MIN_RETENTION_PERCENT must be between 0 and 100.")
+        if self.scenario_autonomy_guardrail_max_cac_usd <= 0:
+            raise ValueError("SCENARIO_AUTONOMY_GUARDRAIL_MAX_CAC_USD must be greater than 0.")
+        if self.scenario_autonomy_marketplace_prune_threshold < 0 or self.scenario_autonomy_marketplace_prune_threshold > 100:
+            raise ValueError("SCENARIO_AUTONOMY_MARKETPLACE_PRUNE_THRESHOLD must be between 0 and 100.")
 
         url = self.parsed_database_url
         driver = url.drivername.lower()

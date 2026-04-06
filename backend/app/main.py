@@ -19,9 +19,11 @@ from app.core.i18n import resolve_language_from_header, translate
 from app.core.logging import configure_logging, get_logger
 from app.core.runtime_guard import verify_runtime_database
 from app.infrastructure.db.session import async_session_maker, engine
+from app.api.service_deps_internal.container import ServiceContainer
 from app.modules.economy.repository.store_repository import StoreRepository
 from app.modules.economy.repository.wallet_repository import WalletRepository
 from app.modules.economy.service.kpi_scheduler import run_economy_kpi_scheduler
+from app.modules.scenarios.service.scenario_autonomy_scheduler import run_scenario_autonomy_scheduler
 from app.modules.economy.service.store_service import sync_default_store_catalog
 
 configure_logging(get_settings().debug)
@@ -32,6 +34,7 @@ log = get_logger(__name__)
 async def lifespan(_app: FastAPI):
     settings = get_settings()
     kpi_scheduler_task: asyncio.Task[None] | None = None
+    autonomy_scheduler_task: asyncio.Task[None] | None = None
     log.info("starting", app=settings.app_name, app_env=settings.app_env)
     await verify_runtime_database(engine, settings)
     try:
@@ -54,11 +57,27 @@ async def lifespan(_app: FastAPI):
             interval_minutes=settings.economy_kpi_job_interval_minutes,
             lookback_days=settings.economy_kpi_job_lookback_days,
         )
+    if settings.scenario_autonomy_enabled and settings.scenario_autonomy_scheduler_enabled:
+        autonomy_scheduler_task = asyncio.create_task(
+            run_scenario_autonomy_scheduler(
+                session_factory=async_session_maker,
+                service_factory=lambda session: ServiceContainer(session).scenario_autonomy_service,
+                interval_minutes=settings.scenario_autonomy_interval_minutes,
+            )
+        )
+        log.info(
+            "scenario_autonomy_scheduler_started",
+            interval_minutes=settings.scenario_autonomy_interval_minutes,
+        )
     yield
     if kpi_scheduler_task is not None:
         kpi_scheduler_task.cancel()
         with suppress(asyncio.CancelledError):
             await kpi_scheduler_task
+    if autonomy_scheduler_task is not None:
+        autonomy_scheduler_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await autonomy_scheduler_task
     await get_cache().close()
     log.info("shutting_down")
 

@@ -7,12 +7,19 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.db.models import (
+    ScenarioAutonomyCycle,
+    ScenarioAutonomyExperiment,
+    ScenarioAutonomyGrowthDecision,
+    ScenarioAutonomyGuardrailEvent,
+    ScenarioAutonomyPersonalizationProfile,
     ScenarioBlueprintComment,
     ScenarioBlueprintRating,
     ScenarioBlueprintSave,
     ScenarioBlueprintVersion,
     ScenarioCreatorRewardEvent,
     ScenarioOutputShowcase,
+    User,
+    UserRole,
     UserScenarioBlueprint,
     UserScenarioBlueprintShare,
     UserScenarioWorkflow,
@@ -415,3 +422,191 @@ class ScenarioPlatformRepository:
         await self._session.flush()
         await self._session.refresh(event)
         return event
+
+    async def resolve_autonomous_owner(
+        self,
+        *,
+        preferred_user_id: uuid.UUID | None = None,
+    ) -> User | None:
+        if preferred_user_id is not None:
+            preferred = await self._session.execute(select(User).where(User.id == preferred_user_id))
+            user = preferred.scalar_one_or_none()
+            if user is not None:
+                return user
+
+        admin_result = await self._session.execute(
+            select(User).where(User.role == UserRole.admin).order_by(User.created_at.asc()).limit(1)
+        )
+        admin = admin_result.scalar_one_or_none()
+        if admin is not None:
+            return admin
+
+        user_result = await self._session.execute(select(User).order_by(User.created_at.asc()).limit(1))
+        return user_result.scalar_one_or_none()
+
+    async def create_autonomy_cycle(self, row: ScenarioAutonomyCycle) -> ScenarioAutonomyCycle:
+        self._session.add(row)
+        await self._session.flush()
+        await self._session.refresh(row)
+        return row
+
+    async def save_autonomy_cycle(self, row: ScenarioAutonomyCycle) -> ScenarioAutonomyCycle:
+        await self._session.flush()
+        await self._session.refresh(row)
+        return row
+
+    async def get_autonomy_cycle_by_id(self, *, cycle_id: uuid.UUID) -> ScenarioAutonomyCycle | None:
+        result = await self._session.execute(
+            select(ScenarioAutonomyCycle).where(ScenarioAutonomyCycle.id == cycle_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_latest_autonomy_cycle(self) -> ScenarioAutonomyCycle | None:
+        result = await self._session.execute(
+            select(ScenarioAutonomyCycle).order_by(ScenarioAutonomyCycle.started_at.desc()).limit(1)
+        )
+        return result.scalar_one_or_none()
+
+    async def list_recent_autonomy_cycles(self, *, limit: int = 20) -> Sequence[ScenarioAutonomyCycle]:
+        result = await self._session.execute(
+            select(ScenarioAutonomyCycle)
+            .order_by(ScenarioAutonomyCycle.started_at.desc())
+            .limit(max(1, limit))
+        )
+        return result.scalars().all()
+
+    async def count_autonomy_cycles(self) -> int:
+        result = await self._session.execute(select(func.count(ScenarioAutonomyCycle.id)))
+        return int(result.scalar_one() or 0)
+
+    async def create_autonomy_experiment(self, row: ScenarioAutonomyExperiment) -> ScenarioAutonomyExperiment:
+        self._session.add(row)
+        await self._session.flush()
+        await self._session.refresh(row)
+        return row
+
+    async def save_autonomy_experiment(self, row: ScenarioAutonomyExperiment) -> ScenarioAutonomyExperiment:
+        await self._session.flush()
+        await self._session.refresh(row)
+        return row
+
+    async def list_autonomy_experiments(
+        self,
+        *,
+        cycle_id: uuid.UUID,
+    ) -> Sequence[ScenarioAutonomyExperiment]:
+        result = await self._session.execute(
+            select(ScenarioAutonomyExperiment)
+            .where(ScenarioAutonomyExperiment.cycle_id == cycle_id)
+            .order_by(ScenarioAutonomyExperiment.created_at.asc())
+        )
+        return result.scalars().all()
+
+    async def create_autonomy_growth_decision(
+        self,
+        row: ScenarioAutonomyGrowthDecision,
+    ) -> ScenarioAutonomyGrowthDecision:
+        self._session.add(row)
+        await self._session.flush()
+        await self._session.refresh(row)
+        return row
+
+    async def list_autonomy_growth_decisions(
+        self,
+        *,
+        cycle_id: uuid.UUID,
+    ) -> Sequence[ScenarioAutonomyGrowthDecision]:
+        result = await self._session.execute(
+            select(ScenarioAutonomyGrowthDecision)
+            .where(ScenarioAutonomyGrowthDecision.cycle_id == cycle_id)
+            .order_by(ScenarioAutonomyGrowthDecision.created_at.asc())
+        )
+        return result.scalars().all()
+
+    async def create_autonomy_guardrail_event(
+        self,
+        row: ScenarioAutonomyGuardrailEvent,
+    ) -> ScenarioAutonomyGuardrailEvent:
+        self._session.add(row)
+        await self._session.flush()
+        await self._session.refresh(row)
+        return row
+
+    async def list_autonomy_guardrail_events(
+        self,
+        *,
+        cycle_id: uuid.UUID,
+    ) -> Sequence[ScenarioAutonomyGuardrailEvent]:
+        result = await self._session.execute(
+            select(ScenarioAutonomyGuardrailEvent)
+            .where(ScenarioAutonomyGuardrailEvent.cycle_id == cycle_id)
+            .order_by(ScenarioAutonomyGuardrailEvent.created_at.asc())
+        )
+        return result.scalars().all()
+
+    async def list_autonomous_blueprints(
+        self,
+        *,
+        only_published: bool = True,
+        limit: int = 240,
+    ) -> Sequence[UserScenarioBlueprint]:
+        stmt = select(UserScenarioBlueprint).where(UserScenarioBlueprint.autonomous_mode.is_(True))
+        if only_published:
+            stmt = stmt.where(UserScenarioBlueprint.is_published.is_(True))
+        result = await self._session.execute(
+            stmt.order_by(
+                UserScenarioBlueprint.autonomous_quality_score.desc(),
+                UserScenarioBlueprint.updated_at.desc(),
+            ).limit(max(1, limit))
+        )
+        return result.scalars().all()
+
+    async def list_autonomous_iteration_candidates(
+        self,
+        *,
+        min_runs: int = 3,
+        limit: int = 60,
+    ) -> Sequence[UserScenarioBlueprint]:
+        result = await self._session.execute(
+            select(UserScenarioBlueprint)
+            .where(
+                UserScenarioBlueprint.autonomous_mode.is_(True),
+                UserScenarioBlueprint.is_published.is_(True),
+                UserScenarioBlueprint.run_count >= max(1, min_runs),
+            )
+            .order_by(
+                UserScenarioBlueprint.autonomous_quality_score.asc(),
+                UserScenarioBlueprint.updated_at.asc(),
+            )
+            .limit(max(1, limit))
+        )
+        return result.scalars().all()
+
+    async def get_personalization_profile(
+        self,
+        *,
+        user_id: uuid.UUID,
+    ) -> ScenarioAutonomyPersonalizationProfile | None:
+        result = await self._session.execute(
+            select(ScenarioAutonomyPersonalizationProfile).where(
+                ScenarioAutonomyPersonalizationProfile.user_id == user_id
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def create_personalization_profile(
+        self,
+        row: ScenarioAutonomyPersonalizationProfile,
+    ) -> ScenarioAutonomyPersonalizationProfile:
+        self._session.add(row)
+        await self._session.flush()
+        await self._session.refresh(row)
+        return row
+
+    async def save_personalization_profile(
+        self,
+        row: ScenarioAutonomyPersonalizationProfile,
+    ) -> ScenarioAutonomyPersonalizationProfile:
+        await self._session.flush()
+        await self._session.refresh(row)
+        return row

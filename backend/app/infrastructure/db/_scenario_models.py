@@ -261,6 +261,11 @@ class UserScenarioBlueprint(Base):
     is_published: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
     is_premium: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     monetization_mode: Mapped[str] = mapped_column(String(24), nullable=False, default="free", index=True)
+    autonomous_mode: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
+    autonomous_stage: Mapped[str] = mapped_column(String(24), nullable=False, default="manual", index=True)
+    autonomous_quality_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    autonomous_target_segment: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    autonomous_last_iteration_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
     token_price: Mapped[int | None] = mapped_column(Integer, nullable=True)
     input_schema: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     context_text: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -562,4 +567,130 @@ class ScenarioCreatorRewardEvent(Base):
         DateTime(timezone=True),
         nullable=False,
         default=lambda: datetime.now(timezone.utc),
+    )
+
+
+class ScenarioAutonomyCycle(Base):
+    __tablename__ = "scenario_autonomy_cycles"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    trigger: Mapped[str] = mapped_column(String(24), nullable=False, default="manual", index=True)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="running", index=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    generated_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    published_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    iterations_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    notes_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+
+class ScenarioAutonomyExperiment(Base):
+    __tablename__ = "scenario_autonomy_experiments"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    cycle_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("scenario_autonomy_cycles.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    blueprint_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("user_scenario_blueprints.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    experiment_key: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
+    dimension: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="running", index=True)
+    control_variant: Mapped[str] = mapped_column(String(120), nullable=False)
+    treatment_variant: Mapped[str] = mapped_column(String(120), nullable=False)
+    winner_variant: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    baseline_metrics_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    outcome_metrics_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ScenarioAutonomyGrowthDecision(Base):
+    __tablename__ = "scenario_autonomy_growth_decisions"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    cycle_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("scenario_autonomy_cycles.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    source: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
+    campaign: Mapped[str | None] = mapped_column(String(160), nullable=True, index=True)
+    action: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    rationale_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    before_state_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    after_state_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    guardrail_passed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+
+class ScenarioAutonomyGuardrailEvent(Base):
+    __tablename__ = "scenario_autonomy_guardrail_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    cycle_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("scenario_autonomy_cycles.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    scope: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    rule_key: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
+    severity: Mapped[str] = mapped_column(String(24), nullable=False, default="warning")
+    triggered: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
+    details_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+
+class ScenarioAutonomyPersonalizationProfile(Base):
+    __tablename__ = "scenario_autonomy_personalization_profiles"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+    ui_variant: Mapped[str] = mapped_column(String(80), nullable=False, default="control")
+    paywall_variant: Mapped[str] = mapped_column(String(80), nullable=False, default="soft")
+    pricing_variant: Mapped[str] = mapped_column(String(80), nullable=False, default="standard")
+    preferred_categories: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    recommended_blueprint_ids: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
     )

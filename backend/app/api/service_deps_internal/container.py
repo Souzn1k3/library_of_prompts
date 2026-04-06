@@ -54,6 +54,7 @@ from app.modules.scenarios.repository.scenario_demo_repository import ScenarioDe
 from app.modules.scenarios.repository.scenario_platform_repository import ScenarioPlatformRepository
 from app.modules.scenarios.service.scenario_demo_run_service import ScenarioDemoRunService
 from app.modules.scenarios.service.scenario_game_service import ScenarioGameService
+from app.modules.scenarios.service.scenario_autonomy_service import ScenarioAutonomyService
 from app.modules.scenarios.service.scenario_platform_service import ScenarioPlatformService
 from app.modules.scenarios.service.scenario_service import ScenarioService
 
@@ -308,6 +309,17 @@ class ServiceContainer:
             prompt_repo=self.prompt_repository,
             user_repo=self.user_repository,
             wallet=self.wallet_service,
+            settings=self.settings,
+        )
+
+    @cached_property
+    def scenario_autonomy_service(self) -> ScenarioAutonomyService:
+        return ScenarioAutonomyService(
+            repo=self.scenario_platform_repository,
+            platform=self.scenario_platform_service,
+            analytics_repo=self.analytics_repository,
+            analytics=self.analytics_service,
+            billing_repo=self.billing_repository,
             settings=self.settings,
         )
 

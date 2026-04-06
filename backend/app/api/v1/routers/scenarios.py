@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Query, Request, Response
 
 from app.api.deps import get_current_user, get_optional_user
 from app.api.service_deps import (
+    get_scenario_autonomy_service,
     get_scenario_demo_run_service,
     get_scenario_game_service,
     get_scenario_platform_service,
@@ -12,6 +13,11 @@ from app.api.service_deps import (
 from app.api.support.rate_limit import RateLimitRule, enforce_request_rate_limits
 from app.infrastructure.db.models import User
 from app.modules.scenarios.model.scenario import (
+    ScenarioAutonomyCycleRead,
+    ScenarioAutonomyPersonalizationRead,
+    ScenarioAutonomyRunWrite,
+    ScenarioAutonomySelfCheckRead,
+    ScenarioAutonomyStatusRead,
     ScenarioDemoRunStatusRead,
     ScenarioDemoRunTrackRead,
     ScenarioDemoRunTrackWrite,
@@ -56,6 +62,7 @@ from app.modules.scenarios.model.scenario import (
 )
 from app.modules.scenarios.service.scenario_demo_run_service import ScenarioDemoRunService
 from app.modules.scenarios.service.scenario_game_service import ScenarioGameService
+from app.modules.scenarios.service.scenario_autonomy_service import ScenarioAutonomyService
 from app.modules.scenarios.service.scenario_platform_service import ScenarioPlatformService
 from app.modules.scenarios.service.scenario_service import ScenarioService
 
@@ -470,3 +477,39 @@ async def scenarios_team_shared(
     svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
 ) -> list[ScenarioBlueprintRead]:
     return await svc.list_team_shared_blueprints(viewer=current_user)
+
+
+@router.post("/autonomy/run", response_model=ScenarioAutonomyCycleRead)
+async def scenarios_autonomy_run(
+    body: ScenarioAutonomyRunWrite,
+    current_user: User = Depends(get_current_user),
+    svc: ScenarioAutonomyService = Depends(get_scenario_autonomy_service),
+) -> ScenarioAutonomyCycleRead:
+    return await svc.run_autonomous_cycle(
+        actor=current_user,
+        trigger="manual",
+        max_new_scenarios=body.max_new_scenarios,
+        force=body.force,
+    )
+
+
+@router.get("/autonomy/status", response_model=ScenarioAutonomyStatusRead)
+async def scenarios_autonomy_status(
+    svc: ScenarioAutonomyService = Depends(get_scenario_autonomy_service),
+) -> ScenarioAutonomyStatusRead:
+    return await svc.get_status()
+
+
+@router.get("/autonomy/self-check", response_model=ScenarioAutonomySelfCheckRead)
+async def scenarios_autonomy_self_check(
+    svc: ScenarioAutonomyService = Depends(get_scenario_autonomy_service),
+) -> ScenarioAutonomySelfCheckRead:
+    return await svc.get_self_check()
+
+
+@router.get("/autonomy/personalization", response_model=ScenarioAutonomyPersonalizationRead)
+async def scenarios_autonomy_personalization(
+    current_user: User = Depends(get_current_user),
+    svc: ScenarioAutonomyService = Depends(get_scenario_autonomy_service),
+) -> ScenarioAutonomyPersonalizationRead:
+    return await svc.get_personalization(viewer=current_user)

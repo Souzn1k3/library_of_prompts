@@ -279,6 +279,11 @@ class ScenarioBlueprintRead(BaseModel):
     author_display_name: str | None = None
     visibility: str
     monetization_mode: str
+    autonomous_mode: bool = False
+    autonomous_stage: str = "manual"
+    autonomous_quality_score: float = 0.0
+    autonomous_target_segment: str | None = None
+    autonomous_last_iteration_at: datetime | None = None
     is_published: bool
     is_premium: bool
     token_price: int | None
@@ -455,3 +460,98 @@ class ScenarioWorkflowRunAdvanceRead(BaseModel):
     run: ScenarioWorkflowRunRead
     is_completed: bool
     next_blueprint_id: uuid.UUID | None = None
+
+
+class ScenarioAutonomyRunWrite(BaseModel):
+    force: bool = False
+    max_new_scenarios: int | None = Field(default=None, ge=1, le=10)
+
+
+class ScenarioAutonomyNeedSignalRead(BaseModel):
+    source: Literal["search", "failed_runs", "popular_actions", "retention_gap"]
+    key: str
+    strength: float = Field(ge=0.0, le=1.0)
+    evidence_count: int = Field(ge=0)
+
+
+class ScenarioAutonomyExperimentRead(BaseModel):
+    id: uuid.UUID
+    cycle_id: uuid.UUID
+    blueprint_id: uuid.UUID | None = None
+    experiment_key: str
+    dimension: Literal["scenario", "ui", "pricing", "paywall"]
+    status: str
+    control_variant: str
+    treatment_variant: str
+    winner_variant: str | None = None
+    baseline_metrics: dict[str, Any] = Field(default_factory=dict)
+    outcome_metrics: dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime
+    completed_at: datetime | None = None
+
+
+class ScenarioAutonomyGrowthDecisionRead(BaseModel):
+    id: uuid.UUID
+    cycle_id: uuid.UUID
+    source: str
+    campaign: str | None = None
+    action: Literal["scale_channel", "kill_channel", "adjust_budget", "adjust_pricing", "adjust_paywall"]
+    rationale: dict[str, Any] = Field(default_factory=dict)
+    before_state: dict[str, Any] = Field(default_factory=dict)
+    after_state: dict[str, Any] = Field(default_factory=dict)
+    guardrail_passed: bool = True
+    created_at: datetime
+
+
+class ScenarioAutonomyGuardrailRead(BaseModel):
+    id: uuid.UUID
+    cycle_id: uuid.UUID
+    scope: Literal["scenario", "ui", "pricing", "growth", "marketplace"]
+    rule_key: str
+    severity: Literal["info", "warning", "critical"] = "warning"
+    triggered: bool
+    details: dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime
+
+
+class ScenarioAutonomySelfCheckRead(BaseModel):
+    creates_new_scenarios: bool
+    tests_autonomously: bool
+    makes_decisions_autonomously: bool
+    improves_without_human: bool
+    all_passed: bool
+
+
+class ScenarioAutonomyCycleRead(BaseModel):
+    id: uuid.UUID
+    trigger: str
+    status: str
+    started_at: datetime
+    finished_at: datetime | None = None
+    generated_count: int = 0
+    published_count: int = 0
+    iterations_count: int = 0
+    signals: list[ScenarioAutonomyNeedSignalRead] = Field(default_factory=list)
+    experiments: list[ScenarioAutonomyExperimentRead] = Field(default_factory=list)
+    growth_decisions: list[ScenarioAutonomyGrowthDecisionRead] = Field(default_factory=list)
+    guardrails: list[ScenarioAutonomyGuardrailRead] = Field(default_factory=list)
+    self_check: ScenarioAutonomySelfCheckRead
+
+
+class ScenarioAutonomyStatusRead(BaseModel):
+    enabled: bool
+    scheduler_enabled: bool
+    latest_cycle: ScenarioAutonomyCycleRead | None = None
+    total_cycles: int = 0
+    self_check: ScenarioAutonomySelfCheckRead
+
+
+class ScenarioAutonomyPersonalizationRead(BaseModel):
+    user_id: uuid.UUID
+    ui_variant: str
+    paywall_variant: str
+    pricing_variant: str
+    preferred_categories: list[str] = Field(default_factory=list)
+    reasons: list[str] = Field(default_factory=list)
+    recommended_blueprints: list[ScenarioBlueprintRead] = Field(default_factory=list)
+    updated_at: datetime

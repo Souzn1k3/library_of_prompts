@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import uuid
 
 import pytest
 from sqlalchemy import select
@@ -401,3 +402,82 @@ async def test_marketplace_discovery_social_and_lineage_v4(async_client, unique_
     )
     assert comments.status_code == 200
     assert any("remix value" in item["body"] for item in comments.json())
+
+
+@pytest.mark.asyncio
+async def test_autonomous_v5_loop_runs_end_to_end(async_client, unique_email: str):
+    token = await _register(async_client, unique_email, "Autonomy Operator")
+
+    now = datetime.now(timezone.utc)
+    ingest = await async_client.post(
+        "/api/v1/analytics/events",
+        headers={"Authorization": f"Bearer {token}"},
+        json={
+            "events": [
+                {
+                    "event_id": f"auto-signup-{uuid.uuid4().hex[:12]}",
+                    "event_name": "signup_completed",
+                    "session_id": "auto-session-v5",
+                    "timestamp": now.isoformat(),
+                    "context": {"page": "/autonomy", "feature": "test"},
+                    "metadata": {"source": "organic"},
+                },
+                {
+                    "event_id": f"auto-run-{uuid.uuid4().hex[:12]}",
+                    "event_name": "scenario_run",
+                    "session_id": "auto-session-v5",
+                    "timestamp": now.isoformat(),
+                    "context": {"page": "/autonomy", "feature": "test"},
+                    "metadata": {"status": "failed", "intent": "retention rescue"},
+                },
+                {
+                    "event_id": f"auto-search-{uuid.uuid4().hex[:12]}",
+                    "event_name": "catalog_search_used",
+                    "session_id": "auto-session-v5",
+                    "timestamp": now.isoformat(),
+                    "context": {"page": "/autonomy", "feature": "test"},
+                    "metadata": {"query": "improve retention in onboarding"},
+                },
+            ]
+        },
+    )
+    assert ingest.status_code == 202
+
+    run = await async_client.post(
+        "/api/v1/scenarios/autonomy/run",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"force": True, "max_new_scenarios": 2},
+    )
+    assert run.status_code == 200
+    payload = run.json()
+    assert payload["generated_count"] >= 1
+    assert payload["published_count"] >= 1
+    assert isinstance(payload["experiments"], list)
+    assert len(payload["experiments"]) >= 1
+    assert payload["self_check"]["creates_new_scenarios"] is True
+    assert payload["self_check"]["tests_autonomously"] is True
+
+    status = await async_client.get(
+        "/api/v1/scenarios/autonomy/status",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert status.status_code == 200
+    status_payload = status.json()
+    assert status_payload["enabled"] is True
+    assert status_payload["latest_cycle"] is not None
+
+    self_check = await async_client.get(
+        "/api/v1/scenarios/autonomy/self-check",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert self_check.status_code == 200
+    assert self_check.json()["creates_new_scenarios"] is True
+
+    personalization = await async_client.get(
+        "/api/v1/scenarios/autonomy/personalization",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert personalization.status_code == 200
+    personalization_payload = personalization.json()
+    assert personalization_payload["ui_variant"] in {"control", "guided"}
+    assert isinstance(personalization_payload["recommended_blueprints"], list)
