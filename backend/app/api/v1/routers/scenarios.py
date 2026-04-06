@@ -23,11 +23,20 @@ from app.modules.scenarios.model.scenario import (
     ScenarioMarketplaceForkRead,
     ScenarioNextStepRead,
     ScenarioPackRead,
+    ScenarioBlueprintCommentRead,
+    ScenarioBlueprintCommentWrite,
+    ScenarioBlueprintLineageRead,
     ScenarioBlueprintPatchWrite,
     ScenarioBlueprintPublishRead,
+    ScenarioBlueprintRatingRead,
+    ScenarioBlueprintRatingWrite,
     ScenarioBlueprintRead,
+    ScenarioBlueprintSaveRead,
     ScenarioBlueprintShareRead,
     ScenarioBlueprintShareWrite,
+    ScenarioBlueprintUsageTrackRead,
+    ScenarioBlueprintUsageTrackWrite,
+    ScenarioBlueprintVersionRead,
     ScenarioBlueprintWrite,
     ScenarioChainRead,
     ScenarioShowcaseCreateWrite,
@@ -281,6 +290,29 @@ async def scenarios_studio_publish(
     return await svc.publish_blueprint(viewer=current_user, blueprint_id=blueprint_id)
 
 
+@router.get("/studio/{blueprint_id}/versions", response_model=list[ScenarioBlueprintVersionRead])
+async def scenarios_studio_versions(
+    blueprint_id: uuid.UUID,
+    limit: int = Query(default=40, ge=1, le=120),
+    current_user: User = Depends(get_current_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> list[ScenarioBlueprintVersionRead]:
+    return await svc.list_blueprint_versions(
+        viewer=current_user,
+        blueprint_id=blueprint_id,
+        limit=limit,
+    )
+
+
+@router.get("/studio/{blueprint_id}/lineage", response_model=ScenarioBlueprintLineageRead)
+async def scenarios_studio_lineage(
+    blueprint_id: uuid.UUID,
+    viewer: User | None = Depends(get_optional_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> ScenarioBlueprintLineageRead:
+    return await svc.get_blueprint_lineage(viewer=viewer, blueprint_id=blueprint_id)
+
+
 @router.post("/studio/{blueprint_id}/share", response_model=ScenarioBlueprintShareRead)
 async def scenarios_studio_share(
     blueprint_id: uuid.UUID,
@@ -294,9 +326,22 @@ async def scenarios_studio_share(
 @router.get("/marketplace", response_model=list[ScenarioBlueprintRead])
 async def scenarios_marketplace(
     limit: int = Query(default=24, ge=1, le=60),
+    section: str = Query(default="trending", min_length=2, max_length=32),
+    search: str | None = Query(default=None, max_length=140),
+    category: str | None = Query(default=None, max_length=40),
+    tags: str | None = Query(default=None, max_length=240),
+    viewer: User | None = Depends(get_optional_user),
     svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
 ) -> list[ScenarioBlueprintRead]:
-    return await svc.list_marketplace_blueprints(limit=limit)
+    parsed_tags = [item.strip() for item in (tags or "").split(",") if item.strip()]
+    return await svc.list_marketplace_blueprints(
+        limit=limit,
+        section=section,
+        search=search,
+        category=category,
+        tags=parsed_tags,
+        viewer=viewer,
+    )
 
 
 @router.post("/marketplace/{blueprint_id}/fork", response_model=ScenarioMarketplaceForkRead)
@@ -308,6 +353,15 @@ async def scenarios_marketplace_fork(
     return await svc.fork_marketplace_blueprint(viewer=current_user, blueprint_id=blueprint_id)
 
 
+@router.post("/marketplace/{blueprint_id}/remix", response_model=ScenarioMarketplaceForkRead)
+async def scenarios_marketplace_remix(
+    blueprint_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> ScenarioMarketplaceForkRead:
+    return await svc.remix_marketplace_blueprint(viewer=current_user, blueprint_id=blueprint_id)
+
+
 @router.post("/marketplace/{blueprint_id}/like", response_model=ScenarioBlueprintRead)
 async def scenarios_marketplace_like(
     blueprint_id: uuid.UUID,
@@ -315,6 +369,63 @@ async def scenarios_marketplace_like(
     svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
 ) -> ScenarioBlueprintRead:
     return await svc.like_marketplace_blueprint(viewer=current_user, blueprint_id=blueprint_id)
+
+
+@router.post("/marketplace/{blueprint_id}/save", response_model=ScenarioBlueprintSaveRead)
+async def scenarios_marketplace_save(
+    blueprint_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> ScenarioBlueprintSaveRead:
+    return await svc.toggle_save_blueprint(viewer=current_user, blueprint_id=blueprint_id)
+
+
+@router.post("/marketplace/{blueprint_id}/rating", response_model=ScenarioBlueprintRatingRead)
+async def scenarios_marketplace_rate(
+    blueprint_id: uuid.UUID,
+    body: ScenarioBlueprintRatingWrite,
+    current_user: User = Depends(get_current_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> ScenarioBlueprintRatingRead:
+    return await svc.rate_blueprint(viewer=current_user, blueprint_id=blueprint_id, body=body)
+
+
+@router.get("/marketplace/{blueprint_id}/comments", response_model=list[ScenarioBlueprintCommentRead])
+async def scenarios_marketplace_comments(
+    blueprint_id: uuid.UUID,
+    limit: int = Query(default=30, ge=1, le=120),
+    viewer: User | None = Depends(get_optional_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> list[ScenarioBlueprintCommentRead]:
+    return await svc.list_blueprint_comments(viewer=viewer, blueprint_id=blueprint_id, limit=limit)
+
+
+@router.post("/marketplace/{blueprint_id}/comments", response_model=ScenarioBlueprintCommentRead)
+async def scenarios_marketplace_comment_create(
+    blueprint_id: uuid.UUID,
+    body: ScenarioBlueprintCommentWrite,
+    current_user: User = Depends(get_current_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> ScenarioBlueprintCommentRead:
+    return await svc.create_blueprint_comment(
+        viewer=current_user,
+        blueprint_id=blueprint_id,
+        body=body,
+    )
+
+
+@router.post("/marketplace/{blueprint_id}/usage", response_model=ScenarioBlueprintUsageTrackRead)
+async def scenarios_marketplace_track_usage(
+    blueprint_id: uuid.UUID,
+    body: ScenarioBlueprintUsageTrackWrite,
+    viewer: User | None = Depends(get_optional_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> ScenarioBlueprintUsageTrackRead:
+    return await svc.track_blueprint_usage(
+        viewer=viewer,
+        blueprint_id=blueprint_id,
+        body=body,
+    )
 
 
 @router.get("/workflows/mine", response_model=list[ScenarioWorkflowRead])

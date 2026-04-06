@@ -1,10 +1,19 @@
 import { API_ENDPOINTS, apiPath } from "../constants/api";
 import type {
   ScenarioBlueprintPatch,
+  ScenarioBlueprintCommentRead,
+  ScenarioBlueprintCommentWrite,
+  ScenarioBlueprintLineageRead,
   ScenarioBlueprintPublishRead,
+  ScenarioBlueprintRatingRead,
+  ScenarioBlueprintRatingWrite,
   ScenarioBlueprintRead,
+  ScenarioBlueprintSaveRead,
   ScenarioBlueprintShareRead,
   ScenarioBlueprintShareWrite,
+  ScenarioBlueprintUsageTrackRead,
+  ScenarioBlueprintUsageTrackWrite,
+  ScenarioBlueprintVersionRead,
   ScenarioBlueprintWrite,
   ScenarioChainRead,
   ScenarioDemoRunStatusRead,
@@ -145,6 +154,21 @@ export async function publishScenarioBlueprint(blueprintId: string): Promise<Sce
   return authFetch<ScenarioBlueprintPublishRead>(apiPath.scenarioStudioPublish(blueprintId), jsonInit("POST", {}));
 }
 
+export async function fetchScenarioBlueprintVersions(
+  blueprintId: string,
+  limit = 40,
+): Promise<ScenarioBlueprintVersionRead[]> {
+  return authFetch<ScenarioBlueprintVersionRead[]>(
+    `${apiPath.scenarioStudioVersions(blueprintId)}?limit=${encodeURIComponent(String(limit))}`,
+  );
+}
+
+export async function fetchScenarioBlueprintLineage(
+  blueprintId: string,
+): Promise<ScenarioBlueprintLineageRead> {
+  return authFetch<ScenarioBlueprintLineageRead>(apiPath.scenarioStudioLineage(blueprintId));
+}
+
 export async function shareScenarioBlueprint(
   blueprintId: string,
   body: ScenarioBlueprintShareWrite,
@@ -152,9 +176,34 @@ export async function shareScenarioBlueprint(
   return authFetch<ScenarioBlueprintShareRead>(apiPath.scenarioStudioShare(blueprintId), jsonInit("POST", body));
 }
 
-export async function fetchScenarioMarketplace(limit = 24): Promise<ScenarioBlueprintRead[]> {
+export async function fetchScenarioMarketplace(
+  params:
+    | number
+    | {
+        limit?: number;
+        section?: "trending" | "new" | "top" | "best" | "personalized";
+        search?: string | null;
+        category?: string | null;
+        tags?: string[] | null;
+      } = 24,
+): Promise<ScenarioBlueprintRead[]> {
+  const normalized = typeof params === "number" ? { limit: params } : params;
+  const query = new URLSearchParams();
+  query.set("limit", String(normalized.limit ?? 24));
+  if (normalized.section) {
+    query.set("section", normalized.section);
+  }
+  if (normalized.search) {
+    query.set("search", normalized.search);
+  }
+  if (normalized.category) {
+    query.set("category", normalized.category);
+  }
+  if (normalized.tags && normalized.tags.length) {
+    query.set("tags", normalized.tags.join(","));
+  }
   return authFetch<ScenarioBlueprintRead[]>(
-    `${API_ENDPOINTS.scenariosMarketplace}?limit=${encodeURIComponent(String(limit))}`,
+    `${API_ENDPOINTS.scenariosMarketplace}?${query.toString()}`,
   );
 }
 
@@ -164,10 +213,52 @@ export async function forkScenarioMarketplaceBlueprint(
   return authFetch<ScenarioMarketplaceForkRead>(apiPath.scenarioMarketplaceFork(blueprintId), jsonInit("POST", {}));
 }
 
+export async function remixScenarioMarketplaceBlueprint(
+  blueprintId: string,
+): Promise<ScenarioMarketplaceForkRead> {
+  return authFetch<ScenarioMarketplaceForkRead>(apiPath.scenarioMarketplaceRemix(blueprintId), jsonInit("POST", {}));
+}
+
 export async function likeScenarioMarketplaceBlueprint(
   blueprintId: string,
 ): Promise<ScenarioBlueprintRead> {
   return authFetch<ScenarioBlueprintRead>(apiPath.scenarioMarketplaceLike(blueprintId), jsonInit("POST", {}));
+}
+
+export async function saveScenarioMarketplaceBlueprint(
+  blueprintId: string,
+): Promise<ScenarioBlueprintSaveRead> {
+  return authFetch<ScenarioBlueprintSaveRead>(apiPath.scenarioMarketplaceSave(blueprintId), jsonInit("POST", {}));
+}
+
+export async function rateScenarioMarketplaceBlueprint(
+  blueprintId: string,
+  body: ScenarioBlueprintRatingWrite,
+): Promise<ScenarioBlueprintRatingRead> {
+  return authFetch<ScenarioBlueprintRatingRead>(apiPath.scenarioMarketplaceRating(blueprintId), jsonInit("POST", body));
+}
+
+export async function fetchScenarioMarketplaceComments(
+  blueprintId: string,
+  limit = 30,
+): Promise<ScenarioBlueprintCommentRead[]> {
+  return authFetch<ScenarioBlueprintCommentRead[]>(
+    `${apiPath.scenarioMarketplaceComments(blueprintId)}?limit=${encodeURIComponent(String(limit))}`,
+  );
+}
+
+export async function createScenarioMarketplaceComment(
+  blueprintId: string,
+  body: ScenarioBlueprintCommentWrite,
+): Promise<ScenarioBlueprintCommentRead> {
+  return authFetch<ScenarioBlueprintCommentRead>(apiPath.scenarioMarketplaceComments(blueprintId), jsonInit("POST", body));
+}
+
+export async function trackScenarioMarketplaceUsage(
+  blueprintId: string,
+  body: ScenarioBlueprintUsageTrackWrite,
+): Promise<ScenarioBlueprintUsageTrackRead> {
+  return authFetch<ScenarioBlueprintUsageTrackRead>(apiPath.scenarioMarketplaceUsage(blueprintId), jsonInit("POST", body));
 }
 
 export async function fetchMyScenarioWorkflows(): Promise<ScenarioWorkflowRead[]> {

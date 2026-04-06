@@ -285,3 +285,119 @@ async def test_showcase_share_and_upvote(async_client, unique_email: str):
     )
     assert upvote.status_code == 200
     assert upvote.json()["upvotes"] >= 1
+
+
+@pytest.mark.asyncio
+async def test_marketplace_discovery_social_and_lineage_v4(async_client, unique_email: str):
+    creator_email = unique_email
+    consumer_email = f"consumer_v4_{unique_email}"
+
+    creator_token = await _register(async_client, creator_email, "Creator V4")
+    consumer_token = await _register(async_client, consumer_email, "Consumer V4")
+    await _set_user_credits(consumer_email, 240)
+
+    create_blueprint = await async_client.post(
+        "/api/v1/scenarios/studio",
+        headers={"Authorization": f"Bearer {creator_token}"},
+        json={
+            "slug": "v4-market-os",
+            "title": "V4 Market OS",
+            "summary": "Creator operating system for scenario growth loop.",
+            "category": "growth",
+            "tags": ["growth", "onboarding", "retention"],
+            "visibility": "premium",
+            "monetization_mode": "paid",
+            "token_price": 20,
+            "logic_text": "1. Capture context. 2. Generate response. 3. Validate and publish.",
+        },
+    )
+    assert create_blueprint.status_code == 200
+    blueprint_id = create_blueprint.json()["id"]
+
+    patch_blueprint = await async_client.patch(
+        f"/api/v1/scenarios/studio/{blueprint_id}",
+        headers={"Authorization": f"Bearer {creator_token}"},
+        json={"summary": "Updated summary for version two."},
+    )
+    assert patch_blueprint.status_code == 200
+    assert patch_blueprint.json()["version_number"] >= 2
+
+    publish = await async_client.post(
+        f"/api/v1/scenarios/studio/{blueprint_id}/publish",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert publish.status_code == 200
+    assert publish.json()["blueprint"]["is_published"] is True
+
+    discovery = await async_client.get(
+        "/api/v1/scenarios/marketplace?section=trending&search=v4&category=growth&limit=12",
+        headers={"Authorization": f"Bearer {consumer_token}"},
+    )
+    assert discovery.status_code == 200
+    discovered = discovery.json()
+    assert any(item["id"] == blueprint_id for item in discovered)
+
+    rate = await async_client.post(
+        f"/api/v1/scenarios/marketplace/{blueprint_id}/rating",
+        headers={"Authorization": f"Bearer {consumer_token}"},
+        json={"rating": 5},
+    )
+    assert rate.status_code == 200
+    assert rate.json()["rating_count"] >= 1
+
+    comment = await async_client.post(
+        f"/api/v1/scenarios/marketplace/{blueprint_id}/comments",
+        headers={"Authorization": f"Bearer {consumer_token}"},
+        json={"body": "Great creator scenario, clear loop and remix value."},
+    )
+    assert comment.status_code == 200
+
+    save = await async_client.post(
+        f"/api/v1/scenarios/marketplace/{blueprint_id}/save",
+        headers={"Authorization": f"Bearer {consumer_token}"},
+    )
+    assert save.status_code == 200
+    assert save.json()["saved"] is True
+
+    run_event = await async_client.post(
+        f"/api/v1/scenarios/marketplace/{blueprint_id}/usage",
+        headers={"Authorization": f"Bearer {consumer_token}"},
+        json={"event": "run"},
+    )
+    assert run_event.status_code == 200
+    complete_event = await async_client.post(
+        f"/api/v1/scenarios/marketplace/{blueprint_id}/usage",
+        headers={"Authorization": f"Bearer {consumer_token}"},
+        json={"event": "complete"},
+    )
+    assert complete_event.status_code == 200
+    assert complete_event.json()["completion_count"] >= 1
+
+    remix = await async_client.post(
+        f"/api/v1/scenarios/marketplace/{blueprint_id}/remix",
+        headers={"Authorization": f"Bearer {consumer_token}"},
+    )
+    assert remix.status_code == 200
+    remixed_id = remix.json()["forked_blueprint"]["id"]
+
+    lineage = await async_client.get(
+        f"/api/v1/scenarios/studio/{remixed_id}/lineage",
+        headers={"Authorization": f"Bearer {consumer_token}"},
+    )
+    assert lineage.status_code == 200
+    lineage_payload = lineage.json()
+    assert len(lineage_payload["chain"]) >= 1
+
+    versions = await async_client.get(
+        f"/api/v1/scenarios/studio/{blueprint_id}/versions?limit=12",
+        headers={"Authorization": f"Bearer {creator_token}"},
+    )
+    assert versions.status_code == 200
+    assert len(versions.json()) >= 2
+
+    comments = await async_client.get(
+        f"/api/v1/scenarios/marketplace/{blueprint_id}/comments?limit=20",
+        headers={"Authorization": f"Bearer {consumer_token}"},
+    )
+    assert comments.status_code == 200
+    assert any("remix value" in item["body"] for item in comments.json())

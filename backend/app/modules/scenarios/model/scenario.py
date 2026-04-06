@@ -236,13 +236,16 @@ class ScenarioBlueprintWrite(BaseModel):
     title: str = Field(min_length=3, max_length=260)
     summary: str | None = Field(default=None, max_length=700)
     category: Literal["utility", "learning", "productivity", "entertainment", "growth"] = "utility"
+    tags: list[str] = Field(default_factory=list, max_length=20)
+    metadata: dict[str, Any] | None = None
     input_schema: dict[str, Any] | None = None
     context_text: str | None = Field(default=None, max_length=4000)
     logic_text: str | None = Field(default=None, max_length=6000)
     output_text: str | None = Field(default=None, max_length=4000)
     run_instructions: str | None = Field(default=None, max_length=3000)
     source_prompt_slug: str | None = Field(default=None, max_length=200)
-    visibility: Literal["private", "team", "public", "marketplace"] = "private"
+    visibility: Literal["private", "team", "public", "marketplace", "premium"] = "private"
+    monetization_mode: Literal["free", "pro_only", "paid"] = "free"
     is_premium: bool = False
     token_price: int | None = Field(default=None, ge=1, le=10000)
 
@@ -251,12 +254,15 @@ class ScenarioBlueprintPatchWrite(BaseModel):
     title: str | None = Field(default=None, min_length=3, max_length=260)
     summary: str | None = Field(default=None, max_length=700)
     category: Literal["utility", "learning", "productivity", "entertainment", "growth"] | None = None
+    tags: list[str] | None = Field(default=None, max_length=20)
+    metadata: dict[str, Any] | None = None
     input_schema: dict[str, Any] | None = None
     context_text: str | None = Field(default=None, max_length=4000)
     logic_text: str | None = Field(default=None, max_length=6000)
     output_text: str | None = Field(default=None, max_length=4000)
     run_instructions: str | None = Field(default=None, max_length=3000)
-    visibility: Literal["private", "team", "public", "marketplace"] | None = None
+    visibility: Literal["private", "team", "public", "marketplace", "premium"] | None = None
+    monetization_mode: Literal["free", "pro_only", "paid"] | None = None
     is_premium: bool | None = None
     token_price: int | None = Field(default=None, ge=1, le=10000)
 
@@ -268,7 +274,11 @@ class ScenarioBlueprintRead(BaseModel):
     title: str
     summary: str | None
     category: str
+    tags: list[str]
+    metadata: dict[str, Any] | None = None
+    author_display_name: str | None = None
     visibility: str
+    monetization_mode: str
     is_published: bool
     is_premium: bool
     token_price: int | None
@@ -278,8 +288,17 @@ class ScenarioBlueprintRead(BaseModel):
     output_text: str | None
     run_instructions: str | None
     usage_count: int
+    run_count: int
+    completion_count: int
+    save_count: int
     fork_count: int
     like_count: int
+    comment_count: int
+    rating_average: float
+    rating_count: int
+    version_number: int
+    forked_from_id: uuid.UUID | None = None
+    root_blueprint_id: uuid.UUID | None = None
     created_at: datetime
     updated_at: datetime
     published_at: datetime | None
@@ -314,6 +333,82 @@ class ScenarioMarketplaceForkRead(BaseModel):
     token_spent: int = 0
     balance_after: int | None = None
     creator_reward_applied: bool = False
+
+
+class ScenarioBlueprintVersionRead(BaseModel):
+    id: uuid.UUID
+    blueprint_id: uuid.UUID
+    version_number: int
+    snapshot_json: dict[str, Any]
+    change_note: str | None = None
+    created_by_user_id: uuid.UUID | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ScenarioBlueprintLineageNodeRead(BaseModel):
+    id: uuid.UUID
+    slug: str
+    title: str
+    owner_user_id: uuid.UUID
+    version_number: int
+    forked_from_id: uuid.UUID | None = None
+    root_blueprint_id: uuid.UUID | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ScenarioBlueprintLineageRead(BaseModel):
+    root_blueprint_id: uuid.UUID
+    chain: list[ScenarioBlueprintLineageNodeRead]
+    children: list[ScenarioBlueprintLineageNodeRead]
+
+
+class ScenarioBlueprintCommentWrite(BaseModel):
+    body: str = Field(min_length=1, max_length=2000)
+
+
+class ScenarioBlueprintCommentRead(BaseModel):
+    id: uuid.UUID
+    blueprint_id: uuid.UUID
+    author_user_id: uuid.UUID | None = None
+    author_display_name: str | None = None
+    body: str
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ScenarioBlueprintRatingWrite(BaseModel):
+    rating: int = Field(ge=1, le=5)
+
+
+class ScenarioBlueprintRatingRead(BaseModel):
+    blueprint_id: uuid.UUID
+    rating: int
+    rating_average: float
+    rating_count: int
+
+
+class ScenarioBlueprintSaveRead(BaseModel):
+    blueprint_id: uuid.UUID
+    saved: bool
+    save_count: int
+
+
+class ScenarioBlueprintUsageTrackWrite(BaseModel):
+    event: Literal["run", "complete"]
+
+
+class ScenarioBlueprintUsageTrackRead(BaseModel):
+    blueprint_id: uuid.UUID
+    event: Literal["run", "complete"]
+    usage_count: int
+    run_count: int
+    completion_count: int
 
 
 class ScenarioWorkflowWrite(BaseModel):

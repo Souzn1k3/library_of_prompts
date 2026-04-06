@@ -94,12 +94,26 @@ export const apiPath = {
   scenarioStudioById: (blueprintId: string) => `${API_ENDPOINTS.scenariosStudio}/${encodeURIComponent(blueprintId)}`,
   scenarioStudioPublish: (blueprintId: string) =>
     `${API_ENDPOINTS.scenariosStudio}/${encodeURIComponent(blueprintId)}/publish`,
+  scenarioStudioVersions: (blueprintId: string) =>
+    `${API_ENDPOINTS.scenariosStudio}/${encodeURIComponent(blueprintId)}/versions`,
+  scenarioStudioLineage: (blueprintId: string) =>
+    `${API_ENDPOINTS.scenariosStudio}/${encodeURIComponent(blueprintId)}/lineage`,
   scenarioStudioShare: (blueprintId: string) =>
     `${API_ENDPOINTS.scenariosStudio}/${encodeURIComponent(blueprintId)}/share`,
   scenarioMarketplaceFork: (blueprintId: string) =>
     `${API_ENDPOINTS.scenariosMarketplace}/${encodeURIComponent(blueprintId)}/fork`,
+  scenarioMarketplaceRemix: (blueprintId: string) =>
+    `${API_ENDPOINTS.scenariosMarketplace}/${encodeURIComponent(blueprintId)}/remix`,
   scenarioMarketplaceLike: (blueprintId: string) =>
     `${API_ENDPOINTS.scenariosMarketplace}/${encodeURIComponent(blueprintId)}/like`,
+  scenarioMarketplaceSave: (blueprintId: string) =>
+    `${API_ENDPOINTS.scenariosMarketplace}/${encodeURIComponent(blueprintId)}/save`,
+  scenarioMarketplaceRating: (blueprintId: string) =>
+    `${API_ENDPOINTS.scenariosMarketplace}/${encodeURIComponent(blueprintId)}/rating`,
+  scenarioMarketplaceComments: (blueprintId: string) =>
+    `${API_ENDPOINTS.scenariosMarketplace}/${encodeURIComponent(blueprintId)}/comments`,
+  scenarioMarketplaceUsage: (blueprintId: string) =>
+    `${API_ENDPOINTS.scenariosMarketplace}/${encodeURIComponent(blueprintId)}/usage`,
   scenarioWorkflowRun: (workflowId: string) =>
     `${API_ENDPOINTS.scenariosWorkflows}/${encodeURIComponent(workflowId)}/run`,
   scenarioWorkflowAdvanceRun: (runId: string) =>

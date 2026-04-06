@@ -3,10 +3,14 @@ from __future__ import annotations
 import uuid
 from collections.abc import Sequence
 
-from sqlalchemy import select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.infrastructure.db.models import (
+    ScenarioBlueprintComment,
+    ScenarioBlueprintRating,
+    ScenarioBlueprintSave,
+    ScenarioBlueprintVersion,
     ScenarioCreatorRewardEvent,
     ScenarioOutputShowcase,
     UserScenarioBlueprint,
@@ -87,6 +91,33 @@ class ScenarioPlatformRepository:
         )
         return result.scalars().all()
 
+    async def list_public_blueprints_filtered(
+        self,
+        *,
+        limit: int = 24,
+        search: str | None = None,
+        category: str | None = None,
+    ) -> Sequence[UserScenarioBlueprint]:
+        stmt = select(UserScenarioBlueprint).where(
+            UserScenarioBlueprint.is_published.is_(True),
+            UserScenarioBlueprint.visibility.in_(["public", "marketplace"]),
+        )
+        if category:
+            stmt = stmt.where(UserScenarioBlueprint.category == category)
+        if search:
+            needle = f"%{search.strip().lower()}%"
+            stmt = stmt.where(
+                or_(
+                    func.lower(UserScenarioBlueprint.title).like(needle),
+                    func.lower(UserScenarioBlueprint.slug).like(needle),
+                    func.lower(func.coalesce(UserScenarioBlueprint.summary, "")).like(needle),
+                )
+            )
+        result = await self._session.execute(
+            stmt.order_by(UserScenarioBlueprint.updated_at.desc()).limit(max(limit, 1))
+        )
+        return result.scalars().all()
+
     async def list_shared_blueprints_for_member(
         self,
         *,
@@ -115,6 +146,24 @@ class ScenarioPlatformRepository:
         await self._session.flush()
         await self._session.refresh(blueprint)
         return blueprint
+
+    async def list_blueprint_children(self, *, blueprint_id: uuid.UUID, limit: int = 64) -> Sequence[UserScenarioBlueprint]:
+        result = await self._session.execute(
+            select(UserScenarioBlueprint)
+            .where(UserScenarioBlueprint.forked_from_id == blueprint_id)
+            .order_by(UserScenarioBlueprint.created_at.desc())
+            .limit(limit)
+        )
+        return result.scalars().all()
+
+    async def list_blueprints_by_root(self, *, root_blueprint_id: uuid.UUID, limit: int = 256) -> Sequence[UserScenarioBlueprint]:
+        result = await self._session.execute(
+            select(UserScenarioBlueprint)
+            .where(UserScenarioBlueprint.root_blueprint_id == root_blueprint_id)
+            .order_by(UserScenarioBlueprint.created_at.asc())
+            .limit(limit)
+        )
+        return result.scalars().all()
 
     async def get_blueprint_share(
         self,
@@ -148,6 +197,119 @@ class ScenarioPlatformRepository:
             .order_by(UserScenarioBlueprintShare.created_at.asc())
         )
         return result.scalars().all()
+
+    async def create_blueprint_version(self, version: ScenarioBlueprintVersion) -> ScenarioBlueprintVersion:
+        self._session.add(version)
+        await self._session.flush()
+        await self._session.refresh(version)
+        return version
+
+    async def list_blueprint_versions(
+        self,
+        *,
+        blueprint_id: uuid.UUID,
+        limit: int = 40,
+    ) -> Sequence[ScenarioBlueprintVersion]:
+        result = await self._session.execute(
+            select(ScenarioBlueprintVersion)
+            .where(ScenarioBlueprintVersion.blueprint_id == blueprint_id)
+            .order_by(ScenarioBlueprintVersion.version_number.desc(), ScenarioBlueprintVersion.created_at.desc())
+            .limit(limit)
+        )
+        return result.scalars().all()
+
+    async def get_blueprint_rating_by_user(
+        self,
+        *,
+        blueprint_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> ScenarioBlueprintRating | None:
+        result = await self._session.execute(
+            select(ScenarioBlueprintRating).where(
+                ScenarioBlueprintRating.blueprint_id == blueprint_id,
+                ScenarioBlueprintRating.user_id == user_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def create_blueprint_rating(self, rating: ScenarioBlueprintRating) -> ScenarioBlueprintRating:
+        self._session.add(rating)
+        await self._session.flush()
+        await self._session.refresh(rating)
+        return rating
+
+    async def save_blueprint_rating(self, rating: ScenarioBlueprintRating) -> ScenarioBlueprintRating:
+        await self._session.flush()
+        await self._session.refresh(rating)
+        return rating
+
+    async def count_blueprint_ratings(self, *, blueprint_id: uuid.UUID) -> tuple[int, float]:
+        result = await self._session.execute(
+            select(
+                func.count(ScenarioBlueprintRating.id),
+                func.coalesce(func.avg(ScenarioBlueprintRating.rating), 0.0),
+            ).where(ScenarioBlueprintRating.blueprint_id == blueprint_id)
+        )
+        row = result.one()
+        return int(row[0] or 0), float(row[1] or 0.0)
+
+    async def get_blueprint_save_by_user(
+        self,
+        *,
+        blueprint_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> ScenarioBlueprintSave | None:
+        result = await self._session.execute(
+            select(ScenarioBlueprintSave).where(
+                ScenarioBlueprintSave.blueprint_id == blueprint_id,
+                ScenarioBlueprintSave.user_id == user_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def create_blueprint_save(self, save: ScenarioBlueprintSave) -> ScenarioBlueprintSave:
+        self._session.add(save)
+        await self._session.flush()
+        await self._session.refresh(save)
+        return save
+
+    async def delete_blueprint_save(self, save: ScenarioBlueprintSave) -> None:
+        await self._session.delete(save)
+        await self._session.flush()
+
+    async def count_blueprint_saves(self, *, blueprint_id: uuid.UUID) -> int:
+        result = await self._session.execute(
+            select(func.count(ScenarioBlueprintSave.id)).where(ScenarioBlueprintSave.blueprint_id == blueprint_id)
+        )
+        return int(result.scalar_one() or 0)
+
+    async def create_blueprint_comment(self, comment: ScenarioBlueprintComment) -> ScenarioBlueprintComment:
+        self._session.add(comment)
+        await self._session.flush()
+        await self._session.refresh(comment)
+        return comment
+
+    async def list_blueprint_comments(
+        self,
+        *,
+        blueprint_id: uuid.UUID,
+        limit: int = 40,
+    ) -> Sequence[ScenarioBlueprintComment]:
+        result = await self._session.execute(
+            select(ScenarioBlueprintComment)
+            .where(ScenarioBlueprintComment.blueprint_id == blueprint_id)
+            .order_by(ScenarioBlueprintComment.created_at.desc())
+            .limit(limit)
+        )
+        return result.scalars().all()
+
+    async def count_blueprint_comments(self, *, blueprint_id: uuid.UUID) -> int:
+        result = await self._session.execute(
+            select(func.count(ScenarioBlueprintComment.id)).where(
+                ScenarioBlueprintComment.blueprint_id == blueprint_id
+            )
+        )
+        return int(result.scalar_one() or 0)
 
     async def create_workflow(self, workflow: UserScenarioWorkflow) -> UserScenarioWorkflow:
         self._session.add(workflow)

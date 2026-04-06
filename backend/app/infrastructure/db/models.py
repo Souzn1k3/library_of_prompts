@@ -89,6 +89,10 @@ from ._economy_models import (  # noqa: F401
 )
 from ._scenario_models import (  # noqa: F401
     GuestScenarioRunUsage,
+    ScenarioBlueprintComment,
+    ScenarioBlueprintRating,
+    ScenarioBlueprintSave,
+    ScenarioBlueprintVersion,
     ScenarioCreatorRewardEvent,
     ScenarioGameTokenClaim,
     ScenarioGameTokenEvent,

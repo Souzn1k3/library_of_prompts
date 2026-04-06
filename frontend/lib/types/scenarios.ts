@@ -225,13 +225,16 @@ export type ScenarioBlueprintWrite = {
   title: string;
   summary?: string | null;
   category: "utility" | "learning" | "productivity" | "entertainment" | "growth";
+  tags?: string[];
+  metadata?: Record<string, unknown> | null;
   input_schema?: Record<string, unknown> | null;
   context_text?: string | null;
   logic_text?: string | null;
   output_text?: string | null;
   run_instructions?: string | null;
   source_prompt_slug?: string | null;
-  visibility?: "private" | "team" | "public" | "marketplace";
+  visibility?: "private" | "team" | "public" | "marketplace" | "premium";
+  monetization_mode?: "free" | "pro_only" | "paid";
   is_premium?: boolean;
   token_price?: number | null;
 };
@@ -245,7 +248,11 @@ export type ScenarioBlueprintRead = {
   title: string;
   summary: string | null;
   category: string;
+  tags: string[];
+  metadata: Record<string, unknown> | null;
+  author_display_name: string | null;
   visibility: string;
+  monetization_mode: string;
   is_published: boolean;
   is_premium: boolean;
   token_price: number | null;
@@ -255,8 +262,17 @@ export type ScenarioBlueprintRead = {
   output_text: string | null;
   run_instructions: string | null;
   usage_count: number;
+  run_count: number;
+  completion_count: number;
+  save_count: number;
   fork_count: number;
   like_count: number;
+  comment_count: number;
+  rating_average: number;
+  rating_count: number;
+  version_number: number;
+  forked_from_id: string | null;
+  root_blueprint_id: string | null;
   created_at: string;
   updated_at: string;
   published_at: string | null;
@@ -287,6 +303,76 @@ export type ScenarioMarketplaceForkRead = {
   token_spent: number;
   balance_after: number | null;
   creator_reward_applied: boolean;
+};
+
+export type ScenarioBlueprintVersionRead = {
+  id: string;
+  blueprint_id: string;
+  version_number: number;
+  snapshot_json: Record<string, unknown>;
+  change_note: string | null;
+  created_by_user_id: string | null;
+  created_at: string;
+};
+
+export type ScenarioBlueprintLineageNodeRead = {
+  id: string;
+  slug: string;
+  title: string;
+  owner_user_id: string;
+  version_number: number;
+  forked_from_id: string | null;
+  root_blueprint_id: string | null;
+  created_at: string;
+};
+
+export type ScenarioBlueprintLineageRead = {
+  root_blueprint_id: string;
+  chain: ScenarioBlueprintLineageNodeRead[];
+  children: ScenarioBlueprintLineageNodeRead[];
+};
+
+export type ScenarioBlueprintCommentWrite = {
+  body: string;
+};
+
+export type ScenarioBlueprintCommentRead = {
+  id: string;
+  blueprint_id: string;
+  author_user_id: string | null;
+  author_display_name: string | null;
+  body: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ScenarioBlueprintRatingWrite = {
+  rating: number;
+};
+
+export type ScenarioBlueprintRatingRead = {
+  blueprint_id: string;
+  rating: number;
+  rating_average: number;
+  rating_count: number;
+};
+
+export type ScenarioBlueprintSaveRead = {
+  blueprint_id: string;
+  saved: boolean;
+  save_count: number;
+};
+
+export type ScenarioBlueprintUsageTrackWrite = {
+  event: "run" | "complete";
+};
+
+export type ScenarioBlueprintUsageTrackRead = {
+  blueprint_id: string;
+  event: "run" | "complete";
+  usage_count: number;
+  run_count: number;
+  completion_count: number;
 };
 
 export type ScenarioWorkflowWrite = {
