@@ -1,10 +1,10 @@
 import type { Attribution } from "@/lib/analytics/types";
-import type { RevenueDashboard } from "@/lib/types";
+import type { ChannelSpendUpsertRead, ChannelSpendUpsertWrite, RevenueDashboard } from "@/lib/types";
 import { withQuery } from "@/lib/http";
 
 import { API_ENDPOINTS } from "@/lib/constants/api";
 
-import { authFetch, optionalAuthJsonFetch } from "./transport";
+import { authFetch, jsonInit, optionalAuthJsonFetch } from "./transport";
 
 export type AttributionCaptureResponse = {
   session_id: string;
@@ -64,4 +64,13 @@ export async function fetchRevenueDashboard({
     window_days: Math.max(7, Math.min(90, Math.trunc(windowDays))),
   });
   return authFetch<RevenueDashboard>(path);
+}
+
+export async function upsertGtmChannelSpend(
+  payload: ChannelSpendUpsertWrite,
+): Promise<ChannelSpendUpsertRead> {
+  return authFetch<ChannelSpendUpsertRead>(
+    API_ENDPOINTS.analyticsGtmSpend,
+    jsonInit("POST", payload),
+  );
 }

@@ -3,8 +3,31 @@ import Link from "next/link";
 import { T } from "@/components/i18n/T";
 import { PageIntro } from "@/components/navigation/PageIntro";
 import { RouteCard } from "@/components/navigation/RouteCard";
+import { fetchScenarioHomeAggregate } from "@/lib/api";
+import { getServerAccessToken } from "@/lib/server-auth";
+import { getServerLanguage } from "@/lib/server-i18n";
+import type { PromptListItem } from "@/lib/types";
 
-export default function ScenariosPage() {
+import { ScenariosHubClient } from "./ScenariosHubClient";
+
+export default async function ScenariosPage() {
+  const [accessToken, language] = await Promise.all([
+    getServerAccessToken(),
+    getServerLanguage(),
+  ]);
+
+  const aggregate = await fetchScenarioHomeAggregate({
+    accessToken,
+    language,
+    limit: 12,
+  }).catch(() => null);
+
+  const prompts = dedupePrompts([
+    ...(aggregate?.featured ?? []),
+    ...(aggregate?.recommended ?? []),
+    ...(aggregate?.retention ?? []),
+  ]).slice(0, 24);
+
   return (
     <div className="pv-page">
       <PageIntro
@@ -17,7 +40,10 @@ export default function ScenariosPage() {
         description={<T k="home.scenarioTrySubtitle" />}
         actions={(
           <>
-            <Link href="/catalog" className="pv-button-primary">
+            <Link href="/#home-workbench" className="pv-button-primary">
+              Run from Workbench
+            </Link>
+            <Link href="/catalog" className="pv-button-secondary">
               <T k="home.explorePrompts" />
             </Link>
             <Link href="/scenarios/marketplace" className="pv-button-secondary">
@@ -57,6 +83,21 @@ export default function ScenariosPage() {
           />
         </div>
       </section>
+
+      <ScenariosHubClient
+        prompts={prompts}
+        nextSteps={aggregate?.next_steps ?? []}
+        loopHints={aggregate?.loop_hints ?? null}
+        isAuthenticated={Boolean(accessToken)}
+      />
     </div>
   );
+}
+
+function dedupePrompts(prompts: PromptListItem[]) {
+  const map = new Map<string, PromptListItem>();
+  for (const prompt of prompts) {
+    map.set(prompt.id, prompt);
+  }
+  return [...map.values()];
 }

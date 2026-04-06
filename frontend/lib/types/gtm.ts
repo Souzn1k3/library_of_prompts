@@ -64,6 +64,34 @@ export type GtmScaleSignal = {
   conversion_rate: number;
 };
 
+export type ChannelSpendUpsertWrite = {
+  spend_day: string;
+  source: string;
+  medium?: string | null;
+  campaign?: string | null;
+  ad_id?: string | null;
+  creative_id?: string | null;
+  cost_usd: number;
+  clicks?: number;
+  impressions?: number;
+  dedupe_key?: string | null;
+};
+
+export type ChannelSpendUpsertRead = {
+  id: string;
+  spend_day: string;
+  source: string;
+  medium: string | null;
+  campaign: string | null;
+  ad_id: string | null;
+  creative_id: string | null;
+  cost_usd: number;
+  clicks: number;
+  impressions: number;
+  dedupe_key: string;
+  updated_at: string;
+};
+
 export type GtmDashboard = {
   headline: GtmHeadline;
   channels: GtmChannelPerformance[];
@@ -72,4 +100,3 @@ export type GtmDashboard = {
   top_creatives: GtmCreativePerformance[];
   signals: GtmScaleSignal[];
 };
-

@@ -95,6 +95,7 @@ export function HomeActionWorkbench({
   const [copyState, setCopyState] = useState<"idle" | "pending" | "copied" | "error">("idle");
   const [shareState, setShareState] = useState<"idle" | "copied" | "error">("idle");
   const [lastRunAt, setLastRunAt] = useState<Date | null>(null);
+  const [resumePrefillHandled, setResumePrefillHandled] = useState(false);
 
   const runPending = demoRun.runPending || engagement.runPending;
   const promptBySlug = useMemo(() => {
@@ -143,6 +144,49 @@ export function HomeActionWorkbench({
     const timeoutId = window.setTimeout(() => setShareState("idle"), COPY_RESET_TIMEOUT_MS);
     return () => window.clearTimeout(timeoutId);
   }, [shareState]);
+
+  useEffect(() => {
+    if (resumePrefillHandled || typeof window === "undefined") {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const resumeSlug = normalizeValue(params.get("resume"));
+    if (!resumeSlug) {
+      setResumePrefillHandled(true);
+      return;
+    }
+
+    if (!promptBySlug.has(resumeSlug)) {
+      setResumePrefillHandled(true);
+      return;
+    }
+
+    state.selectScenarioSlug(resumeSlug);
+    workspace.markRecent(resumeSlug);
+    const unfinishedTask = workspace.unfinished.find((item) => item.slug === resumeSlug)?.task ?? "";
+    if (unfinishedTask) {
+      state.setTaskInput(unfinishedTask);
+    }
+
+    trackEvent({
+      eventName: "scenario_resumed",
+      page: "/",
+      feature: "home_workbench_resume_param",
+      metadata: {
+        prompt_slug: resumeSlug,
+        has_task: Boolean(unfinishedTask),
+      },
+    });
+
+    params.delete("resume");
+    const query = params.toString();
+    const nextUrl = query
+      ? `${window.location.pathname}?${query}${window.location.hash}`
+      : `${window.location.pathname}${window.location.hash}`;
+    window.history.replaceState({}, "", nextUrl);
+    setResumePrefillHandled(true);
+  }, [promptBySlug, resumePrefillHandled, state, workspace]);
 
   useEffect(() => {
     const attribution = readAttribution();
@@ -201,7 +245,7 @@ export function HomeActionWorkbench({
     }
 
     state.commitRunInput();
-    workspace.markRecent(selectedPrompt.slug);
+    workspace.trackRun(selectedPrompt.slug, state.taskInput.trim() ? state.taskInput : null);
     const cleanTask = state.taskInput.trim();
     if (cleanTask) {
       workspace.saveUnfinished(selectedPrompt.slug, cleanTask);

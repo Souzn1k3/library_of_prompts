@@ -1,13 +1,23 @@
-import Link from "next/link";
-
 import { ApiRequestError, fetchRevenueDashboard } from "@/lib/api";
 import { getServerAccessToken } from "@/lib/server-auth";
+import {
+  OpsDashboardEmptyState,
+  OpsDashboardHero,
+  OpsTableEmptyRow,
+  OpsTableSection,
+} from "@/components/analytics/OpsDashboardShell";
 
-function pct(value: number): string {
+function pct(value: number | null): string {
+  if (value === null || value === undefined) {
+    return "n/a";
+  }
   return `${value.toFixed(2)}%`;
 }
 
-function usd(value: number): string {
+function usd(value: number | null): string {
+  if (value === null || value === undefined) {
+    return "n/a";
+  }
   return `$${value.toFixed(2)}`;
 }
 
@@ -28,69 +38,37 @@ export default async function RevenuePage() {
 
   if (!dashboard) {
     return (
-      <div className="pv-page-sm">
-        <section className="pv-hero px-6 py-7 sm:px-8 sm:py-8">
-          <p className="pv-kicker">Revenue OS</p>
-          <h1 className="pv-title max-w-4xl text-zinc-950">Revenue OS Dashboard</h1>
-          <p className="mt-3 pv-lead max-w-3xl">{error ?? "No revenue data available yet."}</p>
-        </section>
-        <section className="pv-panel px-6 py-6 sm:px-7">
-          <div className="pv-section-copy">
-            <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">Enable revenue tracking</h2>
-            <p className="mt-2 text-sm text-zinc-600">
-              Revenue analytics appears after billing activation and user acquisition events.
-            </p>
-          </div>
-          <div className="mt-5 grid gap-3 md:grid-cols-3">
-            <article className="pv-analytics-card">
-              <p className="pv-analytics-label">Billing setup</p>
-              <p className="mt-2 text-sm text-zinc-700">Activate a paid tier to start subscription tracking.</p>
-            </article>
-            <article className="pv-analytics-card">
-              <p className="pv-analytics-label">Traffic flow</p>
-              <p className="mt-2 text-sm text-zinc-700">Drive catalog traffic and first prompt actions.</p>
-            </article>
-            <article className="pv-analytics-card">
-              <p className="pv-analytics-label">Conversion loop</p>
-              <p className="mt-2 text-sm text-zinc-700">Return to inspect MRR, churn, and paywall performance.</p>
-            </article>
-          </div>
-          <div className="mt-5 flex flex-wrap gap-2">
-            <Link href="/pricing?tier=starter" className="pv-button-primary !w-auto">Upgrade plan</Link>
-            <Link href="/dashboard" className="pv-button-secondary !w-auto">Open dashboard</Link>
-            <Link href="/catalog" className="pv-button-secondary !w-auto">Open catalog</Link>
-          </div>
-        </section>
-      </div>
+      <OpsDashboardEmptyState
+        kicker="Revenue OS"
+        title="Revenue OS Dashboard"
+        message={error ?? "No revenue data available yet."}
+        steps={[
+          { label: "1. Billing setup", body: "Activate a paid tier to start subscription tracking." },
+          { label: "2. Traffic flow", body: "Drive catalog traffic and first prompt actions." },
+          { label: "3. Conversion loop", body: "Return to inspect MRR, churn, and paywall performance." },
+        ]}
+        actions={[
+          { href: "/pricing?tier=starter", label: "Upgrade plan", tone: "primary" },
+          { href: "/dashboard", label: "Open dashboard" },
+          { href: "/catalog", label: "Open catalog" },
+        ]}
+      />
     );
   }
 
   const h = dashboard.headline;
   return (
     <div className="pv-page-sm">
-      <section className="pv-hero px-6 py-7 sm:px-8 sm:py-8">
-        <p className="pv-kicker">Revenue OS</p>
-        <h1 className="pv-title max-w-4xl text-zinc-950">Revenue OS Dashboard</h1>
-        <p className="mt-3 pv-lead max-w-3xl">
-          MRR health, conversion quality, and monetization efficiency for the current window.
-        </p>
-        <p className="mt-3 text-sm font-medium text-zinc-600">
-          Window: {h.window_days}d · Updated: {new Date(h.computed_at).toLocaleString()}
-        </p>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Link href="/growth" className="pv-nav-pill !min-h-0 !px-3 !py-1.5 !text-xs">
-            Growth
-          </Link>
-          <Link href="/revenue" className="pv-nav-pill pv-nav-pill-active !min-h-0 !px-3 !py-1.5 !text-xs">
-            Revenue
-          </Link>
-          <Link href="/gtm" className="pv-nav-pill !min-h-0 !px-3 !py-1.5 !text-xs">
-            GTM
-          </Link>
-        </div>
-      </section>
+      <OpsDashboardHero
+        kicker="Revenue OS"
+        title="Revenue OS Dashboard"
+        subtitle="MRR health, conversion quality, and monetization efficiency for the current window."
+        windowDays={h.window_days}
+        updatedAt={h.computed_at}
+        activeTab="revenue"
+      />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <article className="pv-analytics-card">
           <div className="pv-analytics-label">MRR</div>
           <div className="pv-analytics-value">{usd(h.mrr_usd)}</div>
@@ -100,8 +78,16 @@ export default async function RevenuePage() {
           <div className="pv-analytics-value">{usd(h.arr_usd)}</div>
         </article>
         <article className="pv-analytics-card">
+          <div className="pv-analytics-label">ARPU</div>
+          <div className="pv-analytics-value">{usd(h.arpu_usd)}</div>
+        </article>
+        <article className="pv-analytics-card">
           <div className="pv-analytics-label">Free → Paid</div>
           <div className="pv-analytics-value">{pct(h.free_to_paid_conversion)}</div>
+        </article>
+        <article className="pv-analytics-card">
+          <div className="pv-analytics-label">Revenue / Active User</div>
+          <div className="pv-analytics-value">{usd(h.revenue_per_user_usd)}</div>
         </article>
         <article className="pv-analytics-card">
           <div className="pv-analytics-label">Churn</div>
@@ -111,14 +97,14 @@ export default async function RevenuePage() {
           <div className="pv-analytics-label">LTV Proxy</div>
           <div className="pv-analytics-value">{usd(h.ltv_proxy_usd)}</div>
         </article>
+        <article className="pv-analytics-card">
+          <div className="pv-analytics-label">Paying D30 Retention</div>
+          <div className="pv-analytics-value">{pct(h.paying_user_retention_d30)}</div>
+        </article>
       </div>
 
-      <section className="pv-panel px-6 py-6 sm:px-7">
-        <div className="pv-section-copy">
-          <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">Revenue Funnel</h2>
-          <p className="mt-2 text-sm text-zinc-600">Full path from acquisition to paid conversion.</p>
-        </div>
-        <div className="mt-5 grid gap-2 md:grid-cols-4 xl:grid-cols-7">
+      <OpsTableSection title="Revenue Funnel" subtitle="Full path from acquisition to paid conversion.">
+        <div className="grid gap-2 md:grid-cols-4 xl:grid-cols-7">
           {dashboard.funnel.steps.map((step) => (
             <article key={step.key} className="pv-analytics-card">
               <div className="pv-analytics-label">{step.label}</div>
@@ -127,13 +113,10 @@ export default async function RevenuePage() {
             </article>
           ))}
         </div>
-      </section>
+      </OpsTableSection>
 
-      <section className="pv-panel px-6 py-6 sm:px-7">
-        <div className="pv-section-copy">
-          <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">Revenue By Source</h2>
-        </div>
-        <div className="pv-analytics-table-wrap mt-5">
+      <OpsTableSection title="Revenue By Source" subtitle="MRR and conversion contribution per acquisition source.">
+        <div className="pv-analytics-table-wrap">
           <table className="pv-analytics-table">
             <thead>
               <tr>
@@ -145,25 +128,26 @@ export default async function RevenuePage() {
               </tr>
             </thead>
             <tbody>
-              {dashboard.revenue_by_source.map((row) => (
-                <tr key={row.source}>
-                  <td>{row.source}</td>
-                  <td>{row.acquired_users}</td>
-                  <td>{row.paid_users}</td>
-                  <td>{pct(row.conversion_rate)}</td>
-                  <td>{usd(row.mrr_usd)}</td>
-                </tr>
-              ))}
+              {dashboard.revenue_by_source.length ? (
+                dashboard.revenue_by_source.map((row) => (
+                  <tr key={row.source}>
+                    <td>{row.source}</td>
+                    <td>{row.acquired_users}</td>
+                    <td>{row.paid_users}</td>
+                    <td>{pct(row.conversion_rate)}</td>
+                    <td>{usd(row.mrr_usd)}</td>
+                  </tr>
+                ))
+              ) : (
+                <OpsTableEmptyRow colSpan={5} label="No source-attributed revenue in this window." />
+              )}
             </tbody>
           </table>
         </div>
-      </section>
+      </OpsTableSection>
 
-      <section className="pv-panel px-6 py-6 sm:px-7">
-        <div className="pv-section-copy">
-          <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">Paywall Performance</h2>
-        </div>
-        <div className="pv-analytics-table-wrap mt-5">
+      <OpsTableSection title="Paywall Performance" subtitle="Performance by paywall and pricing variants.">
+        <div className="pv-analytics-table-wrap">
           <table className="pv-analytics-table">
             <thead>
               <tr>
@@ -177,27 +161,59 @@ export default async function RevenuePage() {
               </tr>
             </thead>
             <tbody>
-              {dashboard.paywall_performance.map((row) => (
-                <tr key={`${row.experiment_key}:${row.variant}`}>
-                  <td>{row.experiment_key}</td>
-                  <td>{row.variant}</td>
-                  <td>{row.views}</td>
-                  <td>{row.interactions}</td>
-                  <td>{row.paid_users}</td>
-                  <td>{pct(row.conversion_rate)}</td>
-                  <td>{usd(row.revenue_per_user_usd)}</td>
-                </tr>
-              ))}
+              {dashboard.paywall_performance.length ? (
+                dashboard.paywall_performance.map((row) => (
+                  <tr key={`${row.experiment_key}:${row.variant}`}>
+                    <td>{row.experiment_key}</td>
+                    <td>{row.variant}</td>
+                    <td>{row.views}</td>
+                    <td>{row.interactions}</td>
+                    <td>{row.paid_users}</td>
+                    <td>{pct(row.conversion_rate)}</td>
+                    <td>{usd(row.revenue_per_user_usd)}</td>
+                  </tr>
+                ))
+              ) : (
+                <OpsTableEmptyRow colSpan={7} label="No paywall experiments were observed." />
+              )}
             </tbody>
           </table>
         </div>
-      </section>
+      </OpsTableSection>
 
-      <section className="pv-panel px-6 py-6 sm:px-7">
-        <div className="pv-section-copy">
-          <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">Top Cohorts</h2>
+      <OpsTableSection title="Funnel By Source" subtitle="Contribution flow from acquisition to paid by source.">
+        <div className="pv-analytics-table-wrap">
+          <table className="pv-analytics-table">
+            <thead>
+              <tr>
+                <th>Source</th>
+                <th>Acquired</th>
+                <th>Paid</th>
+                <th>Conv</th>
+                <th>ARR</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dashboard.funnel_by_source.length ? (
+                dashboard.funnel_by_source.map((row) => (
+                  <tr key={`source-funnel-${row.source}`}>
+                    <td>{row.source}</td>
+                    <td>{row.acquired_users}</td>
+                    <td>{row.paid_users}</td>
+                    <td>{pct(row.conversion_rate)}</td>
+                    <td>{usd(row.arr_usd)}</td>
+                  </tr>
+                ))
+              ) : (
+                <OpsTableEmptyRow colSpan={5} label="No source funnel rows for this period." />
+              )}
+            </tbody>
+          </table>
         </div>
-        <div className="pv-analytics-table-wrap mt-5">
+      </OpsTableSection>
+
+      <OpsTableSection title="Top Cohorts" subtitle="Revenue quality by signup week, source, and plan tier.">
+        <div className="pv-analytics-table-wrap">
           <table className="pv-analytics-table">
             <thead>
               <tr>
@@ -207,21 +223,52 @@ export default async function RevenuePage() {
                 <th>Users</th>
                 <th>Paid</th>
                 <th>Revenue</th>
+                <th>D30 Retention</th>
+                <th>Conv Lag</th>
               </tr>
             </thead>
             <tbody>
-              {dashboard.cohorts.slice(0, 10).map((row, index) => (
-                <tr key={`${row.cohort_week_start}:${row.source}:${row.plan_tier}:${index}`}>
-                  <td>{row.cohort_week_start}</td>
-                  <td>{row.source}</td>
-                  <td>{row.plan_tier}</td>
-                  <td>{row.users}</td>
-                  <td>{row.paid_users}</td>
-                  <td>{usd(row.revenue_usd)}</td>
-                </tr>
-              ))}
+              {dashboard.cohorts.length ? (
+                dashboard.cohorts.slice(0, 12).map((row, index) => (
+                  <tr key={`${row.cohort_week_start}:${row.source}:${row.plan_tier}:${index}`}>
+                    <td>{row.cohort_week_start}</td>
+                    <td>{row.source}</td>
+                    <td>{row.plan_tier}</td>
+                    <td>{row.users}</td>
+                    <td>{row.paid_users}</td>
+                    <td>{usd(row.revenue_usd)}</td>
+                    <td>{pct(row.retention_d30)}</td>
+                    <td>{row.conversion_lag_days == null ? "n/a" : `${row.conversion_lag_days.toFixed(1)}d`}</td>
+                  </tr>
+                ))
+              ) : (
+                <OpsTableEmptyRow colSpan={8} label="No cohort rows available." />
+              )}
             </tbody>
           </table>
+        </div>
+      </OpsTableSection>
+
+      <section className="pv-panel px-6 py-6 sm:px-7">
+        <div className="pv-section-copy">
+          <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">Churn Signals</h2>
+          <p className="mt-2 text-sm text-zinc-600">
+            Risk counters for immediate retention actions and reactivation campaigns.
+          </p>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <article className="pv-analytics-card">
+            <div className="pv-analytics-label">At Risk</div>
+            <div className="pv-analytics-value">{dashboard.churn_signals.churn_risk_users}</div>
+          </article>
+          <article className="pv-analytics-card">
+            <div className="pv-analytics-label">Canceled</div>
+            <div className="pv-analytics-value">{dashboard.churn_signals.canceled_users}</div>
+          </article>
+          <article className="pv-analytics-card">
+            <div className="pv-analytics-label">Inactive Paying</div>
+            <div className="pv-analytics-value">{dashboard.churn_signals.inactive_paying_users}</div>
+          </article>
         </div>
       </section>
     </div>
