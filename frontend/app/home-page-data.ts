@@ -1,6 +1,5 @@
 import {
   fetchDiscoverySections,
-  fetchPopularLessons,
   fetchPromptBySlug,
   fetchPromptRecommendations,
 } from "@/lib/api";
@@ -8,21 +7,11 @@ import { getTranslation, type Language } from "@/lib/i18n";
 import type { PromptListItem } from "@/lib/types";
 
 export type HomePageData = {
-  featuredPrompts: PromptListItem[];
+  entryPrompts: PromptListItem[];
+  recommendedPrompts: PromptListItem[];
   promptsTitle: string;
-  popularLessons: Awaited<ReturnType<typeof fetchPopularLessons>>;
-  heroPrompt: PromptListItem | undefined;
   heroPromptBody: string | null;
-  proof: HomeProofMetrics;
-};
-
-export type HomeProofMetrics = {
-  promptCount: number;
-  totalSaves: number;
-  totalCopies: number;
-  lessonCount: number;
-  topQualityScore: number;
-  hasQualitySignals: boolean;
+  quickUseCases: string[];
 };
 
 export async function loadHomePageData({
@@ -32,22 +21,21 @@ export async function loadHomePageData({
   accessToken: string | null | undefined;
   language: Language;
 }): Promise<HomePageData> {
-  const [sections, popularLessons, homeRecommendations] = await Promise.all([
-    fetchDiscoverySections({ limit: 4, accessToken, language }).catch(() => ({
+  const [sections, homeRecommendations] = await Promise.all([
+    fetchDiscoverySections({ limit: 8, accessToken, language }).catch(() => ({
       for_you: [],
       trending: [],
       best_for_beginners: [],
       most_saved: [],
     })),
-    fetchPopularLessons({ limit: 4, accessToken, language }).catch(() => []),
-    fetchPromptRecommendations({ context: "home", limit: 4, accessToken, language }).catch(() => ({
+    fetchPromptRecommendations({ context: "home", limit: 8, accessToken, language }).catch(() => ({
       context: "home" as const,
       strategy: "cold_start" as const,
       items: [],
     })),
   ]);
 
-  const featuredPrompts =
+  const recommendedPrompts =
     homeRecommendations.items.length > 0
       ? homeRecommendations.items
       : sections.for_you?.length
@@ -59,28 +47,28 @@ export async function loadHomePageData({
       ? getTranslation(language, "dashboard.recommendedForYou")
       : getTranslation(language, "home.trendingPrompts");
 
-  const heroPrompt = featuredPrompts[0];
+  const entryPrompts = dedupePrompts([
+    ...recommendedPrompts,
+    ...(sections.trending ?? []),
+    ...(sections.best_for_beginners ?? []),
+    ...(sections.most_saved ?? []),
+  ]).slice(0, 24);
+
+  const heroPrompt = entryPrompts[0];
   const heroPromptBody = heroPrompt
     ? await fetchPromptBySlug(heroPrompt.slug, accessToken, language)
       .then((detail) => (detail.body_locked ? null : detail.body?.trim() || null))
       .catch(() => null)
     : null;
 
-  const promptPool = dedupePrompts([
-    ...featuredPrompts,
-    ...(sections.trending ?? []),
-    ...(sections.best_for_beginners ?? []),
-    ...(sections.most_saved ?? []),
-  ]);
-  const proof = buildProofMetrics(promptPool, popularLessons);
+  const quickUseCases = buildQuickUseCases(entryPrompts, 4);
 
   return {
-    featuredPrompts,
+    entryPrompts,
+    recommendedPrompts: recommendedPrompts.slice(0, 6),
     promptsTitle,
-    popularLessons,
-    heroPrompt,
     heroPromptBody,
-    proof,
+    quickUseCases,
   };
 }
 
@@ -92,30 +80,35 @@ function dedupePrompts(prompts: PromptListItem[]) {
   return [...map.values()];
 }
 
-function buildProofMetrics(
-  prompts: PromptListItem[],
-  lessons: Awaited<ReturnType<typeof fetchPopularLessons>>,
-): HomeProofMetrics {
-  let totalSaves = 0;
-  let totalCopies = 0;
-  let qualitySignals = 0;
-  let topQualityScore = 0;
-
+function buildQuickUseCases(prompts: PromptListItem[], limit: number): string[] {
+  const counts = new Map<string, number>();
   for (const prompt of prompts) {
-    totalSaves += prompt.save_count ?? 0;
-    totalCopies += prompt.copy_count ?? 0;
-    if (typeof prompt.quality_score === "number" && prompt.quality_score > 0) {
-      qualitySignals += 1;
-      topQualityScore = Math.max(topQualityScore, prompt.quality_score);
+    for (const candidate of [...(prompt.use_cases ?? []), ...(prompt.tags ?? [])]) {
+      const normalized = normalizeQuickUseCase(candidate);
+      if (!normalized) {
+        continue;
+      }
+      counts.set(normalized, (counts.get(normalized) ?? 0) + 1);
     }
   }
 
-  return {
-    promptCount: prompts.length,
-    totalSaves,
-    totalCopies,
-    lessonCount: lessons.length,
-    topQualityScore,
-    hasQualitySignals: qualitySignals > 0,
-  };
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, limit)
+    .map(([label]) => label);
+}
+
+function normalizeQuickUseCase(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+  const normalized = value
+    .toLowerCase()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (normalized.length < 3) {
+    return null;
+  }
+  return normalized;
 }

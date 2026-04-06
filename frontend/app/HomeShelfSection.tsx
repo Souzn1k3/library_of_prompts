@@ -28,9 +28,12 @@ export function HomeShelfSection({
       <div className="pv-section-head">
         <div className="pv-section-copy">
           <p className="pv-kicker pv-home-section-kicker">
-            <T k="catalog.prompts" />
+            <T k="home.personalizedKicker" />
           </p>
           <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{title}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-600">
+            <T k="home.personalizedSubtitle" />
+          </p>
         </div>
         <Link href={href} className="pv-inline-link">
           {hrefLabel}

@@ -8,6 +8,7 @@ import { PromptPageAside } from "./PromptPageAside";
 import { PromptPageContentPanel } from "./PromptPageContentPanel";
 import { PromptPageHeader } from "./PromptPageHeader";
 import { PromptRelatedSection } from "./PromptRelatedSection";
+import { PromptScenarioStage } from "./PromptScenarioStage";
 import type { PromptPageData } from "./prompt-page-data";
 
 type PromptPageArticleProps = {
@@ -55,11 +56,15 @@ export function PromptPageArticle({ language, data }: PromptPageArticleProps) {
         }}
       />
 
+      <PromptScenarioStage language={language} prompt={prompt} />
+
       <PromptPageHeader language={language} prompt={prompt} category={category} />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
         <PromptPageContentPanel
+          language={language}
           promptId={prompt.id}
+          promptSlug={prompt.slug}
           body={prompt.body}
           bodyLocked={Boolean(prompt.body_locked)}
           interactionMetadata={interactionMetadata}

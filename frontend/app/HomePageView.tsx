@@ -3,10 +3,8 @@ import { getTranslation, type Language } from "@/lib/i18n";
 import { absoluteUrl } from "@/lib/seo";
 
 import { HomeHeroSection } from "./HomeHeroSection";
-import { HomeFlowSection } from "./HomeFlowSection";
-import { HomeLessonsSection } from "./HomeLessonsSection";
 import { HomePathsSection } from "./HomePathsSection";
-import { HomeProofSection } from "./HomeProofSection";
+import { HomeScenariosSection } from "./HomeScenariosSection";
 import { HomeShelfSection } from "./HomeShelfSection";
 import type { HomePageData } from "./home-page-data";
 
@@ -17,7 +15,14 @@ type HomePageViewProps = {
 };
 
 export function HomePageView({ language, initialAuthenticated, data }: HomePageViewProps) {
-  const { featuredPrompts, promptsTitle, popularLessons, heroPrompt, heroPromptBody, proof } = data;
+  const {
+    entryPrompts,
+    recommendedPrompts,
+    promptsTitle,
+    heroPromptBody,
+    quickUseCases,
+  } = data;
+  const shelfPrompts = recommendedPrompts.length ? recommendedPrompts : entryPrompts;
 
   return (
     <div className="pv-page">
@@ -30,7 +35,7 @@ export function HomePageView({ language, initialAuthenticated, data }: HomePageV
           url: absoluteUrl("/"),
           mainEntity: {
             "@type": "ItemList",
-            itemListElement: featuredPrompts.slice(0, 6).map((prompt, index) => ({
+            itemListElement: shelfPrompts.slice(0, 6).map((prompt, index) => ({
               "@type": "ListItem",
               position: index + 1,
               name: prompt.title,
@@ -41,27 +46,30 @@ export function HomePageView({ language, initialAuthenticated, data }: HomePageV
       />
 
       <HomeHeroSection
-        language={language}
         initialAuthenticated={initialAuthenticated}
-        heroPrompt={heroPrompt}
+        entryPrompts={entryPrompts}
         heroPromptBody={heroPromptBody}
+        quickUseCases={quickUseCases}
       />
 
-      <HomeProofSection language={language} proof={proof} />
-
-      <HomeFlowSection initialAuthenticated={initialAuthenticated} heroPromptSlug={heroPrompt?.slug} />
+      <HomeScenariosSection
+        prompts={entryPrompts}
+        initialAuthenticated={initialAuthenticated}
+      />
 
       <HomeShelfSection
         title={promptsTitle}
         href="/catalog"
         hrefLabel={getTranslation(language, "home.seeAll")}
-        prompts={featuredPrompts}
-        idPrefix="home-featured"
+        prompts={shelfPrompts}
+        idPrefix="home-recommended"
       />
 
-      <HomeLessonsSection language={language} lessons={popularLessons} />
-
-      <HomePathsSection initialAuthenticated={initialAuthenticated} />
+      <HomePathsSection
+        initialAuthenticated={initialAuthenticated}
+        quickUseCases={quickUseCases}
+        entryPrompts={entryPrompts}
+      />
     </div>
   );
 }

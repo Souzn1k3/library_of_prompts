@@ -33,7 +33,7 @@ export function PromptPageHeader({ language, prompt, category }: PromptPageHeade
           : []),
         { label: prompt.title },
       ]}
-      eyebrow={getTranslation(language, "prompt.sectionTitle")}
+      eyebrow={getTranslation(language, "prompt.scenarioEyebrow")}
       title={prompt.title}
       description={prompt.summary ?? undefined}
     >
@@ -57,6 +57,11 @@ export function PromptPageHeader({ language, prompt, category }: PromptPageHeade
       {prompt.body_locked && !prompt.price ? (
         <div className="pv-alert pv-alert-warning text-sm">
           <p>{getTranslation(language, "prompt.previewOnlyMessage")}</p>
+          <ul className="mt-3 list-disc space-y-1 pl-5 text-xs text-amber-900/90">
+            <li>{getTranslation(language, "prompt.proBenefitFullScenario")}</li>
+            <li>{getTranslation(language, "prompt.proBenefitCopy")}</li>
+            <li>{getTranslation(language, "prompt.proBenefitAdvanced")}</li>
+          </ul>
           <div className="mt-4 flex flex-wrap gap-3">
             <TrackedUpgradeButton
               href="/pricing?tier=starter"

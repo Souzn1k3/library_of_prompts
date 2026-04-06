@@ -16,9 +16,9 @@ export function PromptRelatedSection({ language, related }: PromptRelatedSection
     <section className="pv-panel px-6 py-6 sm:px-7">
       <div className="pv-section-head">
         <div className="pv-section-copy">
-          <p className="pv-kicker">{getTranslation(language, "prompt.relatedPrompts")}</p>
+          <p className="pv-kicker">{getTranslation(language, "prompt.relatedScenarios")}</p>
           <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
-            {getTranslation(language, "prompt.relatedPrompts")}
+            {getTranslation(language, "prompt.relatedScenarios")}
           </h2>
         </div>
       </div>
