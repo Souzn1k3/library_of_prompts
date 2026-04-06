@@ -76,6 +76,13 @@ function toLegacyScenarioList(value: unknown): LegacyScenarioDefinition[] {
   });
 }
 
+function toRecordList(value: unknown): Array<Record<string, unknown>> {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null);
+}
+
 export const scenarioPlatformActions: ScenarioActionRegistry = {
   "analytics.fetchGrowthDashboard": async (input) => {
     const windowDays = toNumber(input.window_days, 28);
@@ -243,6 +250,14 @@ export const scenarioPlatformActions: ScenarioActionRegistry = {
       selected: state.selectedScenario,
       has_active_filters: state.hasActiveFilters,
     };
+  },
+  "scenarios.findBySlug": (input) => {
+    const items = toRecordList(input.items);
+    const slug = asString(input.slug);
+    if (!items.length) {
+      return null;
+    }
+    return items.find((item) => asString(item.slug) === slug) ?? items[0] ?? null;
   },
   "runtime.noop": () => null,
 };
