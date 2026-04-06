@@ -143,4 +143,36 @@ describe("ScenarioEngineCore", () => {
       echoed: "hello runtime",
     });
   });
+
+  test("enforces usage limits without scenario-specific code", async () => {
+    const submitAction = vi.fn(async () => ({ ok: true }));
+    const definition: ScenarioDefinition = {
+      ...TEST_DEFINITION,
+      permissions: {
+        ...TEST_DEFINITION.permissions,
+        usageLimits: [
+          {
+            id: "submit_limit",
+            event: "form/submit",
+            max: 1,
+            window: "session",
+          },
+        ],
+      },
+    };
+
+    const core = new ScenarioEngineCore({
+      definition,
+      actions: {
+        "test.submit": submitAction,
+      },
+    });
+
+    await core.boot();
+    await core.triggerInteraction("form.submit", { formId: "main" });
+    await core.triggerInteraction("form.submit", { formId: "main" });
+
+    expect(submitAction).toHaveBeenCalledTimes(1);
+    expect(core.getSnapshot().errors.some((message) => message.includes("submit_limit"))).toBe(true);
+  });
 });

@@ -32,7 +32,10 @@ export class LogicEngine {
   }
 
   async handleEvent(event: ScenarioRuntimeEvent): Promise<ScenarioRuntimeEvent[]> {
-    this.applyUsageAccounting(event);
+    const usageAllowed = this.applyUsageAccounting(event);
+    if (!usageAllowed) {
+      return [];
+    }
 
     const triggered = this.stepsByEvent.get(event.name) ?? [];
     if (!triggered.length) {
@@ -197,10 +200,20 @@ export class LogicEngine {
     return tierWeight(this.options.tier) >= tierWeight(required);
   }
 
-  private applyUsageAccounting(event: ScenarioRuntimeEvent): void {
+  private applyUsageAccounting(event: ScenarioRuntimeEvent): boolean {
     const limits = this.options.definition.permissions.usageLimits.filter((limit) => limit.event === event.name);
+    let allowed = true;
     for (const limit of limits) {
+      const exceeded = this.options.state.isUsageLimitExceeded(limit.id, limit.max, limit.window);
+      if (exceeded) {
+        this.options.state.pushError(
+          `Usage limit exceeded for "${limit.id}" (${limit.max}/${limit.window}).`,
+        );
+        allowed = false;
+        continue;
+      }
       this.options.state.incrementUsage(limit.id, limit.window);
     }
+    return allowed;
   }
 }
