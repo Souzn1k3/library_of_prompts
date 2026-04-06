@@ -8,25 +8,31 @@ import type { PromptDetail } from "@/lib/types";
 
 type DemoRunMockState = {
   runPending: boolean;
+  boostPending: boolean;
   capReached: boolean;
   isPro: boolean;
   remainingRuns: number | null;
+  bonusRunsRemaining: number | null;
   latestMessage: string | null;
 };
 
 const mockState: DemoRunMockState = {
   runPending: false,
+  boostPending: false,
   capReached: false,
   isPro: false,
   remainingRuns: 3,
+  bonusRunsRemaining: 0,
   latestMessage: null,
 };
 const runSpy = vi.fn(async () => ({ executed: true, status: { cap_reached: false } }));
+const boostSpy = vi.fn(async () => ({ applied_bonus_runs: 3 }));
 
 vi.mock("@/features/scenarios/presentation/useScenarioDemoRun", () => ({
   useScenarioDemoRun: () => ({
     ...mockState,
     run: runSpy,
+    purchaseBoost: boostSpy,
   }),
 }));
 
@@ -52,10 +58,13 @@ describe("PromptScenarioStage", () => {
   beforeEach(() => {
     runSpy.mockClear();
     mockState.runPending = false;
+    mockState.boostPending = false;
     mockState.capReached = false;
     mockState.isPro = false;
     mockState.remainingRuns = 3;
+    mockState.bonusRunsRemaining = 0;
     mockState.latestMessage = null;
+    boostSpy.mockClear();
   });
 
   it("renders locked pro-gate state with unlock CTA for free users", () => {

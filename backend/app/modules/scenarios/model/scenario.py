@@ -3,6 +3,7 @@ from __future__ import annotations
 import enum
 import uuid
 from datetime import datetime
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -61,6 +62,12 @@ class ScenarioHomeAggregateRead(BaseModel):
     featured: list[PromptListItem]
     recommended: list[PromptListItem]
     retention: list[PromptListItem]
+    packs: list["ScenarioPackRead"] = []
+    chains: list["ScenarioChainRead"] = []
+    next_steps: list["ScenarioNextStepRead"] = []
+    return_triggers: list["ScenarioReturnTriggerRead"] = []
+    showcase: list["ScenarioShowcaseRead"] = []
+    pricing_plans: list["ScenarioPricingPlanRead"] = []
     workspace: ScenarioWorkspaceRead | None = None
     workspace_limits: ScenarioWorkspaceLimitsRead
     loop_hints: ScenarioLoopHintsRead
@@ -91,6 +98,7 @@ class ScenarioDemoRunStatusRead(BaseModel):
     reason: str | None = None
     upgrade_hint: str | None = None
     guest_session_id: str | None = None
+    bonus_runs_remaining: int | None = None
 
 
 class ScenarioDemoRunTrackRead(BaseModel):
@@ -137,3 +145,218 @@ class ScenarioGameClaimRead(BaseModel):
     claimed_tokens: int = 0
     pending_tokens_after: int = 0
     balance_after: int | None = None
+
+
+class ScenarioPackRead(BaseModel):
+    id: str
+    title: str
+    description: str
+    outcome: str
+    prompt_slugs: list[str]
+    prompts: list[PromptListItem]
+    cta_prompt_slug: str | None = None
+
+
+class ScenarioChainStepRead(BaseModel):
+    position: int
+    prompt_slug: str
+    title: str
+    goal: str
+
+
+class ScenarioChainRead(BaseModel):
+    id: str
+    title: str
+    description: str
+    steps: list[ScenarioChainStepRead]
+
+
+class ScenarioNextStepRead(BaseModel):
+    source_prompt_slug: str | None = None
+    next_prompt_slug: str
+    reason: str
+    confidence: float = Field(ge=0, le=1)
+
+
+class ScenarioReturnTriggerRead(BaseModel):
+    trigger_key: str
+    label: str
+    count: int
+    href: str
+
+
+class ScenarioPricingPlanRead(BaseModel):
+    tier: Literal["free", "starter", "pro", "enterprise"]
+    price_monthly_usd: int
+    headline: str
+    highlights: list[str]
+
+
+class ScenarioShowcaseCreateWrite(BaseModel):
+    share_id: str | None = Field(default=None, min_length=8, max_length=120)
+    prompt_slug: str | None = Field(default=None, min_length=1, max_length=200)
+    blueprint_id: uuid.UUID | None = None
+    title: str = Field(min_length=3, max_length=240)
+    excerpt: str = Field(min_length=3, max_length=700)
+    output_preview: str = Field(min_length=5, max_length=4000)
+    visibility: Literal["public", "unlisted"] = "public"
+
+
+class ScenarioShowcaseRead(BaseModel):
+    share_id: str
+    prompt_slug: str | None = None
+    blueprint_id: uuid.UUID | None = None
+    title: str
+    excerpt: str
+    output_preview: str
+    visibility: str
+    upvotes: int
+    created_at: datetime
+
+
+class ScenarioShowcaseUpvoteWrite(BaseModel):
+    share_id: str = Field(min_length=8, max_length=120)
+
+
+class ScenarioTokenBoostPurchaseWrite(BaseModel):
+    prompt_slug: str = Field(min_length=1, max_length=200)
+
+
+class ScenarioTokenBoostPurchaseRead(BaseModel):
+    prompt_slug: str
+    applied_bonus_runs: int
+    bonus_runs_remaining: int
+    token_cost: int
+    balance_after: int | None = None
+    is_pro: bool
+
+
+class ScenarioBlueprintWrite(BaseModel):
+    slug: str = Field(min_length=3, max_length=180)
+    title: str = Field(min_length=3, max_length=260)
+    summary: str | None = Field(default=None, max_length=700)
+    category: Literal["utility", "learning", "productivity", "entertainment", "growth"] = "utility"
+    input_schema: dict[str, Any] | None = None
+    context_text: str | None = Field(default=None, max_length=4000)
+    logic_text: str | None = Field(default=None, max_length=6000)
+    output_text: str | None = Field(default=None, max_length=4000)
+    run_instructions: str | None = Field(default=None, max_length=3000)
+    source_prompt_slug: str | None = Field(default=None, max_length=200)
+    visibility: Literal["private", "team", "public", "marketplace"] = "private"
+    is_premium: bool = False
+    token_price: int | None = Field(default=None, ge=1, le=10000)
+
+
+class ScenarioBlueprintPatchWrite(BaseModel):
+    title: str | None = Field(default=None, min_length=3, max_length=260)
+    summary: str | None = Field(default=None, max_length=700)
+    category: Literal["utility", "learning", "productivity", "entertainment", "growth"] | None = None
+    input_schema: dict[str, Any] | None = None
+    context_text: str | None = Field(default=None, max_length=4000)
+    logic_text: str | None = Field(default=None, max_length=6000)
+    output_text: str | None = Field(default=None, max_length=4000)
+    run_instructions: str | None = Field(default=None, max_length=3000)
+    visibility: Literal["private", "team", "public", "marketplace"] | None = None
+    is_premium: bool | None = None
+    token_price: int | None = Field(default=None, ge=1, le=10000)
+
+
+class ScenarioBlueprintRead(BaseModel):
+    id: uuid.UUID
+    owner_user_id: uuid.UUID
+    slug: str
+    title: str
+    summary: str | None
+    category: str
+    visibility: str
+    is_published: bool
+    is_premium: bool
+    token_price: int | None
+    input_schema: dict[str, Any] | None
+    context_text: str | None
+    logic_text: str | None
+    output_text: str | None
+    run_instructions: str | None
+    usage_count: int
+    fork_count: int
+    like_count: int
+    created_at: datetime
+    updated_at: datetime
+    published_at: datetime | None
+
+    model_config = {"from_attributes": True}
+
+
+class ScenarioBlueprintPublishRead(BaseModel):
+    blueprint: ScenarioBlueprintRead
+    creator_reward_tokens: int
+    creator_reward_applied: bool
+
+
+class ScenarioBlueprintShareWrite(BaseModel):
+    member_email: str = Field(min_length=5, max_length=320)
+    can_edit: bool = False
+
+
+class ScenarioBlueprintShareRead(BaseModel):
+    blueprint_id: uuid.UUID
+    owner_user_id: uuid.UUID
+    member_user_id: uuid.UUID
+    can_edit: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ScenarioMarketplaceForkRead(BaseModel):
+    source_blueprint_id: uuid.UUID
+    forked_blueprint: ScenarioBlueprintRead
+    token_spent: int = 0
+    balance_after: int | None = None
+    creator_reward_applied: bool = False
+
+
+class ScenarioWorkflowWrite(BaseModel):
+    name: str = Field(min_length=3, max_length=220)
+    description: str | None = Field(default=None, max_length=600)
+    visibility: Literal["private", "team", "public"] = "private"
+    step_blueprint_ids: list[uuid.UUID] = Field(default_factory=list, min_length=1, max_length=16)
+
+
+class ScenarioWorkflowRead(BaseModel):
+    id: uuid.UUID
+    owner_user_id: uuid.UUID
+    name: str
+    description: str | None
+    visibility: str
+    step_blueprint_ids: list[str]
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ScenarioWorkflowRunStartWrite(BaseModel):
+    context: dict[str, Any] | None = None
+
+
+class ScenarioWorkflowRunRead(BaseModel):
+    id: uuid.UUID
+    workflow_id: uuid.UUID
+    status: str
+    current_step: int
+    completed_steps: int
+    total_steps: int
+    next_blueprint_id: uuid.UUID | None = None
+    completed_at: datetime | None = None
+    last_active_at: datetime
+
+
+class ScenarioWorkflowRunAdvanceWrite(BaseModel):
+    mark_complete: bool = True
+
+
+class ScenarioWorkflowRunAdvanceRead(BaseModel):
+    run: ScenarioWorkflowRunRead
+    is_completed: bool
+    next_blueprint_id: uuid.UUID | None = None

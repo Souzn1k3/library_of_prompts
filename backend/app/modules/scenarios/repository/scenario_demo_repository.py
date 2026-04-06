@@ -7,7 +7,12 @@ from datetime import datetime
 from sqlalchemy import distinct, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.infrastructure.db.models import GuestScenarioRunUsage, ScenarioGameTokenClaim, ScenarioGameTokenEvent
+from app.infrastructure.db.models import (
+    GuestScenarioRunUsage,
+    ScenarioGameTokenClaim,
+    ScenarioGameTokenEvent,
+    UserScenarioRunBoost,
+)
 
 
 class ScenarioDemoRepository:
@@ -33,6 +38,26 @@ class ScenarioDemoRepository:
         await self._session.flush()
         await self._session.refresh(usage)
         return usage
+
+    async def get_user_run_boost(self, *, user_id: uuid.UUID, prompt_id: uuid.UUID) -> UserScenarioRunBoost | None:
+        result = await self._session.execute(
+            select(UserScenarioRunBoost).where(
+                UserScenarioRunBoost.user_id == user_id,
+                UserScenarioRunBoost.prompt_id == prompt_id,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def create_user_run_boost(self, boost: UserScenarioRunBoost) -> UserScenarioRunBoost:
+        self._session.add(boost)
+        await self._session.flush()
+        await self._session.refresh(boost)
+        return boost
+
+    async def save_user_run_boost(self, boost: UserScenarioRunBoost) -> UserScenarioRunBoost:
+        await self._session.flush()
+        await self._session.refresh(boost)
+        return boost
 
     async def sum_guest_runs_for_prompt_ip_since(
         self,

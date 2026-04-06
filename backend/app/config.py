@@ -56,6 +56,11 @@ class Settings(BaseSettings):
     web_demo_game_guest_fingerprint_daily_token_cap: int = 36
     web_demo_game_guest_fingerprint_window_minutes: int = 10
     web_demo_game_guest_fingerprint_window_event_cap: int = 6
+    scenario_run_boost_token_cost: int = 12
+    scenario_run_boost_bonus_runs: int = 3
+    scenario_creator_publish_reward_tokens: int = 20
+    scenario_creator_fork_reward_tokens: int = 5
+    scenario_creator_like_reward_tokens: int = 1
     legacy_bot_database_url: str | None = None
 
     jwt_secret_key: str = Field(
@@ -167,6 +172,16 @@ class Settings(BaseSettings):
             raise ValueError("WEB_DEMO_GAME_GUEST_FINGERPRINT_WINDOW_MINUTES must be greater than 0.")
         if self.web_demo_game_guest_fingerprint_window_event_cap <= 0:
             raise ValueError("WEB_DEMO_GAME_GUEST_FINGERPRINT_WINDOW_EVENT_CAP must be greater than 0.")
+        if self.scenario_run_boost_token_cost <= 0:
+            raise ValueError("SCENARIO_RUN_BOOST_TOKEN_COST must be greater than 0.")
+        if self.scenario_run_boost_bonus_runs <= 0:
+            raise ValueError("SCENARIO_RUN_BOOST_BONUS_RUNS must be greater than 0.")
+        if self.scenario_creator_publish_reward_tokens < 0:
+            raise ValueError("SCENARIO_CREATOR_PUBLISH_REWARD_TOKENS must be greater or equal to 0.")
+        if self.scenario_creator_fork_reward_tokens < 0:
+            raise ValueError("SCENARIO_CREATOR_FORK_REWARD_TOKENS must be greater or equal to 0.")
+        if self.scenario_creator_like_reward_tokens < 0:
+            raise ValueError("SCENARIO_CREATOR_LIKE_REWARD_TOKENS must be greater or equal to 0.")
 
         url = self.parsed_database_url
         driver = url.drivername.lower()

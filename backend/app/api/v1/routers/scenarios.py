@@ -1,9 +1,12 @@
+import uuid
+
 from fastapi import APIRouter, Depends, Query, Request, Response
 
 from app.api.deps import get_current_user, get_optional_user
 from app.api.service_deps import (
     get_scenario_demo_run_service,
     get_scenario_game_service,
+    get_scenario_platform_service,
     get_scenario_service,
 )
 from app.api.support.rate_limit import RateLimitRule, enforce_request_rate_limits
@@ -17,6 +20,26 @@ from app.modules.scenarios.model.scenario import (
     ScenarioGameEarnRead,
     ScenarioGameEarnWrite,
     ScenarioGameStateRead,
+    ScenarioMarketplaceForkRead,
+    ScenarioNextStepRead,
+    ScenarioPackRead,
+    ScenarioBlueprintPatchWrite,
+    ScenarioBlueprintPublishRead,
+    ScenarioBlueprintRead,
+    ScenarioBlueprintShareRead,
+    ScenarioBlueprintShareWrite,
+    ScenarioBlueprintWrite,
+    ScenarioChainRead,
+    ScenarioShowcaseCreateWrite,
+    ScenarioShowcaseRead,
+    ScenarioShowcaseUpvoteWrite,
+    ScenarioTokenBoostPurchaseRead,
+    ScenarioTokenBoostPurchaseWrite,
+    ScenarioWorkflowRead,
+    ScenarioWorkflowRunAdvanceRead,
+    ScenarioWorkflowRunStartWrite,
+    ScenarioWorkflowRunRead,
+    ScenarioWorkflowWrite,
     ScenarioHomeAggregateRead,
     ScenarioRunEventRead,
     ScenarioWorkspaceRead,
@@ -24,6 +47,7 @@ from app.modules.scenarios.model.scenario import (
 )
 from app.modules.scenarios.service.scenario_demo_run_service import ScenarioDemoRunService
 from app.modules.scenarios.service.scenario_game_service import ScenarioGameService
+from app.modules.scenarios.service.scenario_platform_service import ScenarioPlatformService
 from app.modules.scenarios.service.scenario_service import ScenarioService
 
 router = APIRouter(prefix="/scenarios", tags=["scenarios"])
@@ -46,6 +70,39 @@ async def scenarios_home_aggregate(
     svc: ScenarioService = Depends(get_scenario_service),
 ) -> ScenarioHomeAggregateRead:
     return await svc.get_home_aggregate(viewer, limit=limit)
+
+
+@router.get("/packs", response_model=list[ScenarioPackRead])
+async def scenarios_packs(
+    viewer: User | None = Depends(get_optional_user),
+    svc: ScenarioService = Depends(get_scenario_service),
+) -> list[ScenarioPackRead]:
+    aggregate = await svc.get_home_aggregate(viewer, limit=10)
+    return aggregate.packs
+
+
+@router.get("/chains", response_model=list[ScenarioChainRead])
+async def scenarios_chains(
+    viewer: User | None = Depends(get_optional_user),
+    svc: ScenarioService = Depends(get_scenario_service),
+) -> list[ScenarioChainRead]:
+    aggregate = await svc.get_home_aggregate(viewer, limit=10)
+    return aggregate.chains
+
+
+@router.get("/next-step", response_model=ScenarioNextStepRead | None)
+async def scenarios_next_step(
+    prompt_slug: str | None = Query(default=None, min_length=1, max_length=200),
+    viewer: User | None = Depends(get_optional_user),
+    scenario_svc: ScenarioService = Depends(get_scenario_service),
+    platform_svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> ScenarioNextStepRead | None:
+    aggregate = await scenario_svc.get_home_aggregate(viewer, limit=10)
+    return await platform_svc.recommend_next(
+        source_prompt_slug=prompt_slug,
+        recommended=aggregate.recommended,
+        chains=aggregate.chains,
+    )
 
 
 @router.get("/workspace", response_model=ScenarioWorkspaceRead)
@@ -106,6 +163,15 @@ async def scenarios_demo_run_track(
     )
 
 
+@router.post("/demo-run/boost-purchase", response_model=ScenarioTokenBoostPurchaseRead)
+async def scenarios_demo_run_boost_purchase(
+    body: ScenarioTokenBoostPurchaseWrite,
+    current_user: User = Depends(get_current_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> ScenarioTokenBoostPurchaseRead:
+    return await svc.purchase_demo_run_boost(viewer=current_user, prompt_slug=body.prompt_slug)
+
+
 @router.get("/game/state", response_model=ScenarioGameStateRead)
 async def scenarios_game_state(
     request: Request,
@@ -151,3 +217,145 @@ async def scenarios_game_claim(
         request=request,
         response=response,
     )
+
+
+@router.get("/showcase", response_model=list[ScenarioShowcaseRead])
+async def scenarios_showcase(
+    limit: int = Query(default=24, ge=1, le=60),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> list[ScenarioShowcaseRead]:
+    return await svc.list_showcase(limit=limit)
+
+
+@router.post("/showcase/share", response_model=ScenarioShowcaseRead)
+async def scenarios_showcase_share(
+    body: ScenarioShowcaseCreateWrite,
+    viewer: User | None = Depends(get_optional_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> ScenarioShowcaseRead:
+    return await svc.create_showcase(viewer=viewer, body=body)
+
+
+@router.post("/showcase/upvote", response_model=ScenarioShowcaseRead)
+async def scenarios_showcase_upvote(
+    body: ScenarioShowcaseUpvoteWrite,
+    current_user: User = Depends(get_current_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> ScenarioShowcaseRead:
+    return await svc.upvote_showcase(viewer=current_user, share_id=body.share_id)
+
+
+@router.get("/studio/mine", response_model=list[ScenarioBlueprintRead])
+async def scenarios_studio_mine(
+    current_user: User = Depends(get_current_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> list[ScenarioBlueprintRead]:
+    return await svc.list_my_blueprints(viewer=current_user)
+
+
+@router.post("/studio", response_model=ScenarioBlueprintRead)
+async def scenarios_studio_create(
+    body: ScenarioBlueprintWrite,
+    current_user: User = Depends(get_current_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> ScenarioBlueprintRead:
+    return await svc.create_blueprint(viewer=current_user, body=body)
+
+
+@router.patch("/studio/{blueprint_id}", response_model=ScenarioBlueprintRead)
+async def scenarios_studio_patch(
+    blueprint_id: uuid.UUID,
+    body: ScenarioBlueprintPatchWrite,
+    current_user: User = Depends(get_current_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> ScenarioBlueprintRead:
+    return await svc.patch_blueprint(viewer=current_user, blueprint_id=blueprint_id, body=body)
+
+
+@router.post("/studio/{blueprint_id}/publish", response_model=ScenarioBlueprintPublishRead)
+async def scenarios_studio_publish(
+    blueprint_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> ScenarioBlueprintPublishRead:
+    return await svc.publish_blueprint(viewer=current_user, blueprint_id=blueprint_id)
+
+
+@router.post("/studio/{blueprint_id}/share", response_model=ScenarioBlueprintShareRead)
+async def scenarios_studio_share(
+    blueprint_id: uuid.UUID,
+    body: ScenarioBlueprintShareWrite,
+    current_user: User = Depends(get_current_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> ScenarioBlueprintShareRead:
+    return await svc.share_blueprint_with_member(viewer=current_user, blueprint_id=blueprint_id, body=body)
+
+
+@router.get("/marketplace", response_model=list[ScenarioBlueprintRead])
+async def scenarios_marketplace(
+    limit: int = Query(default=24, ge=1, le=60),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> list[ScenarioBlueprintRead]:
+    return await svc.list_marketplace_blueprints(limit=limit)
+
+
+@router.post("/marketplace/{blueprint_id}/fork", response_model=ScenarioMarketplaceForkRead)
+async def scenarios_marketplace_fork(
+    blueprint_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> ScenarioMarketplaceForkRead:
+    return await svc.fork_marketplace_blueprint(viewer=current_user, blueprint_id=blueprint_id)
+
+
+@router.post("/marketplace/{blueprint_id}/like", response_model=ScenarioBlueprintRead)
+async def scenarios_marketplace_like(
+    blueprint_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> ScenarioBlueprintRead:
+    return await svc.like_marketplace_blueprint(viewer=current_user, blueprint_id=blueprint_id)
+
+
+@router.get("/workflows/mine", response_model=list[ScenarioWorkflowRead])
+async def scenarios_workflows_mine(
+    current_user: User = Depends(get_current_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> list[ScenarioWorkflowRead]:
+    return await svc.list_my_workflows(viewer=current_user)
+
+
+@router.post("/workflows", response_model=ScenarioWorkflowRead)
+async def scenarios_workflows_create(
+    body: ScenarioWorkflowWrite,
+    current_user: User = Depends(get_current_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> ScenarioWorkflowRead:
+    return await svc.create_workflow(viewer=current_user, body=body)
+
+
+@router.post("/workflows/{workflow_id}/run", response_model=ScenarioWorkflowRunRead)
+async def scenarios_workflows_run(
+    workflow_id: uuid.UUID,
+    body: ScenarioWorkflowRunStartWrite,
+    current_user: User = Depends(get_current_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> ScenarioWorkflowRunRead:
+    return await svc.start_workflow_run(viewer=current_user, workflow_id=workflow_id, body=body)
+
+
+@router.post("/workflows/runs/{run_id}/advance", response_model=ScenarioWorkflowRunAdvanceRead)
+async def scenarios_workflow_run_advance(
+    run_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> ScenarioWorkflowRunAdvanceRead:
+    return await svc.advance_workflow_run(viewer=current_user, run_id=run_id)
+
+
+@router.get("/team/shared", response_model=list[ScenarioBlueprintRead])
+async def scenarios_team_shared(
+    current_user: User = Depends(get_current_user),
+    svc: ScenarioPlatformService = Depends(get_scenario_platform_service),
+) -> list[ScenarioBlueprintRead]:
+    return await svc.list_team_shared_blueprints(viewer=current_user)

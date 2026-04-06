@@ -21,7 +21,15 @@ export type AnalyticsEventName =
   | "checkout_started"
   | "subscription_activated"
   | "catalog_search_used"
-  | "catalog_filter_used";
+  | "catalog_filter_used"
+  | "scenario_run"
+  | "scenario_saved"
+  | "scenario_resumed"
+  | "scenario_upgrade_clicked"
+  | "scenario_completed"
+  | "scenario_shared"
+  | "scenario_pack_started"
+  | "scenario_chain_next_clicked";
 
 export type Attribution = {
   utm_source?: string;

@@ -7,6 +7,7 @@ import { buildScenarioLiveResult, isRuFamilyLanguage } from "@/features/scenario
 import { mapPromptToScenario } from "@/features/scenarios/infrastructure/promptScenarioMapper";
 import { useScenarioDemoRun } from "@/features/scenarios/presentation/useScenarioDemoRun";
 import type { ScenarioResultDepth } from "@/features/scenarios/domain/scenario";
+import { trackEvent } from "@/lib/analytics";
 import type { Language } from "@/lib/i18n";
 import type { PromptDetail } from "@/lib/types";
 
@@ -46,6 +47,29 @@ export function PromptScenarioStage({ language, prompt }: PromptScenarioStagePro
     }
     setCommittedInput(scenarioInput);
     setRefreshSeed((current) => current + 1);
+    trackEvent({
+      eventName: "scenario_run",
+      page: `/prompt/${prompt.slug}`,
+      feature: "prompt_scenario_stage",
+      metadata: { prompt_slug: prompt.slug },
+    });
+  }
+
+  async function purchaseBoost() {
+    const purchase = await demoRun.purchaseBoost();
+    if (!purchase) {
+      return;
+    }
+    trackEvent({
+      eventName: "scenario_upgrade_clicked",
+      page: `/prompt/${prompt.slug}`,
+      feature: "prompt_scenario_stage",
+      metadata: {
+        prompt_slug: prompt.slug,
+        source: "token_boost",
+        applied_bonus_runs: purchase.applied_bonus_runs,
+      },
+    });
   }
 
   return (
@@ -141,6 +165,21 @@ export function PromptScenarioStage({ language, prompt }: PromptScenarioStagePro
               <p className="text-xs text-emerald-700">{localized.demoUnlimited}</p>
             )}
             {demoRun.capReached ? <p className="text-xs text-amber-700">{localized.demoCapReached}</p> : null}
+            {!demoRun.isPro ? (
+              <p className="text-xs text-emerald-700">
+                {localized.bonusRunsLeft.replace("{count}", String(demoRun.bonusRunsRemaining ?? 0))}
+              </p>
+            ) : null}
+            {!demoRun.isPro ? (
+              <button
+                type="button"
+                onClick={() => void purchaseBoost()}
+                className="pv-button-secondary !w-auto"
+                disabled={demoRun.boostPending}
+              >
+                {demoRun.boostPending ? localized.boostPending : localized.boostAction}
+              </button>
+            ) : null}
             {runGuardMessage ? <p className="text-xs text-zinc-500">{runGuardMessage}</p> : null}
           </div>
 
@@ -204,6 +243,11 @@ function getLocalizedCopy(language: Language) {
       runPending: "Запуск...",
       demoRunsLeft: "Осталось демо-запусков: {count}",
       demoUnlimited: "PRO: лимитов на запуски нет",
+      bonusRunsLeft: "Бонусных запусков осталось: {count}",
+      boostAction: "Купить +3 запуска за Tokens",
+      boostPending: "Покупка...",
+      boostAdded: "Бонусные запуски добавлены: +{count}.",
+      boostFailed: "Не удалось купить бонусные запуски.",
       demoCapReached: "Лимит демо-запусков достигнут. Перейдите на PRO.",
       demoIpCapReached: "Достигнут дневной лимит гостевых запусков для этого сценария.",
       demoFingerprintCapReached: "Достигнут дневной лимит по отпечатку устройства для этого сценария.",
@@ -232,6 +276,11 @@ function getLocalizedCopy(language: Language) {
     runPending: "Running...",
     demoRunsLeft: "Demo runs left: {count}",
     demoUnlimited: "PRO: unlimited runs",
+    bonusRunsLeft: "Bonus runs left: {count}",
+    boostAction: "Buy +3 runs with Tokens",
+    boostPending: "Purchasing...",
+    boostAdded: "Bonus runs added: +{count}.",
+    boostFailed: "Could not purchase bonus runs.",
     demoCapReached: "Demo run cap reached. Upgrade to PRO.",
     demoIpCapReached: "Guest daily run limit reached for this scenario.",
     demoFingerprintCapReached: "Guest fingerprint daily run limit reached for this scenario.",
@@ -261,6 +310,16 @@ function formatRunGuardMessage(
   }
   if (reason === "run_unavailable") {
     return localized.runUnavailable;
+  }
+  if (reason.startsWith("bonus_runs_added:")) {
+    const count = Number(reason.split(":")[1] ?? "0");
+    return localized.boostAdded.replace("{count}", String(count));
+  }
+  if (reason === "boost_purchase_failed") {
+    return localized.boostFailed;
+  }
+  if (reason === "pro_unlimited_runs") {
+    return localized.demoUnlimited;
   }
   return reason;
 }

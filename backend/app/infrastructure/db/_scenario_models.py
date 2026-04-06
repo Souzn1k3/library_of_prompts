@@ -189,3 +189,239 @@ class TelegramRewardClaim(Base):
     )
 
     user: Mapped["User | None"] = relationship(back_populates="telegram_reward_claims")
+
+
+class UserScenarioRunBoost(Base):
+    __tablename__ = "user_scenario_run_boosts"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    prompt_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("prompts.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    bonus_runs_remaining: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    __table_args__ = (UniqueConstraint("user_id", "prompt_id", name="uq_user_scenario_run_boosts_user_prompt"),)
+
+
+class UserScenarioBlueprint(Base):
+    __tablename__ = "user_scenario_blueprints"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    owner_user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    source_prompt_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("prompts.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    forked_from_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("user_scenario_blueprints.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    slug: Mapped[str] = mapped_column(String(180), nullable=False)
+    title: Mapped[str] = mapped_column(String(260), nullable=False)
+    summary: Mapped[str | None] = mapped_column(String(700), nullable=True)
+    category: Mapped[str] = mapped_column(String(40), nullable=False, default="utility", index=True)
+    visibility: Mapped[str] = mapped_column(String(24), nullable=False, default="private", index=True)
+    is_published: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
+    is_premium: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    token_price: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    input_schema: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    context_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    logic_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    output_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    run_instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
+    usage_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    fork_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    like_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    __table_args__ = (
+        UniqueConstraint("owner_user_id", "slug", name="uq_user_scenario_blueprints_owner_slug"),
+    )
+
+
+class UserScenarioBlueprintShare(Base):
+    __tablename__ = "user_scenario_blueprint_shares"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    blueprint_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("user_scenario_blueprints.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    owner_user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    member_user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    can_edit: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "blueprint_id",
+            "member_user_id",
+            name="uq_user_scenario_blueprint_shares_blueprint_member",
+        ),
+    )
+
+
+class UserScenarioWorkflow(Base):
+    __tablename__ = "user_scenario_workflows"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    owner_user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    name: Mapped[str] = mapped_column(String(220), nullable=False)
+    description: Mapped[str | None] = mapped_column(String(600), nullable=True)
+    visibility: Mapped[str] = mapped_column(String(24), nullable=False, default="private", index=True)
+    step_blueprint_ids: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+
+class UserScenarioWorkflowRun(Base):
+    __tablename__ = "user_scenario_workflow_runs"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    workflow_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("user_scenario_workflows.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    actor_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    guest_id: Mapped[str | None] = mapped_column(String(80), nullable=True, index=True)
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="in_progress", index=True)
+    current_step: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    completed_steps: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    context_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_active_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ScenarioOutputShowcase(Base):
+    __tablename__ = "scenario_output_showcases"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    share_id: Mapped[str] = mapped_column(String(120), nullable=False, unique=True, index=True)
+    author_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    prompt_slug: Mapped[str | None] = mapped_column(String(200), nullable=True, index=True)
+    blueprint_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("user_scenario_blueprints.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    title: Mapped[str] = mapped_column(String(240), nullable=False)
+    excerpt: Mapped[str] = mapped_column(String(700), nullable=False)
+    output_preview: Mapped[str] = mapped_column(Text, nullable=False)
+    visibility: Mapped[str] = mapped_column(String(24), nullable=False, default="public", index=True)
+    upvotes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        index=True,
+    )
+
+
+class ScenarioCreatorRewardEvent(Base):
+    __tablename__ = "scenario_creator_reward_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    event_key: Mapped[str] = mapped_column(String(160), nullable=False, unique=True, index=True)
+    recipient_user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    blueprint_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("user_scenario_blueprints.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    reward_tokens: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    reason: Mapped[str] = mapped_column(String(80), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )

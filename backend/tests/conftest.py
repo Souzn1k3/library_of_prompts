@@ -48,6 +48,11 @@ os.environ.setdefault("WEB_DEMO_GAME_GUEST_IP_DAILY_TOKEN_CAP", "72")
 os.environ.setdefault("WEB_DEMO_GAME_GUEST_FINGERPRINT_DAILY_TOKEN_CAP", "36")
 os.environ.setdefault("WEB_DEMO_GAME_GUEST_FINGERPRINT_WINDOW_MINUTES", "10")
 os.environ.setdefault("WEB_DEMO_GAME_GUEST_FINGERPRINT_WINDOW_EVENT_CAP", "6")
+os.environ.setdefault("SCENARIO_RUN_BOOST_TOKEN_COST", "12")
+os.environ.setdefault("SCENARIO_RUN_BOOST_BONUS_RUNS", "3")
+os.environ.setdefault("SCENARIO_CREATOR_PUBLISH_REWARD_TOKENS", "20")
+os.environ.setdefault("SCENARIO_CREATOR_FORK_REWARD_TOKENS", "5")
+os.environ.setdefault("SCENARIO_CREATOR_LIKE_REWARD_TOKENS", "1")
 os.environ.setdefault("ECONOMY_KPI_JOB_ENABLED", "false")
 
 

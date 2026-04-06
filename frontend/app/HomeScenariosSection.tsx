@@ -7,13 +7,28 @@ import { useI18n } from "@/components/i18n/LanguageProvider";
 import { buildScenarioLiveResult } from "@/features/scenarios/application/scenarioRuntime";
 import { mapPromptListToScenarios } from "@/features/scenarios/infrastructure/promptScenarioMapper";
 import { useScenarioGameLedger } from "@/features/scenarios/presentation/useScenarioGameLedger";
+import { trackEvent } from "@/lib/analytics";
 import { SCENARIO_GAME_CHALLENGES } from "@/lib/scenarios/game";
-import type { PromptListItem } from "@/lib/types";
+import type {
+  PromptListItem,
+  ScenarioChainRead,
+  ScenarioNextStepRead,
+  ScenarioPackRead,
+  ScenarioPricingPlanRead,
+  ScenarioReturnTriggerRead,
+  ScenarioShowcaseRead,
+} from "@/lib/types";
 
 type HomeScenariosSectionProps = {
   prompts: PromptListItem[];
   recommendedPrompts: PromptListItem[];
   retentionPrompts: PromptListItem[];
+  packs: ScenarioPackRead[];
+  chains: ScenarioChainRead[];
+  nextSteps: ScenarioNextStepRead[];
+  returnTriggers: ScenarioReturnTriggerRead[];
+  showcase: ScenarioShowcaseRead[];
+  pricingPlans: ScenarioPricingPlanRead[];
   initialAuthenticated: boolean;
 };
 
@@ -23,6 +38,12 @@ export function HomeScenariosSection({
   prompts,
   recommendedPrompts,
   retentionPrompts,
+  packs,
+  chains,
+  nextSteps,
+  returnTriggers,
+  showcase,
+  pricingPlans,
   initialAuthenticated,
 }: HomeScenariosSectionProps) {
   const { t, language } = useI18n();
@@ -35,6 +56,10 @@ export function HomeScenariosSection({
   const chainScenarios = useMemo(
     () => mapPromptListToScenarios(dedupePrompts([...retentionPrompts, ...prompts]).slice(0, 3)),
     [prompts, retentionPrompts],
+  );
+  const chainSteps = useMemo(
+    () => chains.find((chain) => chain.steps.length >= 2)?.steps ?? [],
+    [chains],
   );
 
   const [activeScenarioId, setActiveScenarioId] = useState<string | null>(featuredScenarios[0]?.id ?? null);
@@ -163,22 +188,67 @@ export function HomeScenariosSection({
         </div>
       ) : null}
 
+      {packs.length ? (
+        <div className="mt-5 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">{t("home.packKicker")}</p>
+          <div className="grid gap-3 lg:grid-cols-3">
+            {packs.slice(0, 3).map((pack) => (
+              <article key={`home-pack-${pack.id}`} className="rounded-[1rem] border border-zinc-200 bg-white p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{pack.id}</p>
+                <h3 className="mt-2 text-base font-semibold text-zinc-950">{pack.title}</h3>
+                <p className="mt-1 text-xs leading-relaxed text-zinc-600">{pack.description}</p>
+                <p className="mt-2 text-xs text-emerald-700">{pack.outcome}</p>
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {pack.prompts.slice(0, 3).map((prompt) => (
+                    <span key={`${pack.id}-${prompt.id}`} className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] text-zinc-600">
+                      {prompt.title}
+                    </span>
+                  ))}
+                </div>
+                <Link
+                  href={`/prompt/${encodeURIComponent(pack.cta_prompt_slug ?? pack.prompt_slugs[0] ?? "")}`}
+                  className="pv-inline-link mt-3 text-sm"
+                  onClick={() =>
+                    trackEvent({
+                      eventName: "scenario_pack_started",
+                      page: "/",
+                      feature: "home_packs",
+                      metadata: { pack_id: pack.id, prompt_slug: pack.cta_prompt_slug ?? null },
+                    })}
+                >
+                  {t("home.packAction")}
+                  <span aria-hidden="true">↗</span>
+                </Link>
+              </article>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
         <article className="rounded-[1.1rem] border border-[var(--pv-border)] bg-zinc-50/70 p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">{t("home.scenarioChainKicker")}</p>
           <h3 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-zinc-950">{t("home.scenarioChainTitle")}</h3>
           <p className="mt-2 text-sm leading-relaxed text-zinc-600">{t("home.scenarioChainSubtitle")}</p>
           <div className="mt-3 space-y-2">
-            {chainScenarios.map((scenario, index) => (
-              <div
-                key={`home-chain-${scenario.id}`}
-                className="rounded-[0.9rem] border border-zinc-200 bg-white p-3"
-              >
+            {(chainSteps.length
+              ? chainSteps.map((step) => ({
+                key: step.prompt_slug,
+                title: step.title,
+                summary: step.goal,
+              }))
+              : chainScenarios.map((scenario) => ({
+                key: scenario.id,
+                title: scenario.title,
+                summary: scenario.summary,
+              }))
+            ).map((item, index) => (
+              <div key={`home-chain-${item.key}`} className="rounded-[0.9rem] border border-zinc-200 bg-white p-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
                   {t("home.scenarioChainStep", { count: index + 1 })}
                 </p>
-                <p className="mt-1 text-sm font-semibold text-zinc-900">{scenario.title}</p>
-                <p className="mt-1 text-xs leading-relaxed text-zinc-600">{scenario.summary}</p>
+                <p className="mt-1 text-sm font-semibold text-zinc-900">{item.title}</p>
+                <p className="mt-1 text-xs leading-relaxed text-zinc-600">{item.summary}</p>
               </div>
             ))}
           </div>
@@ -218,6 +288,92 @@ export function HomeScenariosSection({
           </div>
         </article>
       </div>
+
+      <div className="mt-5 grid gap-4 lg:grid-cols-2">
+        <article className="rounded-[1.1rem] border border-[var(--pv-border)] bg-zinc-50/70 p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">{t("home.nextStepKicker")}</p>
+          <h3 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-zinc-950">{t("home.nextStepTitle")}</h3>
+          <div className="mt-3 space-y-2">
+            {nextSteps.slice(0, 3).map((step) => (
+              <Link
+                key={`next-step-${step.next_prompt_slug}`}
+                href={`/prompt/${encodeURIComponent(step.next_prompt_slug)}`}
+                className="block rounded-[0.9rem] border border-zinc-200 bg-white p-3"
+                onClick={() =>
+                  trackEvent({
+                    eventName: "scenario_chain_next_clicked",
+                    page: "/",
+                    feature: "home_next_steps",
+                    metadata: {
+                      source_prompt_slug: step.source_prompt_slug,
+                      next_prompt_slug: step.next_prompt_slug,
+                    },
+                  })}
+              >
+                <p className="text-xs font-semibold text-zinc-800">{step.next_prompt_slug}</p>
+                <p className="mt-1 text-xs leading-relaxed text-zinc-600">{step.reason}</p>
+              </Link>
+            ))}
+            {!nextSteps.length ? <p className="text-sm text-zinc-600">{t("home.nextStepEmpty")}</p> : null}
+          </div>
+        </article>
+
+        <article className="rounded-[1.1rem] border border-[var(--pv-border)] bg-zinc-50/70 p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">{t("home.returnKicker")}</p>
+          <h3 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-zinc-950">{t("home.returnTitle")}</h3>
+          <div className="mt-3 space-y-2">
+            {returnTriggers.slice(0, 3).map((trigger) => (
+              <Link key={trigger.trigger_key} href={trigger.href} className="block rounded-[0.9rem] border border-zinc-200 bg-white p-3">
+                <p className="text-xs font-semibold text-zinc-900">{trigger.label}</p>
+                <p className="mt-1 text-xs text-zinc-600">{t("home.returnCount", { count: trigger.count })}</p>
+              </Link>
+            ))}
+            {!returnTriggers.length ? <p className="text-sm text-zinc-600">{t("home.returnEmpty")}</p> : null}
+          </div>
+        </article>
+      </div>
+
+      {showcase.length ? (
+        <div className="mt-5 rounded-[1.2rem] border border-[var(--pv-border)] bg-white/85 p-4 sm:p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">{t("home.showcaseKicker")}</p>
+          <h3 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-zinc-950">{t("home.showcaseTitle")}</h3>
+          <div className="mt-3 grid gap-3 md:grid-cols-3">
+            {showcase.slice(0, 3).map((item) => (
+              <article key={item.share_id} className="rounded-[0.9rem] border border-zinc-200 bg-zinc-50 p-3">
+                <p className="text-xs font-semibold text-zinc-900">{item.title}</p>
+                <p className="mt-1 text-xs leading-relaxed text-zinc-600">{item.excerpt}</p>
+                <pre className="mt-2 max-h-[6rem] overflow-auto rounded-[0.7rem] border border-zinc-200 bg-white p-2 text-[11px] leading-relaxed text-zinc-700 whitespace-pre-wrap">
+                  {item.output_preview}
+                </pre>
+              </article>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {pricingPlans.length ? (
+        <div className="mt-5 rounded-[1.2rem] border border-[var(--pv-border)] bg-white/85 p-4 sm:p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">{t("home.pricingKicker")}</p>
+          <h3 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-zinc-950">{t("home.pricingTitle")}</h3>
+          <div className="mt-3 grid gap-3 md:grid-cols-4">
+            {pricingPlans.map((plan) => (
+              <article key={plan.tier} className="rounded-[0.9rem] border border-zinc-200 bg-zinc-50 p-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{plan.tier}</p>
+                <p className="mt-1 text-lg font-semibold text-zinc-950">${plan.price_monthly_usd}</p>
+                <p className="mt-1 text-xs leading-relaxed text-zinc-600">{plan.headline}</p>
+              </article>
+            ))}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link href="/studio" className="pv-button-secondary !w-auto">
+              {t("home.pricingStudioAction")}
+            </Link>
+            <Link href="/scenarios/marketplace" className="pv-button-primary !w-auto">
+              {t("home.pricingMarketplaceAction")}
+            </Link>
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-5 rounded-[1.2rem] border border-[var(--pv-border)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(244,248,255,0.9))] p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">

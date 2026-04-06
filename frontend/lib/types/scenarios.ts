@@ -54,11 +54,74 @@ export type ScenarioLoopHintsRead = {
   free_demo_runs_per_scenario: number;
 };
 
+export type ScenarioPackRead = {
+  id: string;
+  title: string;
+  description: string;
+  outcome: string;
+  prompt_slugs: string[];
+  prompts: PromptListItem[];
+  cta_prompt_slug: string | null;
+};
+
+export type ScenarioChainStepRead = {
+  position: number;
+  prompt_slug: string;
+  title: string;
+  goal: string;
+};
+
+export type ScenarioChainRead = {
+  id: string;
+  title: string;
+  description: string;
+  steps: ScenarioChainStepRead[];
+};
+
+export type ScenarioNextStepRead = {
+  source_prompt_slug: string | null;
+  next_prompt_slug: string;
+  reason: string;
+  confidence: number;
+};
+
+export type ScenarioReturnTriggerRead = {
+  trigger_key: string;
+  label: string;
+  count: number;
+  href: string;
+};
+
+export type ScenarioPricingPlanRead = {
+  tier: "free" | "starter" | "pro" | "enterprise";
+  price_monthly_usd: number;
+  headline: string;
+  highlights: string[];
+};
+
+export type ScenarioShowcaseRead = {
+  share_id: string;
+  prompt_slug: string | null;
+  blueprint_id: string | null;
+  title: string;
+  excerpt: string;
+  output_preview: string;
+  visibility: string;
+  upvotes: number;
+  created_at: string;
+};
+
 export type ScenarioHomeAggregateRead = {
   generated_at: string;
   featured: PromptListItem[];
   recommended: PromptListItem[];
   retention: PromptListItem[];
+  packs: ScenarioPackRead[];
+  chains: ScenarioChainRead[];
+  next_steps: ScenarioNextStepRead[];
+  return_triggers: ScenarioReturnTriggerRead[];
+  showcase: ScenarioShowcaseRead[];
+  pricing_plans: ScenarioPricingPlanRead[];
   workspace: ScenarioWorkspaceRead | null;
   workspace_limits: ScenarioWorkspaceLimitsRead;
   loop_hints: ScenarioLoopHintsRead;
@@ -76,6 +139,7 @@ export type ScenarioDemoRunStatusRead = {
   reason: string | null;
   upgrade_hint: string | null;
   guest_session_id: string | null;
+  bonus_runs_remaining: number | null;
 };
 
 export type ScenarioDemoRunTrackRequest = {
@@ -127,4 +191,140 @@ export type ScenarioGameClaimRead = {
   claimed_tokens: number;
   pending_tokens_after: number;
   balance_after: number | null;
+};
+
+export type ScenarioTokenBoostPurchaseRequest = {
+  prompt_slug: string;
+};
+
+export type ScenarioTokenBoostPurchaseRead = {
+  prompt_slug: string;
+  applied_bonus_runs: number;
+  bonus_runs_remaining: number;
+  token_cost: number;
+  balance_after: number | null;
+  is_pro: boolean;
+};
+
+export type ScenarioShowcaseCreateRequest = {
+  share_id?: string;
+  prompt_slug?: string | null;
+  blueprint_id?: string | null;
+  title: string;
+  excerpt: string;
+  output_preview: string;
+  visibility?: "public" | "unlisted";
+};
+
+export type ScenarioShowcaseUpvoteRequest = {
+  share_id: string;
+};
+
+export type ScenarioBlueprintWrite = {
+  slug: string;
+  title: string;
+  summary?: string | null;
+  category: "utility" | "learning" | "productivity" | "entertainment" | "growth";
+  input_schema?: Record<string, unknown> | null;
+  context_text?: string | null;
+  logic_text?: string | null;
+  output_text?: string | null;
+  run_instructions?: string | null;
+  source_prompt_slug?: string | null;
+  visibility?: "private" | "team" | "public" | "marketplace";
+  is_premium?: boolean;
+  token_price?: number | null;
+};
+
+export type ScenarioBlueprintPatch = Partial<ScenarioBlueprintWrite>;
+
+export type ScenarioBlueprintRead = {
+  id: string;
+  owner_user_id: string;
+  slug: string;
+  title: string;
+  summary: string | null;
+  category: string;
+  visibility: string;
+  is_published: boolean;
+  is_premium: boolean;
+  token_price: number | null;
+  input_schema: Record<string, unknown> | null;
+  context_text: string | null;
+  logic_text: string | null;
+  output_text: string | null;
+  run_instructions: string | null;
+  usage_count: number;
+  fork_count: number;
+  like_count: number;
+  created_at: string;
+  updated_at: string;
+  published_at: string | null;
+};
+
+export type ScenarioBlueprintPublishRead = {
+  blueprint: ScenarioBlueprintRead;
+  creator_reward_tokens: number;
+  creator_reward_applied: boolean;
+};
+
+export type ScenarioBlueprintShareWrite = {
+  member_email: string;
+  can_edit?: boolean;
+};
+
+export type ScenarioBlueprintShareRead = {
+  blueprint_id: string;
+  owner_user_id: string;
+  member_user_id: string;
+  can_edit: boolean;
+  created_at: string;
+};
+
+export type ScenarioMarketplaceForkRead = {
+  source_blueprint_id: string;
+  forked_blueprint: ScenarioBlueprintRead;
+  token_spent: number;
+  balance_after: number | null;
+  creator_reward_applied: boolean;
+};
+
+export type ScenarioWorkflowWrite = {
+  name: string;
+  description?: string | null;
+  visibility?: "private" | "team" | "public";
+  step_blueprint_ids: string[];
+};
+
+export type ScenarioWorkflowRead = {
+  id: string;
+  owner_user_id: string;
+  name: string;
+  description: string | null;
+  visibility: string;
+  step_blueprint_ids: string[];
+  created_at: string;
+  updated_at: string;
+};
+
+export type ScenarioWorkflowRunStartWrite = {
+  context?: Record<string, unknown> | null;
+};
+
+export type ScenarioWorkflowRunRead = {
+  id: string;
+  workflow_id: string;
+  status: string;
+  current_step: number;
+  completed_steps: number;
+  total_steps: number;
+  next_blueprint_id: string | null;
+  completed_at: string | null;
+  last_active_at: string;
+};
+
+export type ScenarioWorkflowRunAdvanceRead = {
+  run: ScenarioWorkflowRunRead;
+  is_completed: boolean;
+  next_blueprint_id: string | null;
 };

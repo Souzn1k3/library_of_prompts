@@ -25,6 +25,8 @@ type HomeWorkbenchResultPanelProps = {
   onOutputDepthChange: (depth: ScenarioResultDepth) => void;
   onRunNow: () => void;
   runPending: boolean;
+  onPurchaseBoost: () => void;
+  boostPending: boolean;
   openScenarioHref: string;
   onCopy: () => void;
   onToggleSave: () => void;
@@ -39,6 +41,7 @@ type HomeWorkbenchResultPanelProps = {
     isPro: boolean;
     remainingRuns: number | null;
     capReached: boolean;
+    bonusRunsRemaining: number | null;
   };
   unfinished: UnfinishedItem[];
   recentSlugs: string[];
@@ -61,6 +64,8 @@ export function HomeWorkbenchResultPanel({
   onOutputDepthChange,
   onRunNow,
   runPending,
+  onPurchaseBoost,
+  boostPending,
   openScenarioHref,
   onCopy,
   onToggleSave,
@@ -84,6 +89,13 @@ export function HomeWorkbenchResultPanel({
   }
 
   const guardMessage =
+    runGuardMessage?.startsWith("bonus_runs_added:")
+      ? t("home.entryBoostAdded", { count: Number(runGuardMessage.split(":")[1] ?? "0") })
+      : runGuardMessage === "boost_purchase_failed"
+        ? t("home.entryBoostFailed")
+      : runGuardMessage === "pro_unlimited_runs"
+        ? t("home.entryDemoRunsUnlimited")
+      :
     runGuardMessage === "free_demo_cap_reached"
       ? t("home.entryDemoCapReached")
       : runGuardMessage === "guest_ip_prompt_daily_cap_reached"
@@ -181,7 +193,22 @@ export function HomeWorkbenchResultPanel({
               {t("home.entryDemoRunsLeft", { count: demoStatus.remainingRuns ?? 0 })}
             </p>
           )}
+          {!demoStatus.isPro && (demoStatus.bonusRunsRemaining ?? 0) > 0 ? (
+            <p className="text-xs text-emerald-700">
+              {t("home.entryBonusRunsRemaining", { count: demoStatus.bonusRunsRemaining ?? 0 })}
+            </p>
+          ) : null}
           {demoStatus.capReached ? <p className="text-xs text-amber-700">{t("home.entryDemoCapReached")}</p> : null}
+          {!demoStatus.isPro ? (
+            <button
+              type="button"
+              onClick={onPurchaseBoost}
+              disabled={boostPending}
+              className="pv-button-secondary !w-auto disabled:opacity-60"
+            >
+              {boostPending ? t("home.entryBoostPending") : t("home.entryBoostAction")}
+            </button>
+          ) : null}
         </div>
 
         <div className="flex flex-wrap gap-2">

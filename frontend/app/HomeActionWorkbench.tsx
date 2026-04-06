@@ -11,6 +11,7 @@ import { useI18n } from "@/components/i18n/LanguageProvider";
 import { useScenarioDemoRun } from "@/features/scenarios/presentation/useScenarioDemoRun";
 import { useScenarioEngagement } from "@/features/scenarios/presentation/useScenarioEngagement";
 import { useScenarioWorkspace } from "@/features/scenarios/presentation/useScenarioWorkspace";
+import { trackEvent } from "@/lib/analytics";
 import type { PromptListItem } from "@/lib/types";
 
 const COPY_RESET_TIMEOUT_MS = 1800;
@@ -110,6 +111,14 @@ export function HomeActionWorkbench({
       workspace.saveUnfinished(selectedPrompt.slug, cleanTask);
     }
     await engagement.markScenarioRun(selectedPrompt.id);
+    trackEvent({
+      eventName: "scenario_run",
+      page: "/",
+      feature: "home_workbench",
+      metadata: {
+        prompt_slug: selectedPrompt.slug,
+      },
+    });
     setLastRunAt(new Date());
   }
 
@@ -150,11 +159,27 @@ export function HomeActionWorkbench({
       return;
     }
     workspace.toggleSaved(selectedPrompt.slug);
+    trackEvent({
+      eventName: "scenario_saved",
+      page: "/",
+      feature: "home_workbench",
+      metadata: {
+        prompt_slug: selectedPrompt.slug,
+      },
+    });
   }
 
   function resumeUnfinished(slug: string, task: string) {
     selectScenarioSlug(slug);
     state.setTaskInput(task);
+    trackEvent({
+      eventName: "scenario_resumed",
+      page: "/",
+      feature: "home_workbench",
+      metadata: {
+        prompt_slug: slug,
+      },
+    });
   }
 
   function markCurrentDone() {
@@ -162,6 +187,34 @@ export function HomeActionWorkbench({
       return;
     }
     workspace.clearUnfinished(selectedPrompt.slug);
+    trackEvent({
+      eventName: "scenario_completed",
+      page: "/",
+      feature: "home_workbench",
+      metadata: {
+        prompt_slug: selectedPrompt.slug,
+      },
+    });
+  }
+
+  async function purchaseBoostRuns() {
+    if (!selectedPrompt) {
+      return;
+    }
+    const purchase = await demoRun.purchaseBoost();
+    if (!purchase) {
+      return;
+    }
+    trackEvent({
+      eventName: "scenario_upgrade_clicked",
+      page: "/",
+      feature: "home_workbench",
+      metadata: {
+        prompt_slug: selectedPrompt.slug,
+        source: "run_boost",
+        applied_bonus_runs: purchase.applied_bonus_runs,
+      },
+    });
   }
 
   return (
@@ -207,6 +260,8 @@ export function HomeActionWorkbench({
           onOutputDepthChange={state.setOutputDepth}
           onRunNow={() => void runScenarioNow()}
           runPending={runPending}
+          onPurchaseBoost={() => void purchaseBoostRuns()}
+          boostPending={demoRun.boostPending}
           openScenarioHref={state.openScenarioHref}
           onCopy={() => void copyReadyScript()}
           onToggleSave={toggleSaveScenario}
@@ -221,6 +276,7 @@ export function HomeActionWorkbench({
             isPro: demoRun.isPro,
             remainingRuns: demoRun.remainingRuns,
             capReached: demoRun.capReached,
+            bonusRunsRemaining: demoRun.bonusRunsRemaining,
           }}
           unfinished={workspace.unfinished}
           recentSlugs={workspace.recentSlugs}

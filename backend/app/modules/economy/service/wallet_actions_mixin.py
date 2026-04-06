@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from app.infrastructure.db.models import CurrencyTransactionType, User
+from app.infrastructure.db.models import CurrencyTransaction, CurrencyTransactionType, User
 from app.modules.economy.config.tuning import (
     DAILY_LADDER_REWARDS,
     STREAK_FREEZE_TOKEN_MILESTONES,
@@ -25,8 +25,8 @@ class WalletActionsMixin:
         source_id: uuid.UUID | None = None,
         metadata: dict | None = None,
         now: datetime | None = None,
-    ) -> None:
-        await self._repo.adjust_balance(
+    ) -> CurrencyTransaction:
+        return await self._repo.adjust_balance(
             user_id=user_id,
             amount=amount,
             reason=reason,

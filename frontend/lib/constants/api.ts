@@ -33,9 +33,22 @@ export const API_ENDPOINTS = {
   scenariosWorkspaceTrack: `${API_V1_PREFIX}/scenarios/workspace/track`,
   scenariosDemoRunStatus: `${API_V1_PREFIX}/scenarios/demo-run/status`,
   scenariosDemoRunTrack: `${API_V1_PREFIX}/scenarios/demo-run/track`,
+  scenariosDemoRunBoostPurchase: `${API_V1_PREFIX}/scenarios/demo-run/boost-purchase`,
   scenariosGameState: `${API_V1_PREFIX}/scenarios/game/state`,
   scenariosGameEarn: `${API_V1_PREFIX}/scenarios/game/earn`,
   scenariosGameClaim: `${API_V1_PREFIX}/scenarios/game/claim`,
+  scenariosPacks: `${API_V1_PREFIX}/scenarios/packs`,
+  scenariosChains: `${API_V1_PREFIX}/scenarios/chains`,
+  scenariosNextStep: `${API_V1_PREFIX}/scenarios/next-step`,
+  scenariosShowcase: `${API_V1_PREFIX}/scenarios/showcase`,
+  scenariosShowcaseShare: `${API_V1_PREFIX}/scenarios/showcase/share`,
+  scenariosShowcaseUpvote: `${API_V1_PREFIX}/scenarios/showcase/upvote`,
+  scenariosStudio: `${API_V1_PREFIX}/scenarios/studio`,
+  scenariosStudioMine: `${API_V1_PREFIX}/scenarios/studio/mine`,
+  scenariosMarketplace: `${API_V1_PREFIX}/scenarios/marketplace`,
+  scenariosWorkflows: `${API_V1_PREFIX}/scenarios/workflows`,
+  scenariosWorkflowsMine: `${API_V1_PREFIX}/scenarios/workflows/mine`,
+  scenariosTeamShared: `${API_V1_PREFIX}/scenarios/team/shared`,
   store: `${API_V1_PREFIX}/store`,
   lessons: `${API_V1_PREFIX}/lessons`,
   lessonsPopular: `${API_V1_PREFIX}/lessons/popular`,
@@ -72,5 +85,18 @@ export const apiPath = {
   userSavedPromptById: (promptId: string) => `${API_ENDPOINTS.usersSavedPrompts}/${promptId}`,
   promptEventCopy: (promptId: string) => `${API_ENDPOINTS.prompts}/${promptId}/events/copy`,
   promptEventApply: (promptId: string) => `${API_ENDPOINTS.prompts}/${promptId}/events/apply`,
+  scenarioStudioById: (blueprintId: string) => `${API_ENDPOINTS.scenariosStudio}/${encodeURIComponent(blueprintId)}`,
+  scenarioStudioPublish: (blueprintId: string) =>
+    `${API_ENDPOINTS.scenariosStudio}/${encodeURIComponent(blueprintId)}/publish`,
+  scenarioStudioShare: (blueprintId: string) =>
+    `${API_ENDPOINTS.scenariosStudio}/${encodeURIComponent(blueprintId)}/share`,
+  scenarioMarketplaceFork: (blueprintId: string) =>
+    `${API_ENDPOINTS.scenariosMarketplace}/${encodeURIComponent(blueprintId)}/fork`,
+  scenarioMarketplaceLike: (blueprintId: string) =>
+    `${API_ENDPOINTS.scenariosMarketplace}/${encodeURIComponent(blueprintId)}/like`,
+  scenarioWorkflowRun: (workflowId: string) =>
+    `${API_ENDPOINTS.scenariosWorkflows}/${encodeURIComponent(workflowId)}/run`,
+  scenarioWorkflowAdvanceRun: (runId: string) =>
+    `${API_ENDPOINTS.scenariosWorkflows}/runs/${encodeURIComponent(runId)}/advance`,
   telegramRewardClaim: `${API_V1_PREFIX}/telegram/rewards/claim`,
 } as const;
