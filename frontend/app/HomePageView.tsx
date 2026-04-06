@@ -42,7 +42,6 @@ export function HomePageView({ initialAuthenticated, data }: HomePageViewProps) 
       />
 
       <HomeHeroSection
-        initialAuthenticated={initialAuthenticated}
         entryPrompts={entryPrompts}
         heroPromptBody={heroPromptBody}
         quickUseCases={quickUseCases}

@@ -11,6 +11,8 @@ import {
 import { buildScenarioLiveResult } from "@/features/scenarios/application/scenarioRuntime";
 import type { ScenarioResultDepth } from "@/features/scenarios/domain/scenario";
 import { mapPromptListToScenarios } from "@/features/scenarios/infrastructure/promptScenarioMapper";
+import { useScenarioEngagement } from "@/features/scenarios/presentation/useScenarioEngagement";
+import { useScenarioWorkspace } from "@/features/scenarios/presentation/useScenarioWorkspace";
 import { getTechniqueTranslationKey } from "@/lib/i18n";
 import {
   buildPromptFallbackTemplate,
@@ -22,14 +24,12 @@ import type { PromptListItem } from "@/lib/types";
 const COPY_RESET_TIMEOUT_MS = 1800;
 
 type HomeActionWorkbenchProps = {
-  initialAuthenticated: boolean;
   prompts: PromptListItem[];
   heroPromptBody: string | null;
   quickUseCases: string[];
 };
 
 export function HomeActionWorkbench({
-  initialAuthenticated,
   prompts,
   heroPromptBody,
   quickUseCases,
@@ -44,8 +44,21 @@ export function HomeActionWorkbench({
   const [outputDepth, setOutputDepth] = useState<ScenarioResultDepth>("detailed");
   const [variationSeed, setVariationSeed] = useState(0);
   const [copyState, setCopyState] = useState<"idle" | "pending" | "copied" | "error">("idle");
+  const [shareState, setShareState] = useState<"idle" | "copied" | "error">("idle");
+  const [lastRunAt, setLastRunAt] = useState<Date | null>(null);
+
+  const workspace = useScenarioWorkspace();
+  const engagement = useScenarioEngagement();
 
   const scenarios = useMemo(() => mapPromptListToScenarios(prompts), [prompts]);
+
+  const promptBySlug = useMemo(() => {
+    const map = new Map<string, PromptListItem>();
+    for (const prompt of prompts) {
+      map.set(prompt.slug, prompt);
+    }
+    return map;
+  }, [prompts]);
 
   const techniqueOptions = useMemo(
     () => [...new Set(scenarios.map((scenario) => scenario.technique))],
@@ -96,6 +109,18 @@ export function HomeActionWorkbench({
     return () => window.clearTimeout(timeoutId);
   }, [copyState]);
 
+  useEffect(() => {
+    if (shareState !== "copied") {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setShareState("idle");
+    }, COPY_RESET_TIMEOUT_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [shareState]);
+
   const selectedPrompt = useMemo(() => {
     if (!explorer.selectedScenario) {
       return null;
@@ -131,21 +156,53 @@ export function HomeActionWorkbench({
     });
   }, [explorer.selectedScenario, language, outputDepth, taskInput, variationSeed]);
 
-  const openScenarioHref = selectedPrompt
-    ? `/prompt/${encodeURIComponent(selectedPrompt.slug)}`
-    : "/catalog";
+  const openScenarioHref = selectedPrompt ? `/prompt/${encodeURIComponent(selectedPrompt.slug)}` : "/catalog";
+
+  const isSaved = selectedPrompt ? workspace.savedSlugs.includes(selectedPrompt.slug) : false;
+  const unfinishedCurrent = selectedPrompt
+    ? workspace.unfinished.find((item) => item.slug === selectedPrompt.slug)
+    : null;
+
+  async function runScenarioNow() {
+    if (!selectedPrompt || !explorer.selectedScenario) {
+      return;
+    }
+
+    workspace.markRecent(selectedPrompt.slug);
+    if (taskInput.trim()) {
+      workspace.saveUnfinished(selectedPrompt.slug, taskInput);
+    }
+    await engagement.markScenarioRun(selectedPrompt.id);
+    setLastRunAt(new Date());
+  }
 
   async function copyReadyScript() {
-    if (!readyScript.trim()) {
+    if (!readyScript.trim() || !selectedPrompt) {
       return;
     }
 
     setCopyState("pending");
     try {
       await navigator.clipboard.writeText(readyScript);
+      await engagement.markScenarioCopy(selectedPrompt.id);
+      workspace.markRecent(selectedPrompt.slug);
       setCopyState("copied");
     } catch {
       setCopyState("error");
+    }
+  }
+
+  async function shareScenario() {
+    if (!selectedPrompt || typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/prompt/${encodeURIComponent(selectedPrompt.slug)}`);
+      workspace.markRecent(selectedPrompt.slug);
+      setShareState("copied");
+    } catch {
+      setShareState("error");
     }
   }
 
@@ -157,6 +214,27 @@ export function HomeActionWorkbench({
 
   function toggleFacet(facetValue: string) {
     setSelectedFacet((current) => (current === facetValue ? null : facetValue));
+  }
+
+  function toggleSaveScenario() {
+    if (!selectedPrompt) {
+      return;
+    }
+
+    workspace.toggleSaved(selectedPrompt.slug);
+    workspace.markRecent(selectedPrompt.slug);
+  }
+
+  function resumeUnfinished(slug: string, task: string) {
+    setSelectedSlug(slug);
+    setTaskInput(task);
+  }
+
+  function markCurrentDone() {
+    if (!selectedPrompt) {
+      return;
+    }
+    workspace.clearUnfinished(selectedPrompt.slug);
   }
 
   if (!prompts.length) {
@@ -195,9 +273,9 @@ export function HomeActionWorkbench({
               className="pv-input"
               placeholder={t("home.entrySearchPlaceholder")}
             />
-            <Link href={openScenarioHref} className="pv-button-primary sm:w-auto">
-              {t("home.entryPrimaryAction")}
-            </Link>
+            <button type="button" onClick={() => void runScenarioNow()} className="pv-button-primary sm:w-auto" disabled={engagement.runPending}>
+              {engagement.runPending ? t("home.entryRunPending") : t("home.entryRunNow")}
+            </button>
           </div>
 
           <div className="space-y-3">
@@ -337,6 +415,14 @@ export function HomeActionWorkbench({
                   {explorer.selectedScenario.title}
                 </h2>
                 <p className="mt-2 text-sm leading-relaxed text-zinc-600">{t("home.entryLiveStageSubtitle")}</p>
+                {engagement.latestMessage ? (
+                  <p className="mt-2 text-xs font-semibold text-emerald-700">{engagement.latestMessage}</p>
+                ) : null}
+                {lastRunAt ? (
+                  <p className="mt-1 text-xs text-zinc-500">
+                    {t("home.entryLastRun", { time: lastRunAt.toLocaleTimeString() })}
+                  </p>
+                ) : null}
               </div>
 
               <div className="space-y-2">
@@ -350,6 +436,11 @@ export function HomeActionWorkbench({
                   className="pv-textarea min-h-[98px]"
                   placeholder={t("home.entryIntentPlaceholder")}
                 />
+                {unfinishedCurrent ? (
+                  <div className="rounded-[0.85rem] border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600">
+                    {t("home.entryUnfinishedHint")}
+                  </div>
+                ) : null}
               </div>
 
               <div className="space-y-2">
@@ -397,41 +488,98 @@ export function HomeActionWorkbench({
                 <p className="text-xs text-zinc-500">{t("home.entryProGateLimit")}</p>
               </div>
 
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <Link href={openScenarioHref} className="pv-button-primary sm:flex-1">
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => void runScenarioNow()}
+                  className="pv-button-primary"
+                  disabled={engagement.runPending}
+                >
+                  {engagement.runPending ? t("home.entryRunPending") : t("home.entryRunNow")}
+                </button>
+                <Link href={openScenarioHref} className="pv-button-secondary !w-auto">
                   {t("home.entryPrimaryAction")}
                 </Link>
                 <button
                   type="button"
                   onClick={() => void copyReadyScript()}
-                  disabled={copyState === "pending"}
-                  className="pv-button-secondary sm:w-auto disabled:opacity-60"
+                  disabled={copyState === "pending" || engagement.copyPending}
+                  className="pv-button-secondary !w-auto disabled:opacity-60"
                 >
                   {copyState === "copied"
                     ? t("home.entryCopySuccess")
-                    : copyState === "pending"
+                    : copyState === "pending" || engagement.copyPending
                       ? t("copy.copying")
                       : t("home.entryCopyAction")}
+                </button>
+                <button type="button" onClick={toggleSaveScenario} className="pv-button-secondary !w-auto">
+                  {isSaved ? t("home.entrySavedAction") : t("home.entrySaveAction")}
+                </button>
+                <button type="button" onClick={() => void shareScenario()} className="pv-button-secondary !w-auto">
+                  {shareState === "copied" ? t("home.entryShareCopied") : t("home.entryShareAction")}
                 </button>
               </div>
 
               {copyState === "error" ? <p className="text-sm text-red-700">{t("home.entryCopyError")}</p> : null}
+              {shareState === "error" ? <p className="text-sm text-red-700">{t("home.entryShareError")}</p> : null}
 
-              {copyState === "copied" ? (
-                <div className="space-y-2 rounded-[1rem] border border-emerald-200 bg-emerald-50/80 p-3">
-                  <p className="text-sm leading-relaxed text-emerald-900">{t("home.entryCopiedHint")}</p>
-                  <div className="flex flex-wrap gap-2">
-                    <Link href={openScenarioHref} className="rounded-full border border-emerald-300 px-3 py-1.5 text-xs font-semibold text-emerald-900 transition hover:bg-emerald-100">
-                      {t("home.entryNextActionOpen")}
-                    </Link>
-                    <Link
-                      href={initialAuthenticated ? "/dashboard" : "/signup"}
-                      className="rounded-full border border-emerald-300 px-3 py-1.5 text-xs font-semibold text-emerald-900 transition hover:bg-emerald-100"
-                    >
-                      {t(initialAuthenticated ? "home.entryNextActionSaveAuth" : "home.entryNextActionSaveGuest")}
-                    </Link>
+              {workspace.unfinished.length ? (
+                <div className="space-y-2 rounded-[1rem] border border-zinc-200 bg-zinc-50/70 p-3">
+                  <p className="text-sm font-semibold text-zinc-900">{t("home.entryUnfinishedTitle")}</p>
+                  <div className="space-y-2">
+                    {workspace.unfinished.map((item) => {
+                      const prompt = promptBySlug.get(item.slug);
+                      if (!prompt) {
+                        return null;
+                      }
+
+                      return (
+                        <div key={`unfinished-${item.slug}`} className="rounded-[0.8rem] border border-zinc-200 bg-white p-2.5">
+                          <p className="text-xs font-semibold text-zinc-900">{prompt.title}</p>
+                          <p className="mt-1 line-clamp-2 text-xs text-zinc-600">{item.task}</p>
+                          <button
+                            type="button"
+                            onClick={() => resumeUnfinished(item.slug, item.task)}
+                            className="mt-2 text-xs font-semibold text-[var(--pv-brand-strong)]"
+                          >
+                            {t("home.entryUnfinishedResume")}
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
+              ) : null}
+
+              {workspace.recentSlugs.length ? (
+                <div className="space-y-2 rounded-[1rem] border border-zinc-200 bg-zinc-50/70 p-3">
+                  <p className="text-sm font-semibold text-zinc-900">{t("home.entryRecentTitle")}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {workspace.recentSlugs.slice(0, 5).map((slug) => {
+                      const prompt = promptBySlug.get(slug);
+                      if (!prompt) {
+                        return null;
+                      }
+
+                      return (
+                        <button
+                          key={`recent-${slug}`}
+                          type="button"
+                          onClick={() => setSelectedSlug(slug)}
+                          className="rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700"
+                        >
+                          {prompt.title}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
+              {unfinishedCurrent ? (
+                <button type="button" onClick={markCurrentDone} className="text-xs font-semibold text-zinc-500">
+                  {t("home.entryMarkDone")}
+                </button>
               ) : null}
             </div>
           ) : null}
