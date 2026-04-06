@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { T } from "@/components/i18n/T";
+import { formatScenarioFacetLabel } from "@/lib/scenarios/text";
 import type { PromptListItem } from "@/lib/types";
 
 type HomePathsSectionProps = {
@@ -45,10 +46,10 @@ export function HomePathsSection({
               <T k="home.quickPathsCardLabel" />
             </p>
             <h3 className="mt-2 text-lg font-semibold tracking-[-0.03em] text-zinc-950">
-              {formatUseCaseLabel(useCase)}
+              {formatScenarioFacetLabel(useCase)}
             </h3>
             <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-              <T k="home.quickPathsCardBody" params={{ useCase: formatUseCaseLabel(useCase) }} />
+              <T k="home.quickPathsCardBody" params={{ useCase: formatScenarioFacetLabel(useCase) }} />
             </p>
             <Link href={resolveUseCaseHref(entryPrompts, useCase)} className="pv-inline-link mt-4 w-fit text-sm">
               <T k="home.quickPathsCardAction" />
@@ -59,14 +60,6 @@ export function HomePathsSection({
       </div>
     </section>
   );
-}
-
-function formatUseCaseLabel(useCase: string): string {
-  return useCase
-    .split(" ")
-    .filter(Boolean)
-    .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
-    .join(" ");
 }
 
 function resolveUseCaseHref(prompts: PromptListItem[], useCase: string): string {

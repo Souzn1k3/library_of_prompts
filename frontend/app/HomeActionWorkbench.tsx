@@ -5,7 +5,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
-import { getTechniqueTranslationKey, type Language } from "@/lib/i18n";
+import { getTechniqueTranslationKey } from "@/lib/i18n";
+import { normalizeSearchValue, promptMatchesUseCase, scorePrompt } from "@/lib/scenarios/search";
+import {
+  buildPromptFallbackTemplate,
+  buildReadyScenarioScript,
+  formatScenarioFacetLabel,
+} from "@/lib/scenarios/text";
 import type { PromptListItem } from "@/lib/types";
 
 const MAX_VISIBLE_RESULTS = 6;
@@ -128,30 +134,9 @@ export function HomeActionWorkbench({
     const selectedBody =
       heroPromptBody && prompts[0]?.slug === selectedPrompt.slug
         ? heroPromptBody
-        : getPromptFallbackTemplate(language, selectedPrompt);
+        : buildPromptFallbackTemplate(language, selectedPrompt);
 
-    const normalizedTask = taskInput.trim();
-    if (!normalizedTask) {
-      return selectedBody;
-    }
-
-    if (language === "ru" || language === "tt") {
-      return [
-        `Задача: ${normalizedTask}`,
-        "",
-        "Используй шаблон ниже и адаптируй его под эту задачу.",
-        "",
-        selectedBody,
-      ].join("\n");
-    }
-
-    return [
-      `Task: ${normalizedTask}`,
-      "",
-      "Use the template below and adapt it to this task.",
-      "",
-      selectedBody,
-    ].join("\n");
+    return buildReadyScenarioScript(language, selectedBody, taskInput);
   }, [heroPromptBody, language, prompts, selectedPrompt, taskInput]);
 
   async function copyReadyPrompt() {
@@ -285,7 +270,7 @@ export function HomeActionWorkbench({
                           : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-900"
                       }`}
                     >
-                      {formatUseCaseLabel(useCase)}
+                      {formatScenarioFacetLabel(useCase)}
                     </button>
                   ))}
                 </div>
@@ -449,95 +434,4 @@ export function HomeActionWorkbench({
       </div>
     </section>
   );
-}
-
-function normalizeSearchValue(value: string | null | undefined): string {
-  return (value ?? "")
-    .toLowerCase()
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function promptMatchesUseCase(prompt: PromptListItem, normalizedUseCase: string): boolean {
-  const value = [
-    ...(prompt.use_cases ?? []),
-    ...(prompt.tags ?? []),
-    prompt.title,
-    prompt.summary ?? "",
-  ]
-    .join(" ")
-    .toLowerCase()
-    .replace(/[_-]+/g, " ")
-    .replace(/\s+/g, " ");
-
-  return value.includes(normalizedUseCase);
-}
-
-function scorePrompt(prompt: PromptListItem, normalizedQuery: string): number {
-  const title = normalizeSearchValue(prompt.title);
-  const summary = normalizeSearchValue(prompt.summary);
-  const useCases = normalizeSearchValue((prompt.use_cases ?? []).join(" "));
-  const tags = normalizeSearchValue((prompt.tags ?? []).join(" "));
-
-  let score = 0;
-  if (title.includes(normalizedQuery)) {
-    score += 8;
-  }
-  if (summary.includes(normalizedQuery)) {
-    score += 5;
-  }
-  if (useCases.includes(normalizedQuery)) {
-    score += 4;
-  }
-  if (tags.includes(normalizedQuery)) {
-    score += 3;
-  }
-
-  const queryWords = normalizedQuery.split(" ").filter(Boolean);
-  for (const word of queryWords) {
-    if (title.includes(word)) {
-      score += 2;
-    }
-    if (summary.includes(word)) {
-      score += 1;
-    }
-  }
-
-  return score;
-}
-
-function getPromptFallbackTemplate(language: Language, prompt: PromptListItem): string {
-  const isRuFamily = language === "ru" || language === "tt";
-  const promptSummary = prompt.summary?.trim() || (isRuFamily ? "Нет краткого описания." : "No summary provided.");
-
-  if (isRuFamily) {
-    return [
-      `Контекст: ${prompt.title}`,
-      `Описание: ${promptSummary}`,
-      "",
-      "Сделай:",
-      "1) Сначала уточни недостающие детали задачи.",
-      "2) Предложи рабочую структуру решения.",
-      "3) Дай финальный результат в практичном формате.",
-    ].join("\n");
-  }
-
-  return [
-    `Context: ${prompt.title}`,
-    `Summary: ${promptSummary}`,
-    "",
-    "Do this:",
-    "1) Ask for missing details first.",
-    "2) Propose a practical solution structure.",
-    "3) Return a ready-to-use final output.",
-  ].join("\n");
-}
-
-function formatUseCaseLabel(useCase: string): string {
-  return useCase
-    .split(" ")
-    .filter(Boolean)
-    .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
-    .join(" ");
 }

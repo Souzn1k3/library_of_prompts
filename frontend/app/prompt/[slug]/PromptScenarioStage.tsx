@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import type { Language } from "@/lib/i18n";
+import { isRuFamilyLanguage } from "@/lib/scenarios/text";
 import type { PromptDetail } from "@/lib/types";
 
 type PromptScenarioStageProps = {
@@ -152,7 +153,7 @@ function buildLiveResult({
   outputMode: "concise" | "detailed";
   refreshSeed: number;
 }) {
-  const isRuFamily = language === "ru" || language === "tt";
+  const isRuFamily = isRuFamilyLanguage(language);
   const summary = prompt.summary?.trim() || (isRuFamily ? "Описание отсутствует." : "No summary available.");
   const focus = scenarioInput.trim() || summary;
   const variant = refreshSeed % 3;
@@ -237,7 +238,7 @@ function buildLiveResult({
 }
 
 function getLocalizedCopy(language: Language) {
-  if (language === "ru" || language === "tt") {
+  if (isRuFamilyLanguage(language)) {
     return {
       liveResultKicker: "Живой результат сценария",
       liveResultSubtitle: "Сначала вы видите итог AI-работы. Ниже — полный сценарий и доступ к его логике.",

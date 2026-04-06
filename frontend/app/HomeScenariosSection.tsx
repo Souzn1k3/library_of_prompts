@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
-import { getTechniqueTranslationKey, type Language } from "@/lib/i18n";
+import { getTechniqueTranslationKey } from "@/lib/i18n";
+import { SCENARIO_GAME_CHALLENGES } from "@/lib/scenarios/game";
+import { buildScenarioOutputPreview } from "@/lib/scenarios/text";
 import type { PromptListItem } from "@/lib/types";
 
 type HomeScenariosSectionProps = {
@@ -12,109 +14,7 @@ type HomeScenariosSectionProps = {
   initialAuthenticated: boolean;
 };
 
-type GameChoice = {
-  en: string;
-  ru: string;
-  reward: number;
-  feedbackEn: string;
-  feedbackRu: string;
-};
-
-type GameChallenge = {
-  id: string;
-  promptEn: string;
-  promptRu: string;
-  choices: GameChoice[];
-};
-
 const TELEGRAM_BOT_URL = "https://t.me/prompts_souz_bot";
-
-const GAME_CHALLENGES: GameChallenge[] = [
-  {
-    id: "challenge-1",
-    promptEn: "You need better bug reports from your team. Pick the strongest AI instruction.",
-    promptRu: "Нужно улучшить баг-репорты в команде. Выбери самый сильный AI-инструктаж.",
-    choices: [
-      {
-        en: "Write any bug report.",
-        ru: "Напиши любой баг-репорт.",
-        reward: 1,
-        feedbackEn: "Too vague. The model has no structure to follow.",
-        feedbackRu: "Слишком расплывчато. У модели нет структуры для ответа.",
-      },
-      {
-        en: "Create a bug report with steps, expected behavior, actual behavior, impact, and logs.",
-        ru: "Собери баг-репорт: шаги, ожидаемое, фактическое, влияние и логи.",
-        reward: 6,
-        feedbackEn: "Great. Clear structure = stable output quality.",
-        feedbackRu: "Отлично. Четкая структура дает стабильный результат.",
-      },
-      {
-        en: "Explain why bugs are bad.",
-        ru: "Объясни, почему баги — это плохо.",
-        reward: 2,
-        feedbackEn: "Helpful but not actionable for real execution.",
-        feedbackRu: "Полезно, но не дает рабочего результата.",
-      },
-    ],
-  },
-  {
-    id: "challenge-2",
-    promptEn: "You need a launch plan in 24 hours. Choose the highest-leverage scenario.",
-    promptRu: "Нужен план запуска за 24 часа. Выбери сценарий с максимальной пользой.",
-    choices: [
-      {
-        en: "Give random launch ideas.",
-        ru: "Дай случайные идеи запуска.",
-        reward: 1,
-        feedbackEn: "No timeline, no owners, no execution path.",
-        feedbackRu: "Нет сроков, владельцев и пути исполнения.",
-      },
-      {
-        en: "Build a 24-hour launch plan: timeline, owners, channels, KPI, and risk fallback.",
-        ru: "Собери план запуска на 24 часа: таймлайн, владельцы, каналы, KPI и fallback по рискам.",
-        reward: 6,
-        feedbackEn: "Strong. This is execution-ready.",
-        feedbackRu: "Сильно. Это уже готово к исполнению.",
-      },
-      {
-        en: "Describe what launch means.",
-        ru: "Опиши, что такое запуск.",
-        reward: 2,
-        feedbackEn: "Educational, but too passive for urgent work.",
-        feedbackRu: "Образовательно, но слишком пассивно для срочной задачи.",
-      },
-    ],
-  },
-  {
-    id: "challenge-3",
-    promptEn: "You need better customer interviews. Select the scenario that increases signal quality.",
-    promptRu: "Нужно улучшить интервью с клиентами. Выбери сценарий, который повышает качество инсайтов.",
-    choices: [
-      {
-        en: "Generate 5 generic questions.",
-        ru: "Сгенерируй 5 общих вопросов.",
-        reward: 2,
-        feedbackEn: "A start, but not enough depth for reliable insight.",
-        feedbackRu: "Неплохой старт, но мало глубины для надежных инсайтов.",
-      },
-      {
-        en: "Create an interview script with hypotheses, probing questions, bias traps, and synthesis format.",
-        ru: "Создай скрипт интервью: гипотезы, уточняющие вопросы, анти-байас ловушки и формат синтеза.",
-        reward: 6,
-        feedbackEn: "Excellent. This drives better decisions from each interview.",
-        feedbackRu: "Отлично. Такой сценарий делает каждое интервью полезнее для решений.",
-      },
-      {
-        en: "Ask users if they like the product.",
-        ru: "Спроси пользователей, нравится ли им продукт.",
-        reward: 1,
-        feedbackEn: "Weak signal. It won't reveal root causes.",
-        feedbackRu: "Слабый сигнал. Корневые причины не вскроются.",
-      },
-    ],
-  },
-];
 
 export function HomeScenariosSection({ prompts, initialAuthenticated }: HomeScenariosSectionProps) {
   const { t, language } = useI18n();
@@ -130,7 +30,7 @@ export function HomeScenariosSection({ prompts, initialAuthenticated }: HomeScen
     [activeScenarioId, scenarios],
   );
 
-  const gameChallenge = GAME_CHALLENGES[gameStep] ?? null;
+  const gameChallenge = SCENARIO_GAME_CHALLENGES[gameStep] ?? null;
   const selectedChoice = selectedChoiceIndex !== null && gameChallenge
     ? gameChallenge.choices[selectedChoiceIndex] ?? null
     : null;
@@ -148,8 +48,8 @@ export function HomeScenariosSection({ prompts, initialAuthenticated }: HomeScen
       setGameTokens((current) => current + selectedChoice.reward);
     }
 
-    if (gameStep + 1 >= GAME_CHALLENGES.length) {
-      setGameStep(GAME_CHALLENGES.length);
+    if (gameStep + 1 >= SCENARIO_GAME_CHALLENGES.length) {
+      setGameStep(SCENARIO_GAME_CHALLENGES.length);
       setSelectedChoiceIndex(null);
       return;
     }
@@ -190,7 +90,7 @@ export function HomeScenariosSection({ prompts, initialAuthenticated }: HomeScen
             </p>
 
             <pre className="mt-3 line-clamp-4 rounded-[0.9rem] border border-zinc-200 bg-zinc-50 p-3 text-xs leading-relaxed text-zinc-700 whitespace-pre-wrap">
-              {buildScenarioOutput(language, scenario, scenarioInput)}
+              {buildScenarioOutputPreview(language, scenario, scenarioInput)}
             </pre>
 
             <div className="mt-3 flex flex-wrap gap-2">
@@ -220,7 +120,7 @@ export function HomeScenariosSection({ prompts, initialAuthenticated }: HomeScen
             placeholder={t("home.scenarioLabPlaceholder")}
           />
           <pre className="mt-3 max-h-[13rem] overflow-auto rounded-[0.9rem] border border-zinc-200 bg-zinc-50 p-3 text-xs leading-relaxed text-zinc-700 whitespace-pre-wrap">
-            {buildScenarioOutput(language, activeScenario, scenarioInput)}
+            {buildScenarioOutputPreview(language, activeScenario, scenarioInput)}
           </pre>
           <div className="mt-3 flex flex-wrap gap-2">
             <Link href={`/prompt/${encodeURIComponent(activeScenario.slug)}`} className="pv-button-primary !w-auto">
@@ -304,34 +204,4 @@ export function HomeScenariosSection({ prompts, initialAuthenticated }: HomeScen
       </div>
     </section>
   );
-}
-
-function buildScenarioOutput(language: Language, prompt: PromptListItem, userInput: string): string {
-  const isRuFamily = language === "ru" || language === "tt";
-  const task = userInput.trim();
-  const summary = prompt.summary?.trim() || (isRuFamily ? "Описание сценария отсутствует." : "No scenario summary.");
-
-  if (isRuFamily) {
-    return [
-      "Результат AI-сценария:",
-      "",
-      `Сценарий: ${prompt.title}`,
-      `Фокус: ${task || summary}`,
-      "",
-      "1) Диагноз ситуации и ключевые риски",
-      "2) Пошаговый план действий на ближайший цикл",
-      "3) Готовый формат ответа, который можно сразу применять",
-    ].join("\n");
-  }
-
-  return [
-    "AI scenario output:",
-    "",
-    `Scenario: ${prompt.title}`,
-    `Focus: ${task || summary}`,
-    "",
-    "1) Situation diagnosis and key risks",
-    "2) Action plan for the next execution cycle",
-    "3) Ready-to-use output format you can run immediately",
-  ].join("\n");
 }
