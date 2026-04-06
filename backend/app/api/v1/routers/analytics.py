@@ -3,7 +3,12 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, Query, Request, status
 
 from app.api.deps import get_optional_user
-from app.api.service_deps import get_analytics_service, get_growth_ops_service, get_revenue_ops_service
+from app.api.service_deps import (
+    get_analytics_service,
+    get_gtm_ops_service,
+    get_growth_ops_service,
+    get_revenue_ops_service,
+)
 from app.api.support.rate_limit import RateLimitRule, enforce_request_rate_limits
 from app.infrastructure.db.models import User
 from app.modules.analytics.model.analytics import (
@@ -15,8 +20,10 @@ from app.modules.analytics.model.analytics import (
     AnalyticsIngestResponse,
 )
 from app.modules.analytics.model.growth import GrowthDashboardRead, GrowthRuntimeRead
+from app.modules.analytics.model.gtm import ChannelSpendUpsertRead, ChannelSpendUpsertWrite, GtmDashboardRead
 from app.modules.analytics.model.revenue import RevenueDashboardRead
 from app.modules.analytics.service.analytics_service import AnalyticsService
+from app.modules.analytics.service.gtm_ops_service import GtmOpsService
 from app.modules.analytics.service.growth_ops_service import GrowthOpsService
 from app.modules.analytics.service.revenue_ops_service import RevenueOpsService
 
@@ -141,6 +148,30 @@ async def revenue_dashboard(
     viewer: User | None = Depends(get_optional_user),
     svc: RevenueOpsService = Depends(get_revenue_ops_service),
 ) -> RevenueDashboardRead:
+    return await svc.dashboard(
+        user=viewer,
+        window_days=window_days,
+    )
+
+
+@router.post("/gtm/spend", response_model=ChannelSpendUpsertRead)
+async def upsert_channel_spend(
+    body: ChannelSpendUpsertWrite,
+    viewer: User | None = Depends(get_optional_user),
+    svc: GtmOpsService = Depends(get_gtm_ops_service),
+) -> ChannelSpendUpsertRead:
+    return await svc.upsert_spend(
+        user=viewer,
+        payload=body,
+    )
+
+
+@router.get("/gtm/dashboard", response_model=GtmDashboardRead)
+async def gtm_dashboard(
+    window_days: int = Query(default=30, ge=7, le=90),
+    viewer: User | None = Depends(get_optional_user),
+    svc: GtmOpsService = Depends(get_gtm_ops_service),
+) -> GtmDashboardRead:
     return await svc.dashboard(
         user=viewer,
         window_days=window_days,

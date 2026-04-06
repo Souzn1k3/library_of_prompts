@@ -60,6 +60,7 @@ from ._identity_billing_models import (  # noqa: F401
     AnalyticsEvent,
     AuthRefreshToken,
     BillingCustomer,
+    ChannelSpendEntry,
     ContributorProfile,
     OnboardingEvent,
     OnboardingProfile,

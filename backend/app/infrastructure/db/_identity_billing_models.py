@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
-from sqlalchemy import JSON, Boolean, DateTime, Enum, ForeignKey, Integer, String, UniqueConstraint, Uuid
+from sqlalchemy import JSON, Boolean, Date, DateTime, Enum, ForeignKey, Integer, String, UniqueConstraint, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ._catalog_models import Prompt
@@ -39,6 +39,8 @@ class AnalyticsEvent(Base):
     utm_campaign: Mapped[str | None] = mapped_column(String(160), nullable=True)
     utm_term: Mapped[str | None] = mapped_column(String(160), nullable=True)
     utm_content: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    ad_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    creative_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
     referrer: Mapped[str | None] = mapped_column(String(500), nullable=True)
     metadata_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
@@ -65,10 +67,14 @@ class SessionAttribution(Base):
     first_utm_source: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
     first_utm_medium: Mapped[str | None] = mapped_column(String(120), nullable=True)
     first_utm_campaign: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    first_ad_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    first_creative_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
     first_referrer: Mapped[str | None] = mapped_column(String(500), nullable=True)
     last_utm_source: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
     last_utm_medium: Mapped[str | None] = mapped_column(String(120), nullable=True)
     last_utm_campaign: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    last_ad_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    last_creative_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
     last_referrer: Mapped[str | None] = mapped_column(String(500), nullable=True)
     first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -103,10 +109,14 @@ class UserAttribution(Base):
     first_utm_source: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
     first_utm_medium: Mapped[str | None] = mapped_column(String(120), nullable=True)
     first_utm_campaign: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    first_ad_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    first_creative_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
     first_referrer: Mapped[str | None] = mapped_column(String(500), nullable=True)
     last_utm_source: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
     last_utm_medium: Mapped[str | None] = mapped_column(String(120), nullable=True)
     last_utm_campaign: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    last_ad_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    last_creative_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
     last_referrer: Mapped[str | None] = mapped_column(String(500), nullable=True)
     first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -158,6 +168,33 @@ class AuthRefreshToken(Base):
     )
 
     user: Mapped["User"] = relationship(back_populates="refresh_tokens")
+
+
+class ChannelSpendEntry(Base):
+    __tablename__ = "channel_spend_entries"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    spend_day: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    source: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
+    medium: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    campaign: Mapped[str | None] = mapped_column(String(160), nullable=True, index=True)
+    ad_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    creative_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    cost_usd_cents: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    clicks: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    impressions: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    dedupe_key: Mapped[str] = mapped_column(String(220), nullable=False, unique=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
 
 
 class Plan(Base):

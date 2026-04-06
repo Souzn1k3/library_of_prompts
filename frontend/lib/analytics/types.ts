@@ -29,6 +29,9 @@ export type AnalyticsEventName =
   | "paywall_viewed"
   | "paywall_interaction"
   | "pricing_plan_selected"
+  | "ad_click"
+  | "landing_view"
+  | "signup_from_source"
   | "catalog_search_used"
   | "catalog_filter_used"
   | "scenario_run"
@@ -44,7 +47,9 @@ export type AnalyticsEventName =
   | "growth_experiment_assigned"
   | "feature_flag_exposed"
   | "churn_risk_detected"
-  | "reactivation_trigger";
+  | "reactivation_trigger"
+  | "scale_channel"
+  | "kill_channel";
 
 export type Attribution = {
   utm_source?: string;
@@ -52,6 +57,8 @@ export type Attribution = {
   utm_campaign?: string;
   utm_term?: string;
   utm_content?: string;
+  ad_id?: string;
+  creative_id?: string;
   referrer?: string;
 };
 

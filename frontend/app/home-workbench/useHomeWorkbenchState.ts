@@ -48,15 +48,18 @@ export function useHomeWorkbenchState({
   quickUseCases,
   heroPromptBody,
   language,
+  preferredFacet,
 }: {
   prompts: PromptListItem[];
   quickUseCases: string[];
   heroPromptBody: string | null;
   language: Language;
+  preferredFacet?: string | null;
 }): HomeWorkbenchState {
+  const normalizedPreferredFacet = preferredFacet ? normalizeScenarioFacet(preferredFacet) : null;
   const [query, setQuery] = useState("");
   const [selectedTechnique, setSelectedTechnique] = useState<PromptListItem["technique"] | "all">("all");
-  const [selectedFacet, setSelectedFacet] = useState<string | null>(null);
+  const [selectedFacet, setSelectedFacet] = useState<string | null>(normalizedPreferredFacet);
   const [selectedSlug, setSelectedSlug] = useState<string | null>(prompts[0]?.slug ?? null);
   const [taskInput, setTaskInput] = useState("");
   const [committedTaskInput, setCommittedTaskInput] = useState("");
@@ -101,6 +104,17 @@ export function useHomeWorkbenchState({
       setSelectedSlug(explorer.filteredScenarios[0].slug);
     }
   }, [explorer.filteredScenarios, selectedSlug]);
+
+  useEffect(() => {
+    if (!normalizedPreferredFacet || selectedFacet) {
+      return;
+    }
+    const canUsePreferredFacet = quickFacetOptions.some((option) => option.value === normalizedPreferredFacet);
+    if (!canUsePreferredFacet) {
+      return;
+    }
+    setSelectedFacet(normalizedPreferredFacet);
+  }, [normalizedPreferredFacet, quickFacetOptions, selectedFacet]);
 
   const selectedPrompt = useMemo(() => {
     if (!explorer.selectedScenario) {

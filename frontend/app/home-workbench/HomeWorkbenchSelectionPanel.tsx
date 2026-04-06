@@ -24,6 +24,9 @@ type HomeWorkbenchSelectionPanelProps = {
   explorer: ScenarioExplorerSnapshot;
   onResetFilters: () => void;
   onSelectScenario: (slug: string) => void;
+  heroKicker?: string;
+  heroTitle?: string;
+  heroSubtitle?: string;
 };
 
 export function HomeWorkbenchSelectionPanel({
@@ -41,13 +44,16 @@ export function HomeWorkbenchSelectionPanel({
   explorer,
   onResetFilters,
   onSelectScenario,
+  heroKicker,
+  heroTitle,
+  heroSubtitle,
 }: HomeWorkbenchSelectionPanelProps) {
   return (
     <div className="space-y-5">
       <div className="max-w-[43rem] space-y-3">
-        <p className="pv-kicker">{t("home.entryKicker")}</p>
-        <h1 className="pv-display max-w-[22ch] text-zinc-950">{t("home.entryTitle")}</h1>
-        <p className="text-sm leading-relaxed text-zinc-600">{t("home.entrySubtitle")}</p>
+        <p className="pv-kicker">{heroKicker ?? t("home.entryKicker")}</p>
+        <h1 className="pv-display max-w-[22ch] text-zinc-950">{heroTitle ?? t("home.entryTitle")}</h1>
+        <p className="text-sm leading-relaxed text-zinc-600">{heroSubtitle ?? t("home.entrySubtitle")}</p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">

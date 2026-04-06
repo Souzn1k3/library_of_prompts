@@ -6,6 +6,8 @@ export const API_ENDPOINTS = {
   analyticsGrowthRuntime: `${API_V1_PREFIX}/analytics/growth/runtime`,
   analyticsGrowthDashboard: `${API_V1_PREFIX}/analytics/growth/dashboard`,
   analyticsRevenueDashboard: `${API_V1_PREFIX}/analytics/revenue/dashboard`,
+  analyticsGtmDashboard: `${API_V1_PREFIX}/analytics/gtm/dashboard`,
+  analyticsGtmSpend: `${API_V1_PREFIX}/analytics/gtm/spend`,
   auth: {
     refresh: `${API_V1_PREFIX}/auth/refresh`,
     login: `${API_V1_PREFIX}/auth/login`,

@@ -40,11 +40,31 @@ export function readAttribution(): Attribution {
     "utm_campaign",
     "utm_term",
     "utm_content",
+    "ad_id",
+    "creative_id",
   ];
   for (const key of replacements) {
     const value = params.get(key);
     if (value) {
       nextAttr[key] = value;
+    }
+  }
+  if (!nextAttr.utm_source) {
+    const sourceParam = params.get("source");
+    if (sourceParam) {
+      nextAttr.utm_source = sourceParam;
+    }
+  }
+  if (!nextAttr.utm_medium) {
+    const mediumParam = params.get("medium");
+    if (mediumParam) {
+      nextAttr.utm_medium = mediumParam;
+    }
+  }
+  if (!nextAttr.utm_campaign) {
+    const campaignParam = params.get("campaign");
+    if (campaignParam) {
+      nextAttr.utm_campaign = campaignParam;
     }
   }
   if (!nextAttr.referrer && document.referrer) {

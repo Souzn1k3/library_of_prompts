@@ -66,6 +66,7 @@ class Settings(BaseSettings):
     growth_flag_chain_recommendations_rollout_percent: int = 100
     growth_flag_showcase_share_rollout_percent: int = 100
     growth_experiment_homepage_rollout_percent: int = 50
+    growth_experiment_landing_rollout_percent: int = 50
     growth_experiment_upgrade_rollout_percent: int = 50
     growth_experiment_paywall_rollout_percent: int = 50
     growth_experiment_pricing_rollout_percent: int = 50
@@ -200,6 +201,7 @@ class Settings(BaseSettings):
             ),
             ("GROWTH_FLAG_SHOWCASE_SHARE_ROLLOUT_PERCENT", self.growth_flag_showcase_share_rollout_percent),
             ("GROWTH_EXPERIMENT_HOMEPAGE_ROLLOUT_PERCENT", self.growth_experiment_homepage_rollout_percent),
+            ("GROWTH_EXPERIMENT_LANDING_ROLLOUT_PERCENT", self.growth_experiment_landing_rollout_percent),
             ("GROWTH_EXPERIMENT_UPGRADE_ROLLOUT_PERCENT", self.growth_experiment_upgrade_rollout_percent),
             ("GROWTH_EXPERIMENT_PAYWALL_ROLLOUT_PERCENT", self.growth_experiment_paywall_rollout_percent),
             ("GROWTH_EXPERIMENT_PRICING_ROLLOUT_PERCENT", self.growth_experiment_pricing_rollout_percent),

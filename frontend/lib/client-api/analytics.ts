@@ -13,6 +13,8 @@ export type AttributionCaptureResponse = {
     utm_source: string | null;
     utm_medium: string | null;
     utm_campaign: string | null;
+    ad_id: string | null;
+    creative_id: string | null;
     referrer: string | null;
     seen_at: string;
   };
@@ -20,6 +22,8 @@ export type AttributionCaptureResponse = {
     utm_source: string | null;
     utm_medium: string | null;
     utm_campaign: string | null;
+    ad_id: string | null;
+    creative_id: string | null;
     referrer: string | null;
     seen_at: string;
   };
@@ -29,10 +33,14 @@ export async function captureAttribution({
   sessionId,
   attribution,
   source = "web",
+  page = "/",
+  feature = "attribution_capture",
 }: {
   sessionId: string;
   attribution: Attribution;
   source?: string;
+  page?: string;
+  feature?: string;
 }): Promise<AttributionCaptureResponse> {
   return optionalAuthJsonFetch<AttributionCaptureResponse>(API_ENDPOINTS.analyticsAttribution, {
     method: "POST",
@@ -41,6 +49,8 @@ export async function captureAttribution({
       session_id: sessionId,
       attribution,
       source,
+      page,
+      feature,
     }),
   });
 }
@@ -55,4 +65,3 @@ export async function fetchRevenueDashboard({
   });
   return authFetch<RevenueDashboard>(path);
 }
-

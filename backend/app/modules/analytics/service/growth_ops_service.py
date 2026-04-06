@@ -97,6 +97,16 @@ class GrowthOpsService:
                 ),
             ),
             _ExperimentDefinition(
+                key="landing_entry_v1",
+                target="all",
+                rollout_percent=int(self._settings.growth_experiment_landing_rollout_percent),
+                variants=(
+                    ("default", 34),
+                    ("source_matched", 33),
+                    ("intent_matched", 33),
+                ),
+            ),
+            _ExperimentDefinition(
                 key="scenario_upgrade_moment_v1",
                 target="authenticated",
                 rollout_percent=int(self._settings.growth_experiment_upgrade_rollout_percent),

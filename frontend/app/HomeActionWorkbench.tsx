@@ -11,10 +11,39 @@ import { useI18n } from "@/components/i18n/LanguageProvider";
 import { useScenarioDemoRun } from "@/features/scenarios/presentation/useScenarioDemoRun";
 import { useScenarioEngagement } from "@/features/scenarios/presentation/useScenarioEngagement";
 import { useScenarioWorkspace } from "@/features/scenarios/presentation/useScenarioWorkspace";
-import { trackEvent } from "@/lib/analytics";
+import { analyticsSessionId, trackEvent } from "@/lib/analytics";
+import { readAttribution } from "@/lib/analytics/storage";
+import { fetchGrowthRuntime } from "@/lib/client-api";
 import type { PromptListItem } from "@/lib/types";
 
 const COPY_RESET_TIMEOUT_MS = 1800;
+
+function normalizeValue(value: string | null | undefined): string | null {
+  const normalized = (value ?? "").trim().toLowerCase();
+  return normalized || null;
+}
+
+function inferIntentFromCampaign(campaign: string | null): string | null {
+  if (!campaign) {
+    return null;
+  }
+  if (/(learn|course|education|exam)/.test(campaign)) {
+    return "learning";
+  }
+  if (/(productivity|ops|workflow|automation|team)/.test(campaign)) {
+    return "productivity";
+  }
+  if (/(growth|marketing|acquisition|revenue|ads)/.test(campaign)) {
+    return "growth";
+  }
+  if (/(game|fun|entertain)/.test(campaign)) {
+    return "entertainment";
+  }
+  if (/(utility|support|assistant)/.test(campaign)) {
+    return "utility";
+  }
+  return null;
+}
 
 type HomeActionWorkbenchProps = {
   prompts: PromptListItem[];
@@ -30,12 +59,35 @@ export function HomeActionWorkbench({
   const { t, language } = useI18n();
   const workspace = useScenarioWorkspace();
   const engagement = useScenarioEngagement();
+  const [landingVariant, setLandingVariant] = useState("default");
+  const [landingSource, setLandingSource] = useState<string>("direct");
+  const [landingCampaign, setLandingCampaign] = useState<string | null>(null);
+
+  const landingIntent = useMemo(() => inferIntentFromCampaign(landingCampaign), [landingCampaign]);
+
+  const preferredFacet = useMemo(() => {
+    if (landingVariant === "intent_matched" && landingIntent) {
+      return landingIntent;
+    }
+    if (landingVariant === "source_matched") {
+      const sourceFacetMap: Record<string, string> = {
+        google: "productivity",
+        linkedin: "productivity",
+        tiktok: "growth",
+        twitter: "growth",
+        seo: "learning",
+      };
+      return sourceFacetMap[landingSource] ?? null;
+    }
+    return null;
+  }, [landingIntent, landingSource, landingVariant]);
 
   const state = useHomeWorkbenchState({
     prompts,
     quickUseCases,
     heroPromptBody,
     language,
+    preferredFacet,
   });
 
   const demoRun = useScenarioDemoRun(state.selectedPrompt?.slug ?? null);
@@ -53,6 +105,29 @@ export function HomeActionWorkbench({
     return map;
   }, [prompts]);
 
+  const heroCopy = useMemo(() => {
+    const base = {
+      kicker: t("home.entryKicker"),
+      title: t("home.entryTitle"),
+      subtitle: t("home.entrySubtitle"),
+    };
+    if (landingVariant === "source_matched" && landingSource !== "direct") {
+      return {
+        kicker: `${base.kicker} · ${landingSource}`,
+        title: base.title,
+        subtitle: `${base.subtitle} Optimized for traffic from ${landingSource}.`,
+      };
+    }
+    if (landingVariant === "intent_matched" && landingIntent) {
+      return {
+        kicker: `${base.kicker} · ${landingIntent}`,
+        title: base.title,
+        subtitle: `${base.subtitle} Showing scenarios aligned with "${landingIntent}" intent.`,
+      };
+    }
+    return base;
+  }, [landingIntent, landingSource, landingVariant, t]);
+
   useEffect(() => {
     if (copyState !== "copied") {
       return;
@@ -68,6 +143,27 @@ export function HomeActionWorkbench({
     const timeoutId = window.setTimeout(() => setShareState("idle"), COPY_RESET_TIMEOUT_MS);
     return () => window.clearTimeout(timeoutId);
   }, [shareState]);
+
+  useEffect(() => {
+    const attribution = readAttribution();
+    const source = normalizeValue(attribution.utm_source) ?? "direct";
+    const campaign = normalizeValue(attribution.utm_campaign);
+    setLandingSource(source);
+    setLandingCampaign(campaign);
+
+    void fetchGrowthRuntime({
+      sessionId: analyticsSessionId(),
+      page: "/",
+      feature: "homepage_landing",
+    })
+      .then((runtime) => {
+        const experiment = runtime.experiments.find((item) => item.key === "landing_entry_v1");
+        if (experiment?.variant) {
+          setLandingVariant(experiment.variant);
+        }
+      })
+      .catch(() => null);
+  }, []);
 
   if (!prompts.length) {
     return (
@@ -235,6 +331,9 @@ export function HomeActionWorkbench({
           explorer={state.explorer}
           onResetFilters={state.resetFilters}
           onSelectScenario={selectScenarioSlug}
+          heroKicker={heroCopy.kicker}
+          heroTitle={heroCopy.title}
+          heroSubtitle={heroCopy.subtitle}
         />
 
         <HomeWorkbenchResultPanel

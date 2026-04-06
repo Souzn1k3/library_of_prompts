@@ -1,6 +1,6 @@
 import uuid
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
 from sqlalchemy import func, select
@@ -8,7 +8,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.infrastructure.db.models import AnalyticsEvent, SessionAttribution, UserAttribution
+from app.infrastructure.db.models import AnalyticsEvent, ChannelSpendEntry, SessionAttribution, UserAttribution
 from app.modules.analytics.model.analytics import AnalyticsEventName
 
 
@@ -104,6 +104,39 @@ class AnalyticsRepository:
         result = await self._session.execute(stmt)
         return result.all()
 
+    async def list_event_rows_with_dims(
+        self,
+        *,
+        from_ts: datetime,
+        to_ts: datetime | None = None,
+        event_names: Sequence[str] | None = None,
+        user_only: bool = False,
+    ) -> Sequence[tuple[uuid.UUID | None, str, str, datetime, dict[str, Any], str | None, str | None, str | None, str | None, str | None]]:
+        stmt = (
+            select(
+                AnalyticsEvent.user_id,
+                AnalyticsEvent.session_id,
+                AnalyticsEvent.event_name,
+                AnalyticsEvent.occurred_at,
+                AnalyticsEvent.metadata_json,
+                AnalyticsEvent.utm_source,
+                AnalyticsEvent.utm_medium,
+                AnalyticsEvent.utm_campaign,
+                AnalyticsEvent.ad_id,
+                AnalyticsEvent.creative_id,
+            )
+            .where(AnalyticsEvent.occurred_at >= from_ts)
+            .order_by(AnalyticsEvent.occurred_at.asc())
+        )
+        if to_ts is not None:
+            stmt = stmt.where(AnalyticsEvent.occurred_at < to_ts)
+        if event_names:
+            stmt = stmt.where(AnalyticsEvent.event_name.in_(list(event_names)))
+        if user_only:
+            stmt = stmt.where(AnalyticsEvent.user_id.is_not(None))
+        result = await self._session.execute(stmt)
+        return result.all()
+
     async def count_distinct_users(
         self,
         *,
@@ -181,5 +214,36 @@ class AnalyticsRepository:
         stmt = select(UserAttribution)
         if user_ids:
             stmt = stmt.where(UserAttribution.user_id.in_(list(user_ids)))
+        result = await self._session.execute(stmt)
+        return result.scalars().all()
+
+    async def get_channel_spend_by_dedupe_key(self, *, dedupe_key: str) -> ChannelSpendEntry | None:
+        result = await self._session.execute(
+            select(ChannelSpendEntry).where(ChannelSpendEntry.dedupe_key == dedupe_key)
+        )
+        return result.scalar_one_or_none()
+
+    async def create_channel_spend(self, row: ChannelSpendEntry) -> ChannelSpendEntry:
+        self._session.add(row)
+        await self._session.flush()
+        await self._session.refresh(row)
+        return row
+
+    async def save_channel_spend(self, row: ChannelSpendEntry) -> ChannelSpendEntry:
+        await self._session.flush()
+        await self._session.refresh(row)
+        return row
+
+    async def list_channel_spend_rows(
+        self,
+        *,
+        day_from: date,
+        day_to: date,
+    ) -> Sequence[ChannelSpendEntry]:
+        stmt = (
+            select(ChannelSpendEntry)
+            .where(ChannelSpendEntry.spend_day >= day_from, ChannelSpendEntry.spend_day <= day_to)
+            .order_by(ChannelSpendEntry.spend_day.asc(), ChannelSpendEntry.source.asc())
+        )
         result = await self._session.execute(stmt)
         return result.scalars().all()

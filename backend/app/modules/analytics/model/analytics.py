@@ -42,6 +42,9 @@ class AnalyticsEventName(str, enum.Enum):
     paywall_viewed = "paywall_viewed"
     paywall_interaction = "paywall_interaction"
     pricing_plan_selected = "pricing_plan_selected"
+    ad_click = "ad_click"
+    landing_view = "landing_view"
+    signup_from_source = "signup_from_source"
     catalog_search_used = "catalog_search_used"
     catalog_filter_used = "catalog_filter_used"
     scenario_run = "scenario_run"
@@ -58,6 +61,8 @@ class AnalyticsEventName(str, enum.Enum):
     feature_flag_exposed = "feature_flag_exposed"
     churn_risk_detected = "churn_risk_detected"
     reactivation_trigger = "reactivation_trigger"
+    scale_channel = "scale_channel"
+    kill_channel = "kill_channel"
     economy_experiment_assigned = "economy_experiment_assigned"
     store_offer_viewed = "store_offer_viewed"
     store_purchase_completed = "store_purchase_completed"
@@ -80,6 +85,8 @@ class AnalyticsAttribution(BaseModel):
     utm_campaign: str | None = Field(default=None, max_length=160)
     utm_term: str | None = Field(default=None, max_length=160)
     utm_content: str | None = Field(default=None, max_length=160)
+    ad_id: str | None = Field(default=None, max_length=120)
+    creative_id: str | None = Field(default=None, max_length=120)
     referrer: str | None = Field(default=None, max_length=500)
 
 
@@ -154,12 +161,16 @@ class AttributionCaptureWrite(BaseModel):
     session_id: str = Field(min_length=6, max_length=120)
     attribution: AnalyticsAttribution
     source: str = Field(default="web", min_length=1, max_length=40)
+    page: str = Field(default="/", min_length=1, max_length=260)
+    feature: str = Field(default="attribution_capture", min_length=1, max_length=120)
 
 
 class AttributionTouchRead(BaseModel):
     utm_source: str | None = None
     utm_medium: str | None = None
     utm_campaign: str | None = None
+    ad_id: str | None = None
+    creative_id: str | None = None
     referrer: str | None = None
     seen_at: datetime
 
@@ -185,6 +196,8 @@ class AnalyticsEventRead(BaseModel):
     utm_campaign: str | None
     utm_term: str | None
     utm_content: str | None
+    ad_id: str | None
+    creative_id: str | None
     referrer: str | None
     metadata_json: dict[str, Any]
     occurred_at: datetime

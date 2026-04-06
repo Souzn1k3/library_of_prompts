@@ -22,6 +22,8 @@ export function AttributionBootstrap() {
     void captureAttribution({
       sessionId,
       attribution,
+      page: window.location.pathname,
+      feature: "attribution_bootstrap",
     })
       .then((payload) => {
         trackEvent({
@@ -42,4 +44,3 @@ export function AttributionBootstrap() {
 
   return null;
 }
-

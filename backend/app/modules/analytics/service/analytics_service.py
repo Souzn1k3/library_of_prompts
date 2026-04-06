@@ -40,6 +40,8 @@ class AnalyticsService:
             "utm_campaign": attribution.utm_campaign if attribution else None,
             "utm_term": attribution.utm_term if attribution else None,
             "utm_content": attribution.utm_content if attribution else None,
+            "ad_id": attribution.ad_id if attribution else None,
+            "creative_id": attribution.creative_id if attribution else None,
             "referrer": attribution.referrer if attribution else None,
             "metadata_json": event.metadata,
             "occurred_at": event.timestamp,
@@ -68,6 +70,8 @@ class AnalyticsService:
         utm_source: str | None,
         utm_medium: str | None,
         utm_campaign: str | None,
+        ad_id: str | None,
+        creative_id: str | None,
         referrer: str | None,
         seen_at: datetime,
     ) -> AttributionTouchRead:
@@ -75,6 +79,8 @@ class AnalyticsService:
             utm_source=utm_source,
             utm_medium=utm_medium,
             utm_campaign=utm_campaign,
+            ad_id=ad_id,
+            creative_id=creative_id,
             referrer=referrer,
             seen_at=seen_at,
         )
@@ -86,11 +92,15 @@ class AnalyticsService:
         attribution: AnalyticsAttribution,
         user: User | None,
         source: str,
+        context_page: str,
+        context_feature: str,
     ) -> tuple[SessionAttribution, UserAttribution | None, bool]:
         now = datetime.now(timezone.utc)
         source_value = self._normalize_attr(attribution.utm_source, 120)
         medium_value = self._normalize_attr(attribution.utm_medium, 120)
         campaign_value = self._normalize_attr(attribution.utm_campaign, 160)
+        ad_id_value = self._normalize_attr(attribution.ad_id, 120)
+        creative_id_value = self._normalize_attr(attribution.creative_id, 120)
         referrer_value = self._normalize_attr(attribution.referrer, 500)
 
         session_row = await self._repo.get_session_attribution(session_id=session_id)
@@ -101,10 +111,14 @@ class AnalyticsService:
                 first_utm_source=source_value,
                 first_utm_medium=medium_value,
                 first_utm_campaign=campaign_value,
+                first_ad_id=ad_id_value,
+                first_creative_id=creative_id_value,
                 first_referrer=referrer_value,
                 last_utm_source=source_value,
                 last_utm_medium=medium_value,
                 last_utm_campaign=campaign_value,
+                last_ad_id=ad_id_value,
+                last_creative_id=creative_id_value,
                 last_referrer=referrer_value,
                 first_seen_at=now,
                 last_seen_at=now,
@@ -121,6 +135,10 @@ class AnalyticsService:
                 session_row.last_utm_medium = medium_value
             if campaign_value:
                 session_row.last_utm_campaign = campaign_value
+            if ad_id_value:
+                session_row.last_ad_id = ad_id_value
+            if creative_id_value:
+                session_row.last_creative_id = creative_id_value
             if referrer_value:
                 session_row.last_referrer = referrer_value
             session_row.last_seen_at = now
@@ -140,10 +158,14 @@ class AnalyticsService:
                     first_utm_source=session_row.first_utm_source,
                     first_utm_medium=session_row.first_utm_medium,
                     first_utm_campaign=session_row.first_utm_campaign,
+                    first_ad_id=session_row.first_ad_id,
+                    first_creative_id=session_row.first_creative_id,
                     first_referrer=session_row.first_referrer,
                     last_utm_source=session_row.last_utm_source,
                     last_utm_medium=session_row.last_utm_medium,
                     last_utm_campaign=session_row.last_utm_campaign,
+                    last_ad_id=session_row.last_ad_id,
+                    last_creative_id=session_row.last_creative_id,
                     last_referrer=session_row.last_referrer,
                     first_seen_at=session_row.first_seen_at,
                     last_seen_at=now,
@@ -159,6 +181,10 @@ class AnalyticsService:
                     user_row.last_utm_medium = session_row.last_utm_medium
                 if session_row.last_utm_campaign:
                     user_row.last_utm_campaign = session_row.last_utm_campaign
+                if session_row.last_ad_id:
+                    user_row.last_ad_id = session_row.last_ad_id
+                if session_row.last_creative_id:
+                    user_row.last_creative_id = session_row.last_creative_id
                 if session_row.last_referrer:
                     user_row.last_referrer = session_row.last_referrer
                 user_row.last_seen_at = now
@@ -180,16 +206,20 @@ class AnalyticsService:
                 "utm_source": session_row.last_utm_source,
                 "utm_medium": session_row.last_utm_medium,
                 "utm_campaign": session_row.last_utm_campaign,
+                "ad_id": session_row.last_ad_id,
+                "creative_id": session_row.last_creative_id,
             },
             attribution=AnalyticsAttribution(
                 utm_source=session_row.last_utm_source,
                 utm_medium=session_row.last_utm_medium,
                 utm_campaign=session_row.last_utm_campaign,
+                ad_id=session_row.last_ad_id,
+                creative_id=session_row.last_creative_id,
                 referrer=session_row.last_referrer,
             ),
             session_id=session_id,
-            context_page="/api/v1/analytics/attribution",
-            context_feature="attribution",
+            context_page=context_page,
+            context_feature=context_feature,
         )
         return session_row, user_row, is_new_user_attribution
 
@@ -212,6 +242,8 @@ class AnalyticsService:
                     attribution=event.attribution,
                     user=user,
                     source=event.source,
+                    context_page=event.context.page,
+                    context_feature=event.context.feature,
                 )
             except Exception:
                 log.exception("analytics_attribution_sync_failed", session_id=event.session_id)
@@ -260,6 +292,70 @@ class AnalyticsService:
             attribution=body.attribution,
             user=user,
             source=body.source,
+            context_page=body.page,
+            context_feature=body.feature,
+        )
+
+        medium = (session_row.last_utm_medium or "").strip().lower()
+        has_ad_click_signal = bool(
+            session_row.last_ad_id
+            or session_row.last_creative_id
+            or medium in {"ads", "cpc", "ppc", "paid", "paid_social", "display"}
+        )
+        if has_ad_click_signal:
+            await self.record_server_event(
+                event_name=AnalyticsEventName.ad_click,
+                user_id=user.id if user else None,
+                event_id=(
+                    "ad_click:"
+                    f"{session_row.session_id}:"
+                    f"{session_row.last_ad_id or 'na'}:"
+                    f"{session_row.last_creative_id or 'na'}"
+                ),
+                metadata={
+                    "session_id": session_row.session_id,
+                    "source": session_row.last_utm_source,
+                    "medium": session_row.last_utm_medium,
+                    "campaign": session_row.last_utm_campaign,
+                    "ad_id": session_row.last_ad_id,
+                    "creative_id": session_row.last_creative_id,
+                },
+                attribution=AnalyticsAttribution(
+                    utm_source=session_row.last_utm_source,
+                    utm_medium=session_row.last_utm_medium,
+                    utm_campaign=session_row.last_utm_campaign,
+                    ad_id=session_row.last_ad_id,
+                    creative_id=session_row.last_creative_id,
+                    referrer=session_row.last_referrer,
+                ),
+                session_id=session_row.session_id,
+                context_page=body.page,
+                context_feature="ad_click_capture",
+            )
+
+        await self.record_server_event(
+            event_name=AnalyticsEventName.landing_view,
+            user_id=user.id if user else None,
+            event_id=f"landing_view:{session_row.session_id}",
+            metadata={
+                "session_id": session_row.session_id,
+                "source": session_row.last_utm_source,
+                "medium": session_row.last_utm_medium,
+                "campaign": session_row.last_utm_campaign,
+                "page": body.page,
+                "feature": body.feature,
+            },
+            attribution=AnalyticsAttribution(
+                utm_source=session_row.last_utm_source,
+                utm_medium=session_row.last_utm_medium,
+                utm_campaign=session_row.last_utm_campaign,
+                ad_id=session_row.last_ad_id,
+                creative_id=session_row.last_creative_id,
+                referrer=session_row.last_referrer,
+            ),
+            session_id=session_row.session_id,
+            context_page=body.page,
+            context_feature="landing_view_capture",
         )
 
         if user is not None and is_new_user:
@@ -271,15 +367,19 @@ class AnalyticsService:
                     "session_id": session_id,
                     "first_touch_source": user_row.first_utm_source if user_row else None,
                     "first_touch_campaign": user_row.first_utm_campaign if user_row else None,
+                    "first_touch_ad_id": user_row.first_ad_id if user_row else None,
+                    "first_touch_creative_id": user_row.first_creative_id if user_row else None,
                 },
                 attribution=AnalyticsAttribution(
                     utm_source=user_row.first_utm_source if user_row else None,
                     utm_medium=user_row.first_utm_medium if user_row else None,
                     utm_campaign=user_row.first_utm_campaign if user_row else None,
+                    ad_id=user_row.first_ad_id if user_row else None,
+                    creative_id=user_row.first_creative_id if user_row else None,
                     referrer=user_row.first_referrer if user_row else None,
                 ),
                 session_id=session_id,
-                context_page="/api/v1/analytics/attribution",
+                context_page=body.page,
                 context_feature="acquisition",
             )
 
@@ -290,6 +390,8 @@ class AnalyticsService:
                 utm_source=user_row.first_utm_source if user_row else session_row.first_utm_source,
                 utm_medium=user_row.first_utm_medium if user_row else session_row.first_utm_medium,
                 utm_campaign=user_row.first_utm_campaign if user_row else session_row.first_utm_campaign,
+                ad_id=user_row.first_ad_id if user_row else session_row.first_ad_id,
+                creative_id=user_row.first_creative_id if user_row else session_row.first_creative_id,
                 referrer=user_row.first_referrer if user_row else session_row.first_referrer,
                 seen_at=user_row.first_seen_at if user_row else session_row.first_seen_at,
             ),
@@ -297,6 +399,8 @@ class AnalyticsService:
                 utm_source=user_row.last_utm_source if user_row else session_row.last_utm_source,
                 utm_medium=user_row.last_utm_medium if user_row else session_row.last_utm_medium,
                 utm_campaign=user_row.last_utm_campaign if user_row else session_row.last_utm_campaign,
+                ad_id=user_row.last_ad_id if user_row else session_row.last_ad_id,
+                creative_id=user_row.last_creative_id if user_row else session_row.last_creative_id,
                 referrer=user_row.last_referrer if user_row else session_row.last_referrer,
                 seen_at=user_row.last_seen_at if user_row else session_row.last_seen_at,
             ),
@@ -343,6 +447,8 @@ class AnalyticsService:
             utm_source=row.last_utm_source,
             utm_medium=row.last_utm_medium,
             utm_campaign=row.last_utm_campaign,
+            ad_id=row.last_ad_id,
+            creative_id=row.last_creative_id,
             referrer=row.last_referrer,
         )
 
