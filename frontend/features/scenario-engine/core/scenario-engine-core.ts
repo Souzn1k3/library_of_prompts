@@ -82,6 +82,7 @@ export class ScenarioEngineCore {
   }
 
   async boot(): Promise<void> {
+    this.state.hydrateFromLocal();
     await this.state.hydrateFromServer();
     for (const eventName of this.options.definition.logic.entryEvents) {
       await this.dispatch(eventName, {});

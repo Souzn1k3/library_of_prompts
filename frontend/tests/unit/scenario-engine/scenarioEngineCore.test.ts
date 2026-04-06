@@ -175,4 +175,47 @@ describe("ScenarioEngineCore", () => {
     expect(submitAction).toHaveBeenCalledTimes(1);
     expect(core.getSnapshot().errors.some((message) => message.includes("submit_limit"))).toBe(true);
   });
+
+  test("hydrates local persistence during boot, not constructor render", async () => {
+    const definition: ScenarioDefinition = {
+      ...TEST_DEFINITION,
+      state: {
+        ...TEST_DEFINITION.state,
+        persistence: {
+          key: "runtime-hydration-test",
+          local: true,
+          server: false,
+        },
+      },
+    };
+    const storageKey = "scenario-engine:runtime-hydration-test";
+    window.localStorage.setItem(
+      storageKey,
+      JSON.stringify({
+        local: {
+          forms: {
+            main: {
+              value: "persisted value",
+            },
+          },
+        },
+      }),
+    );
+
+    try {
+      const core = new ScenarioEngineCore({
+        definition,
+        actions: {
+          "test.submit": async () => ({ ok: true }),
+        },
+      });
+
+      expect(core.getSnapshot().local.forms.main.value).toBe("");
+
+      await core.boot();
+      expect(core.getSnapshot().local.forms.main.value).toBe("persisted value");
+    } finally {
+      window.localStorage.removeItem(storageKey);
+    }
+  });
 });

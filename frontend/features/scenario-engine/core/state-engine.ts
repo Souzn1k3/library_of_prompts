@@ -52,11 +52,11 @@ export class StateEngine {
   private readonly past: ScenarioRuntimeSnapshot[] = [];
   private readonly future: ScenarioRuntimeSnapshot[] = [];
   private readonly now: () => Date;
+  private localPersistenceHydrated = false;
 
   constructor(private readonly options: StateEngineOptions) {
     this.now = options.now ?? (() => new Date());
     this.snapshot = this.buildInitialSnapshot();
-    this.restoreLocalPersistence();
     this.initialSnapshot = cloneSnapshot(this.snapshot);
   }
 
@@ -201,6 +201,30 @@ export class StateEngine {
     this.notify();
   }
 
+  hydrateFromLocal(): void {
+    if (this.localPersistenceHydrated) {
+      return;
+    }
+    this.localPersistenceHydrated = true;
+
+    if (!this.options.definition.state.persistence.local || typeof window === "undefined") {
+      return;
+    }
+
+    const key = this.persistenceKey();
+    const raw = window.localStorage.getItem(key);
+    if (!raw) {
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as Partial<ScenarioRuntimeSnapshot>;
+      this.mutate((current) => mergeObjects(current, parsed) as ScenarioRuntimeSnapshot, false);
+    } catch {
+      // Ignore malformed persistence payload.
+    }
+  }
+
   async hydrateFromServer(): Promise<void> {
     if (!this.options.definition.state.persistence.server || !this.options.persistenceAdapter) {
       return;
@@ -262,25 +286,6 @@ export class StateEngine {
     }
 
     return snapshot;
-  }
-
-  private restoreLocalPersistence(): void {
-    if (!this.options.definition.state.persistence.local || typeof window === "undefined") {
-      return;
-    }
-
-    const key = this.persistenceKey();
-    const raw = window.localStorage.getItem(key);
-    if (!raw) {
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(raw) as Partial<ScenarioRuntimeSnapshot>;
-      this.snapshot = mergeObjects(this.snapshot, parsed) as ScenarioRuntimeSnapshot;
-    } catch {
-      // Ignore malformed persistence payload.
-    }
   }
 
   private mutate(

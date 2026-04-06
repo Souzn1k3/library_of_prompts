@@ -37,6 +37,10 @@ type NodeInteractionProps = {
   draggable?: boolean;
 };
 
+const STABLE_NUMBER_FORMATTER = new Intl.NumberFormat("en-US", {
+  maximumFractionDigits: 20,
+});
+
 function formatMetricValue(
   value: unknown,
   format: "percent" | "usd" | "number" | "text" | undefined,
@@ -60,7 +64,7 @@ function formatMetricValue(
   if (format === "usd") {
     return `$${value.toFixed(2)}`;
   }
-  return value.toLocaleString();
+  return STABLE_NUMBER_FORMATTER.format(value);
 }
 
 function resolveTemplateText(text: string, snapshot: ScenarioRuntimeSnapshot): string {
