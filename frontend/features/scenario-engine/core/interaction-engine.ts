@@ -17,17 +17,26 @@ type InteractionEngineOptions = {
 
 export class InteractionEngine {
   private readonly byId = new Map<string, ScenarioInteractionDefinition>();
+  private readonly byTypeAndSource = new Map<string, ScenarioInteractionDefinition[]>();
   private readonly now: () => Date;
 
   constructor(private readonly options: InteractionEngineOptions) {
     this.now = options.now ?? (() => new Date());
     for (const interaction of options.definition.inputs.interactions) {
       this.byId.set(interaction.id, interaction);
+      const key = this.toTypeAndSourceKey(interaction.type, interaction.source);
+      const list = this.byTypeAndSource.get(key) ?? [];
+      list.push(interaction);
+      this.byTypeAndSource.set(key, list);
     }
   }
 
   getInteraction(interactionId: string): ScenarioInteractionDefinition | null {
     return this.byId.get(interactionId) ?? null;
+  }
+
+  hasInteraction(type: ScenarioInteractionDefinition["type"], source: string): boolean {
+    return (this.byTypeAndSource.get(this.toTypeAndSourceKey(type, source)) ?? []).length > 0;
   }
 
   async trigger(interactionId: string, rawPayload?: Record<string, unknown>): Promise<void> {
@@ -38,6 +47,22 @@ export class InteractionEngine {
 
     const payload = this.resolvePayload(interaction, rawPayload ?? {});
     await this.options.dispatch(interaction.emits, payload);
+  }
+
+  async triggerByTypeAndSource(
+    type: ScenarioInteractionDefinition["type"],
+    source: string,
+    rawPayload?: Record<string, unknown>,
+  ): Promise<void> {
+    const matches = this.byTypeAndSource.get(this.toTypeAndSourceKey(type, source)) ?? [];
+    if (!matches.length) {
+      return;
+    }
+
+    for (const interaction of matches) {
+      const payload = this.resolvePayload(interaction, rawPayload ?? {});
+      await this.options.dispatch(interaction.emits, payload);
+    }
   }
 
   private resolvePayload(
@@ -65,5 +90,9 @@ export class InteractionEngine {
     }
 
     return payload;
+  }
+
+  private toTypeAndSourceKey(type: ScenarioInteractionDefinition["type"], source: string): string {
+    return `${type}::${source}`;
   }
 }

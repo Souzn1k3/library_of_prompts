@@ -1,7 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import type { ReactNode } from "react";
+import type {
+  DragEventHandler,
+  KeyboardEventHandler,
+  MouseEventHandler,
+  ReactNode,
+} from "react";
 
 import type { ScenarioEngineCore } from "../core/scenario-engine-core";
 import { evaluateCondition, getByPath, resolveValue } from "../core/utils";
@@ -21,6 +26,16 @@ type RenderContext = {
 type Renderer = (node: ScenarioLayoutNode, context: RenderContext) => ReactNode;
 
 type RenderRegistry = Record<ScenarioLayoutNode["kind"], Renderer>;
+
+type NodeInteractionProps = {
+  onClick?: MouseEventHandler<HTMLElement>;
+  onKeyDown?: KeyboardEventHandler<HTMLElement>;
+  onDragStart?: DragEventHandler<HTMLElement>;
+  onDragOver?: DragEventHandler<HTMLElement>;
+  onDrop?: DragEventHandler<HTMLElement>;
+  tabIndex?: number;
+  draggable?: boolean;
+};
 
 function formatMetricValue(
   value: unknown,
@@ -87,6 +102,75 @@ function disabledByCondition(
   });
 }
 
+function buildNodeInteractionProps(
+  node: ScenarioLayoutNode,
+  context: RenderContext,
+): NodeInteractionProps {
+  const source = node.interactionSource ?? node.id;
+  const hasClick = context.engine.hasInteractionByTypeAndSource("click", source);
+  const hasKeyboard = context.engine.hasInteractionByTypeAndSource("keyboard", source);
+  const hasDrag = context.engine.hasInteractionByTypeAndSource("drag", source);
+
+  if (!hasClick && !hasKeyboard && !hasDrag) {
+    return {};
+  }
+
+  const trigger = (type: "click" | "keyboard" | "drag", payload: Record<string, unknown>) => {
+    void context.engine.triggerInteractionByTypeAndSource(type, source, {
+      nodeId: node.id,
+      source,
+      ...payload,
+    });
+  };
+
+  const props: NodeInteractionProps = {};
+
+  if (hasClick) {
+    props.onClick = () => {
+      trigger("click", {});
+    };
+  }
+
+  if (hasKeyboard) {
+    props.tabIndex = node.keyboardFocusable === false ? undefined : 0;
+    props.onKeyDown = (event) => {
+      trigger("keyboard", {
+        key: event.key,
+        code: event.code,
+        repeat: event.repeat,
+        altKey: event.altKey,
+        ctrlKey: event.ctrlKey,
+        metaKey: event.metaKey,
+        shiftKey: event.shiftKey,
+      });
+    };
+  }
+
+  if (hasDrag) {
+    props.draggable = node.draggable ?? true;
+    props.onDragStart = (event) => {
+      trigger("drag", {
+        phase: "start",
+        x: event.clientX,
+        y: event.clientY,
+      });
+    };
+    props.onDragOver = (event) => {
+      event.preventDefault();
+    };
+    props.onDrop = (event) => {
+      event.preventDefault();
+      trigger("drag", {
+        phase: "drop",
+        x: event.clientX,
+        y: event.clientY,
+      });
+    };
+  }
+
+  return props;
+}
+
 function renderChild(node: ScenarioLayoutNode, context: RenderContext, registry: RenderRegistry): ReactNode {
   const conditionResult = evaluateCondition(node.visibleWhen, {
     snapshot: context.snapshot,
@@ -120,6 +204,7 @@ function buildRegistry(): RenderRegistry {
     if (node.kind !== "container") {
       return null;
     }
+    const interactionProps = buildNodeInteractionProps(node, context);
     const className = node.direction === "grid" ? "grid gap-3" : "space-y-3";
     const style =
       node.direction === "grid"
@@ -127,7 +212,7 @@ function buildRegistry(): RenderRegistry {
         : undefined;
 
     return (
-      <div key={node.id} className={className} style={style}>
+      <div key={node.id} className={className} style={style} {...interactionProps}>
         {node.children.map((child) => renderChild(child, context, registry))}
       </div>
     );
@@ -137,10 +222,11 @@ function buildRegistry(): RenderRegistry {
     if (node.kind !== "section") {
       return null;
     }
+    const interactionProps = buildNodeInteractionProps(node, context);
     const title = node.title ? resolveTemplateText(node.title, context.snapshot) : "";
     const subtitle = node.subtitle ? resolveTemplateText(node.subtitle, context.snapshot) : "";
     return (
-      <section key={node.id} className="pv-panel px-6 py-6 sm:px-7">
+      <section key={node.id} className="pv-panel px-6 py-6 sm:px-7" {...interactionProps}>
         {title ? <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">{title}</h2> : null}
         {subtitle ? <p className="mt-2 text-sm text-zinc-600">{subtitle}</p> : null}
         <div className="mt-5 space-y-3">{node.children.map((child) => renderChild(child, context, registry))}</div>
@@ -152,11 +238,12 @@ function buildRegistry(): RenderRegistry {
     if (node.kind !== "hero") {
       return null;
     }
+    const interactionProps = buildNodeInteractionProps(node, context);
     const title = resolveTemplateText(node.title, context.snapshot);
     const subtitle = node.subtitle ? resolveTemplateText(node.subtitle, context.snapshot) : "";
     const meta = node.meta ? resolveTemplateText(node.meta, context.snapshot) : "";
     return (
-      <section key={node.id} className="pv-hero px-6 py-7 sm:px-8 sm:py-8">
+      <section key={node.id} className="pv-hero px-6 py-7 sm:px-8 sm:py-8" {...interactionProps}>
         {node.kicker ? <p className="pv-kicker">{node.kicker}</p> : null}
         <h1 className="pv-title max-w-4xl text-zinc-950">{title}</h1>
         {subtitle ? <p className="mt-3 pv-lead max-w-3xl">{subtitle}</p> : null}
@@ -188,6 +275,7 @@ function buildRegistry(): RenderRegistry {
     if (node.kind !== "text") {
       return null;
     }
+    const interactionProps = buildNodeInteractionProps(node, context);
     const text = resolveTemplateText(node.text, context.snapshot);
     if (!text.trim()) {
       return null;
@@ -201,7 +289,7 @@ function buildRegistry(): RenderRegistry {
             ? "text-rose-700"
             : "text-zinc-600";
     return (
-      <p key={node.id} className={`text-sm ${toneClass}`}>
+      <p key={node.id} className={`text-sm ${toneClass}`} {...interactionProps}>
         {text}
       </p>
     );
@@ -211,8 +299,9 @@ function buildRegistry(): RenderRegistry {
     if (node.kind !== "actions") {
       return null;
     }
+    const interactionProps = buildNodeInteractionProps(node, context);
     return (
-      <div key={node.id} className="flex flex-wrap gap-2">
+      <div key={node.id} className="flex flex-wrap gap-2" {...interactionProps}>
         {node.actions.map((action) => {
           const isDisabled = disabledByCondition(action, context.snapshot);
           return (
@@ -235,9 +324,15 @@ function buildRegistry(): RenderRegistry {
     if (node.kind !== "metric_grid") {
       return null;
     }
+    const interactionProps = buildNodeInteractionProps(node, context);
     const columns = Math.max(1, Math.min(8, node.columns ?? 4));
     return (
-      <div key={node.id} className="grid gap-3" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+      <div
+        key={node.id}
+        className="grid gap-3"
+        style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+        {...interactionProps}
+      >
         {node.items.map((item) => {
           const value = resolveValue(item.value, {
             snapshot: context.snapshot,
@@ -262,13 +357,14 @@ function buildRegistry(): RenderRegistry {
     if (node.kind !== "card_list") {
       return null;
     }
+    const interactionProps = buildNodeInteractionProps(node, context);
     const rows = toRecordList(getByPath(context.snapshot, node.source));
     const columns = Math.max(1, Math.min(4, node.columns ?? 2));
 
     const title = node.title ? resolveTemplateText(node.title, context.snapshot) : "";
     const subtitle = node.subtitle ? resolveTemplateText(node.subtitle, context.snapshot) : "";
     return (
-      <div key={node.id} className="space-y-3">
+      <div key={node.id} className="space-y-3" {...interactionProps}>
         {title ? <h3 className="text-lg font-semibold text-zinc-950">{title}</h3> : null}
         {subtitle ? <p className="text-sm text-zinc-600">{subtitle}</p> : null}
         <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
@@ -301,11 +397,12 @@ function buildRegistry(): RenderRegistry {
     if (node.kind !== "table") {
       return null;
     }
+    const interactionProps = buildNodeInteractionProps(node, context);
     const rows = toRecordList(getByPath(context.snapshot, node.source));
     const title = node.title ? resolveTemplateText(node.title, context.snapshot) : "";
     const subtitle = node.subtitle ? resolveTemplateText(node.subtitle, context.snapshot) : "";
     return (
-      <div key={node.id} className="space-y-3">
+      <div key={node.id} className="space-y-3" {...interactionProps}>
         {title ? <h3 className="text-lg font-semibold text-zinc-950">{title}</h3> : null}
         {subtitle ? <p className="text-sm text-zinc-600">{subtitle}</p> : null}
         <div className="pv-analytics-table-wrap">
@@ -346,6 +443,7 @@ function buildRegistry(): RenderRegistry {
     if (node.kind !== "form") {
       return null;
     }
+    const interactionProps = buildNodeInteractionProps(node, context);
 
     const fields = node.fieldIds
       .map((fieldId) => context.fieldsById.get(fieldId))
@@ -357,6 +455,7 @@ function buildRegistry(): RenderRegistry {
       <form
         key={node.id}
         className="pv-analytics-form-grid"
+        {...interactionProps}
         onSubmit={(event) => {
           event.preventDefault();
           void context.engine.triggerInteraction(node.submitInteractionId, { formId: node.formId });
@@ -481,13 +580,14 @@ function buildRegistry(): RenderRegistry {
     if (node.kind !== "stream") {
       return null;
     }
+    const interactionProps = buildNodeInteractionProps(node, context);
     const stream = getByPath(context.snapshot, node.source);
     const lines = Array.isArray(stream) ? stream.map((item) => String(item)) : [];
     const maxLines = node.maxLines ?? lines.length;
     const visible = lines.slice(-maxLines);
 
     return (
-      <article key={node.id} className="pv-card p-4">
+      <article key={node.id} className="pv-card p-4" {...interactionProps}>
         {visible.length ? (
           <pre className="max-h-[16rem] overflow-auto rounded-[0.75rem] border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-700 whitespace-pre-wrap">
             {visible.join("\n")}
@@ -503,16 +603,22 @@ function buildRegistry(): RenderRegistry {
     if (node.kind !== "canvas") {
       return null;
     }
+    const interactionProps = buildNodeInteractionProps(node, context);
     const dataset = getByPath(context.snapshot, node.source);
-    return <CanvasPanel key={node.id} data={dataset} chart={node.chart} width={node.width} height={node.height} />;
+    return (
+      <div key={node.id} {...interactionProps}>
+        <CanvasPanel data={dataset} chart={node.chart} width={node.width} height={node.height} />
+      </div>
+    );
   };
 
   registry.hybrid = (node, context) => {
     if (node.kind !== "hybrid") {
       return null;
     }
+    const interactionProps = buildNodeInteractionProps(node, context);
     return (
-      <section key={node.id} className="space-y-3">
+      <section key={node.id} className="space-y-3" {...interactionProps}>
         {node.children.map((child) => renderChild(child, context, registry))}
       </section>
     );

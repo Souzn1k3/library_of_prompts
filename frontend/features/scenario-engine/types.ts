@@ -186,6 +186,9 @@ export type ScenarioLayoutNodeBase = {
   visibleWhen?: ScenarioCondition;
   gateId?: string;
   className?: string;
+  interactionSource?: string;
+  keyboardFocusable?: boolean;
+  draggable?: boolean;
 };
 
 export type ScenarioContainerNode = ScenarioLayoutNodeBase & {

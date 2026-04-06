@@ -1,6 +1,7 @@
 import type {
   ScenarioActionRegistry,
   ScenarioDefinition,
+  ScenarioEventType,
   ScenarioRuntimeEvent,
   ScenarioRuntimeSnapshot,
   ScenarioTier,
@@ -127,6 +128,18 @@ export class ScenarioEngineCore {
 
   async triggerInteraction(interactionId: string, payload?: Record<string, unknown>): Promise<void> {
     await this.interaction.trigger(interactionId, payload);
+  }
+
+  hasInteractionByTypeAndSource(type: ScenarioEventType, source: string): boolean {
+    return this.interaction.hasInteraction(type, source);
+  }
+
+  async triggerInteractionByTypeAndSource(
+    type: ScenarioEventType,
+    source: string,
+    payload?: Record<string, unknown>,
+  ): Promise<void> {
+    await this.interaction.triggerByTypeAndSource(type, source, payload);
   }
 
   getPermissionMessage(gateId: string | undefined): string | null {
