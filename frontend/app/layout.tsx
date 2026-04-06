@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 
 import { AnalyticsPageTracker } from "@/components/analytics/AnalyticsPageTracker";
+import { AttributionBootstrap } from "@/components/analytics/AttributionBootstrap";
 import { GrowthRuntimeBootstrap } from "@/components/analytics/GrowthRuntimeBootstrap";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { LanguageProvider } from "@/components/i18n/LanguageProvider";
@@ -119,6 +120,7 @@ export default async function RootLayout({
           <LanguageProvider initialLanguage={language}>
             <AuthProvider initialHasAuthCookie={authState.hasAnyAuthCookie}>
               <AnalyticsPageTracker />
+              <AttributionBootstrap />
               <GrowthRuntimeBootstrap />
               <RouteTransitionLoader />
               <a href="#main-content" className="skip-link">

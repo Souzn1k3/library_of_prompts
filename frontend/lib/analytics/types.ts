@@ -19,7 +19,16 @@ export type AnalyticsEventName =
   | "locked_content_viewed"
   | "upgrade_clicked"
   | "checkout_started"
+  | "checkout_completed"
+  | "payment_failed"
   | "subscription_activated"
+  | "subscription_started"
+  | "subscription_renewed"
+  | "subscription_canceled"
+  | "refund_processed"
+  | "paywall_viewed"
+  | "paywall_interaction"
+  | "pricing_plan_selected"
   | "catalog_search_used"
   | "catalog_filter_used"
   | "scenario_run"
@@ -30,8 +39,12 @@ export type AnalyticsEventName =
   | "scenario_shared"
   | "scenario_pack_started"
   | "scenario_chain_next_clicked"
+  | "user_acquired"
+  | "attribution_assigned"
   | "growth_experiment_assigned"
-  | "feature_flag_exposed";
+  | "feature_flag_exposed"
+  | "churn_risk_detected"
+  | "reactivation_trigger";
 
 export type Attribution = {
   utm_source?: string;

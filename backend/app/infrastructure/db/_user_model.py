@@ -20,8 +20,10 @@ if TYPE_CHECKING:
         ContributorProfile,
         OnboardingEvent,
         OnboardingProfile,
+        SessionAttribution,
         Subscription,
         SubscriptionEvent,
+        UserAttribution,
     )
     from ._marketplace_models import (
         MarketplacePayout,
@@ -174,6 +176,14 @@ class User(Base):
     analytics_events: Mapped[list["AnalyticsEvent"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
+    )
+    user_attribution: Mapped["UserAttribution | None"] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        uselist=False,
+    )
+    session_attributions: Mapped[list["SessionAttribution"]] = relationship(
+        back_populates="linked_user",
     )
     scenario_workspace_entries: Mapped[list["UserScenarioWorkspace"]] = relationship(
         back_populates="user",

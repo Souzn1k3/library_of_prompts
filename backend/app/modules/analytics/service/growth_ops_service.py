@@ -105,6 +105,24 @@ class GrowthOpsService:
                     ("treatment", 50),
                 ),
             ),
+            _ExperimentDefinition(
+                key="paywall_variant_v1",
+                target="all",
+                rollout_percent=int(self._settings.growth_experiment_paywall_rollout_percent),
+                variants=(
+                    ("soft", 50),
+                    ("value_focused", 50),
+                ),
+            ),
+            _ExperimentDefinition(
+                key="pricing_variant_v1",
+                target="all",
+                rollout_percent=int(self._settings.growth_experiment_pricing_rollout_percent),
+                variants=(
+                    ("standard", 50),
+                    ("operator_pack", 50),
+                ),
+            ),
         )
 
     def _subject_key(self, *, user: User | None, session_id: str) -> str:
@@ -545,4 +563,3 @@ class GrowthOpsService:
                 )
             )
         return reads
-

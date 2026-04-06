@@ -32,7 +32,16 @@ class AnalyticsEventName(str, enum.Enum):
     locked_content_viewed = "locked_content_viewed"
     upgrade_clicked = "upgrade_clicked"
     checkout_started = "checkout_started"
+    checkout_completed = "checkout_completed"
+    payment_failed = "payment_failed"
     subscription_activated = "subscription_activated"
+    subscription_started = "subscription_started"
+    subscription_renewed = "subscription_renewed"
+    subscription_canceled = "subscription_canceled"
+    refund_processed = "refund_processed"
+    paywall_viewed = "paywall_viewed"
+    paywall_interaction = "paywall_interaction"
+    pricing_plan_selected = "pricing_plan_selected"
     catalog_search_used = "catalog_search_used"
     catalog_filter_used = "catalog_filter_used"
     scenario_run = "scenario_run"
@@ -43,8 +52,12 @@ class AnalyticsEventName(str, enum.Enum):
     scenario_shared = "scenario_shared"
     scenario_pack_started = "scenario_pack_started"
     scenario_chain_next_clicked = "scenario_chain_next_clicked"
+    user_acquired = "user_acquired"
+    attribution_assigned = "attribution_assigned"
     growth_experiment_assigned = "growth_experiment_assigned"
     feature_flag_exposed = "feature_flag_exposed"
+    churn_risk_detected = "churn_risk_detected"
+    reactivation_trigger = "reactivation_trigger"
     economy_experiment_assigned = "economy_experiment_assigned"
     store_offer_viewed = "store_offer_viewed"
     store_purchase_completed = "store_purchase_completed"
@@ -135,6 +148,27 @@ class AnalyticsIngestResponse(BaseModel):
     accepted: int
     ingested: int
     duplicates: int
+
+
+class AttributionCaptureWrite(BaseModel):
+    session_id: str = Field(min_length=6, max_length=120)
+    attribution: AnalyticsAttribution
+    source: str = Field(default="web", min_length=1, max_length=40)
+
+
+class AttributionTouchRead(BaseModel):
+    utm_source: str | None = None
+    utm_medium: str | None = None
+    utm_campaign: str | None = None
+    referrer: str | None = None
+    seen_at: datetime
+
+
+class AttributionCaptureRead(BaseModel):
+    session_id: str
+    user_id: uuid.UUID | None
+    first_touch: AttributionTouchRead
+    last_touch: AttributionTouchRead
 
 
 class AnalyticsEventRead(BaseModel):

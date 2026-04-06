@@ -7,5 +7,6 @@ export * from "./types/learning";
 export * from "./types/marketplace";
 export * from "./types/missions";
 export * from "./types/onboarding";
+export * from "./types/revenue";
 export * from "./types/scenarios";
 export * from "./types/shared";

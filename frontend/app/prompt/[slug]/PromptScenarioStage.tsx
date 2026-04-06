@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { buildScenarioLiveResult, isRuFamilyLanguage } from "@/features/scenarios/application/scenarioRuntime";
 import { mapPromptToScenario } from "@/features/scenarios/infrastructure/promptScenarioMapper";
@@ -39,6 +39,22 @@ export function PromptScenarioStage({ language, prompt }: PromptScenarioStagePro
       }),
     [committedInput, language, outputMode, refreshSeed, scenarioDefinition],
   );
+
+  useEffect(() => {
+    if (!bodyLocked) {
+      return;
+    }
+    trackEvent({
+      eventName: "paywall_viewed",
+      page: `/prompt/${prompt.slug}`,
+      feature: "scenario_stage_lock",
+      onceKey: `paywall_viewed:prompt:${prompt.slug}`,
+      metadata: {
+        prompt_slug: prompt.slug,
+        surface: "scenario_stage",
+      },
+    });
+  }, [bodyLocked, prompt.slug]);
 
   async function runScenarioNow() {
     const run = await demoRun.run(scenarioInput.trim() ? scenarioInput : null);
@@ -192,7 +208,30 @@ export function PromptScenarioStage({ language, prompt }: PromptScenarioStagePro
             </p>
             {bodyLocked ? (
               <div className="flex flex-wrap gap-2">
-                <Link href="/pricing?tier=starter" className="pv-button-primary !w-auto">
+                <Link
+                  href="/pricing?tier=starter"
+                  className="pv-button-primary !w-auto"
+                  onClick={() => {
+                    trackEvent({
+                      eventName: "paywall_interaction",
+                      page: `/prompt/${prompt.slug}`,
+                      feature: "scenario_stage_lock",
+                      metadata: {
+                        prompt_slug: prompt.slug,
+                        action: "unlock_click",
+                      },
+                    });
+                    trackEvent({
+                      eventName: "upgrade_clicked",
+                      page: `/prompt/${prompt.slug}`,
+                      feature: "scenario_stage_lock",
+                      metadata: {
+                        prompt_slug: prompt.slug,
+                        source: "prompt_scenario_stage",
+                      },
+                    });
+                  }}
+                >
                   {localized.unlockCta}
                 </Link>
                 <a

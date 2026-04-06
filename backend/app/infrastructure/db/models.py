@@ -65,8 +65,10 @@ from ._identity_billing_models import (  # noqa: F401
     OnboardingProfile,
     Plan,
     ProcessedWebhookEvent,
+    SessionAttribution,
     Subscription,
     SubscriptionEvent,
+    UserAttribution,
 )
 from ._learning_models import (  # noqa: F401
     LearningAchievement,

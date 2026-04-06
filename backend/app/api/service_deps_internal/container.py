@@ -9,6 +9,7 @@ from app.infrastructure.db.session import get_db
 from app.modules.analytics.repository.analytics_repository import AnalyticsRepository
 from app.modules.analytics.service.analytics_service import AnalyticsService
 from app.modules.analytics.service.growth_ops_service import GrowthOpsService
+from app.modules.analytics.service.revenue_ops_service import RevenueOpsService
 from app.modules.billing.repository.billing_repository import BillingRepository
 from app.modules.billing.service.billing_service import BillingService
 from app.modules.billing.service.entitlement_service import EntitlementService
@@ -156,6 +157,15 @@ class ServiceContainer:
     def growth_ops_service(self) -> GrowthOpsService:
         return GrowthOpsService(
             repo=self.analytics_repository,
+            analytics=self.analytics_service,
+            settings=self.settings,
+        )
+
+    @cached_property
+    def revenue_ops_service(self) -> RevenueOpsService:
+        return RevenueOpsService(
+            analytics_repo=self.analytics_repository,
+            billing_repo=self.billing_repository,
             analytics=self.analytics_service,
             settings=self.settings,
         )

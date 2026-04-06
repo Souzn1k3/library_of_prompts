@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
+from app.modules.analytics.model.analytics import AnalyticsEventName
 from app.modules.billing.service.billing_stripe_client import stripe
 from app.modules.billing.service.billing_utils import safe_uuid, stripe_object_to_dict, to_datetime_from_unix
 
@@ -43,6 +44,27 @@ class BillingWebhookEventMixin:
             if fallback_user_id is None:
                 metadata = obj.get("metadata") or {}
                 fallback_user_id = safe_uuid(metadata.get("user_id"))
+            metadata = obj.get("metadata") or {}
+            if self._analytics is not None and fallback_user_id is not None:
+                attribution = await self._analytics.get_user_last_touch_attribution(user_id=fallback_user_id)
+                await self._analytics.record_server_event(
+                    event_name=AnalyticsEventName.checkout_completed,
+                    user_id=fallback_user_id,
+                    metadata={
+                        "provider": "stripe",
+                        "checkout_id": str(obj.get("id") or ""),
+                        "subscription_id": str(obj.get("subscription") or ""),
+                        "plan_tier": metadata.get("tier"),
+                        "source_page": metadata.get("source_page") or None,
+                        "scenario_slug": metadata.get("scenario_slug") or None,
+                        "paywall_variant": metadata.get("paywall_variant") or None,
+                        "pricing_variant": metadata.get("pricing_variant") or None,
+                    },
+                    attribution=attribution,
+                    context_page="/api/v1/billing/webhooks",
+                    context_feature="checkout_completed",
+                    event_id=f"stripe_checkout_completed:{provider_event_id}",
+                )
             provider_customer_id = obj.get("customer")
             if provider_customer_id and fallback_user_id is not None:
                 await self._ensure_customer_mapping(
@@ -76,6 +98,25 @@ class BillingWebhookEventMixin:
             return
 
         if event_type == "charge.refunded":
+            metadata = obj.get("metadata") or {}
+            refund_user_id = safe_uuid(metadata.get("user_id")) if isinstance(metadata, dict) else None
+            if self._analytics is not None and refund_user_id is not None:
+                attribution = await self._analytics.get_user_last_touch_attribution(user_id=refund_user_id)
+                await self._analytics.record_server_event(
+                    event_name=AnalyticsEventName.refund_processed,
+                    user_id=refund_user_id,
+                    metadata={
+                        "provider": "stripe",
+                        "payment_intent": str(obj.get("payment_intent") or ""),
+                        "reason": obj.get("reason"),
+                        "source_page": metadata.get("source_page") if isinstance(metadata, dict) else None,
+                        "scenario_slug": metadata.get("scenario_slug") if isinstance(metadata, dict) else None,
+                    },
+                    attribution=attribution,
+                    context_page="/api/v1/billing/webhooks",
+                    context_feature="refund",
+                    event_id=f"stripe_refund_processed:{provider_event_id}",
+                )
             if self._marketplace is not None and (obj.get("metadata") or {}).get("kind") == "prompt_purchase":
                 payment_id = str(obj.get("payment_intent") or "")
                 if payment_id:
@@ -86,6 +127,27 @@ class BillingWebhookEventMixin:
             return
 
         if event_type == "payment_intent.payment_failed":
+            metadata = obj.get("metadata") or {}
+            failed_user_id = safe_uuid(metadata.get("user_id")) if isinstance(metadata, dict) else None
+            if self._analytics is not None and failed_user_id is not None:
+                attribution = await self._analytics.get_user_last_touch_attribution(user_id=failed_user_id)
+                await self._analytics.record_server_event(
+                    event_name=AnalyticsEventName.payment_failed,
+                    user_id=failed_user_id,
+                    metadata={
+                        "provider": "stripe",
+                        "payment_intent": str(obj.get("id") or ""),
+                        "last_payment_error": str((obj.get("last_payment_error") or {}).get("message") or ""),
+                        "source_page": metadata.get("source_page") if isinstance(metadata, dict) else None,
+                        "scenario_slug": metadata.get("scenario_slug") if isinstance(metadata, dict) else None,
+                        "paywall_variant": metadata.get("paywall_variant") if isinstance(metadata, dict) else None,
+                        "pricing_variant": metadata.get("pricing_variant") if isinstance(metadata, dict) else None,
+                    },
+                    attribution=attribution,
+                    context_page="/api/v1/billing/webhooks",
+                    context_feature="payment_failed",
+                    event_id=f"stripe_payment_failed:{provider_event_id}",
+                )
             if self._marketplace is not None and (obj.get("metadata") or {}).get("kind") == "prompt_purchase":
                 purchase_id = safe_uuid((obj.get("metadata") or {}).get("purchase_id"))
                 if purchase_id is not None:

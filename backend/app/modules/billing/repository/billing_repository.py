@@ -180,6 +180,24 @@ class BillingRepository:
         result = await self._session.execute(stmt)
         return result.scalars().all()
 
+    async def list_subscriptions(
+        self,
+        *,
+        statuses: Sequence[SubscriptionStatus] | None = None,
+        from_ts: datetime | None = None,
+        to_ts: datetime | None = None,
+    ) -> Sequence[Subscription]:
+        stmt = select(Subscription).options(selectinload(Subscription.plan))
+        if statuses:
+            stmt = stmt.where(Subscription.status.in_(list(statuses)))
+        if from_ts is not None:
+            stmt = stmt.where(Subscription.created_at >= from_ts)
+        if to_ts is not None:
+            stmt = stmt.where(Subscription.created_at < to_ts)
+        stmt = stmt.order_by(Subscription.created_at.asc())
+        result = await self._session.execute(stmt)
+        return result.scalars().all()
+
     async def create_subscription_event(
         self,
         *,
@@ -204,6 +222,23 @@ class BillingRepository:
         await self._session.flush()
         await self._session.refresh(event)
         return event
+
+    async def list_subscription_events(
+        self,
+        *,
+        from_ts: datetime | None = None,
+        to_ts: datetime | None = None,
+        event_types: Sequence[str] | None = None,
+    ) -> Sequence[SubscriptionEvent]:
+        stmt = select(SubscriptionEvent).order_by(SubscriptionEvent.created_at.asc())
+        if from_ts is not None:
+            stmt = stmt.where(SubscriptionEvent.created_at >= from_ts)
+        if to_ts is not None:
+            stmt = stmt.where(SubscriptionEvent.created_at < to_ts)
+        if event_types:
+            stmt = stmt.where(SubscriptionEvent.event_type.in_(list(event_types)))
+        result = await self._session.execute(stmt)
+        return result.scalars().all()
 
     async def has_processed_webhook_event(self, *, provider: BillingProvider, event_id: str) -> bool:
         result = await self._session.execute(

@@ -51,6 +51,80 @@ class AnalyticsEvent(Base):
     user: Mapped["User | None"] = relationship(back_populates="analytics_events")
 
 
+class SessionAttribution(Base):
+    __tablename__ = "session_attributions"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    session_id: Mapped[str] = mapped_column(String(120), nullable=False, unique=True, index=True)
+    linked_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    first_utm_source: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    first_utm_medium: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    first_utm_campaign: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    first_referrer: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    last_utm_source: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    last_utm_medium: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    last_utm_campaign: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    last_referrer: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    linked_user: Mapped["User | None"] = relationship(back_populates="session_attributions")
+
+
+class UserAttribution(Base):
+    __tablename__ = "user_attributions"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+    first_session_id: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    last_session_id: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    first_utm_source: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    first_utm_medium: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    first_utm_campaign: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    first_referrer: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    last_utm_source: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    last_utm_medium: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    last_utm_campaign: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    last_referrer: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
+    user: Mapped["User"] = relationship(back_populates="user_attribution")
+
+
 class AuthRefreshToken(Base):
     __tablename__ = "auth_refresh_tokens"
 

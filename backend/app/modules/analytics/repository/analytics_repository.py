@@ -8,7 +8,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.infrastructure.db.models import AnalyticsEvent
+from app.infrastructure.db.models import AnalyticsEvent, SessionAttribution, UserAttribution
 from app.modules.analytics.model.analytics import AnalyticsEventName
 
 
@@ -138,3 +138,48 @@ class AnalyticsRepository:
             stmt = stmt.where(AnalyticsEvent.event_name.in_(list(event_names)))
         result = await self._session.execute(stmt)
         return int(result.scalar_one() or 0)
+
+    async def get_session_attribution(self, *, session_id: str) -> SessionAttribution | None:
+        result = await self._session.execute(
+            select(SessionAttribution).where(SessionAttribution.session_id == session_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def create_session_attribution(self, row: SessionAttribution) -> SessionAttribution:
+        self._session.add(row)
+        await self._session.flush()
+        await self._session.refresh(row)
+        return row
+
+    async def save_session_attribution(self, row: SessionAttribution) -> SessionAttribution:
+        await self._session.flush()
+        await self._session.refresh(row)
+        return row
+
+    async def get_user_attribution(self, *, user_id: uuid.UUID) -> UserAttribution | None:
+        result = await self._session.execute(select(UserAttribution).where(UserAttribution.user_id == user_id))
+        return result.scalar_one_or_none()
+
+    async def create_user_attribution(self, row: UserAttribution) -> UserAttribution:
+        self._session.add(row)
+        await self._session.flush()
+        await self._session.refresh(row)
+        return row
+
+    async def save_user_attribution(self, row: UserAttribution) -> UserAttribution:
+        await self._session.flush()
+        await self._session.refresh(row)
+        return row
+
+    async def list_user_attributions(
+        self,
+        *,
+        user_ids: Sequence[uuid.UUID] | None = None,
+    ) -> Sequence[UserAttribution]:
+        if user_ids is not None and len(user_ids) == 0:
+            return []
+        stmt = select(UserAttribution)
+        if user_ids:
+            stmt = stmt.where(UserAttribution.user_id.in_(list(user_ids)))
+        result = await self._session.execute(stmt)
+        return result.scalars().all()

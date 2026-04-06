@@ -67,6 +67,8 @@ class Settings(BaseSettings):
     growth_flag_showcase_share_rollout_percent: int = 100
     growth_experiment_homepage_rollout_percent: int = 50
     growth_experiment_upgrade_rollout_percent: int = 50
+    growth_experiment_paywall_rollout_percent: int = 50
+    growth_experiment_pricing_rollout_percent: int = 50
     legacy_bot_database_url: str | None = None
 
     jwt_secret_key: str = Field(
@@ -199,6 +201,8 @@ class Settings(BaseSettings):
             ("GROWTH_FLAG_SHOWCASE_SHARE_ROLLOUT_PERCENT", self.growth_flag_showcase_share_rollout_percent),
             ("GROWTH_EXPERIMENT_HOMEPAGE_ROLLOUT_PERCENT", self.growth_experiment_homepage_rollout_percent),
             ("GROWTH_EXPERIMENT_UPGRADE_ROLLOUT_PERCENT", self.growth_experiment_upgrade_rollout_percent),
+            ("GROWTH_EXPERIMENT_PAYWALL_ROLLOUT_PERCENT", self.growth_experiment_paywall_rollout_percent),
+            ("GROWTH_EXPERIMENT_PRICING_ROLLOUT_PERCENT", self.growth_experiment_pricing_rollout_percent),
         ):
             if value < 0 or value > 100:
                 raise ValueError(f"{name} must be between 0 and 100.")

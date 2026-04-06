@@ -24,8 +24,12 @@ class CheckoutSessionRequest(BaseModel):
     tier: PlanTier
     success_url: str | None = Field(default=None, max_length=1000)
     cancel_url: str | None = Field(default=None, max_length=1000)
+    source_page: str | None = Field(default=None, max_length=260)
+    scenario_slug: str | None = Field(default=None, max_length=200)
+    paywall_variant: str | None = Field(default=None, max_length=80)
+    pricing_variant: str | None = Field(default=None, max_length=80)
 
-    @field_validator("success_url", "cancel_url")
+    @field_validator("success_url", "cancel_url", "source_page", "scenario_slug", "paywall_variant", "pricing_variant")
     @classmethod
     def normalize_urls(cls, value: str | None) -> str | None:
         return value.strip() if value else None
