@@ -12,21 +12,6 @@ vi.mock("@/components/i18n/LanguageProvider", () => ({
   }),
 }));
 
-vi.mock("@/features/scenarios/presentation/useScenarioGameLedger", () => ({
-  useScenarioGameLedger: () => ({
-    gameState: { pending_tokens: 0, claimable_tokens: 0 },
-    earnPending: false,
-    claimPending: false,
-    latestMessage: null,
-    earn: vi.fn(async () => null),
-    claim: vi.fn(async () => null),
-  }),
-}));
-
-vi.mock("@/lib/analytics", () => ({
-  trackEvent: vi.fn(),
-}));
-
 const prompt = {
   id: "prompt-1",
   slug: "prompt-1",
@@ -107,14 +92,11 @@ describe("HomeScenariosSection", () => {
       />,
     );
 
+    expect(screen.getByRole("heading", { name: "home.scenarioTryTitle" })).toBeInTheDocument();
     expect(screen.getByText("Pack A")).toBeInTheDocument();
     expect(screen.getByText("Next reason")).toBeInTheDocument();
     expect(screen.getByText("Showcase title")).toBeInTheDocument();
-    expect(screen.getByText("$0")).toBeInTheDocument();
-
-    expect(screen.getByRole("link", { name: /home.packAction/ })).toHaveAttribute(
-      "href",
-      `/prompt/${prompt.slug}`,
-    );
+    expect(screen.getByText(/\$0\.00/)).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "home.scenarioCardOpen" })[0]).toBeEnabled();
   });
 });

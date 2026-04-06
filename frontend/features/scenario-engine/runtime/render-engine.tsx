@@ -74,6 +74,9 @@ function disabledByCondition(
   button: ScenarioActionButton,
   snapshot: ScenarioRuntimeSnapshot,
 ): boolean {
+  if (!button.disabledWhen) {
+    return false;
+  }
   return evaluateCondition(button.disabledWhen, {
     snapshot,
     event: {

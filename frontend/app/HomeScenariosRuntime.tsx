@@ -15,7 +15,7 @@ import type {
   ScenarioShowcaseRead,
 } from "@/lib/types";
 
-type HomeScenariosRuntimeProps = {
+export type HomeScenariosRuntimeProps = {
   prompts: PromptListItem[];
   recommendedPrompts: PromptListItem[];
   retentionPrompts: PromptListItem[];
