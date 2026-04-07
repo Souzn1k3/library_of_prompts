@@ -49,15 +49,7 @@ function lessonStateLabel(language: Language, lesson: LearningLessonOutline): st
 
 export function LearningCoursePageView({ language, data }: LearningCoursePageViewProps) {
   const { course, primaryHref } = data;
-  const compactOutcomeItems = course.what_you_will_learn.slice(0, 2);
-  const hiddenOutcomeItems = Math.max(course.what_you_will_learn.length - compactOutcomeItems.length, 0);
-  const compactLearningLoop = [
-    getTranslation(language, "learn.stepKind.theory"),
-    getTranslation(language, "learn.stepKind.guided_practice"),
-    getTranslation(language, "learn.stepKind.quiz"),
-    getTranslation(language, "learn.stepKind.applied_exercise"),
-    getTranslation(language, "learn.stepKind.reflection"),
-  ].join(" → ");
+  const outcomeItems = course.what_you_will_learn.filter(Boolean);
 
   return (
     <div className="pv-page">
@@ -70,44 +62,28 @@ export function LearningCoursePageView({ language, data }: LearningCoursePageVie
         eyebrow={<T k="learn.course" />}
         title={course.title}
         description={course.description}
-        hintLabel={<T k="learn.outcomeAndMethod" />}
-        hint={
-          <div className="grid gap-2.5 lg:grid-cols-2">
-            <article className="rounded-[0.95rem] border border-[var(--pv-border)] bg-white/90 px-3 py-2.5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
-                <T k="learn.whatYouWillLearn" />
-              </p>
-              <ul className="mt-1.5 grid gap-1 text-sm text-zinc-700">
-                {compactOutcomeItems.map((item) => (
-                  <li key={item} className="truncate" title={item}>
-                    • {item}
-                  </li>
-                ))}
-              </ul>
-              {hiddenOutcomeItems > 0 ? (
-                <p className="mt-1 text-xs text-zinc-500">+{hiddenOutcomeItems}</p>
-              ) : null}
-            </article>
-
-            <article className="rounded-[0.95rem] border border-[var(--pv-border)] bg-white/90 px-3 py-2.5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
-                <T k="learn.learningLoopTitle" />
-              </p>
-              <p className="mt-1.5 text-sm text-zinc-700">{compactLearningLoop}</p>
-            </article>
-          </div>
-        }
-        actions={
-          <>
-            <Link href={primaryHref} className="pv-button-primary">
-              {course.start_or_continue_label}
-            </Link>
-            <Link href={APP_ROUTES.learnMy} className="pv-button-secondary">
-              <T k="learn.myModules" />
-            </Link>
-          </>
-        }
-      />
+      >
+        {outcomeItems.length > 0 ? (
+          <section className="max-w-3xl">
+            <h2 className="text-base font-semibold text-zinc-900">
+              <T k="learn.whatYouWillLearn" />
+            </h2>
+            <ul className="mt-2 grid gap-1.5 text-base leading-relaxed text-zinc-700">
+              {outcomeItems.map((item) => (
+                <li key={item}>• {item}</li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+        <div className="pv-cta-group">
+          <Link href={primaryHref} className="pv-button-primary">
+            {course.start_or_continue_label}
+          </Link>
+          <Link href={APP_ROUTES.learnMy} className="pv-button-secondary">
+            <T k="learn.myModules" />
+          </Link>
+        </div>
+      </PageIntro>
 
       <section className="pv-panel px-6 py-6 sm:px-7">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
