@@ -13,9 +13,6 @@ type MissionsHeroProps = {
   currentMission: MissionPresentation | null;
   nextMission: MissionPresentation | null;
   latestCompleted: MissionPresentation | null;
-  selectedView: MissionCollectionView;
-  onSelectView: (view: MissionCollectionView) => void;
-  filterCounts: Record<MissionCollectionView, number>;
   completedCount: number;
   totalCount: number;
   rewardCredits: number;
@@ -26,9 +23,6 @@ export function MissionsHero({
   currentMission,
   nextMission,
   latestCompleted,
-  selectedView,
-  onSelectView,
-  filterCounts,
   completedCount,
   totalCount,
   rewardCredits,
@@ -43,27 +37,6 @@ export function MissionsHero({
       description={t("missions.subtitle")}
     >
       <div className="space-y-5">
-        <div className="flex flex-wrap gap-2">
-          <FilterButton
-            active={selectedView === "active"}
-            label={t("missions.heroFilter.active")}
-            count={filterCounts.active}
-            onClick={() => onSelectView("active")}
-          />
-          <FilterButton
-            active={selectedView === "in_progress"}
-            label={t("missions.heroFilter.in_progress")}
-            count={filterCounts.in_progress}
-            onClick={() => onSelectView("in_progress")}
-          />
-          <FilterButton
-            active={selectedView === "repeatable"}
-            label={t("missions.heroFilter.repeatable")}
-            count={filterCounts.repeatable}
-            onClick={() => onSelectView("repeatable")}
-          />
-        </div>
-
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="pv-card-muted pv-catalog-filter-card-white p-4">
             <p className="pv-stat-label">{t("missions.progress")}</p>
@@ -106,31 +79,6 @@ export function MissionsHero({
         </div>
       </div>
     </PageIntro>
-  );
-}
-
-function FilterButton({
-  active,
-  label,
-  count,
-  onClick,
-}: {
-  active: boolean;
-  label: string;
-  count: number;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={active ? "pv-button-primary !w-auto" : "pv-button-secondary !w-auto"}
-    >
-      {label}
-      <span className="ml-2 rounded-full bg-black/10 px-2 py-0.5 text-[11px] font-semibold">
-        {count}
-      </span>
-    </button>
   );
 }
 

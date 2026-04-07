@@ -54,20 +54,23 @@ export function MissionsClient() {
         currentMission={currentMission}
         nextMission={nextMission}
         latestCompleted={latestCompleted}
-        selectedView={selectedView}
-        onSelectView={setSelectedView}
-        filterCounts={filterCounts}
         completedCount={data.completed_count}
         totalCount={data.total_count}
         rewardCredits={data.rewards.credits}
         rewardBadgeCount={data.rewards.badges.length}
       />
 
+      <MissionsSectionList
+        sections={sections}
+        t={t}
+        selectedView={selectedView}
+        onSelectView={setSelectedView}
+        filterCounts={filterCounts}
+      />
+
       <section className="pv-panel px-6 py-6 sm:px-7">
         <EconomyLoop />
       </section>
-
-      <MissionsSectionList sections={sections} t={t} />
     </div>
   );
 }
