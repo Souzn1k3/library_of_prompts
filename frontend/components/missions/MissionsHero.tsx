@@ -65,17 +65,17 @@ export function MissionsHero({
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
-          <div className="pv-card-muted p-4">
+          <div className="pv-card-muted pv-catalog-filter-card-white p-4">
             <p className="pv-stat-label">{t("missions.progress")}</p>
             <p className="mt-3 text-2xl font-extrabold tracking-[-0.05em] text-zinc-950">
               {completedCount}/{totalCount}
             </p>
           </div>
-          <div className="pv-card-muted p-4">
+          <div className="pv-card-muted pv-catalog-filter-card-white p-4">
             <p className="pv-stat-label">{t("missions.credits")}</p>
             <p className="mt-3 text-2xl font-extrabold tracking-[-0.05em] text-zinc-950">{rewardCredits}</p>
           </div>
-          <div className="pv-card-muted p-4">
+          <div className="pv-card-muted pv-catalog-filter-card-white p-4">
             <p className="pv-stat-label">{t("missions.badges")}</p>
             <p className="mt-3 text-2xl font-extrabold tracking-[-0.05em] text-zinc-950">{rewardBadgeCount}</p>
           </div>
@@ -150,7 +150,7 @@ function MissionNavCard({
   const { t } = useI18n();
 
   return (
-    <article className="pv-card-muted flex h-full flex-col gap-4 p-4">
+    <article className="pv-card-muted pv-catalog-filter-card-white flex h-full flex-col gap-4 p-4">
       <div className="space-y-2">
         <p className="pv-stat-label">{label}</p>
         {mission ? (

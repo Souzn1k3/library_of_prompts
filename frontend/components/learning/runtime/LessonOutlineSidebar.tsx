@@ -4,12 +4,16 @@ import Link from "next/link";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import type { LearningLessonDetail } from "@/lib/types";
+import type { StepState } from "@/components/learning/runtime/types";
 
 type LessonOutlineSidebarProps = {
   lesson: LearningLessonDetail;
   courseTitle: string;
   returnToCourseHref: string;
   courseProgressPercent: number;
+  steps: StepState[];
+  activeStepIndex: number;
+  stepHref: (stepSlug: string) => string;
 };
 
 function lessonStateLabel(
@@ -34,6 +38,9 @@ export function LessonOutlineSidebar({
   courseTitle,
   returnToCourseHref,
   courseProgressPercent,
+  steps,
+  activeStepIndex,
+  stepHref,
 }: LessonOutlineSidebarProps) {
   const { t } = useI18n();
   const completedLessons = lesson.lesson_list.filter((item) => item.status === "completed").length;
@@ -107,6 +114,41 @@ export function LessonOutlineSidebar({
                   </div>
                   <p className="mt-1 text-xs">{item.progress_percent}%</p>
                 </Link>
+                {isCurrent ? (
+                  <ol className="ml-3 mt-2 grid gap-1.5 border-l border-[var(--pv-border)] pl-2">
+                    {steps.map((step, index) => {
+                      const isActiveStep = index === activeStepIndex;
+                      const state = isActiveStep
+                        ? t("learn.current")
+                        : step.completed
+                          ? t("learn.completed")
+                          : step.unlocked
+                            ? t("learn.open")
+                            : t("learn.locked");
+                      const stepClass = isActiveStep
+                        ? "border-[var(--pv-brand)] bg-[var(--pv-brand-soft)] text-zinc-900"
+                        : step.unlocked
+                          ? "border-[var(--pv-border)] bg-white/85 text-zinc-700"
+                          : "border-[var(--pv-border)] bg-zinc-100/70 text-zinc-400";
+                      const stepBody = (
+                        <div className={`rounded-[0.85rem] border px-2.5 py-2 text-xs ${stepClass}`}>
+                          <div className="flex items-start justify-between gap-2">
+                            <span className="min-w-0 truncate font-medium">
+                              {index + 1}. {step.title}
+                            </span>
+                            <span className="shrink-0 uppercase tracking-[0.08em]">{state}</span>
+                          </div>
+                        </div>
+                      );
+
+                      return (
+                        <li key={step.slug}>
+                          {step.unlocked ? <Link href={stepHref(step.slug)}>{stepBody}</Link> : stepBody}
+                        </li>
+                      );
+                    })}
+                  </ol>
+                ) : null}
               </li>
             );
           })}

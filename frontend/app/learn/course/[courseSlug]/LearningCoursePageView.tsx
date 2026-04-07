@@ -49,6 +49,15 @@ function lessonStateLabel(language: Language, lesson: LearningLessonOutline): st
 
 export function LearningCoursePageView({ language, data }: LearningCoursePageViewProps) {
   const { course, primaryHref } = data;
+  const compactOutcomeItems = course.what_you_will_learn.slice(0, 2);
+  const hiddenOutcomeItems = Math.max(course.what_you_will_learn.length - compactOutcomeItems.length, 0);
+  const compactLearningLoop = [
+    getTranslation(language, "learn.stepKind.theory"),
+    getTranslation(language, "learn.stepKind.guided_practice"),
+    getTranslation(language, "learn.stepKind.quiz"),
+    getTranslation(language, "learn.stepKind.applied_exercise"),
+    getTranslation(language, "learn.stepKind.reflection"),
+  ].join(" → ");
 
   return (
     <div className="pv-page">
@@ -61,7 +70,33 @@ export function LearningCoursePageView({ language, data }: LearningCoursePageVie
         eyebrow={<T k="learn.course" />}
         title={course.title}
         description={course.description}
-        hint={course.subtitle}
+        hintLabel={<T k="learn.outcomeAndMethod" />}
+        hint={
+          <div className="grid gap-2.5 lg:grid-cols-2">
+            <article className="rounded-[0.95rem] border border-[var(--pv-border)] bg-white/90 px-3 py-2.5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                <T k="learn.whatYouWillLearn" />
+              </p>
+              <ul className="mt-1.5 grid gap-1 text-sm text-zinc-700">
+                {compactOutcomeItems.map((item) => (
+                  <li key={item} className="truncate" title={item}>
+                    • {item}
+                  </li>
+                ))}
+              </ul>
+              {hiddenOutcomeItems > 0 ? (
+                <p className="mt-1 text-xs text-zinc-500">+{hiddenOutcomeItems}</p>
+              ) : null}
+            </article>
+
+            <article className="rounded-[0.95rem] border border-[var(--pv-border)] bg-white/90 px-3 py-2.5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                <T k="learn.learningLoopTitle" />
+              </p>
+              <p className="mt-1.5 text-sm text-zinc-700">{compactLearningLoop}</p>
+            </article>
+          </div>
+        }
         actions={
           <>
             <Link href={primaryHref} className="pv-button-primary">
@@ -97,45 +132,6 @@ export function LearningCoursePageView({ language, data }: LearningCoursePageVie
             {getTranslation(language, getDifficultyTranslationKey(course.difficulty))}
           </span>
           <span className="pv-chip-brand">{course.status === "completed" ? getTranslation(language, "learn.completed") : getTranslation(language, "learn.inProgress")}</span>
-        </div>
-      </section>
-
-      <section className="pv-panel px-6 py-6 sm:px-7">
-        <div className="pv-section-head">
-          <div className="pv-section-copy">
-            <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
-              <T k="learn.outcomeAndMethod" />
-            </h2>
-            <p className="mt-2 text-sm text-zinc-600">
-              <T k="learn.outcomeAndMethodBody" />
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-2">
-          <article className="rounded-[1.2rem] border border-[var(--pv-border)] bg-white/85 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
-              <T k="learn.whatYouWillLearn" />
-            </p>
-            <ul className="mt-3 grid gap-2 text-sm text-zinc-700">
-              {course.what_you_will_learn.map((item) => (
-                <li key={item}>• {item}</li>
-              ))}
-            </ul>
-          </article>
-
-          <article className="rounded-[1.2rem] border border-[var(--pv-border)] bg-white/85 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
-              <T k="learn.learningLoopTitle" />
-            </p>
-            <ol className="mt-3 grid gap-2 text-sm text-zinc-700">
-              <li>1. <T k="learn.learningLoopTheory" /></li>
-              <li>2. <T k="learn.learningLoopPractice" /></li>
-              <li>3. <T k="learn.learningLoopCheck" /></li>
-              <li>4. <T k="learn.learningLoopFeedback" /></li>
-              <li>5. <T k="learn.learningLoopReinforce" /></li>
-            </ol>
-          </article>
         </div>
       </section>
 

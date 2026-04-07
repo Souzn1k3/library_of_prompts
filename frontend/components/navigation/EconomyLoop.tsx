@@ -24,7 +24,7 @@ export function EconomyLoop({ activeStep, missionCard, walletCard, storeCard }: 
   const { t } = useI18n();
 
   return (
-    <div className="space-y-4">
+    <div className="pv-economy-loop space-y-4">
       <div className="space-y-2">
         <p className="pv-kicker">{t("economy.loopTitle")}</p>
         <p className="text-sm leading-relaxed text-zinc-600">{t("economy.loopBody")}</p>

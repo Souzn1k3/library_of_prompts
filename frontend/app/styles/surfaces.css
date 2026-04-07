@@ -170,6 +170,26 @@
   border-top: 1px solid rgba(15, 23, 42, 0.07);
 }
 
+.pv-economy-loop .pv-kicker {
+  color: #64748b;
+}
+
+.pv-economy-loop .pv-route-card {
+  border-color: rgba(15, 23, 42, 0.08);
+  background: #ffffff;
+}
+
+.pv-economy-loop .pv-route-card::after {
+  display: none;
+}
+
+.pv-economy-loop .pv-route-card:hover,
+.pv-economy-loop .pv-route-card[data-active="true"] {
+  border-color: rgba(15, 23, 42, 0.14);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+  background: #ffffff;
+}
+
 
 .pv-kicker {
   font-family: var(--font-mono), monospace;

@@ -1,12 +1,9 @@
 "use client";
 
-import { useState } from "react";
-
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { LearningProgressSummary } from "@/components/learning/runtime/LearningProgressSummary";
 import { LearningStepArticle } from "@/components/learning/runtime/LearningStepArticle";
 import { LessonOutlineSidebar } from "@/components/learning/runtime/LessonOutlineSidebar";
-import { LearningStepNavigation } from "@/components/learning/runtime/LearningStepNavigation";
 import { useLearningLessonRuntime } from "@/components/learning/runtime/useLearningLessonRuntime";
 import { LearningWeakAreasPanel } from "@/components/learning/runtime/LearningWeakAreasPanel";
 import { EconomyActionBanner } from "@/components/ui/EconomyActionBanner";
@@ -27,7 +24,6 @@ export function LearningLessonRuntime({
   activeStepSlug: activeStepSlugProp,
 }: LearningLessonRuntimeProps) {
   const { t } = useI18n();
-  const [isStepFlowOpen, setIsStepFlowOpen] = useState<boolean>(false);
   const {
     steps,
     activeStepIndex,
@@ -73,6 +69,9 @@ export function LearningLessonRuntime({
         courseTitle={courseTitle}
         returnToCourseHref={lesson.return_to_course_href}
         courseProgressPercent={courseProgressPercent}
+        steps={steps}
+        activeStepIndex={activeStepIndex}
+        stepHref={stepHref}
       />
 
       <section className="space-y-4">
@@ -107,31 +106,6 @@ export function LearningLessonRuntime({
           onTextChange={(value) => setTextAnswer(activeStep.slug, value)}
           onSubmitStep={() => void handleSubmit(activeStep)}
         />
-
-        <section className="pv-panel px-4 py-4 sm:px-5">
-          <button
-            type="button"
-            onClick={() => setIsStepFlowOpen((prev) => !prev)}
-            className="flex w-full items-center justify-between rounded-[0.9rem] border border-[var(--pv-border)] bg-white/85 px-3 py-2 text-sm font-semibold text-zinc-900 focus-visible:shadow-none focus-visible:ring-2 focus-visible:ring-[var(--pv-brand)]/25"
-            aria-expanded={isStepFlowOpen}
-            aria-controls="lesson-flow-panel"
-          >
-            <span>{t("learn.lessonFlow")}</span>
-            <span
-              className={`text-xs text-zinc-500 transition-transform ${
-                isStepFlowOpen ? "rotate-180" : ""
-              }`}
-              aria-hidden="true"
-            >
-              ▼
-            </span>
-          </button>
-          {isStepFlowOpen ? (
-            <div id="lesson-flow-panel" className="mt-3">
-              <LearningStepNavigation steps={steps} activeStepIndex={activeStepIndex} stepHref={stepHref} />
-            </div>
-          ) : null}
-        </section>
 
         <EconomyActionBanner summary={economy} ctaHref={APP_ROUTES.store} />
 

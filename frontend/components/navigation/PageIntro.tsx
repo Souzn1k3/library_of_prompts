@@ -9,6 +9,7 @@ type PageIntroProps = {
   title: ReactNode;
   description?: ReactNode;
   hint?: ReactNode;
+  hintLabel?: ReactNode;
   actions?: ReactNode;
   aside?: ReactNode;
   children?: ReactNode;
@@ -44,6 +45,7 @@ export function PageIntro({
   title,
   description,
   hint,
+  hintLabel,
   actions,
   aside,
   children,
@@ -69,7 +71,7 @@ export function PageIntro({
 
           {hint ? (
             <div className="pv-note">
-              <p className="pv-hint-badge"><T k="common.hintBadge" /></p>
+              <p className="pv-hint-badge">{hintLabel ?? <T k="common.hintBadge" />}</p>
               <div className="mt-1">{hint}</div>
             </div>
           ) : null}
