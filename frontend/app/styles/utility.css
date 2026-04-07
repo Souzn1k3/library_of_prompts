@@ -5,6 +5,10 @@
   gap: 0.75rem;
 }
 
+.pv-card-muted.pv-catalog-filter-card-white {
+  background: #ffffff !important;
+}
+
 .pv-floating-menu {
   display: flex;
   flex-direction: column;

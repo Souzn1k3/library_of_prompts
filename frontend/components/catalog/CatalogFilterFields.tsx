@@ -17,7 +17,7 @@ export function CatalogSelectField({
   onChange: (value: string) => void;
 }) {
   return (
-    <div className="pv-card-muted space-y-2 p-3">
+    <div className="pv-card-muted pv-catalog-filter-card-white space-y-2 p-3">
       <label className="pv-label">{label}</label>
       <select
         value={value}
@@ -46,7 +46,7 @@ export function CatalogMultiSelectField({
   onChange: (values: string[]) => void;
 }) {
   return (
-    <div className="pv-card-muted space-y-2 p-3">
+    <div className="pv-card-muted pv-catalog-filter-card-white space-y-2 p-3">
       <label className="pv-label">{label}</label>
       <select
         multiple

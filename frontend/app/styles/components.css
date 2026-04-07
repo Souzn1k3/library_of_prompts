@@ -126,6 +126,10 @@
   color: var(--pv-brand-strong);
 }
 
+.pv-card-muted.pv-catalog-filter-card-white {
+  background: #ffffff;
+}
+
 .pv-breadcrumbs {
   display: flex;
   flex-wrap: wrap;
