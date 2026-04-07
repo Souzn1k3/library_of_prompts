@@ -1,4 +1,5 @@
 import asyncio
+import socket
 from contextlib import asynccontextmanager, suppress
 from time import perf_counter
 from typing import Any
@@ -33,6 +34,29 @@ log = get_logger(__name__)
 async def lifespan(_app: FastAPI):
     settings = get_settings()
     kpi_scheduler_task: asyncio.Task[None] | None = None
+    loop = asyncio.get_running_loop()
+    previous_exception_handler = loop.get_exception_handler()
+
+    def _loop_exception_handler(loop: asyncio.AbstractEventLoop, context: dict[str, Any]) -> None:
+        exception = context.get("exception")
+        message = context.get("message")
+        if (
+            isinstance(exception, socket.gaierror)
+            and getattr(exception, "errno", None) == -3
+            and message == "Future exception was never retrieved"
+        ):
+            log.warning(
+                "suppressed_dns_resolution_noise",
+                error=str(exception),
+                context_message=message,
+            )
+            return
+        if previous_exception_handler is not None:
+            previous_exception_handler(loop, context)
+            return
+        loop.default_exception_handler(context)
+
+    loop.set_exception_handler(_loop_exception_handler)
     log.info("starting", app=settings.app_name, app_env=settings.app_env)
     await verify_runtime_database(engine, settings)
     try:
@@ -60,6 +84,7 @@ async def lifespan(_app: FastAPI):
         kpi_scheduler_task.cancel()
         with suppress(asyncio.CancelledError):
             await kpi_scheduler_task
+    loop.set_exception_handler(previous_exception_handler)
     await get_cache().close()
     log.info("shutting_down")
 

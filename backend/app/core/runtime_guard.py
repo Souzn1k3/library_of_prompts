@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import ipaddress
+import socket
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -108,9 +110,24 @@ async def _probe_postgres_target(settings: Settings, host: str, port: int) -> st
     if not url.username:
         return None
 
+    # asyncpg DNS resolver can occasionally emit "Future exception was never retrieved"
+    # for unreachable hostnames in probe lists. Resolve first and skip unresolvable hosts.
+    resolved_host = host
+    try:
+        ipaddress.ip_address(host)
+    except ValueError:
+        loop = asyncio.get_running_loop()
+        try:
+            addr_info = await loop.getaddrinfo(host, None, family=socket.AF_UNSPEC, type=socket.SOCK_STREAM)
+        except OSError:
+            return None
+        if not addr_info:
+            return None
+        resolved_host = str(addr_info[0][4][0])
+
     try:
         connection = await asyncpg.connect(
-            host=host,
+            host=resolved_host,
             port=port,
             user=url.username,
             password=url.password,
