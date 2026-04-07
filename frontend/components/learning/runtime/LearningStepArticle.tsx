@@ -221,16 +221,14 @@ export function LearningStepArticle({
                       })
                 }
               />
-              <ChecklistRow
-                ok={textDiagnostics.forbiddenHits.length === 0}
-                label={
-                  textDiagnostics.forbiddenHits.length === 0
-                    ? t("learn.precheckForbiddenOk")
-                    : t("learn.precheckForbiddenHit", {
-                        markers: textDiagnostics.forbiddenHits.join(", "),
-                      })
-                }
-              />
+              {textDiagnostics.forbiddenHits.length > 0 ? (
+                <ChecklistRow
+                  ok={false}
+                  label={t("learn.precheckForbiddenHit", {
+                    markers: textDiagnostics.forbiddenHits.join(", "),
+                  })}
+                />
+              ) : null}
             </ul>
           </section>
         ) : null}
