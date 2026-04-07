@@ -1,7 +1,6 @@
 "use client";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
-import { LearningProgressSummary } from "@/components/learning/runtime/LearningProgressSummary";
 import { LearningStepArticle } from "@/components/learning/runtime/LearningStepArticle";
 import { LessonOutlineSidebar } from "@/components/learning/runtime/LessonOutlineSidebar";
 import { useLearningLessonRuntime } from "@/components/learning/runtime/useLearningLessonRuntime";
@@ -31,7 +30,6 @@ export function LearningLessonRuntime({
     previousStep,
     nextStep,
     completedStepsCount,
-    lessonProgressPercent,
     courseProgressPercent,
     textAnswers,
     choiceAnswers,
@@ -73,14 +71,6 @@ export function LearningLessonRuntime({
       />
 
       <section className="space-y-4">
-        <LearningProgressSummary
-          lessonProgressPercent={lessonProgressPercent}
-          estimatedMinutes={lesson.estimated_minutes}
-          stepsCount={steps.length}
-          completedStepsCount={completedStepsCount}
-          activeStepIndex={activeStepIndex}
-        />
-
         {submitError ? <div className="pv-alert pv-alert-warning">{submitError}</div> : null}
         <LearningStepArticle
           activeStep={activeStep}
