@@ -26,12 +26,20 @@ class LearningStartTargetRead(BaseModel):
     resume_href: str | None = None
 
 
+class LearningActionLinkRead(BaseModel):
+    label: str
+    href: str
+    body: str | None = None
+
+
 class LearningCourseCardRead(BaseModel):
     slug: str
     title: str
     subtitle: str
     description: str
     difficulty: str
+    result_headline: str | None = None
+    deliverable_preview: str | None = None
     estimated_minutes: int
     module_count: int
     lesson_count: int
@@ -115,6 +123,7 @@ class LearningCourseRead(BaseModel):
     subtitle: str
     description: str
     difficulty: str
+    result_headline: str | None = None
     estimated_minutes: int
     module_count: int
     lesson_count: int
@@ -124,6 +133,10 @@ class LearningCourseRead(BaseModel):
     resume_href: str | None = None
     start_or_continue_label: str
     what_you_will_learn: list[str]
+    prerequisites: list[str] = Field(default_factory=list)
+    deliverables: list[str] = Field(default_factory=list)
+    career_outcomes: list[str] = Field(default_factory=list)
+    product_action: LearningActionLinkRead | None = None
     modules: list[LearningModuleRead]
     rewards: LearningCourseRewardsRead
     weak_areas: list[LearningWeakAreaRead] = Field(default_factory=list)
@@ -176,6 +189,13 @@ class LearningLessonRead(BaseModel):
     lesson_slug: str
     title: str
     summary: str
+    objective: str | None = None
+    deliverable: str | None = None
+    scenario_title: str | None = None
+    scenario_body: str | None = None
+    debrief: list[str] = Field(default_factory=list)
+    review_rubric: list[str] = Field(default_factory=list)
+    common_mistakes: list[str] = Field(default_factory=list)
     estimated_minutes: int
     position_in_course: int
     total_lessons: int

@@ -5,6 +5,7 @@ import pytest
 
 COURSE_FOUNDATIONS = "prompt-engineering-foundations"
 COURSE_WORKFLOWS = "prompt-workflows-study-and-work"
+COURSE_PRODUCTION = "production-prompt-systems"
 
 UNIVERSAL_TEXT = """
 [ROLE] Senior AI coach
@@ -322,6 +323,55 @@ async def test_learning_catalog_localization_en_ru_tt(async_client):
     assert tt_title
     assert en_title != ru_title
     assert tt_title != en_title
+
+
+@pytest.mark.asyncio
+async def test_learning_catalog_exposes_three_level_path(async_client):
+    response = await async_client.get("/api/v1/learning/courses", headers={"Accept-Language": "en"})
+    assert response.status_code == 200
+    payload = response.json()
+
+    slugs = [item["slug"] for item in payload["courses"]]
+    assert COURSE_FOUNDATIONS in slugs
+    assert COURSE_WORKFLOWS in slugs
+    assert COURSE_PRODUCTION in slugs
+
+    production = next(item for item in payload["courses"] if item["slug"] == COURSE_PRODUCTION)
+    assert production["difficulty"] == "advanced"
+    assert production["result_headline"]
+    assert production["deliverable_preview"]
+
+
+@pytest.mark.asyncio
+async def test_learning_course_and_lesson_include_context_metadata(async_client):
+    course_response = await async_client.get(
+        f"/api/v1/learning/courses/{COURSE_FOUNDATIONS}",
+        headers={"Accept-Language": "en"},
+    )
+    assert course_response.status_code == 200
+    course = course_response.json()
+
+    assert course["result_headline"]
+    assert course["prerequisites"]
+    assert course["deliverables"]
+    assert course["career_outcomes"]
+    assert course["product_action"]["label"]
+    assert course["product_action"]["href"]
+
+    lesson_response = await async_client.get(
+        f"/api/v1/learning/courses/{COURSE_FOUNDATIONS}/lessons/pe-foundations",
+        headers={"Accept-Language": "en"},
+    )
+    assert lesson_response.status_code == 200
+    lesson = lesson_response.json()
+
+    assert lesson["objective"]
+    assert lesson["deliverable"]
+    assert lesson["scenario_title"]
+    assert lesson["scenario_body"]
+    assert lesson["debrief"]
+    assert lesson["review_rubric"]
+    assert lesson["common_mistakes"]
 
 
 @pytest.mark.asyncio

@@ -19,18 +19,26 @@ type LearningCoursePageViewProps = {
   data: LearningCoursePageData;
 };
 
-function CourseStatCard({
-  label,
-  value,
+function DetailList({
+  title,
+  items,
 }: {
-  label: ReactNode;
-  value: ReactNode;
+  title: ReactNode;
+  items: string[];
 }) {
+  if (!items.length) {
+    return null;
+  }
+
   return (
-    <div className="pv-card p-4">
-      <p className="text-xs uppercase tracking-[0.08em] text-zinc-500">{label}</p>
-      <p className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{value}</p>
-    </div>
+    <section className="pv-card p-5">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{title}</p>
+      <ul className="mt-3 grid gap-2 text-sm leading-relaxed text-zinc-700">
+        {items.map((item) => (
+          <li key={`${title}-${item}`}>• {item}</li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -86,11 +94,24 @@ export function LearningCoursePageView({ language, data }: LearningCoursePageVie
       </PageIntro>
 
       <section className="pv-panel px-6 py-6 sm:px-7">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <CourseStatCard label={<T k="learn.progress" />} value={`${course.progress_percent}%`} />
-          <CourseStatCard label={<T k="learn.modulesTitle" />} value={course.module_count} />
-          <CourseStatCard label={<T k="learn.lessonCount" />} value={course.lesson_count} />
-          <CourseStatCard label={<T k="learn.estimatedEffort" />} value={`${course.estimated_minutes}m`} />
+        <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-600">
+          <span className="pv-chip">
+            {getTranslation(language, getDifficultyTranslationKey(course.difficulty))}
+          </span>
+          <span className="pv-chip-brand">
+            {course.status === "completed"
+              ? getTranslation(language, "learn.completed")
+              : getTranslation(language, "learn.inProgress")}
+          </span>
+          <span className="pv-chip">
+            <T k="learn.progress" />: {course.progress_percent}%
+          </span>
+          <span className="pv-chip">
+            <T k="learn.modulesShort" />: {course.module_count} · <T k="learn.lessonsShort" />: {course.lesson_count}
+          </span>
+          <span className="pv-chip">
+            <T k="learn.estimatedEffort" />: {course.estimated_minutes}m
+          </span>
         </div>
 
         <div
@@ -103,12 +124,14 @@ export function LearningCoursePageView({ language, data }: LearningCoursePageVie
           <div className="pv-progress-fill" style={{ width: `${course.progress_percent}%` }} />
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-zinc-600">
-          <span className="pv-chip">
-            {getTranslation(language, getDifficultyTranslationKey(course.difficulty))}
-          </span>
-          <span className="pv-chip-brand">{course.status === "completed" ? getTranslation(language, "learn.completed") : getTranslation(language, "learn.inProgress")}</span>
-        </div>
+        {course.result_headline ? (
+          <div className="mt-5 rounded-[1rem] border border-[var(--pv-brand)]/20 bg-[var(--pv-brand-soft)]/60 px-4 py-4 text-sm leading-relaxed text-zinc-700">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
+              <T k="learn.resultHeadlineTitle" />
+            </p>
+            <p className="mt-2">{course.result_headline}</p>
+          </div>
+        ) : null}
       </section>
 
       <section className="pv-panel px-6 py-6 sm:px-7">
@@ -157,17 +180,14 @@ export function LearningCoursePageView({ language, data }: LearningCoursePageVie
                         </p>
                         <p className="mt-1 text-sm text-zinc-600">{lesson.summary}</p>
                         <p className="mt-2 text-xs text-zinc-500">
-                          {lesson.estimated_minutes}m · {lessonStateLabel(language, lesson)}
+                          {lesson.estimated_minutes}m · {lessonStateLabel(language, lesson)} · {lesson.progress_percent}%
                         </p>
                       </div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className={`pv-chip ${lesson.is_final_assessment ? "pv-chip-brand" : ""}`}>
-                          {lesson.is_final_assessment
-                            ? getTranslation(language, "learn.finalAssessment")
-                            : getTranslation(language, "learn.lesson")}
+                      {lesson.is_final_assessment ? (
+                        <span className="pv-chip-brand">
+                          {getTranslation(language, "learn.finalAssessment")}
                         </span>
-                        <span className="pv-chip-brand">{lesson.progress_percent}%</span>
-                      </div>
+                      ) : null}
                     </div>
 
                     <div className="mt-3 flex flex-wrap gap-3">
@@ -187,6 +207,30 @@ export function LearningCoursePageView({ language, data }: LearningCoursePageVie
           ))}
         </div>
       </section>
+
+      {course.prerequisites.length > 0 || course.deliverables.length > 0 || course.career_outcomes.length > 0 || course.product_action ? (
+        <section className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+          <div className="grid gap-4">
+            <DetailList title={<T k="learn.prerequisitesTitle" />} items={course.prerequisites} />
+            <DetailList title={<T k="learn.deliverablesTitle" />} items={course.deliverables} />
+            <DetailList title={<T k="learn.careerOutcomesTitle" />} items={course.career_outcomes} />
+          </div>
+
+          {course.product_action ? (
+            <section className="pv-card h-fit p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                <T k="learn.useInProduct" />
+              </p>
+              {course.product_action.body ? (
+                <p className="mt-3 text-sm leading-relaxed text-zinc-700">{course.product_action.body}</p>
+              ) : null}
+              <Link href={course.product_action.href} className="pv-button-primary mt-4 !w-auto">
+                {course.product_action.label}
+              </Link>
+            </section>
+          ) : null}
+        </section>
+      ) : null}
 
       {course.weak_areas.length > 0 ? (
         <section className="pv-panel px-6 py-6 sm:px-7">

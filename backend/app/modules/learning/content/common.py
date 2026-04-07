@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
+from typing import Any
 
 SupportedLearningLanguage = str
 SUPPORTED_LEARNING_LANGUAGES: tuple[SupportedLearningLanguage, ...] = ("en", "ru", "tt")
@@ -112,3 +113,23 @@ def pick_text(value: LocalizedText | Mapping[str, str], language: SupportedLearn
     if "en" in value and value["en"]:
         return localize_learning_text(str(value["en"]), language)
     return localize_learning_text(str(next(iter(value.values()), "")), language)
+
+
+def pick_action(
+    value: Mapping[str, Any] | None,
+    language: SupportedLearningLanguage,
+) -> dict[str, str | None] | None:
+    if not isinstance(value, Mapping):
+        return None
+
+    href = str(value.get("href") or "").strip()
+    label = value.get("label")
+    if not href or not isinstance(label, Mapping):
+        return None
+
+    body = value.get("body")
+    return {
+        "label": pick_text(label, language),
+        "href": href,
+        "body": pick_text(body, language) if isinstance(body, Mapping) else None,
+    }

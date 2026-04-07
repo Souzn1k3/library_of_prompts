@@ -85,6 +85,33 @@ class LearningLessonRuntimeMixin:
             lesson_slug=lesson_slug,
             title=pick_text(lesson_resolution.lesson_row["title"], language),
             summary=pick_text(lesson_resolution.lesson_row["summary"], language),
+            objective=(
+                pick_text(lesson_resolution.lesson_row["objective"], language)
+                if lesson_resolution.lesson_row.get("objective")
+                else None
+            ),
+            deliverable=(
+                pick_text(lesson_resolution.lesson_row["deliverable"], language)
+                if lesson_resolution.lesson_row.get("deliverable")
+                else None
+            ),
+            scenario_title=(
+                pick_text(lesson_resolution.lesson_row["scenario_title"], language)
+                if lesson_resolution.lesson_row.get("scenario_title")
+                else None
+            ),
+            scenario_body=(
+                pick_text(lesson_resolution.lesson_row["scenario_body"], language)
+                if lesson_resolution.lesson_row.get("scenario_body")
+                else None
+            ),
+            debrief=[pick_text(item, language) for item in lesson_resolution.lesson_row.get("debrief", [])],
+            review_rubric=[
+                pick_text(item, language) for item in lesson_resolution.lesson_row.get("review_rubric", [])
+            ],
+            common_mistakes=[
+                pick_text(item, language) for item in lesson_resolution.lesson_row.get("common_mistakes", [])
+            ],
             estimated_minutes=int(lesson_resolution.lesson_row["estimated_minutes"]),
             position_in_course=lesson_resolution.lesson_index,
             total_lessons=total_lessons,

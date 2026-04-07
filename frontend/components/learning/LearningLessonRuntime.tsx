@@ -3,24 +3,25 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
+import { LearningLessonContextPanel } from "@/components/learning/runtime/LearningLessonContextPanel";
 import { LearningStepArticle } from "@/components/learning/runtime/LearningStepArticle";
 import { LessonOutlineSidebar } from "@/components/learning/runtime/LessonOutlineSidebar";
 import { useLearningLessonRuntime } from "@/components/learning/runtime/useLearningLessonRuntime";
 import { LearningWeakAreasPanel } from "@/components/learning/runtime/LearningWeakAreasPanel";
 import { EconomyActionBanner } from "@/components/ui/EconomyActionBanner";
 import { APP_ROUTES } from "@/lib/constants/routes";
-import type { LearningLessonDetail } from "@/lib/types";
+import type { LearningCourseDetail, LearningLessonDetail } from "@/lib/types";
 
 type LearningLessonRuntimeProps = {
+  course: LearningCourseDetail;
   lesson: LearningLessonDetail;
-  courseTitle: string;
   canSubmit: boolean;
   activeStepSlug: string;
 };
 
 export function LearningLessonRuntime({
+  course,
   lesson,
-  courseTitle,
   canSubmit,
   activeStepSlug: activeStepSlugProp,
 }: LearningLessonRuntimeProps) {
@@ -33,6 +34,7 @@ export function LearningLessonRuntime({
     previousStep,
     nextStep,
     completedStepsCount,
+    lessonProgressPercent,
     courseProgressPercent,
     textAnswers,
     choiceAnswers,
@@ -125,8 +127,9 @@ export function LearningLessonRuntime({
       <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start">
         <LessonOutlineSidebar
           lesson={lesson}
-          courseTitle={courseTitle}
+          courseTitle={course.title}
           returnToCourseHref={lesson.return_to_course_href}
+          lessonProgressPercent={lessonProgressPercent}
           courseProgressPercent={courseProgressPercent}
           steps={steps}
           activeStepIndex={activeStepIndex}
@@ -135,6 +138,7 @@ export function LearningLessonRuntime({
         />
 
         <section className="space-y-4">
+          <LearningLessonContextPanel course={course} lesson={lesson} />
           {submitError ? <div className="pv-alert pv-alert-warning">{submitError}</div> : null}
           <LearningStepArticle
             activeStep={activeStep}

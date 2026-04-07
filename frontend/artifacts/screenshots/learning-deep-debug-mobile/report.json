@@ -1,21 +1,21 @@
 {
-  "generatedAt": "2026-04-05T20:59:41.313Z",
-  "baseUrl": "http://127.0.0.1:3100",
+  "generatedAt": "2026-04-07T18:58:32.387Z",
+  "baseUrl": "http://127.0.0.1:3000",
   "apiBase": "http://127.0.0.1:8000",
   "screenshots": [
     {
       "id": "01-learn",
-      "route": "http://127.0.0.1:3100/learn",
+      "route": "http://127.0.0.1:3000/learn",
       "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\artifacts\\screenshots\\learning-deep-debug-mobile\\01-learn.png"
     },
     {
       "id": "02-course",
-      "route": "http://127.0.0.1:3100/learn/course/prompt-engineering-foundations",
+      "route": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations",
       "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\artifacts\\screenshots\\learning-deep-debug-mobile\\02-course.png"
     },
     {
       "id": "03-step",
-      "route": "http://127.0.0.1:3100/learn/course/prompt-engineering-foundations/lesson/pe-foundations/step/pe-foundations-theory",
+      "route": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-foundations/step/pe-foundations-theory",
       "file": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\artifacts\\screenshots\\learning-deep-debug-mobile\\03-step.png"
     }
   ]

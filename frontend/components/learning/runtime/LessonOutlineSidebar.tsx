@@ -10,6 +10,7 @@ type LessonOutlineSidebarProps = {
   lesson: LearningLessonDetail;
   courseTitle: string;
   returnToCourseHref: string;
+  lessonProgressPercent: number;
   courseProgressPercent: number;
   steps: StepState[];
   activeStepIndex: number;
@@ -38,6 +39,7 @@ export function LessonOutlineSidebar({
   lesson,
   courseTitle,
   returnToCourseHref,
+  lessonProgressPercent,
   courseProgressPercent,
   steps,
   activeStepIndex,
@@ -76,6 +78,9 @@ export function LessonOutlineSidebar({
             count: remainingLessons,
           })}
         </p>
+        <p className="mt-2 text-[11px] uppercase tracking-[0.08em] text-zinc-500">
+          {t("learn.lessonProgress")}: {lessonProgressPercent}%
+        </p>
       </div>
 
       <div
@@ -83,9 +88,9 @@ export function LessonOutlineSidebar({
         role="progressbar"
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-valuenow={courseProgressPercent}
+        aria-valuenow={lessonProgressPercent}
       >
-        <div className="pv-progress-fill" style={{ width: `${courseProgressPercent}%` }} />
+        <div className="pv-progress-fill" style={{ width: `${lessonProgressPercent}%` }} />
       </div>
 
       <details className="mt-4 overflow-hidden rounded-[1rem] border border-[var(--pv-border)] bg-white/85 px-3 py-3">

@@ -4,8 +4,9 @@ from app.core.errors import NotFoundError
 from app.core.i18n import SupportedLanguage
 from app.infrastructure.db.models import LearningCourseProgress, LearningLessonProgress, User
 from app.modules.learning.content.catalog import get_course
-from app.modules.learning.content.common import pick_text
+from app.modules.learning.content.common import pick_action, pick_text
 from app.modules.learning.model.learning import (
+    LearningActionLinkRead,
     LearningCourseRead,
     LearningCourseRewardsRead,
     LearningLessonOutlineRead,
@@ -109,6 +110,7 @@ class LearningReadCourseMixin:
             subtitle=pick_text(course["subtitle"], language),
             description=pick_text(course["description"], language),
             difficulty=course["difficulty"],
+            result_headline=pick_text(course["result_headline"], language) if course.get("result_headline") else None,
             estimated_minutes=int(course["estimated_minutes"]),
             module_count=len(course["modules"]),
             lesson_count=total_lessons,
@@ -118,6 +120,14 @@ class LearningReadCourseMixin:
             resume_href=resume_href,
             start_or_continue_label=start_or_continue,
             what_you_will_learn=[pick_text(item, language) for item in course.get("what_you_will_learn", [])],
+            prerequisites=[pick_text(item, language) for item in course.get("prerequisites", [])],
+            deliverables=[pick_text(item, language) for item in course.get("deliverables", [])],
+            career_outcomes=[pick_text(item, language) for item in course.get("career_outcomes", [])],
+            product_action=(
+                LearningActionLinkRead.model_validate(action)
+                if (action := pick_action(course.get("product_action"), language)) is not None
+                else None
+            ),
             modules=modules_out,
             rewards=rewards,
             weak_areas=weak_areas,

@@ -51,6 +51,41 @@ export default async function LearnIndexPage() {
           }
         />
 
+        <section className="pv-panel px-6 py-6 sm:px-7">
+          <div className="pv-section-head">
+            <div className="pv-section-copy">
+              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
+                <T k="learn.pathStagesTitle" />
+              </h2>
+              <p className="mt-2 text-sm text-zinc-600">
+                <T k="learn.pathStagesBody" />
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-3 lg:grid-cols-3">
+            {catalog.courses.map((course) => (
+              <article key={`track-${course.slug}`} className="rounded-[1rem] border border-[var(--pv-border)] bg-white/85 px-4 py-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                  {getTranslation(language, getDifficultyTranslationKey(course.difficulty))}
+                </p>
+                <h3 className="mt-2 text-base font-semibold text-zinc-950">{course.title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-zinc-700">
+                  {course.result_headline || course.description}
+                </p>
+                {course.deliverable_preview ? (
+                  <p className="mt-3 text-xs leading-relaxed text-zinc-500">
+                    <span className="font-semibold text-zinc-700">
+                      <T k="learn.deliverablePreviewTitle" />:
+                    </span>{" "}
+                    {course.deliverable_preview}
+                  </p>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        </section>
+
         {catalog.courses.length === 0 ? (
           <div className="pv-alert pv-alert-warning">
             <T k="learn.noLessons" />
@@ -95,6 +130,9 @@ export default async function LearnIndexPage() {
                     </div>
 
                     <p className="mt-3 text-sm leading-relaxed text-zinc-700">{course.description}</p>
+                    {course.result_headline ? (
+                      <p className="mt-3 text-sm leading-relaxed text-zinc-700">{course.result_headline}</p>
+                    ) : null}
 
                     <div className="mt-4 grid grid-cols-3 gap-2 text-xs text-zinc-600">
                       <div className="rounded-[0.9rem] border border-[var(--pv-border)] bg-white/80 px-3 py-2">
@@ -116,6 +154,15 @@ export default async function LearnIndexPage() {
                       {course.badge_earned ? <span className="pv-chip-brand"><T k="learn.completed" /></span> : null}
                       <TokenAmount amount={`+${course.course_reward_lmn}`} compact showIcon={false} />
                     </div>
+
+                    {course.deliverable_preview ? (
+                      <div className="mt-4 rounded-[0.95rem] border border-[var(--pv-border)] bg-white/85 px-3 py-3 text-sm text-zinc-700">
+                        <span className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                          <T k="learn.deliverablePreviewTitle" />
+                        </span>
+                        <p className="mt-2">{course.deliverable_preview}</p>
+                      </div>
+                    ) : null}
 
                     <div className="mt-4 pv-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={course.progress_percent}>
                       <div className="pv-progress-fill" style={{ width: `${course.progress_percent}%` }} />

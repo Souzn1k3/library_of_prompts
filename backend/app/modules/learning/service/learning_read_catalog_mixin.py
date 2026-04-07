@@ -50,6 +50,12 @@ class LearningReadCatalogMixin:
                     subtitle=pick_text(course["subtitle"], language),
                     description=pick_text(course["description"], language),
                     difficulty=course["difficulty"],
+                    result_headline=pick_text(course["result_headline"], language)
+                    if course.get("result_headline")
+                    else None,
+                    deliverable_preview=pick_text(course["deliverable_preview"], language)
+                    if course.get("deliverable_preview")
+                    else None,
                     estimated_minutes=int(course["estimated_minutes"]),
                     module_count=module_count,
                     lesson_count=lesson_count,

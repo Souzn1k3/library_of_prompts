@@ -2,10 +2,16 @@ from __future__ import annotations
 
 from copy import deepcopy
 
+from app.modules.learning.content.course_enrichment import apply_course_enrichment
 from app.modules.learning.content.prompt_basics import PROMPT_BASICS_COURSE
+from app.modules.learning.content.production_systems import PRODUCTION_SYSTEMS_COURSE
 from app.modules.learning.content.workflows import WORKFLOWS_COURSE
 
-LEARNING_COURSES: list[dict] = [PROMPT_BASICS_COURSE, WORKFLOWS_COURSE]
+LEARNING_COURSES: list[dict] = [
+    apply_course_enrichment(PROMPT_BASICS_COURSE),
+    apply_course_enrichment(WORKFLOWS_COURSE),
+    PRODUCTION_SYSTEMS_COURSE,
+]
 
 COURSE_BY_SLUG: dict[str, dict] = {course["slug"]: course for course in LEARNING_COURSES}
 

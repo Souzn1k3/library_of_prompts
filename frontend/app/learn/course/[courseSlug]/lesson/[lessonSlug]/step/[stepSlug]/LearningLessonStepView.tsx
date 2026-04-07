@@ -32,8 +32,8 @@ export function LearningLessonStepView({ language, data }: LearningLessonStepVie
       ) : null}
 
       <LearningLessonRuntime
+        course={course}
         lesson={data.lesson}
-        courseTitle={course.title}
         canSubmit={canSubmit}
         activeStepSlug={step.slug}
       />

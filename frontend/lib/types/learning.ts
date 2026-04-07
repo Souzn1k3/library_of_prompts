@@ -36,12 +36,20 @@ export type LearningStartTarget = {
   resume_href?: string | null;
 };
 
+export type LearningActionLink = {
+  label: string;
+  href: string;
+  body?: string | null;
+};
+
 export type LearningCourseCard = {
   slug: string;
   title: string;
   subtitle: string;
   description: string;
   difficulty: string;
+  result_headline?: string | null;
+  deliverable_preview?: string | null;
   estimated_minutes: number;
   module_count: number;
   lesson_count: number;
@@ -125,6 +133,7 @@ export type LearningCourseDetail = {
   subtitle: string;
   description: string;
   difficulty: string;
+  result_headline?: string | null;
   estimated_minutes: number;
   module_count: number;
   lesson_count: number;
@@ -134,6 +143,10 @@ export type LearningCourseDetail = {
   resume_href?: string | null;
   start_or_continue_label: string;
   what_you_will_learn: string[];
+  prerequisites: string[];
+  deliverables: string[];
+  career_outcomes: string[];
+  product_action?: LearningActionLink | null;
   modules: LearningModule[];
   rewards: LearningCourseRewards;
   weak_areas: LearningWeakArea[];
@@ -186,6 +199,13 @@ export type LearningLessonDetail = {
   lesson_slug: string;
   title: string;
   summary: string;
+  objective?: string | null;
+  deliverable?: string | null;
+  scenario_title?: string | null;
+  scenario_body?: string | null;
+  debrief: string[];
+  review_rubric: string[];
+  common_mistakes: string[];
   estimated_minutes: number;
   position_in_course: number;
   total_lessons: number;
