@@ -37,8 +37,6 @@ export function LearningLessonRuntime({
     choiceAnswers,
     submittingStepSlug,
     submitError,
-    statusMessage,
-    statusTone,
     economy,
     weakAreas,
     stepHref,
@@ -83,11 +81,6 @@ export function LearningLessonRuntime({
           activeStepIndex={activeStepIndex}
         />
 
-        {statusMessage ? (
-          <div className={statusTone === "warning" ? "pv-alert pv-alert-warning" : "pv-alert pv-alert-success"}>
-            {statusMessage}
-          </div>
-        ) : null}
         {submitError ? <div className="pv-alert pv-alert-warning">{submitError}</div> : null}
         <LearningStepArticle
           activeStep={activeStep}
