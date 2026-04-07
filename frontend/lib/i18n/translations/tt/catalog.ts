@@ -127,6 +127,9 @@ export const ttCatalog = {
   "learn.completeCurrentStepFirst": "Киләсе адым ачылсын өчен хәзерге адымны тәмамлагыз.",
   "learn.theoryShort": "Теория",
   "learn.practiceAction": "Гамәл",
+  "learn.practiceFocusHint":
+    "Түбәндәге биремне үтәгез: адым таләпләренә туры килгән конкрет җавап бирегез, теорияне кабатламагыз.",
+  "learn.backToTheory": "Теориягә кайту",
   "learn.precheck": "Җибәрү алдыннан тикшерү",
   "learn.precheckWords": "Сүзләр: {current}/{min}",
   "learn.precheckMarkersOk": "Барлык мәҗбүри маркерлар бар.",

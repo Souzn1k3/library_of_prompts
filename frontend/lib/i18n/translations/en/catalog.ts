@@ -136,6 +136,9 @@ export const enCatalog = {
   "learn.completeCurrentStepFirst": "Complete this step to unlock the next one.",
   "learn.theoryShort": "Theory",
   "learn.practiceAction": "Action",
+  "learn.practiceFocusHint":
+    "Complete the task below with a concrete answer that follows the step requirements, without retelling theory.",
+  "learn.backToTheory": "Back to theory",
   "learn.precheck": "Pre-check before submit",
   "learn.precheckWords": "Words: {current}/{min}",
   "learn.precheckMarkersOk": "All required markers are present.",

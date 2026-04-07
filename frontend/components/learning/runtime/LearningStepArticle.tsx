@@ -16,6 +16,7 @@ type LearningStepArticleProps = {
   completedStepsCount: number;
   previousStep: StepState | null;
   nextStep: StepState | null;
+  theoryStepSlug: string | null;
   canSubmit: boolean;
   isSubmitting: boolean;
   selectedChoiceId: string;
@@ -68,6 +69,7 @@ export function LearningStepArticle({
   completedStepsCount,
   previousStep,
   nextStep,
+  theoryStepSlug,
   canSubmit,
   isSubmitting,
   selectedChoiceId,
@@ -78,6 +80,10 @@ export function LearningStepArticle({
   onSubmitStep,
 }: LearningStepArticleProps) {
   const { t } = useI18n();
+  const isPracticeStep =
+    activeStep.kind === "guided_practice" ||
+    activeStep.kind === "applied_exercise" ||
+    activeStep.kind === "reflection";
   const textDiagnostics =
     activeStep.submission_type === "text" ? evaluateTextDraft(activeStep, textAnswer) : null;
   const isMarkedLearned = activeStep.submission_type === "none" && activeStep.completed;
@@ -123,7 +129,7 @@ export function LearningStepArticle({
 
       <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div>
-          {activeStep.content.length > 0 ? (
+          {!isPracticeStep && activeStep.content.length > 0 ? (
             <section>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("learn.theoryShort")}</p>
               <div className="mt-2 space-y-3 text-sm leading-relaxed text-zinc-700">
@@ -137,7 +143,15 @@ export function LearningStepArticle({
           {activeStep.task ? (
             <section className="mt-4 rounded-[1.1rem] border border-[var(--pv-border)] bg-white/80 p-4 text-sm text-zinc-700">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("learn.practiceAction")}</p>
+              {isPracticeStep ? <p className="mt-2 text-sm text-zinc-600">{t("learn.practiceFocusHint")}</p> : null}
               <p className="mt-2">{activeStep.task}</p>
+              {isPracticeStep && theoryStepSlug && theoryStepSlug !== activeStep.slug ? (
+                <div className="mt-3">
+                  <Link href={stepHref(theoryStepSlug)} className="pv-button-secondary !w-auto">
+                    {t("learn.backToTheory")}
+                  </Link>
+                </div>
+              ) : null}
             </section>
           ) : null}
 

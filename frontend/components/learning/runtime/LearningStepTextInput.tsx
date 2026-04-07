@@ -1,7 +1,6 @@
 "use client";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
-import { suggestedTemplate } from "@/components/learning/runtime/helpers";
 import type { StepState } from "@/components/learning/runtime/types";
 
 type LearningStepTextInputProps = {
@@ -20,39 +19,9 @@ export function LearningStepTextInput({
   onTextChange,
 }: LearningStepTextInputProps) {
   const { t } = useI18n();
-  const template = suggestedTemplate(step, t);
 
   return (
     <div className="mt-4 space-y-3">
-      {(step.required_markers.length > 0 || step.min_words) ? (
-        <div className="rounded-[1rem] border border-[var(--pv-border)] bg-white/80 px-4 py-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">{t("learn.formatChecklist")}</p>
-          <div className="mt-2 flex flex-wrap gap-2 text-xs text-zinc-700">
-            {step.required_markers.map((marker) => (
-              <span key={`${step.slug}-marker-${marker}`} className="rounded-full border border-[var(--pv-border)] bg-zinc-50 px-2 py-1">
-                {marker}
-              </span>
-            ))}
-            {step.min_words ? (
-              <span className="rounded-full border border-[var(--pv-border)] bg-zinc-50 px-2 py-1">
-                {t("learn.minWords")}: {step.min_words}
-              </span>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
-      {template ? (
-        <details className="rounded-[1rem] border border-[var(--pv-border)] bg-white/80 px-4 py-3">
-          <summary className="cursor-pointer select-none text-sm font-semibold text-zinc-900">
-            {t("learn.readyPrompt")}
-          </summary>
-          <p className="mt-2 pv-hint-badge">{t("common.hintBadge")}</p>
-          <p className="mt-1 text-sm text-zinc-600">{t("learn.readyPromptHint")}</p>
-          <pre className="mt-3 overflow-x-auto rounded-[0.9rem] border border-[var(--pv-border)] bg-zinc-50 px-3 py-3 text-xs leading-relaxed text-zinc-800">
-            {template}
-          </pre>
-        </details>
-      ) : null}
       <p className="text-xs text-zinc-500">{t("learn.answerFormatHint")}</p>
       {step.kind === "reflection" ? (
         <div className="rounded-[0.9rem] border border-[var(--pv-border)] bg-zinc-50/80 px-3 py-2 text-xs text-zinc-600">

@@ -57,6 +57,10 @@ export function LearningLessonRuntime({
   }
 
   const isSubmitting = submittingStepSlug === activeStep.slug;
+  const theoryStepSlug =
+    [...steps.slice(0, activeStepIndex)].reverse().find((step) => step.kind === "theory")?.slug ??
+    steps.find((step) => step.kind === "theory")?.slug ??
+    null;
 
   return (
     <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)] lg:items-start">
@@ -79,6 +83,7 @@ export function LearningLessonRuntime({
           completedStepsCount={completedStepsCount}
           previousStep={previousStep}
           nextStep={nextStep}
+          theoryStepSlug={theoryStepSlug}
           canSubmit={canSubmit}
           isSubmitting={isSubmitting}
           selectedChoiceId={choiceAnswers[activeStep.slug] ?? ""}
