@@ -53,23 +53,26 @@ export function PlansClient({ plans, error }: PlansClientProps) {
   return (
     <div className="space-y-5">
       {error ? (
-        <div className="pv-alert pv-alert-warning text-sm">
+        <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           {error}
         </div>
       ) : null}
 
       {actionError ?? portalError ? (
-        <div className="pv-alert pv-alert-error text-sm">
+        <div className="rounded-[1.5rem] border border-red-200 bg-red-50 p-4 text-sm text-red-800">
           {actionError ?? portalError}
         </div>
       ) : null}
 
       <section
         aria-label={t("plans.title")}
-        className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+        className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory [scrollbar-gutter:stable]"
       >
         {sortedPlans.map((plan) => (
-          <div key={plan.tier} className="h-full">
+          <div
+            key={plan.tier}
+            className="w-[min(22rem,calc(100vw-2.5rem))] shrink-0 snap-start lg:w-[min(24rem,calc(100vw-6rem))]"
+          >
             <PlanPricingCard
               plan={plan}
               preferredTier={preferredTier}

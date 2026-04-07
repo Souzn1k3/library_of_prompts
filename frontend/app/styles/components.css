@@ -24,17 +24,6 @@
   box-shadow: 0 20px 34px rgba(37, 92, 255, 0.3);
 }
 
-.pv-button-primary:active {
-  transform: translateY(0) scale(0.99);
-  box-shadow: 0 10px 20px rgba(37, 92, 255, 0.24);
-}
-
-.pv-button-primary:focus-visible {
-  box-shadow:
-    0 0 0 4px rgba(37, 92, 255, 0.16),
-    0 16px 28px rgba(37, 92, 255, 0.26);
-}
-
 .pv-button-secondary {
   border: 1px solid rgba(15, 23, 42, 0.1);
   background: rgba(255, 255, 255, 0.86);
@@ -47,16 +36,6 @@
   border-color: rgba(37, 92, 255, 0.18);
   background: rgba(255, 255, 255, 0.98);
   color: var(--pv-brand-strong);
-}
-
-.pv-button-secondary:active {
-  transform: translateY(0) scale(0.992);
-}
-
-.pv-button-secondary:focus-visible {
-  box-shadow:
-    0 0 0 4px rgba(37, 92, 255, 0.14),
-    0 10px 20px rgba(15, 23, 42, 0.08);
 }
 
 .pv-hero-actions {
@@ -134,15 +113,6 @@
   background: rgba(255, 255, 255, 0.72);
 }
 
-.pv-button-primary:disabled,
-.pv-button-secondary:disabled,
-.pv-button-ghost:disabled {
-  cursor: not-allowed;
-  transform: none;
-  opacity: 0.62;
-  box-shadow: none;
-}
-
 .pv-inline-link {
   display: inline-flex;
   align-items: center;
@@ -154,11 +124,6 @@
 
 .pv-inline-link:hover {
   color: var(--pv-brand-strong);
-}
-
-.pv-inline-link:focus-visible {
-  border-radius: 0.7rem;
-  box-shadow: 0 0 0 4px rgba(37, 92, 255, 0.14);
 }
 
 .pv-breadcrumbs {
@@ -488,153 +453,4 @@
   border-color: rgba(217, 119, 6, 0.2);
   background: rgba(255, 247, 237, 0.94);
   color: #98571b;
-}
-
-.pv-segment-pill {
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.94);
-  padding: 0.38rem 0.84rem;
-  font-size: 0.76rem;
-  font-weight: 700;
-  line-height: 1.2;
-  color: #475569;
-}
-
-.pv-segment-pill:hover {
-  border-color: rgba(37, 92, 255, 0.22);
-  color: #0f172a;
-}
-
-.pv-segment-pill:focus-visible {
-  box-shadow: 0 0 0 4px rgba(37, 92, 255, 0.14);
-}
-
-.pv-segment-pill-active {
-  border-color: rgba(37, 92, 255, 0.3);
-  background: linear-gradient(180deg, rgba(237, 242, 255, 0.98), rgba(228, 236, 255, 0.9));
-  color: var(--pv-brand-strong);
-}
-
-.pv-analytics-card {
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 1.2rem;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(246, 249, 255, 0.92)),
-    white;
-  padding: 1rem;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
-}
-
-.pv-analytics-label {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: #64748b;
-}
-
-.pv-analytics-value {
-  margin-top: 0.35rem;
-  font-size: clamp(1.42rem, 1.2rem + 0.58vw, 1.85rem);
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  line-height: 1.05;
-  color: #0f172a;
-}
-
-.pv-analytics-meta {
-  margin-top: 0.38rem;
-  font-size: 0.76rem;
-  color: #64748b;
-}
-
-.pv-analytics-table-wrap {
-  width: 100%;
-  overflow-x: auto;
-  border: 1px solid rgba(15, 23, 42, 0.07);
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.74);
-}
-
-.pv-analytics-table {
-  width: 100%;
-  min-width: 42rem;
-  border-collapse: collapse;
-  font-size: 0.84rem;
-  line-height: 1.45;
-  color: #0f172a;
-}
-
-.pv-analytics-table th,
-.pv-analytics-table td {
-  padding: 0.65rem 0.85rem;
-  text-align: left;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
-  vertical-align: top;
-}
-
-.pv-analytics-table th {
-  font-size: 0.69rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: #64748b;
-  white-space: nowrap;
-  background: rgba(248, 250, 255, 0.92);
-}
-
-.pv-analytics-table tr:last-child td {
-  border-bottom: 0;
-}
-
-.pv-analytics-table td {
-  color: #1f2937;
-}
-
-.pv-analytics-table-empty {
-  padding: 1rem 0.85rem !important;
-  text-align: center !important;
-  font-size: 0.82rem;
-  color: #64748b !important;
-  background: rgba(248, 250, 255, 0.9);
-}
-
-.pv-analytics-form-grid {
-  display: grid;
-  gap: 0.85rem;
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-}
-
-@media (min-width: 640px) {
-  .pv-analytics-form-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (min-width: 1280px) {
-  .pv-analytics-form-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 640px) {
-  .pv-analytics-card {
-    border-radius: 1rem;
-    padding: 0.85rem;
-  }
-
-  .pv-analytics-table-wrap {
-    border-radius: 0.9rem;
-  }
-
-  .pv-analytics-table {
-    min-width: 36rem;
-    font-size: 0.79rem;
-  }
-
-  .pv-analytics-table th,
-  .pv-analytics-table td {
-    padding: 0.55rem 0.68rem;
-  }
 }

@@ -9,8 +9,6 @@ ENV HTTP_PROXY=$HTTP_PROXY
 ENV HTTPS_PROXY=$HTTPS_PROXY
 ENV NO_PROXY=$NO_PROXY
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-ENV PLAYWRIGHT_BROWSERS_PATH=0
 
 COPY package.json package-lock.json* ./
 
@@ -18,8 +16,6 @@ RUN npm config set fetch-retries 5 \
  && npm config set fetch-retry-mintimeout 20000 \
  && npm config set fetch-retry-maxtimeout 120000 \
  && npm config set fetch-timeout 300000 \
- && npm config set registry https://registry.npmjs.org/ \
- && npm config set replace-registry-host always \
  && npm ci --no-audit --no-fund
 
 FROM base AS dev

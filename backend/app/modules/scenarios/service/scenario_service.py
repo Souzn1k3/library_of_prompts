@@ -22,7 +22,6 @@ from app.modules.scenarios.model.scenario import (
     ScenarioWorkspaceTrackWrite,
 )
 from app.modules.scenarios.repository.scenario_workspace_repository import ScenarioWorkspaceRepository
-from app.modules.scenarios.service.scenario_platform_service import ScenarioPlatformService
 
 DEFAULT_RECENT_LIMIT = 8
 DEFAULT_SAVED_LIMIT = 24
@@ -38,14 +37,12 @@ class ScenarioService:
         workspace_repo: ScenarioWorkspaceRepository,
         prompt_repo: PromptRepository,
         recommendation_service: RecommendationService,
-        platform: ScenarioPlatformService | None = None,
         marketplace: MarketplaceService | None = None,
         free_demo_run_cap: int = DEFAULT_DEMO_RUNS,
     ) -> None:
         self._workspace_repo = workspace_repo
         self._prompt_repo = prompt_repo
         self._recommendation_service = recommendation_service
-        self._platform = platform
         self._marketplace = marketplace
         self._free_demo_run_cap = max(int(free_demo_run_cap), 1)
 
@@ -141,35 +138,12 @@ class ScenarioService:
         retention = sections.most_saved[:limit] if sections.most_saved else sections.best_for_beginners[:limit]
 
         workspace = await self.get_workspace(viewer) if viewer is not None else None
-        growth_surfaces = (
-            await self._platform.build_home_growth_surfaces(
-                featured=featured,
-                recommended=recommended,
-                retention=retention,
-                workspace=workspace,
-            )
-            if self._platform is not None
-            else {
-                "packs": [],
-                "chains": [],
-                "next_steps": [],
-                "return_triggers": [],
-                "showcase": [],
-                "pricing_plans": [],
-            }
-        )
 
         return ScenarioHomeAggregateRead(
             generated_at=datetime.now(timezone.utc),
             featured=featured,
             recommended=recommended,
             retention=retention,
-            packs=growth_surfaces["packs"],
-            chains=growth_surfaces["chains"],
-            next_steps=growth_surfaces["next_steps"],
-            return_triggers=growth_surfaces["return_triggers"],
-            showcase=growth_surfaces["showcase"],
-            pricing_plans=growth_surfaces["pricing_plans"],
             workspace=workspace,
             workspace_limits=ScenarioWorkspaceLimitsRead(
                 recent_limit=DEFAULT_RECENT_LIMIT,

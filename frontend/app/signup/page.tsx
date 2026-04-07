@@ -11,10 +11,10 @@ export default async function SignupPage() {
   }
 
   return (
-    <div className="pv-page mx-auto max-w-5xl">
+    <div className="mx-auto max-w-5xl">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,0.85fr)] lg:items-start">
         <section className="pv-hero px-6 py-7 sm:px-8 sm:py-8">
-          <h1 className="pv-title max-w-[14ch] text-zinc-900">
+          <h1 className="pv-title whitespace-nowrap text-zinc-900">
             <T k="signup.pageTitle" />
           </h1>
           <p className="mt-3 pv-lead max-w-xl">

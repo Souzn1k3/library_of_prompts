@@ -1,8 +1,6 @@
 export const APP_ROUTES = {
   home: "/",
   catalog: "/catalog",
-  scenarios: "/scenarios",
-  scenariosMarketplace: "/scenarios/marketplace",
   learn: "/learn",
   learnStart: "/learn/start",
   learnMy: "/learn/my",

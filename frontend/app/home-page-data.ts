@@ -3,26 +3,12 @@ import {
   fetchScenarioHomeAggregate,
 } from "@/lib/api";
 import type { Language } from "@/lib/i18n";
-import type {
-  PromptListItem,
-  ScenarioChainRead,
-  ScenarioNextStepRead,
-  ScenarioPackRead,
-  ScenarioPricingPlanRead,
-  ScenarioReturnTriggerRead,
-  ScenarioShowcaseRead,
-} from "@/lib/types";
+import type { PromptListItem } from "@/lib/types";
 
 export type HomePageData = {
   entryPrompts: PromptListItem[];
   recommendedPrompts: PromptListItem[];
   retentionPrompts: PromptListItem[];
-  packs: ScenarioPackRead[];
-  chains: ScenarioChainRead[];
-  nextSteps: ScenarioNextStepRead[];
-  returnTriggers: ScenarioReturnTriggerRead[];
-  showcase: ScenarioShowcaseRead[];
-  pricingPlans: ScenarioPricingPlanRead[];
   heroPromptBody: string | null;
   quickUseCases: string[];
 };
@@ -61,12 +47,6 @@ export async function loadHomePageData({
     entryPrompts,
     recommendedPrompts: recommendedPrompts.slice(0, 6),
     retentionPrompts,
-    packs: aggregate?.packs ?? [],
-    chains: aggregate?.chains ?? [],
-    nextSteps: aggregate?.next_steps ?? [],
-    returnTriggers: aggregate?.return_triggers ?? [],
-    showcase: aggregate?.showcase ?? [],
-    pricingPlans: aggregate?.pricing_plans ?? [],
     heroPromptBody,
     quickUseCases,
   };

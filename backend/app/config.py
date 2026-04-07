@@ -56,30 +56,6 @@ class Settings(BaseSettings):
     web_demo_game_guest_fingerprint_daily_token_cap: int = 36
     web_demo_game_guest_fingerprint_window_minutes: int = 10
     web_demo_game_guest_fingerprint_window_event_cap: int = 6
-    scenario_run_boost_token_cost: int = 12
-    scenario_run_boost_bonus_runs: int = 3
-    scenario_creator_publish_reward_tokens: int = 20
-    scenario_creator_fork_reward_tokens: int = 5
-    scenario_creator_like_reward_tokens: int = 1
-    growth_dashboard_default_window_days: int = 28
-    growth_flag_dashboard_rollout_percent: int = 100
-    growth_flag_chain_recommendations_rollout_percent: int = 100
-    growth_flag_showcase_share_rollout_percent: int = 100
-    growth_experiment_homepage_rollout_percent: int = 50
-    growth_experiment_landing_rollout_percent: int = 50
-    growth_experiment_upgrade_rollout_percent: int = 50
-    growth_experiment_paywall_rollout_percent: int = 50
-    growth_experiment_pricing_rollout_percent: int = 50
-    scenario_autonomy_enabled: bool = True
-    scenario_autonomy_scheduler_enabled: bool = True
-    scenario_autonomy_interval_minutes: int = 45
-    scenario_autonomy_signal_window_days: int = 30
-    scenario_autonomy_max_new_scenarios_per_cycle: int = 3
-    scenario_autonomy_min_improvement_percent: float = 3.0
-    scenario_autonomy_guardrail_min_retention_percent: float = 25.0
-    scenario_autonomy_guardrail_max_cac_usd: float = 150.0
-    scenario_autonomy_guardrail_min_roi_percent: float = -10.0
-    scenario_autonomy_marketplace_prune_threshold: float = 18.0
     legacy_bot_database_url: str | None = None
 
     jwt_secret_key: str = Field(
@@ -191,50 +167,6 @@ class Settings(BaseSettings):
             raise ValueError("WEB_DEMO_GAME_GUEST_FINGERPRINT_WINDOW_MINUTES must be greater than 0.")
         if self.web_demo_game_guest_fingerprint_window_event_cap <= 0:
             raise ValueError("WEB_DEMO_GAME_GUEST_FINGERPRINT_WINDOW_EVENT_CAP must be greater than 0.")
-        if self.scenario_run_boost_token_cost <= 0:
-            raise ValueError("SCENARIO_RUN_BOOST_TOKEN_COST must be greater than 0.")
-        if self.scenario_run_boost_bonus_runs <= 0:
-            raise ValueError("SCENARIO_RUN_BOOST_BONUS_RUNS must be greater than 0.")
-        if self.scenario_creator_publish_reward_tokens < 0:
-            raise ValueError("SCENARIO_CREATOR_PUBLISH_REWARD_TOKENS must be greater or equal to 0.")
-        if self.scenario_creator_fork_reward_tokens < 0:
-            raise ValueError("SCENARIO_CREATOR_FORK_REWARD_TOKENS must be greater or equal to 0.")
-        if self.scenario_creator_like_reward_tokens < 0:
-            raise ValueError("SCENARIO_CREATOR_LIKE_REWARD_TOKENS must be greater or equal to 0.")
-        if self.growth_dashboard_default_window_days < 7 or self.growth_dashboard_default_window_days > 90:
-            raise ValueError("GROWTH_DASHBOARD_DEFAULT_WINDOW_DAYS must be between 7 and 90.")
-        for name, value in (
-            ("GROWTH_FLAG_DASHBOARD_ROLLOUT_PERCENT", self.growth_flag_dashboard_rollout_percent),
-            (
-                "GROWTH_FLAG_CHAIN_RECOMMENDATIONS_ROLLOUT_PERCENT",
-                self.growth_flag_chain_recommendations_rollout_percent,
-            ),
-            ("GROWTH_FLAG_SHOWCASE_SHARE_ROLLOUT_PERCENT", self.growth_flag_showcase_share_rollout_percent),
-            ("GROWTH_EXPERIMENT_HOMEPAGE_ROLLOUT_PERCENT", self.growth_experiment_homepage_rollout_percent),
-            ("GROWTH_EXPERIMENT_LANDING_ROLLOUT_PERCENT", self.growth_experiment_landing_rollout_percent),
-            ("GROWTH_EXPERIMENT_UPGRADE_ROLLOUT_PERCENT", self.growth_experiment_upgrade_rollout_percent),
-            ("GROWTH_EXPERIMENT_PAYWALL_ROLLOUT_PERCENT", self.growth_experiment_paywall_rollout_percent),
-            ("GROWTH_EXPERIMENT_PRICING_ROLLOUT_PERCENT", self.growth_experiment_pricing_rollout_percent),
-        ):
-            if value < 0 or value > 100:
-                raise ValueError(f"{name} must be between 0 and 100.")
-        if self.scenario_autonomy_interval_minutes <= 0:
-            raise ValueError("SCENARIO_AUTONOMY_INTERVAL_MINUTES must be greater than 0.")
-        if self.scenario_autonomy_signal_window_days <= 0:
-            raise ValueError("SCENARIO_AUTONOMY_SIGNAL_WINDOW_DAYS must be greater than 0.")
-        if self.scenario_autonomy_max_new_scenarios_per_cycle <= 0:
-            raise ValueError("SCENARIO_AUTONOMY_MAX_NEW_SCENARIOS_PER_CYCLE must be greater than 0.")
-        if self.scenario_autonomy_min_improvement_percent < 0 or self.scenario_autonomy_min_improvement_percent > 100:
-            raise ValueError("SCENARIO_AUTONOMY_MIN_IMPROVEMENT_PERCENT must be between 0 and 100.")
-        if (
-            self.scenario_autonomy_guardrail_min_retention_percent < 0
-            or self.scenario_autonomy_guardrail_min_retention_percent > 100
-        ):
-            raise ValueError("SCENARIO_AUTONOMY_GUARDRAIL_MIN_RETENTION_PERCENT must be between 0 and 100.")
-        if self.scenario_autonomy_guardrail_max_cac_usd <= 0:
-            raise ValueError("SCENARIO_AUTONOMY_GUARDRAIL_MAX_CAC_USD must be greater than 0.")
-        if self.scenario_autonomy_marketplace_prune_threshold < 0 or self.scenario_autonomy_marketplace_prune_threshold > 100:
-            raise ValueError("SCENARIO_AUTONOMY_MARKETPLACE_PRUNE_THRESHOLD must be between 0 and 100.")
 
         url = self.parsed_database_url
         driver = url.drivername.lower()

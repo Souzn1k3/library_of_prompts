@@ -109,7 +109,6 @@ class BillingCheckoutMixin:
         plan: Plan,
         payload: CheckoutSessionRequest,
     ) -> CheckoutSessionResponse:
-        checkout_session_id = f"mock_chk_{uuid.uuid4().hex}"
         customer = await self._repo.get_billing_customer_for_user(user.id, provider=BillingProvider.mock)
         if customer is None:
             await self._repo.create_billing_customer(
@@ -121,26 +120,6 @@ class BillingCheckoutMixin:
 
         now = datetime.now(timezone.utc)
         provider_subscription_id = f"mock_sub_{uuid.uuid4().hex}"
-        attribution = await self._analytics.get_user_last_touch_attribution(user_id=user.id) if self._analytics else None
-        if self._analytics is not None:
-            await self._analytics.record_server_event(
-                event_name=AnalyticsEventName.checkout_started,
-                user_id=user.id,
-                metadata={
-                    "provider": BillingProvider.mock.value,
-                    "plan_tier": plan.tier.value,
-                    "checkout_mode": "subscription",
-                    "source_page": payload.source_page,
-                    "scenario_slug": payload.scenario_slug,
-                    "paywall_variant": payload.paywall_variant,
-                    "pricing_variant": payload.pricing_variant,
-                },
-                attribution=attribution,
-                context_page="/api/v1/billing/checkout/session",
-                context_feature="mock_checkout",
-                event_id=f"mock_checkout_started:{checkout_session_id}",
-            )
-
         subscription = await self._repo.upsert_subscription(
             user_id=user.id,
             plan_id=plan.id,
@@ -167,55 +146,13 @@ class BillingCheckoutMixin:
         await self._entitlements.recalculate_user_tier(user.id)
         if self._analytics is not None:
             await self._analytics.record_server_event(
-                event_name=AnalyticsEventName.checkout_completed,
-                user_id=user.id,
-                metadata={
-                    "provider": BillingProvider.mock.value,
-                    "plan_tier": plan.tier.value,
-                    "provider_subscription_id": provider_subscription_id,
-                    "session_id": checkout_session_id,
-                    "source_page": payload.source_page,
-                    "scenario_slug": payload.scenario_slug,
-                    "paywall_variant": payload.paywall_variant,
-                    "pricing_variant": payload.pricing_variant,
-                },
-                attribution=attribution,
-                context_page="/api/v1/billing/checkout/session",
-                context_feature="mock_checkout",
-                event_id=f"mock_checkout_completed:{checkout_session_id}",
-            )
-            await self._analytics.record_server_event(
-                event_name=AnalyticsEventName.subscription_started,
-                user_id=user.id,
-                metadata={
-                    "provider": BillingProvider.mock.value,
-                    "plan_tier": plan.tier.value,
-                    "subscription_status": SubscriptionStatus.active.value,
-                    "provider_subscription_id": provider_subscription_id,
-                    "source_page": payload.source_page,
-                    "scenario_slug": payload.scenario_slug,
-                    "paywall_variant": payload.paywall_variant,
-                    "pricing_variant": payload.pricing_variant,
-                },
-                attribution=attribution,
-                context_page="/api/v1/billing/checkout/session",
-                context_feature="mock_checkout",
-                event_id=f"mock_subscription_started:{provider_subscription_id}",
-            )
-            await self._analytics.record_server_event(
                 event_name=AnalyticsEventName.subscription_activated,
                 user_id=user.id,
                 metadata={
                     "provider": BillingProvider.mock.value,
                     "plan_tier": plan.tier.value,
                     "subscription_status": SubscriptionStatus.active.value,
-                    "provider_subscription_id": provider_subscription_id,
-                    "source_page": payload.source_page,
-                    "scenario_slug": payload.scenario_slug,
-                    "paywall_variant": payload.paywall_variant,
-                    "pricing_variant": payload.pricing_variant,
                 },
-                attribution=attribution,
                 context_page="/api/v1/billing/checkout/session",
                 context_feature="mock_checkout",
                 event_id=f"mock_subscription_activated:{provider_subscription_id}",
@@ -227,7 +164,7 @@ class BillingCheckoutMixin:
         )
         return CheckoutSessionResponse(
             url=append_query(success_url, billing="success", tier=plan.tier.value, mock="1"),
-            session_id=checkout_session_id,
+            session_id=provider_subscription_id,
         )
 
     async def create_checkout_session(
@@ -282,27 +219,9 @@ class BillingCheckoutMixin:
                 cancel_url=cancel_url,
                 client_reference_id=str(user.id),
                 allow_promotion_codes=True,
-                subscription_data={
-                    "metadata": {
-                        "user_id": str(user.id),
-                        "tier": plan.tier.value,
-                        "source_page": payload.source_page or "",
-                        "scenario_slug": payload.scenario_slug or "",
-                        "paywall_variant": payload.paywall_variant or "",
-                        "pricing_variant": payload.pricing_variant or "",
-                    }
-                },
-                metadata={
-                    "user_id": str(user.id),
-                    "tier": plan.tier.value,
-                    "source_page": payload.source_page or "",
-                    "scenario_slug": payload.scenario_slug or "",
-                    "paywall_variant": payload.paywall_variant or "",
-                    "pricing_variant": payload.pricing_variant or "",
-                },
+                metadata={"user_id": str(user.id), "tier": plan.tier.value},
             )
             if self._analytics is not None:
-                attribution = await self._analytics.get_user_last_touch_attribution(user_id=user.id)
                 await self._analytics.record_server_event(
                     event_name=AnalyticsEventName.checkout_started,
                     user_id=user.id,
@@ -310,12 +229,7 @@ class BillingCheckoutMixin:
                         "provider": BillingProvider.stripe.value,
                         "plan_tier": plan.tier.value,
                         "checkout_mode": "subscription",
-                        "source_page": payload.source_page,
-                        "scenario_slug": payload.scenario_slug,
-                        "paywall_variant": payload.paywall_variant,
-                        "pricing_variant": payload.pricing_variant,
                     },
-                    attribution=attribution,
                     context_page="/api/v1/billing/checkout/session",
                     context_feature="checkout",
                     event_id=f"stripe_checkout_started:{user.id}:{plan.tier.value}:{getattr(session, 'id', None) or session.get('id')}",

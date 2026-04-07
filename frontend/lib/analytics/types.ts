@@ -19,37 +19,9 @@ export type AnalyticsEventName =
   | "locked_content_viewed"
   | "upgrade_clicked"
   | "checkout_started"
-  | "checkout_completed"
-  | "payment_failed"
   | "subscription_activated"
-  | "subscription_started"
-  | "subscription_renewed"
-  | "subscription_canceled"
-  | "refund_processed"
-  | "paywall_viewed"
-  | "paywall_interaction"
-  | "pricing_plan_selected"
-  | "ad_click"
-  | "landing_view"
-  | "signup_from_source"
   | "catalog_search_used"
-  | "catalog_filter_used"
-  | "scenario_run"
-  | "scenario_saved"
-  | "scenario_resumed"
-  | "scenario_upgrade_clicked"
-  | "scenario_completed"
-  | "scenario_shared"
-  | "scenario_pack_started"
-  | "scenario_chain_next_clicked"
-  | "user_acquired"
-  | "attribution_assigned"
-  | "growth_experiment_assigned"
-  | "feature_flag_exposed"
-  | "churn_risk_detected"
-  | "reactivation_trigger"
-  | "scale_channel"
-  | "kill_channel";
+  | "catalog_filter_used";
 
 export type Attribution = {
   utm_source?: string;
@@ -57,8 +29,6 @@ export type Attribution = {
   utm_campaign?: string;
   utm_term?: string;
   utm_content?: string;
-  ad_id?: string;
-  creative_id?: string;
   referrer?: string;
 };
 

@@ -2,14 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { fetchScenarioDemoRunStatus, purchaseScenarioDemoRunBoost, trackScenarioDemoRun } from "@/lib/client-api";
+import { fetchScenarioDemoRunStatus, trackScenarioDemoRun } from "@/lib/client-api";
 import type { ScenarioDemoRunStatusRead } from "@/lib/types";
 
 type UseScenarioDemoRunState = {
   status: ScenarioDemoRunStatusRead | null;
   loading: boolean;
   runPending: boolean;
-  boostPending: boolean;
   latestMessage: string | null;
 };
 
@@ -17,7 +16,6 @@ const INITIAL_STATE: UseScenarioDemoRunState = {
   status: null,
   loading: false,
   runPending: false,
-  boostPending: false,
   latestMessage: null,
 };
 
@@ -84,49 +82,19 @@ export function useScenarioDemoRun(promptSlug: string | null) {
     [promptSlug],
   );
 
-  const purchaseBoost = useCallback(async () => {
-    if (!promptSlug) {
-      return null;
-    }
-    setState((current) => ({ ...current, boostPending: true, latestMessage: null }));
-    try {
-      const purchase = await purchaseScenarioDemoRunBoost({ prompt_slug: promptSlug });
-      const status = await fetchScenarioDemoRunStatus(promptSlug);
-      setState((current) => ({
-        ...current,
-        boostPending: false,
-        status,
-        latestMessage: purchase.is_pro
-          ? "pro_unlimited_runs"
-          : `bonus_runs_added:${purchase.applied_bonus_runs}`,
-      }));
-      return purchase;
-    } catch {
-      setState((current) => ({
-        ...current,
-        boostPending: false,
-        latestMessage: "boost_purchase_failed",
-      }));
-      return null;
-    }
-  }, [promptSlug]);
-
   return useMemo(
     () => ({
       status: state.status,
       loading: state.loading,
       runPending: state.runPending,
-      boostPending: state.boostPending,
       latestMessage: state.latestMessage,
       refresh,
       run,
-      purchaseBoost,
       canRun: Boolean(state.status?.allowed),
       remainingRuns: state.status?.remaining_runs ?? null,
-      bonusRunsRemaining: state.status?.bonus_runs_remaining ?? null,
       capReached: Boolean(state.status?.cap_reached),
       isPro: Boolean(state.status?.is_pro),
     }),
-    [purchaseBoost, refresh, run, state.boostPending, state.latestMessage, state.loading, state.runPending, state.status],
+    [refresh, run, state.latestMessage, state.loading, state.runPending, state.status],
   );
 }

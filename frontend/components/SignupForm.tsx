@@ -43,7 +43,7 @@ export function SignupForm() {
   return (
     <form className="space-y-4" onSubmit={onSubmit}>
       {error ? (
-        <div className="pv-alert pv-alert-error py-2 text-sm" role="alert" aria-live="polite">
+        <div className="rounded-[1rem] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
           {error}
         </div>
       ) : null}
@@ -101,7 +101,7 @@ export function SignupForm() {
       </button>
       <p className="text-center text-sm text-zinc-600">
         {t("signup.haveAccountPrefix")}{" "}
-        <Link href="/login" className="font-semibold text-[var(--pv-brand-strong)] hover:opacity-90">
+        <Link href="/login" className="font-medium text-zinc-900 underline">
           {t("signup.haveAccountLink")}
         </Link>
       </p>

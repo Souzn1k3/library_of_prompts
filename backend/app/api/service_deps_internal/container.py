@@ -8,9 +8,6 @@ from app.core.cache import get_cache
 from app.infrastructure.db.session import get_db
 from app.modules.analytics.repository.analytics_repository import AnalyticsRepository
 from app.modules.analytics.service.analytics_service import AnalyticsService
-from app.modules.analytics.service.gtm_ops_service import GtmOpsService
-from app.modules.analytics.service.growth_ops_service import GrowthOpsService
-from app.modules.analytics.service.revenue_ops_service import RevenueOpsService
 from app.modules.billing.repository.billing_repository import BillingRepository
 from app.modules.billing.service.billing_service import BillingService
 from app.modules.billing.service.entitlement_service import EntitlementService
@@ -51,11 +48,8 @@ from app.modules.onboarding.repository.onboarding_repository import OnboardingRe
 from app.modules.onboarding.service.onboarding_service import OnboardingService
 from app.modules.scenarios.repository.scenario_workspace_repository import ScenarioWorkspaceRepository
 from app.modules.scenarios.repository.scenario_demo_repository import ScenarioDemoRepository
-from app.modules.scenarios.repository.scenario_platform_repository import ScenarioPlatformRepository
 from app.modules.scenarios.service.scenario_demo_run_service import ScenarioDemoRunService
 from app.modules.scenarios.service.scenario_game_service import ScenarioGameService
-from app.modules.scenarios.service.scenario_autonomy_service import ScenarioAutonomyService
-from app.modules.scenarios.service.scenario_platform_service import ScenarioPlatformService
 from app.modules.scenarios.service.scenario_service import ScenarioService
 
 
@@ -144,41 +138,12 @@ class ServiceContainer:
         return ScenarioDemoRepository(self._session)
 
     @cached_property
-    def scenario_platform_repository(self) -> ScenarioPlatformRepository:
-        return ScenarioPlatformRepository(self._session)
-
-    @cached_property
     def display_name_policy(self) -> DisplayNamePolicy:
         return DisplayNamePolicy()
 
     @cached_property
     def analytics_service(self) -> AnalyticsService:
         return AnalyticsService(self.analytics_repository)
-
-    @cached_property
-    def growth_ops_service(self) -> GrowthOpsService:
-        return GrowthOpsService(
-            repo=self.analytics_repository,
-            analytics=self.analytics_service,
-            settings=self.settings,
-        )
-
-    @cached_property
-    def revenue_ops_service(self) -> RevenueOpsService:
-        return RevenueOpsService(
-            analytics_repo=self.analytics_repository,
-            billing_repo=self.billing_repository,
-            analytics=self.analytics_service,
-            settings=self.settings,
-        )
-
-    @cached_property
-    def gtm_ops_service(self) -> GtmOpsService:
-        return GtmOpsService(
-            analytics_repo=self.analytics_repository,
-            billing_repo=self.billing_repository,
-            analytics=self.analytics_service,
-        )
 
     @cached_property
     def marketplace_service(self) -> MarketplaceService:
@@ -279,7 +244,6 @@ class ServiceContainer:
             workspace_repo=self.scenario_workspace_repository,
             prompt_repo=self.prompt_repository,
             recommendation_service=self.recommendation_service,
-            platform=self.scenario_platform_service,
             marketplace=self.marketplace_service,
             free_demo_run_cap=int(self.settings.scenario_free_demo_run_cap),
         )
@@ -298,28 +262,6 @@ class ServiceContainer:
         return ScenarioGameService(
             repo=self.scenario_demo_repository,
             wallet=self.wallet_service,
-            settings=self.settings,
-        )
-
-    @cached_property
-    def scenario_platform_service(self) -> ScenarioPlatformService:
-        return ScenarioPlatformService(
-            repo=self.scenario_platform_repository,
-            demo_repo=self.scenario_demo_repository,
-            prompt_repo=self.prompt_repository,
-            user_repo=self.user_repository,
-            wallet=self.wallet_service,
-            settings=self.settings,
-        )
-
-    @cached_property
-    def scenario_autonomy_service(self) -> ScenarioAutonomyService:
-        return ScenarioAutonomyService(
-            repo=self.scenario_platform_repository,
-            platform=self.scenario_platform_service,
-            analytics_repo=self.analytics_repository,
-            analytics=self.analytics_service,
-            billing_repo=self.billing_repository,
             settings=self.settings,
         )
 

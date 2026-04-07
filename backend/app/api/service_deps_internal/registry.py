@@ -11,9 +11,6 @@ class ServiceBinding:
 
 SERVICE_BINDINGS: tuple[ServiceBinding, ...] = (
     ServiceBinding(name="analytics", container_attr="analytics_service"),
-    ServiceBinding(name="growth_ops", container_attr="growth_ops_service"),
-    ServiceBinding(name="revenue_ops", container_attr="revenue_ops_service"),
-    ServiceBinding(name="gtm_ops", container_attr="gtm_ops_service"),
     ServiceBinding(name="auth", container_attr="auth_service"),
     ServiceBinding(name="billing", container_attr="billing_service"),
     ServiceBinding(name="category", container_attr="category_service"),
@@ -32,8 +29,6 @@ SERVICE_BINDINGS: tuple[ServiceBinding, ...] = (
     ServiceBinding(name="scenario", container_attr="scenario_service"),
     ServiceBinding(name="scenario_demo_run", container_attr="scenario_demo_run_service"),
     ServiceBinding(name="scenario_game", container_attr="scenario_game_service"),
-    ServiceBinding(name="scenario_autonomy", container_attr="scenario_autonomy_service"),
-    ServiceBinding(name="scenario_platform", container_attr="scenario_platform_service"),
     ServiceBinding(name="saved_prompt", container_attr="saved_prompt_service"),
     ServiceBinding(name="store", container_attr="store_service"),
     ServiceBinding(name="submission", container_attr="submission_service"),

@@ -159,8 +159,6 @@ class ScenarioDemoRunService:
         entry = await self._workspace_repo.get_workspace_entry(user_id=viewer.id, prompt_id=prompt_id)
         used_runs = int(entry.run_count) if entry is not None else 0
         is_pro = viewer.plan_tier != PlanTier.free
-        boost = await self._demo_repo.get_user_run_boost(user_id=viewer.id, prompt_id=prompt_id)
-        bonus_runs_remaining = int(boost.bonus_runs_remaining) if boost is not None else 0
 
         if is_pro:
             if mutate:
@@ -187,17 +185,14 @@ class ScenarioDemoRunService:
                 reason=None,
                 upgrade_hint=None,
                 guest_session_id=None,
-                bonus_runs_remaining=bonus_runs_remaining,
             )
 
-        free_cap_reached = used_runs >= free_cap
-        cap_reached = free_cap_reached and bonus_runs_remaining <= 0
-        allowed = not free_cap_reached or bonus_runs_remaining > 0
+        cap_reached = used_runs >= free_cap
+        allowed = not cap_reached
         reason = "free_demo_cap_reached" if cap_reached else None
 
         if mutate and allowed:
             entry = await self._ensure_workspace_entry(entry=entry, viewer=viewer, prompt_id=prompt_id, now=now)
-            consumed_bonus = used_runs >= free_cap and bonus_runs_remaining > 0
             entry.run_count = int(entry.run_count) + 1
             entry.last_run_at = now
             entry.last_opened_at = entry.last_opened_at or now
@@ -207,16 +202,11 @@ class ScenarioDemoRunService:
                 entry.unfinished_task = clean_task
             await self._workspace_repo.save_workspace_entry(entry)
             used_runs = int(entry.run_count)
-            if consumed_bonus and boost is not None and bonus_runs_remaining > 0:
-                bonus_runs_remaining = max(bonus_runs_remaining - 1, 0)
-                boost.bonus_runs_remaining = bonus_runs_remaining
-                await self._demo_repo.save_user_run_boost(boost)
-            free_cap_reached = used_runs >= free_cap
-            cap_reached = free_cap_reached and bonus_runs_remaining <= 0
-            allowed = not free_cap_reached or bonus_runs_remaining > 0
+            cap_reached = used_runs >= free_cap
+            allowed = not cap_reached
             reason = "free_demo_cap_reached" if cap_reached else None
 
-        remaining = max(free_cap - used_runs, 0) + max(bonus_runs_remaining, 0)
+        remaining = max(free_cap - used_runs, 0)
         return ScenarioDemoRunStatusRead(
             prompt_slug=prompt_slug,
             is_authenticated=True,
@@ -229,7 +219,6 @@ class ScenarioDemoRunService:
             reason=reason,
             upgrade_hint=upgrade_hint if cap_reached else None,
             guest_session_id=None,
-            bonus_runs_remaining=bonus_runs_remaining,
         )
 
     async def _guest_status(

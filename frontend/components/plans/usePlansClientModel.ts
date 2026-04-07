@@ -5,8 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useBillingPortal } from "@/components/billing/useBillingPortal";
 import { ApiRequestError } from "@/lib/api";
-import { analyticsSessionId, trackEvent } from "@/lib/analytics";
-import { createCheckoutSession, fetchBillingStatus, fetchGrowthRuntime } from "@/lib/client-api";
+import { trackEvent } from "@/lib/analytics";
+import { createCheckoutSession, fetchBillingStatus } from "@/lib/client-api";
 import { APP_ROUTES } from "@/lib/constants/routes";
 import type { TranslationKey } from "@/lib/i18n";
 import type { BillingStatus, PlanRecord } from "@/lib/types";
@@ -54,46 +54,11 @@ export function usePlansClientModel({
   const [actionError, setActionError] = useState<string | null>(null);
   const [pendingTier, setPendingTier] = useState<string | null>(null);
   const [expandedTier, setExpandedTier] = useState<string | null>(preferredTier);
-  const [paywallVariant, setPaywallVariant] = useState("control");
-  const [pricingVariant, setPricingVariant] = useState("control");
   const { portalError, portalPending, openPortal, clearPortalError } = useBillingPortal();
 
   useEffect(() => {
     setExpandedTier(preferredTier);
   }, [preferredTier]);
-
-  useEffect(() => {
-    const sessionId = analyticsSessionId();
-    fetchGrowthRuntime({
-      sessionId,
-      page: APP_ROUTES.pricing,
-      feature: "pricing_paywall",
-    })
-      .then((runtime) => {
-        const paywall = runtime.experiments.find((item) => item.key === "paywall_variant_v1");
-        const pricing = runtime.experiments.find((item) => item.key === "pricing_variant_v1");
-        if (paywall?.variant) {
-          setPaywallVariant(paywall.variant);
-        }
-        if (pricing?.variant) {
-          setPricingVariant(pricing.variant);
-        }
-      })
-      .catch(() => null);
-  }, []);
-
-  useEffect(() => {
-    trackEvent({
-      eventName: "paywall_viewed",
-      page: APP_ROUTES.pricing,
-      feature: "pricing_page",
-      onceKey: `paywall_viewed:pricing:${paywallVariant}:${pricingVariant}`,
-      metadata: {
-        paywall_variant: paywallVariant,
-        pricing_variant: pricingVariant,
-      },
-    });
-  }, [paywallVariant, pricingVariant]);
 
   useEffect(() => {
     if (status !== "authenticated" || !user) {
@@ -160,45 +125,16 @@ export function usePlansClientModel({
     setActionError(null);
     setPendingTier(tier);
     trackEvent({
-      eventName: "pricing_plan_selected",
-      page: APP_ROUTES.pricing,
-      feature: "pricing_plan_card",
-      metadata: {
-        current_tier: currentTier,
-        target_tier: tier,
-        paywall_variant: paywallVariant,
-        pricing_variant: pricingVariant,
-      },
-    });
-    trackEvent({
-      eventName: "paywall_interaction",
-      page: APP_ROUTES.pricing,
-      feature: "pricing_checkout_start",
-      metadata: {
-        action: "upgrade_click",
-        current_tier: currentTier,
-        target_tier: tier,
-        paywall_variant: paywallVariant,
-        pricing_variant: pricingVariant,
-      },
-    });
-    trackEvent({
       eventName: "upgrade_clicked",
       page: APP_ROUTES.pricing,
       feature: "plan_upgrade_cta",
       metadata: {
         current_tier: currentTier,
         target_tier: tier,
-        paywall_variant: paywallVariant,
-        pricing_variant: pricingVariant,
       },
     });
     try {
-      const session = await createCheckoutSession(tier, {
-        sourcePage: APP_ROUTES.pricing,
-        paywallVariant,
-        pricingVariant,
-      });
+      const session = await createCheckoutSession(tier);
       window.location.href = session.url;
     } catch (error) {
       setActionError(error instanceof Error ? error.message : t("plans.checkoutFailed"));

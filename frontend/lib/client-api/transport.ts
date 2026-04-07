@@ -42,7 +42,7 @@ function requestHeaders(language: string, initHeaders?: HeadersInit): HeadersIni
   };
 }
 
-export function jsonInit(method: "POST" | "PUT" | "PATCH" | "DELETE", body?: unknown): RequestInit {
+export function jsonInit(method: "POST" | "PUT" | "DELETE", body?: unknown): RequestInit {
   return {
     method,
     headers: { "Content-Type": "application/json" },

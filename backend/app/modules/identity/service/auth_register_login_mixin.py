@@ -35,22 +35,6 @@ class AuthRegisterLoginMixin:
         created = await self._repo.create(user)
         if self._analytics is not None:
             domain = created.email.split("@", 1)[1] if "@" in created.email else None
-            attribution = await self._analytics.get_user_last_touch_attribution(user_id=created.id)
-            await self._analytics.record_server_event(
-                event_name=AnalyticsEventName.signup_from_source,
-                user_id=created.id,
-                metadata={
-                    "source": attribution.utm_source if attribution else "direct",
-                    "medium": attribution.utm_medium if attribution else "organic",
-                    "campaign": attribution.utm_campaign if attribution else None,
-                    "ad_id": attribution.ad_id if attribution else None,
-                    "creative_id": attribution.creative_id if attribution else None,
-                },
-                attribution=attribution,
-                context_page="/api/v1/auth/register",
-                context_feature="signup_from_source",
-                event_id=f"signup_from_source:{created.id}",
-            )
             await self._analytics.record_server_event(
                 event_name=AnalyticsEventName.signup_completed,
                 user_id=created.id,
@@ -59,7 +43,6 @@ class AuthRegisterLoginMixin:
                     "plan_tier": created.plan_tier.value,
                     "email_domain": domain,
                 },
-                attribution=attribution,
                 context_page="/api/v1/auth/register",
                 context_feature="signup",
                 event_id=f"signup_completed:{created.id}",

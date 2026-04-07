@@ -14,12 +14,6 @@ export function HomePageView({ initialAuthenticated, data }: HomePageViewProps) 
   const {
     entryPrompts,
     recommendedPrompts,
-    packs,
-    chains,
-    nextSteps,
-    returnTriggers,
-    showcase,
-    pricingPlans,
     heroPromptBody,
     quickUseCases,
     retentionPrompts,
@@ -57,12 +51,6 @@ export function HomePageView({ initialAuthenticated, data }: HomePageViewProps) 
         prompts={entryPrompts}
         recommendedPrompts={recommendedPrompts}
         retentionPrompts={retentionPrompts}
-        packs={packs}
-        chains={chains}
-        nextSteps={nextSteps}
-        returnTriggers={returnTriggers}
-        showcase={showcase}
-        pricingPlans={pricingPlans}
         initialAuthenticated={initialAuthenticated}
       />
     </div>

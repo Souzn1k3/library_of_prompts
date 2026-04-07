@@ -70,12 +70,12 @@ export function OnboardingWizardSetupSection({
         />
       ) : null}
 
-      <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
         <button
           type="button"
           onClick={goBack}
           disabled={step === 0 || pending}
-          className="pv-button-secondary w-full sm:w-auto disabled:opacity-50"
+          className="pv-button-secondary disabled:opacity-50"
         >
           {t("onboardingWizard.back")}
         </button>
@@ -84,7 +84,7 @@ export function OnboardingWizardSetupSection({
             type="button"
             onClick={goNext}
             disabled={pending || (step === 0 && !role) || (step === 1 && !goal)}
-            className="pv-button-primary w-full sm:w-auto disabled:opacity-60"
+            className="pv-button-primary disabled:opacity-60"
           >
             {t("onboardingWizard.continue")}
           </button>
@@ -93,7 +93,7 @@ export function OnboardingWizardSetupSection({
             type="button"
             onClick={() => void completeOnboardingFlow()}
             disabled={pending || !aiContext}
-            className="pv-button-primary w-full sm:w-auto disabled:opacity-60"
+            className="pv-button-primary disabled:opacity-60"
           >
             {pending ? t("onboardingWizard.preparing") : t("onboardingWizard.finishSetup")}
           </button>

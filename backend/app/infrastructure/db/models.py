@@ -60,16 +60,13 @@ from ._identity_billing_models import (  # noqa: F401
     AnalyticsEvent,
     AuthRefreshToken,
     BillingCustomer,
-    ChannelSpendEntry,
     ContributorProfile,
     OnboardingEvent,
     OnboardingProfile,
     Plan,
     ProcessedWebhookEvent,
-    SessionAttribution,
     Subscription,
     SubscriptionEvent,
-    UserAttribution,
 )
 from ._learning_models import (  # noqa: F401
     LearningAchievement,
@@ -89,25 +86,9 @@ from ._economy_models import (  # noqa: F401
 )
 from ._scenario_models import (  # noqa: F401
     GuestScenarioRunUsage,
-    ScenarioAutonomyCycle,
-    ScenarioAutonomyExperiment,
-    ScenarioAutonomyGrowthDecision,
-    ScenarioAutonomyGuardrailEvent,
-    ScenarioAutonomyPersonalizationProfile,
-    ScenarioBlueprintComment,
-    ScenarioBlueprintRating,
-    ScenarioBlueprintSave,
-    ScenarioBlueprintVersion,
-    ScenarioCreatorRewardEvent,
     ScenarioGameTokenClaim,
     ScenarioGameTokenEvent,
-    ScenarioOutputShowcase,
     TelegramRewardClaim,
-    UserScenarioBlueprint,
-    UserScenarioBlueprintShare,
-    UserScenarioRunBoost,
-    UserScenarioWorkflow,
-    UserScenarioWorkflowRun,
     UserScenarioWorkspace,
 )
 from ._marketplace_models import (  # noqa: F401

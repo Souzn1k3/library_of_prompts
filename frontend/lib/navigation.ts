@@ -79,7 +79,7 @@ export function getHeaderNavigation(): HeaderNavItem[] {
 
 export function isHeaderNavigationItemActive(pathname: string, itemId: HeaderNavItemId) {
   if (itemId === "catalog") {
-    return matchesPath(pathname, ["/catalog", "/scenarios", "/prompt", "/category", "/contributors"]);
+    return matchesPath(pathname, ["/catalog", "/prompt", "/category", "/contributors"]);
   }
 
   if (itemId === "learn") {

@@ -32,41 +32,9 @@ class AnalyticsEventName(str, enum.Enum):
     locked_content_viewed = "locked_content_viewed"
     upgrade_clicked = "upgrade_clicked"
     checkout_started = "checkout_started"
-    checkout_completed = "checkout_completed"
-    payment_failed = "payment_failed"
     subscription_activated = "subscription_activated"
-    subscription_started = "subscription_started"
-    subscription_renewed = "subscription_renewed"
-    subscription_canceled = "subscription_canceled"
-    refund_processed = "refund_processed"
-    paywall_viewed = "paywall_viewed"
-    paywall_interaction = "paywall_interaction"
-    pricing_plan_selected = "pricing_plan_selected"
-    ad_click = "ad_click"
-    landing_view = "landing_view"
-    signup_from_source = "signup_from_source"
     catalog_search_used = "catalog_search_used"
     catalog_filter_used = "catalog_filter_used"
-    scenario_run = "scenario_run"
-    scenario_saved = "scenario_saved"
-    scenario_resumed = "scenario_resumed"
-    scenario_upgrade_clicked = "scenario_upgrade_clicked"
-    scenario_completed = "scenario_completed"
-    scenario_shared = "scenario_shared"
-    scenario_pack_started = "scenario_pack_started"
-    scenario_chain_next_clicked = "scenario_chain_next_clicked"
-    user_acquired = "user_acquired"
-    attribution_assigned = "attribution_assigned"
-    growth_experiment_assigned = "growth_experiment_assigned"
-    feature_flag_exposed = "feature_flag_exposed"
-    churn_risk_detected = "churn_risk_detected"
-    reactivation_trigger = "reactivation_trigger"
-    scale_channel = "scale_channel"
-    kill_channel = "kill_channel"
-    adjust_budget = "adjust_budget"
-    adjust_pricing = "adjust_pricing"
-    adjust_paywall = "adjust_paywall"
-    autonomous_cycle_completed = "autonomous_cycle_completed"
     economy_experiment_assigned = "economy_experiment_assigned"
     store_offer_viewed = "store_offer_viewed"
     store_purchase_completed = "store_purchase_completed"
@@ -89,8 +57,6 @@ class AnalyticsAttribution(BaseModel):
     utm_campaign: str | None = Field(default=None, max_length=160)
     utm_term: str | None = Field(default=None, max_length=160)
     utm_content: str | None = Field(default=None, max_length=160)
-    ad_id: str | None = Field(default=None, max_length=120)
-    creative_id: str | None = Field(default=None, max_length=120)
     referrer: str | None = Field(default=None, max_length=500)
 
 
@@ -161,31 +127,6 @@ class AnalyticsIngestResponse(BaseModel):
     duplicates: int
 
 
-class AttributionCaptureWrite(BaseModel):
-    session_id: str = Field(min_length=6, max_length=120)
-    attribution: AnalyticsAttribution
-    source: str = Field(default="web", min_length=1, max_length=40)
-    page: str = Field(default="/", min_length=1, max_length=260)
-    feature: str = Field(default="attribution_capture", min_length=1, max_length=120)
-
-
-class AttributionTouchRead(BaseModel):
-    utm_source: str | None = None
-    utm_medium: str | None = None
-    utm_campaign: str | None = None
-    ad_id: str | None = None
-    creative_id: str | None = None
-    referrer: str | None = None
-    seen_at: datetime
-
-
-class AttributionCaptureRead(BaseModel):
-    session_id: str
-    user_id: uuid.UUID | None
-    first_touch: AttributionTouchRead
-    last_touch: AttributionTouchRead
-
-
 class AnalyticsEventRead(BaseModel):
     id: uuid.UUID
     event_id: str
@@ -200,8 +141,6 @@ class AnalyticsEventRead(BaseModel):
     utm_campaign: str | None
     utm_term: str | None
     utm_content: str | None
-    ad_id: str | None
-    creative_id: str | None
     referrer: str | None
     metadata_json: dict[str, Any]
     occurred_at: datetime
