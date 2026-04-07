@@ -8,7 +8,6 @@ import { PromptPageAside } from "./PromptPageAside";
 import { PromptPageContentPanel } from "./PromptPageContentPanel";
 import { PromptPageHeader } from "./PromptPageHeader";
 import { PromptRelatedSection } from "./PromptRelatedSection";
-import { PromptScenarioStage } from "./PromptScenarioStage";
 import type { PromptPageData } from "./prompt-page-data";
 
 type PromptPageArticleProps = {
@@ -55,8 +54,6 @@ export function PromptPageArticle({ language, data }: PromptPageArticleProps) {
           description: prompt.summary ?? prompt.title,
         }}
       />
-
-      <PromptScenarioStage language={language} prompt={prompt} />
 
       <PromptPageHeader language={language} prompt={prompt} category={category} />
 
