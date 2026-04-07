@@ -40,7 +40,7 @@ export function LessonOutlineSidebar({
   const remainingLessons = Math.max(lesson.lesson_list.length - completedLessons, 0);
 
   return (
-    <aside className="pv-panel px-5 py-5 lg:sticky lg:top-24">
+    <aside className="pv-panel px-5 py-5 lg:sticky lg:top-0">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500">{t("learn.course")}</p>
