@@ -63,7 +63,7 @@ export function LearningStepTextInput({
       <textarea
         value={textAnswer}
         onChange={(event) => onTextChange(event.target.value)}
-        placeholder={step.placeholder ?? ""}
+        placeholder=""
         disabled={!canSubmit || isSubmitting}
         className="min-h-[180px] w-full resize-none rounded-[1rem] border border-[var(--pv-border)] bg-white/90 px-3 py-3 text-sm text-zinc-900 outline-none transition focus:border-zinc-400"
       />
