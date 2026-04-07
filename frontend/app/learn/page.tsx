@@ -39,16 +39,6 @@ export default async function LearnIndexPage() {
           eyebrow={<T k="learn.title" />}
           title={<T k="learn.title" />}
           description={<T k="learn.releaseSubtitle" />}
-          hint={
-            <div className="space-y-2 text-sm text-zinc-800">
-              <p className="font-semibold">
-                <T k="learn.releaseHintTitle" />
-              </p>
-              <p>
-                <T k="learn.releaseHint" />
-              </p>
-            </div>
-          }
           actions={
             <>
               <Link href={APP_ROUTES.learnStart} className="pv-button-primary">
