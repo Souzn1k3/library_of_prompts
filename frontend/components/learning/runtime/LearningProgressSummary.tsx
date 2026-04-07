@@ -43,12 +43,10 @@ export function LearningProgressSummary({
         <span className="pv-chip-brand">
           {t("learn.stepPosition", { current: activeStepIndex + 1, total: stepsCount })}
         </span>
-        <Metric label={t("learn.progress")} value={`${courseProgressPercent}%`} />
+        <span className="inline-flex items-center rounded-full border border-[var(--pv-border)] bg-white/90 px-3 py-1 text-xs font-semibold text-zinc-950">
+          {courseProgressPercent}%
+        </span>
         <Metric label={t("learn.lessonProgress")} value={`${lessonProgressPercent}%`} />
-        <Metric
-          label={t("learn.stepCompletion")}
-          value={t("learn.stepCompletionValue", { done: completedStepsCount, total: stepsCount })}
-        />
         <Metric label={t("learn.lessonEstimated")} value={`${estimatedMinutes}m`} />
       </div>
 
