@@ -8,6 +8,7 @@ from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -82,6 +83,7 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=6)
 
     @app.middleware("http")
     async def request_id_middleware(request: Request, call_next):
@@ -102,6 +104,23 @@ def create_app() -> FastAPI:
             vary_tokens.add("Accept-Language")
             response.headers["Vary"] = ", ".join(sorted(vary_tokens))
         path = request.url.path
+        has_auth_context = bool(
+            request.headers.get("authorization")
+            or request.cookies.get(settings.access_token_cookie_name)
+            or request.cookies.get(settings.refresh_token_cookie_name)
+        )
+        is_public_learning_read = (
+            path == "/api/v1/learning/courses"
+            or path.startswith("/api/v1/learning/courses/")
+            or path.startswith("/api/v1/learning/lessons/by-slug/")
+        )
+        if is_public_learning_read:
+            response.headers["Cache-Control"] = (
+                "private, no-store"
+                if has_auth_context
+                else "public, max-age=90, stale-while-revalidate=180"
+            )
+            return response
         if path in ("/health", "/api/v1/billing/plans"):
             response.headers["Cache-Control"] = "public, max-age=120"
         return response

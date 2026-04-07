@@ -12,7 +12,26 @@ import type {
   PopularLessonItem,
 } from "../types";
 import type { Language } from "../i18n";
-import { apiFetch } from "./transport";
+import { apiFetch, type ApiFetchInit } from "./transport";
+
+function learningReadFetchInit(
+  accessToken: string | null | undefined,
+  language: Language | string | null | undefined,
+  revalidateSeconds: number,
+): ApiFetchInit {
+  if (accessToken) {
+    return {
+      accessToken,
+      language,
+      cache: "no-store",
+    };
+  }
+  return {
+    accessToken,
+    language,
+    next: { revalidate: revalidateSeconds },
+  };
+}
 
 export async function fetchLessons(
   accessToken?: string | null,
@@ -60,7 +79,7 @@ export async function fetchLearningCatalog(
   accessToken?: string | null,
   language?: Language | string | null,
 ): Promise<LearningCatalog> {
-  return apiFetch<LearningCatalog>(API_ENDPOINTS.learningCourses, { accessToken, language, cache: "no-store" });
+  return apiFetch<LearningCatalog>(API_ENDPOINTS.learningCourses, learningReadFetchInit(accessToken, language, 90));
 }
 
 export async function fetchLearningMyModules(
@@ -75,11 +94,10 @@ export async function fetchLearningCourse(
   accessToken?: string | null,
   language?: Language | string | null,
 ): Promise<LearningCourseDetail> {
-  return apiFetch<LearningCourseDetail>(apiPath.learningCourse(courseSlug), {
-    accessToken,
-    language,
-    cache: "no-store",
-  });
+  return apiFetch<LearningCourseDetail>(
+    apiPath.learningCourse(courseSlug),
+    learningReadFetchInit(accessToken, language, 120),
+  );
 }
 
 export async function fetchLearningLesson(
@@ -88,11 +106,10 @@ export async function fetchLearningLesson(
   accessToken?: string | null,
   language?: Language | string | null,
 ): Promise<LearningLessonDetail> {
-  return apiFetch<LearningLessonDetail>(apiPath.learningLesson(courseSlug, lessonSlug), {
-    accessToken,
-    language,
-    cache: "no-store",
-  });
+  return apiFetch<LearningLessonDetail>(
+    apiPath.learningLesson(courseSlug, lessonSlug),
+    learningReadFetchInit(accessToken, language, 90),
+  );
 }
 
 export async function locateLearningLessonBySlug(
@@ -102,11 +119,7 @@ export async function locateLearningLessonBySlug(
 ): Promise<{ course_slug: string; lesson_slug: string; href: string } | null> {
   return apiFetch<{ course_slug: string; lesson_slug: string; href: string } | null>(
     apiPath.learningLocateLessonBySlug(lessonSlug),
-    {
-      accessToken,
-      language,
-      cache: "no-store",
-    },
+    learningReadFetchInit(accessToken, language, 300),
   );
 }
 

@@ -11,13 +11,29 @@ import { useMissionDetailData } from "@/components/missions/detail/useMissionDet
 import { trackEvent } from "@/lib/analytics";
 import { APP_ROUTES, appRoute } from "@/lib/constants/routes";
 import { getMissionPresentation } from "@/lib/missionPresentation";
+import type { MissionRead } from "@/lib/types";
 
-export function MissionDetailClient({ slug }: { slug: string }) {
+type MissionDetailClientProps = {
+  slug: string;
+  initialMission?: MissionRead | null;
+  initialError?: string | null;
+  initialSignedOut?: boolean;
+};
+
+export function MissionDetailClient({
+  slug,
+  initialMission = null,
+  initialError = null,
+  initialSignedOut = false,
+}: MissionDetailClientProps) {
   const { t, language } = useI18n();
   const { mission, error, isSignedOut, loading, retry } = useMissionDetailData({
     slug,
     language,
     loadFailedMessage: t("missionDetail.loadFailed"),
+    initialMission,
+    initialError,
+    initialSignedOut,
   });
 
   const missionView = useMemo(

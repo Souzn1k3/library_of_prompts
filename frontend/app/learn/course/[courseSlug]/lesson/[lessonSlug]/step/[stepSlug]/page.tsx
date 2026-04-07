@@ -9,7 +9,7 @@ import { getServerAccessToken } from "@/lib/server-auth";
 import { getServerLanguage } from "@/lib/server-i18n";
 
 import { LearningLessonStepView } from "./LearningLessonStepView";
-import { getLearningLessonCached, loadLearningLessonStepPageData } from "./learning-step-page-data";
+import { loadLearningLessonStepPageData } from "./learning-step-page-data";
 
 type Props = {
   params: Promise<{ courseSlug: string; lessonSlug: string; stepSlug: string }>;
@@ -33,24 +33,8 @@ function buildStepMetadataFallback(
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const { courseSlug, lessonSlug, stepSlug } = await props.params;
-  const accessToken = await getServerAccessToken();
   const language = await getServerLanguage();
-
-  try {
-    const lesson = await getLearningLessonCached(courseSlug, lessonSlug, accessToken, language);
-    const step = lesson.steps.find((item) => item.slug === stepSlug);
-    const title = step ? `${lesson.title} · ${step.title}` : lesson.title;
-    const description = step?.task ?? lesson.summary;
-
-    return buildPageMetadata({
-      title,
-      description,
-      path: appRoute.learnCourseLessonStep(courseSlug, lessonSlug, stepSlug),
-      type: "article",
-    });
-  } catch {
-    return buildStepMetadataFallback(courseSlug, lessonSlug, stepSlug, language);
-  }
+  return buildStepMetadataFallback(courseSlug, lessonSlug, stepSlug, language);
 }
 
 export default async function LearningLessonStepPage(props: Props) {

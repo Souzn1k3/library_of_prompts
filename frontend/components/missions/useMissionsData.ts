@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ApiRequestError } from "@/lib/api";
 import { fetchMissions } from "@/lib/client-api";
@@ -11,6 +11,8 @@ export type MissionsLoadError = "signed_out" | string | null;
 type UseMissionsDataArgs = {
   language: string;
   loadFailedMessage: string;
+  initialData?: MissionListRead | null;
+  initialError?: MissionsLoadError;
 };
 
 type UseMissionsDataResult = {
@@ -23,10 +25,14 @@ type UseMissionsDataResult = {
 export function useMissionsData({
   language,
   loadFailedMessage,
+  initialData = null,
+  initialError = null,
 }: UseMissionsDataArgs): UseMissionsDataResult {
-  const [data, setData] = useState<MissionListRead | null>(null);
-  const [error, setError] = useState<MissionsLoadError>(null);
-  const [loading, setLoading] = useState(true);
+  const hasInitialState = initialData !== null || initialError !== null;
+  const skipInitialFetchRef = useRef(hasInitialState);
+  const [data, setData] = useState<MissionListRead | null>(initialData);
+  const [error, setError] = useState<MissionsLoadError>(initialError);
+  const [loading, setLoading] = useState(!hasInitialState);
   const [reloadToken, setReloadToken] = useState(0);
 
   const reload = useCallback(() => {
@@ -34,6 +40,11 @@ export function useMissionsData({
   }, []);
 
   useEffect(() => {
+    if (skipInitialFetchRef.current) {
+      skipInitialFetchRef.current = false;
+      return;
+    }
+
     let cancelled = false;
     setLoading(true);
 

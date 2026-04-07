@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Request
 
 from app.api.deps import get_current_user, get_optional_user
 from app.api.service_deps import get_learning_service, get_mission_service, get_store_service
+from app.core.cache import get_cache
 from app.core.i18n import resolve_language_from_header
 from app.infrastructure.db.models import User
 from app.modules.learning.model.learning import (
@@ -20,6 +21,7 @@ from app.modules.missions.service.mission_service import MissionService
 from app.modules.economy.service.store_service import StoreService
 
 router = APIRouter(prefix="/learning", tags=["learning"])
+_LEARNING_READ_CACHE_TTL_SECONDS = 180
 
 
 def _language(request: Request):
@@ -41,7 +43,18 @@ async def learning_catalog(
     viewer: User | None = Depends(get_optional_user),
     svc: LearningService = Depends(get_learning_service),
 ) -> LearningCatalogRead:
-    return await svc.catalog(user=viewer, language=_language(request))
+    language = _language(request)
+    if viewer is not None:
+        return await svc.catalog(user=viewer, language=language)
+
+    cache = get_cache()
+    suffix = f"catalog:language={language}"
+    return await cache.get_or_set_json(
+        namespace="learning",
+        suffix=suffix,
+        ttl_seconds=_LEARNING_READ_CACHE_TTL_SECONDS,
+        loader=lambda: svc.catalog(user=None, language=language),
+    )
 
 
 @router.get("/my", response_model=LearningMyModulesRead)
@@ -60,7 +73,18 @@ async def get_learning_course(
     viewer: User | None = Depends(get_optional_user),
     svc: LearningService = Depends(get_learning_service),
 ) -> LearningCourseRead:
-    return await svc.course(course_slug=course_slug, user=viewer, language=_language(request))
+    language = _language(request)
+    if viewer is not None:
+        return await svc.course(course_slug=course_slug, user=viewer, language=language)
+
+    cache = get_cache()
+    suffix = f"course:slug={course_slug}:language={language}"
+    return await cache.get_or_set_json(
+        namespace="learning",
+        suffix=suffix,
+        ttl_seconds=_LEARNING_READ_CACHE_TTL_SECONDS,
+        loader=lambda: svc.course(course_slug=course_slug, user=None, language=language),
+    )
 
 
 @router.get("/courses/{course_slug}/lessons/{lesson_slug}", response_model=LearningLessonRead)
@@ -71,11 +95,27 @@ async def get_learning_lesson(
     viewer: User | None = Depends(get_optional_user),
     svc: LearningService = Depends(get_learning_service),
 ) -> LearningLessonRead:
-    return await svc.lesson(
-        user=viewer,
-        course_slug=course_slug,
-        lesson_slug=lesson_slug,
-        language=_language(request),
+    language = _language(request)
+    if viewer is not None:
+        return await svc.lesson(
+            user=viewer,
+            course_slug=course_slug,
+            lesson_slug=lesson_slug,
+            language=language,
+        )
+
+    cache = get_cache()
+    suffix = f"lesson:course={course_slug}:lesson={lesson_slug}:language={language}"
+    return await cache.get_or_set_json(
+        namespace="learning",
+        suffix=suffix,
+        ttl_seconds=_LEARNING_READ_CACHE_TTL_SECONDS,
+        loader=lambda: svc.lesson(
+            user=None,
+            course_slug=course_slug,
+            lesson_slug=lesson_slug,
+            language=language,
+        ),
     )
 
 
@@ -111,13 +151,27 @@ async def locate_learning_lesson(
     lesson_slug: str,
     svc: LearningService = Depends(get_learning_service),
 ) -> dict[str, str] | None:
-    row = await svc.locate_lesson(lesson_slug)
-    if row is None:
+    cache = get_cache()
+    suffix = f"locate:lesson={lesson_slug}"
+
+    async def loader() -> dict[str, str] | None:
+        row = await svc.locate_lesson(lesson_slug)
+        if row is None:
+            return None
+        course_slug, normalized_lesson_slug = row
+        return {
+            "course_slug": course_slug,
+            "lesson_slug": normalized_lesson_slug,
+            "href": f"/learn/course/{course_slug}/lesson/{normalized_lesson_slug}",
+        }
+
+    payload = await cache.get_or_set_json(
+        namespace="learning",
+        suffix=suffix,
+        ttl_seconds=_LEARNING_READ_CACHE_TTL_SECONDS,
+        loader=loader,
+    )
+    if payload is None:
         return None
-    course_slug, normalized_lesson_slug = row
-    return {
-        "course_slug": course_slug,
-        "lesson_slug": normalized_lesson_slug,
-        "href": f"/learn/course/{course_slug}/lesson/{normalized_lesson_slug}",
-    }
+    return payload
 

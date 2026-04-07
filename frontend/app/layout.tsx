@@ -50,6 +50,7 @@ const ibmPlexMono = localFont({
   ],
   variable: "--font-mono",
   display: "swap",
+  preload: false,
 });
 
 const siteUrl = getSiteUrl();

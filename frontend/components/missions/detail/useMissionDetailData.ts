@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ApiRequestError } from "@/lib/api";
 import { fetchMissionBySlug } from "@/lib/client-api";
@@ -11,16 +11,33 @@ type UseMissionDetailDataArgs = {
   slug: string;
   language: Language;
   loadFailedMessage: string;
+  initialMission?: MissionRead | null;
+  initialError?: string | null;
+  initialSignedOut?: boolean;
 };
 
-export function useMissionDetailData({ slug, language, loadFailedMessage }: UseMissionDetailDataArgs) {
-  const [mission, setMission] = useState<MissionRead | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isSignedOut, setIsSignedOut] = useState(false);
-  const [loading, setLoading] = useState(true);
+export function useMissionDetailData({
+  slug,
+  language,
+  loadFailedMessage,
+  initialMission = null,
+  initialError = null,
+  initialSignedOut = false,
+}: UseMissionDetailDataArgs) {
+  const hasInitialState = Boolean(initialMission) || Boolean(initialError) || initialSignedOut;
+  const skipInitialFetchRef = useRef(hasInitialState);
+  const [mission, setMission] = useState<MissionRead | null>(initialMission);
+  const [error, setError] = useState<string | null>(initialError);
+  const [isSignedOut, setIsSignedOut] = useState(initialSignedOut);
+  const [loading, setLoading] = useState(!hasInitialState);
   const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
+    if (skipInitialFetchRef.current) {
+      skipInitialFetchRef.current = false;
+      return;
+    }
+
     let isCancelled = false;
     setLoading(true);
     setIsSignedOut(false);

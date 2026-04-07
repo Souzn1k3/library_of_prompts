@@ -17,13 +17,21 @@ import {
 import { useMissionsData } from "@/components/missions/useMissionsData";
 import { useMissionsViewModel } from "@/components/missions/useMissionsViewModel";
 import { EconomyLoop } from "@/components/navigation/EconomyLoop";
+import type { MissionListRead } from "@/lib/types";
 
-export function MissionsClient() {
+type MissionsClientProps = {
+  initialData?: MissionListRead | null;
+  initialError?: "signed_out" | string | null;
+};
+
+export function MissionsClient({ initialData = null, initialError = null }: MissionsClientProps) {
   const { t, language } = useI18n();
   const [selectedView, setSelectedView] = useState<MissionCollectionView>("active");
   const { data, error, loading, reload } = useMissionsData({
     language,
     loadFailedMessage: t("missions.loadFailed"),
+    initialData,
+    initialError,
   });
   const { currentMission, nextMission, latestCompleted, filterCounts, sections } =
     useMissionsViewModel({
