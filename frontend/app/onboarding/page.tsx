@@ -21,9 +21,8 @@ export default function OnboardingPage() {
             <Link href="/dashboard" className="pv-button-secondary">
               <T k="nav.dashboard" />
             </Link>
-            <Link href="/catalog" className="pv-inline-link">
+            <Link href="/catalog" className="pv-button-secondary">
               <T k="home.explorePrompts" />
-              <span aria-hidden="true">↗</span>
             </Link>
           </>
         }
