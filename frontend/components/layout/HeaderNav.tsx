@@ -68,7 +68,7 @@ export function HeaderNav({ mobile = false, onNavigate }: HeaderNavProps) {
   if (status === "loading") {
     return mobile ? (
       <div
-        className="min-h-[8.5rem] rounded-[1.25rem] border border-[rgba(15,23,42,0.08)] bg-white/72"
+        className="min-h-[8.5rem] rounded-[0.9rem] border border-[var(--pv-border)] bg-white"
         aria-hidden
       />
     ) : (

@@ -1,51 +1,58 @@
 :root {
   color-scheme: light;
-  --font-sans: "Segoe UI Variable", "Segoe UI", "Aptos", "Inter", "Trebuchet MS", sans-serif;
-  --font-mono: "Cascadia Code", "Cascadia Mono", "IBM Plex Mono", "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
-  --pv-bg: #f8f7f4;
-  --pv-bg-strong: #fffdfa;
-  --pv-surface: rgba(255, 255, 255, 0.84);
-  --pv-surface-strong: rgba(255, 255, 255, 0.96);
-  --pv-surface-muted: #f3f1eb;
-  --pv-border: rgba(15, 23, 42, 0.08);
-  --pv-border-strong: rgba(37, 92, 255, 0.22);
-  --pv-text: #0f172a;
-  --pv-muted: #5a667c;
-  --pv-brand: #255cff;
-  --pv-brand-strong: #1341df;
-  --pv-brand-soft: #edf2ff;
-  --pv-accent: #11b8a4;
-  --pv-accent-strong: #089881;
-  --pv-accent-soft: #e6fcf7;
-  --pv-success: #0f9f74;
-  --pv-warning: #d97706;
-  --pv-danger: #dc2626;
+  --font-sans: "Segoe UI Variable", "Segoe UI", "Inter", "Roboto", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+
+  --pv-bg: #f8f9fb;
+  --pv-bg-strong: #ffffff;
+  --pv-surface: #ffffff;
+  --pv-surface-strong: #ffffff;
+  --pv-surface-muted: #f3f4f6;
+
+  --pv-border: #e5e7eb;
+  --pv-border-strong: #cbd5e1;
+
+  --pv-text: #111827;
+  --pv-muted: #4b5563;
+
+  --pv-brand: #1d4ed8;
+  --pv-brand-strong: #1e40af;
+  --pv-brand-soft: #dbeafe;
+
+  --pv-accent: #1d4ed8;
+  --pv-accent-strong: #1e40af;
+  --pv-accent-soft: #dbeafe;
+
+  --pv-success: #0f766e;
+  --pv-warning: #b45309;
+  --pv-danger: #b91c1c;
+
   --pv-token-primary: #1f2937;
-  --pv-token-accent: #c8a24a;
-  --pv-token-surface: #f8f7f4;
-  --pv-lmn-base: #c8a24a;
-  --pv-lmn-base-strong: #a38233;
-  --pv-lmn-highlight: #f2e2b8;
-  --pv-lmn-surface: rgba(248, 247, 244, 0.95);
-  --pv-lmn-ink: #1f2937;
-  --pv-lmn-glow: rgba(200, 162, 74, 0.22);
-  --pv-lmn-shadow: rgba(17, 24, 39, 0.18);
-  --pv-lmn-earned: #39c88d;
-  --pv-lmn-earned-soft: rgba(57, 200, 141, 0.2);
-  --pv-lmn-spent: #f97316;
-  --pv-lmn-spent-soft: rgba(249, 115, 22, 0.18);
-  --pv-shadow: 0 12px 28px rgba(15, 23, 42, 0.06), 0 2px 8px rgba(15, 23, 42, 0.04);
-  --pv-card-shadow: 0 8px 20px rgba(15, 23, 42, 0.06), 0 1px 4px rgba(15, 23, 42, 0.03);
-  --pv-card-shadow-hover:
-    0 14px 28px rgba(15, 23, 42, 0.09),
-    0 4px 12px rgba(15, 23, 42, 0.05);
+  --pv-token-accent: #9ca3af;
+  --pv-token-surface: #ffffff;
+
+  --pv-lmn-base: #1f2937;
+  --pv-lmn-base-strong: #111827;
+  --pv-lmn-highlight: #9ca3af;
+  --pv-lmn-surface: #ffffff;
+  --pv-lmn-ink: #111827;
+  --pv-lmn-glow: rgba(29, 78, 216, 0.08);
+  --pv-lmn-shadow: rgba(15, 23, 42, 0.12);
+  --pv-lmn-earned: #0f766e;
+  --pv-lmn-earned-soft: rgba(15, 118, 110, 0.12);
+  --pv-lmn-spent: #b45309;
+  --pv-lmn-spent-soft: rgba(180, 83, 9, 0.12);
+
+  --pv-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 6px 16px rgba(15, 23, 42, 0.04);
+  --pv-card-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 20px rgba(15, 23, 42, 0.04);
+  --pv-card-shadow-hover: 0 1px 2px rgba(15, 23, 42, 0.05), 0 12px 24px rgba(15, 23, 42, 0.06);
 }
 
 html {
   min-height: 100%;
   overflow-x: clip;
   scrollbar-gutter: stable both-edges;
-  background: linear-gradient(180deg, #faf8f3 0%, #f7f4ed 100%);
+  background: var(--pv-bg);
 }
 
 body {
@@ -53,12 +60,13 @@ body {
   overflow-x: clip;
   font-family: var(--font-sans), sans-serif;
   text-rendering: optimizeLegibility;
-  background: transparent;
+  background: var(--pv-bg);
   color: var(--pv-text);
+  line-height: 1.5;
 }
 
 ::selection {
-  background: rgba(37, 92, 255, 0.18);
+  background: rgba(29, 78, 216, 0.14);
   color: var(--pv-text);
 }
 
@@ -68,17 +76,16 @@ input,
 select,
 textarea {
   transition:
-    transform 160ms ease,
-    box-shadow 160ms ease,
-    border-color 160ms ease,
-    background-color 160ms ease,
-    color 160ms ease,
-    opacity 160ms ease;
+    box-shadow 140ms ease,
+    border-color 140ms ease,
+    background-color 140ms ease,
+    color 140ms ease,
+    opacity 140ms ease;
 }
 
 :focus-visible {
   outline: none;
-  box-shadow: 0 0 0 4px rgba(37, 92, 255, 0.14);
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.2);
 }
 
 .skip-link {
@@ -97,10 +104,10 @@ textarea {
   width: auto;
   height: auto;
   overflow: visible;
-  padding: 0.65rem 0.85rem;
-  border-radius: 999px;
-  background: linear-gradient(135deg, var(--pv-brand), #4a7bff);
-  color: white;
+  padding: 0.6rem 0.85rem;
+  border-radius: 0.5rem;
+  background: var(--pv-brand);
+  color: #ffffff;
   font-size: 0.875rem;
   outline: 2px solid rgba(255, 255, 255, 0.9);
   outline-offset: 2px;

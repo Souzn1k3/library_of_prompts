@@ -56,7 +56,7 @@ export function PlanPricingCard({
       }`}
     >
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className={`text-lg font-semibold ${isMaxPlan ? "text-emerald-700" : "text-zinc-900"}`}>
+        <h2 className={`text-lg font-semibold ${isMaxPlan ? "text-[var(--pv-brand-strong)]" : "text-zinc-900"}`}>
           {planDisplayName}
         </h2>
         <div className="text-right text-sm text-zinc-600">
@@ -111,7 +111,7 @@ export function PlanPricingCard({
             {t("plans.createAccountCta")}
           </Link>
         ) : isCurrent ? (
-          <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-2 text-sm font-medium text-emerald-800">
+          <span className="inline-flex items-center rounded-full border border-[rgba(29,78,216,0.24)] bg-[rgba(29,78,216,0.1)] px-3 py-2 text-sm font-medium text-[var(--pv-brand-strong)]">
             {t("plans.currentPlan")}
           </span>
         ) : isLowerOrEqual ? (

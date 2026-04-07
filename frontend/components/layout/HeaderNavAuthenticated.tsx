@@ -28,7 +28,7 @@ export function HeaderNavAuthenticatedMobile({
   t,
 }: HeaderNavAuthenticatedMobileProps) {
   return (
-    <div className="rounded-[1.25rem] border border-[rgba(15,23,42,0.08)] bg-white/72 p-3.5 shadow-[0_14px_28px_rgba(15,23,42,0.04)]">
+    <div className="rounded-[0.9rem] border border-[var(--pv-border)] bg-white p-3.5">
       <div className="flex items-center gap-3">
         <span className="pv-header-avatar pv-header-avatar-lg">{userInitials}</span>
         <div className="min-w-0">
@@ -144,7 +144,7 @@ export function HeaderNavAuthenticatedDesktop({
             })}
           </div>
 
-          <div className="mt-2 border-t border-[rgba(15,23,42,0.08)] pt-2">
+          <div className="mt-2 border-t border-[var(--pv-border)] pt-2">
             <button type="button" onClick={onLogout} className="pv-header-menu-link w-full">
               {t("nav.logout")}
             </button>
