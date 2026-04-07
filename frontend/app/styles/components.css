@@ -122,6 +122,38 @@
   background: rgba(255, 255, 255, 0.72);
 }
 
+.pv-fullscreen-icon-button {
+  display: inline-flex;
+  height: 2.55rem;
+  width: 2.55rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  border-radius: 0.8rem;
+  background: #111827;
+  color: #f8fafc;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.26);
+  transition:
+    transform 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    border-color 160ms ease;
+}
+
+.pv-fullscreen-icon-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(165, 180, 252, 0.56);
+  background: #1f2937;
+  box-shadow: 0 14px 24px rgba(15, 23, 42, 0.32);
+}
+
+.pv-fullscreen-icon-button:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 4px rgba(37, 92, 255, 0.2),
+    0 14px 24px rgba(15, 23, 42, 0.32);
+}
+
 .pv-inline-link {
   display: inline-flex;
   align-items: center;

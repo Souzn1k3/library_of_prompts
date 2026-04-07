@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { LearningStepArticle } from "@/components/learning/runtime/LearningStepArticle";
@@ -51,6 +51,40 @@ export function LearningLessonRuntime({
     t,
   });
 
+  const openFullscreen = useCallback(async () => {
+    setIsFullscreen(true);
+    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+      try {
+        await document.documentElement.requestFullscreen();
+      } catch {
+        // Some browsers may block fullscreen; keep in-app fullscreen as fallback.
+      }
+    }
+  }, []);
+
+  const closeFullscreen = useCallback(async () => {
+    setIsFullscreen(false);
+    if (document.fullscreenElement && document.exitFullscreen) {
+      try {
+        await document.exitFullscreen();
+      } catch {
+        // Ignore exit errors.
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        setIsFullscreen(false);
+      }
+    };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+    };
+  }, []);
+
   useEffect(() => {
     if (!isFullscreen) {
       return;
@@ -61,7 +95,7 @@ export function LearningLessonRuntime({
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setIsFullscreen(false);
+        void closeFullscreen();
       }
     };
 
@@ -70,7 +104,7 @@ export function LearningLessonRuntime({
       document.body.style.overflow = previousBodyOverflow;
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [isFullscreen]);
+  }, [closeFullscreen, isFullscreen]);
 
   if (!activeStep) {
     return (
@@ -97,7 +131,7 @@ export function LearningLessonRuntime({
           steps={steps}
           activeStepIndex={activeStepIndex}
           stepHref={stepHref}
-          onOpenFullscreen={() => setIsFullscreen(true)}
+          onOpenFullscreen={() => void openFullscreen()}
         />
 
         <section className="space-y-4">
@@ -131,7 +165,7 @@ export function LearningLessonRuntime({
         <div className="fixed inset-0 z-[140] bg-[var(--pv-bg)]">
           <div className="mx-auto flex h-full w-full max-w-[1700px] flex-col overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
             <div className="mb-4 flex items-center justify-end">
-              <button type="button" className="pv-button-secondary !w-auto" onClick={() => setIsFullscreen(false)}>
+              <button type="button" className="pv-button-secondary !w-auto" onClick={() => void closeFullscreen()}>
                 {t("learn.exitFullscreen")}
               </button>
             </div>

@@ -157,9 +157,26 @@ export function LessonOutlineSidebar({
         </ol>
       </details>
 
-      <button type="button" onClick={onOpenFullscreen} className="mt-3 pv-button-secondary !w-full">
-        {t("learn.openFullscreen")}
-      </button>
+      <div className="mt-3 flex justify-end">
+        <button
+          type="button"
+          onClick={onOpenFullscreen}
+          className="pv-fullscreen-icon-button"
+          aria-label={t("learn.openFullscreen")}
+          title={t("learn.openFullscreen")}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="h-4 w-4">
+            <path
+              d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2.2"
+            />
+          </svg>
+        </button>
+      </div>
     </aside>
   );
 }
