@@ -115,12 +115,11 @@ export function LearningStepArticle({
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="pv-kicker">{t(`learn.stepKind.${activeStep.kind}`)}</p>
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="text-xs text-zinc-500">
             {t("learn.stepPosition", { current: activeStepIndex + 1, total: stepsCount })} ·{" "}
             {t("learn.stepCompletionValue", { done: completedStepsCount, total: stepsCount })}
           </p>
-          <h3 className="mt-2 text-xl font-bold tracking-[-0.04em] text-zinc-950">{activeStep.title}</h3>
+          <h3 className="mt-1 text-xl font-bold tracking-[-0.04em] text-zinc-950">{activeStep.title}</h3>
           {isPracticeStep && theoryStepSlug && theoryStepSlug !== activeStep.slug ? (
             <Link
               href={stepHref(theoryStepSlug)}
