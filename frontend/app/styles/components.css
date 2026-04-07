@@ -24,6 +24,15 @@
   box-shadow: 0 20px 34px rgba(37, 92, 255, 0.3);
 }
 
+.pv-button-primary.pv-button-primary-disabled,
+.pv-button-primary.pv-button-primary-disabled:hover {
+  border-color: rgba(148, 163, 184, 0.45);
+  background: #e5e7eb;
+  color: #475569;
+  box-shadow: none;
+  transform: none;
+}
+
 .pv-button-secondary {
   border: 1px solid rgba(15, 23, 42, 0.1);
   background: rgba(255, 255, 255, 0.86);

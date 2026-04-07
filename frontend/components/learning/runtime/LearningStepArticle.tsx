@@ -80,17 +80,21 @@ export function LearningStepArticle({
   const { t } = useI18n();
   const textDiagnostics =
     activeStep.submission_type === "text" ? evaluateTextDraft(activeStep, textAnswer) : null;
+  const isMarkedLearned = activeStep.submission_type === "none" && activeStep.completed;
   const submitDisabled =
     isSubmitting ||
     !canSubmit ||
     !activeStep.unlocked ||
+    isMarkedLearned ||
     (activeStep.submission_type === "choice" && selectedChoiceId.trim().length === 0) ||
     (activeStep.submission_type === "text" && textAnswer.trim().length === 0);
 
   const submitLabel = isSubmitting
     ? t("learn.checking")
     : activeStep.submission_type === "none"
-      ? t("learn.markStepLearned")
+      ? isMarkedLearned
+        ? t("learn.completed")
+        : t("learn.markStepLearned")
       : activeStep.completed
         ? t("learn.retryStep")
         : t("learn.checkStep");
@@ -228,7 +232,9 @@ export function LearningStepArticle({
           type="button"
           onClick={onSubmitStep}
           disabled={submitDisabled}
-          className="pv-button-primary !w-auto disabled:cursor-not-allowed disabled:opacity-60"
+          className={`pv-button-primary !w-auto disabled:cursor-not-allowed disabled:opacity-60 ${
+            isMarkedLearned ? "pv-button-primary-disabled" : ""
+          }`}
         >
           {submitLabel}
         </button>
