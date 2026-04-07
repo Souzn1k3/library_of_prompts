@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
-import { LearningLessonContextPanel } from "@/components/learning/runtime/LearningLessonContextPanel";
 import { LearningStepArticle } from "@/components/learning/runtime/LearningStepArticle";
 import { LessonOutlineSidebar } from "@/components/learning/runtime/LessonOutlineSidebar";
 import { useLearningLessonRuntime } from "@/components/learning/runtime/useLearningLessonRuntime";
@@ -138,7 +137,6 @@ export function LearningLessonRuntime({
         />
 
         <section className="space-y-4">
-          <LearningLessonContextPanel course={course} lesson={lesson} />
           {submitError ? <div className="pv-alert pv-alert-warning">{submitError}</div> : null}
           <LearningStepArticle
             activeStep={activeStep}
