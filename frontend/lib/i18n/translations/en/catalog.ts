@@ -110,6 +110,8 @@ export const enCatalog = {
   "learn.signInToSubmit": "Sign in to submit practice and save progress.",
   "learn.stepLockedLocal": "Complete the current step before moving forward.",
   "learn.lessonList": "Course lessons",
+  "learn.openFullscreen": "Open learning in fullscreen",
+  "learn.exitFullscreen": "Exit fullscreen",
   "learn.lessonProgress": "Lesson progress",
   "learn.stepCompletion": "Step completion",
   "learn.stepCompletionValue": "{done}/{total}",

@@ -111,6 +111,8 @@ export const ruCatalog = {
   "learn.signInToSubmit": "Войдите, чтобы отправлять практику и сохранять прогресс.",
   "learn.stepLockedLocal": "Сначала завершите текущий шаг, затем переходите дальше.",
   "learn.lessonList": "Уроки курса",
+  "learn.openFullscreen": "Открыть обучение на весь экран",
+  "learn.exitFullscreen": "Выйти из полного экрана",
   "learn.lessonProgress": "Прогресс урока",
   "learn.stepCompletion": "Пройдено шагов",
   "learn.stepCompletionValue": "{done}/{total}",

@@ -101,6 +101,8 @@ export const ttCatalog = {
   "learn.signInToSubmit": "Практиканы җибәрү һәм прогресс саклау өчен керегез.",
   "learn.stepLockedLocal": "Алга күчкәнче башта хәзерге адымны тәмамлагыз.",
   "learn.lessonList": "Курс дәресләре",
+  "learn.openFullscreen": "Өйрәнүне тулы экранда ачу",
+  "learn.exitFullscreen": "Тулы экраннан чыгу",
   "learn.lessonProgress": "Дәрес прогрессы",
   "learn.stepCompletion": "Үтелгән адымнар",
   "learn.stepCompletionValue": "{done}/{total}",

@@ -14,6 +14,7 @@ type LessonOutlineSidebarProps = {
   steps: StepState[];
   activeStepIndex: number;
   stepHref: (stepSlug: string) => string;
+  onOpenFullscreen: () => void;
 };
 
 function lessonStateLabel(
@@ -41,6 +42,7 @@ export function LessonOutlineSidebar({
   steps,
   activeStepIndex,
   stepHref,
+  onOpenFullscreen,
 }: LessonOutlineSidebarProps) {
   const { t } = useI18n();
   const completedLessons = lesson.lesson_list.filter((item) => item.status === "completed").length;
@@ -154,6 +156,10 @@ export function LessonOutlineSidebar({
           })}
         </ol>
       </details>
+
+      <button type="button" onClick={onOpenFullscreen} className="mt-3 pv-button-secondary !w-full">
+        {t("learn.openFullscreen")}
+      </button>
     </aside>
   );
 }

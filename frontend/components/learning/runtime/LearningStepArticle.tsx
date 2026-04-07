@@ -17,6 +17,7 @@ type LearningStepArticleProps = {
   previousStep: StepState | null;
   nextStep: StepState | null;
   theoryStepSlug: string | null;
+  isFullscreen: boolean;
   canSubmit: boolean;
   isSubmitting: boolean;
   selectedChoiceId: string;
@@ -70,6 +71,7 @@ export function LearningStepArticle({
   previousStep,
   nextStep,
   theoryStepSlug,
+  isFullscreen,
   canSubmit,
   isSubmitting,
   selectedChoiceId,
@@ -106,7 +108,11 @@ export function LearningStepArticle({
         : t("learn.checkStep");
 
   return (
-    <article className="pv-panel px-6 py-6 sm:px-7 ring-1 ring-[var(--pv-brand)]/35">
+    <article
+      className={`pv-panel ring-1 ring-[var(--pv-brand)]/35 ${
+        isFullscreen ? "px-5 py-5 sm:px-7 sm:py-7 lg:px-8 lg:py-8" : "px-6 py-6 sm:px-7"
+      }`}
+    >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="pv-kicker">{t(`learn.stepKind.${activeStep.kind}`)}</p>
@@ -136,7 +142,13 @@ export function LearningStepArticle({
         </div>
       ) : null}
 
-      <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div
+        className={`mt-5 grid gap-5 ${
+          isFullscreen
+            ? "xl:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_420px]"
+            : "xl:grid-cols-[minmax(0,1fr)_320px]"
+        }`}
+      >
         <div>
           {!isPracticeStep && activeStep.content.length > 0 ? (
             <section>
