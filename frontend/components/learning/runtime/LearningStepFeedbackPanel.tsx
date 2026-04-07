@@ -37,9 +37,9 @@ export function LearningStepFeedbackPanel({ step }: LearningStepFeedbackPanelPro
   return (
     <div className={panelClass}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="font-semibold">{step.feedback.verdict}</p>
+        <p className="font-semibold">{passed ? t("learn.completed") : t("learn.stepNeedsRevision")}</p>
         <p className="text-sm font-semibold">
-          {t("learn.feedbackScoreLabel", { score: step.feedback.score, target: step.feedback.pass_score })}
+          {t("learn.feedbackScoreOnly", { score: step.feedback.score })}
         </p>
       </div>
       <div className="mt-3 grid gap-3">

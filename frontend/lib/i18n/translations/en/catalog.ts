@@ -143,6 +143,7 @@ export const enCatalog = {
   "learn.precheckForbiddenOk": "No forbidden phrases detected.",
   "learn.precheckForbiddenHit": "Forbidden phrases found: {markers}",
   "learn.feedbackScoreLabel": "Score {score}/100 (target {target})",
+  "learn.feedbackScoreOnly": "Score {score}/100",
   "learn.feedbackStrengths": "What worked",
   "learn.feedbackImprovements": "What to fix",
   "learn.feedbackRevisit": "What to revisit",

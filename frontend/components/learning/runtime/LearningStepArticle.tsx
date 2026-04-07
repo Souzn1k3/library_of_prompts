@@ -108,7 +108,6 @@ export function LearningStepArticle({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="pv-chip-brand">{t("learn.stepMinutesLabel", { count: activeStep.estimated_minutes })}</span>
-          <span className="pv-chip">{t("learn.passScoreLabel", { score: activeStep.pass_score })}</span>
         </div>
       </div>
 

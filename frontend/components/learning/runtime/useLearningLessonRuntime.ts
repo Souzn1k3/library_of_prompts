@@ -154,17 +154,7 @@ export function useLearningLessonRuntime({
           setStatusMessage(t("learn.lessonCompleted"));
         } else {
           setStatusTone(result.passed ? "success" : "warning");
-          setStatusMessage(
-            result.passed
-              ? t("learn.stepPassedDetailed", {
-                  score: result.score,
-                  target: result.feedback.pass_score,
-                })
-              : t("learn.stepNeedsRevisionDetailed", {
-                  score: result.score,
-                  target: result.feedback.pass_score,
-                }),
-          );
+          setStatusMessage(result.passed ? t("learn.stepPassed") : t("learn.stepNeedsRevision"));
         }
       } catch (error) {
         setSubmitError(extractErrorMessage(error));

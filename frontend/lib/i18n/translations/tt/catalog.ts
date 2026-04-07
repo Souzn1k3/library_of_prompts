@@ -134,6 +134,7 @@ export const ttCatalog = {
   "learn.precheckForbiddenOk": "Тыелган фразалар табылмады.",
   "learn.precheckForbiddenHit": "Тыелган фразалар табылды: {markers}",
   "learn.feedbackScoreLabel": "Бәя {score}/100 (чиге {target})",
+  "learn.feedbackScoreOnly": "Бәя {score}/100",
   "learn.feedbackStrengths": "Нәрсә яхшы булды",
   "learn.feedbackImprovements": "Нәрсәне төзәтергә",
   "learn.feedbackRevisit": "Нәрсәне кабатларга",

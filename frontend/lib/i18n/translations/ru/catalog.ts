@@ -144,6 +144,7 @@ export const ruCatalog = {
   "learn.precheckForbiddenOk": "Запрещённые фразы не обнаружены.",
   "learn.precheckForbiddenHit": "Найдены запрещённые фразы: {markers}",
   "learn.feedbackScoreLabel": "Оценка {score}/100 (порог {target})",
+  "learn.feedbackScoreOnly": "Оценка {score}/100",
   "learn.feedbackStrengths": "Что получилось",
   "learn.feedbackImprovements": "Что исправить",
   "learn.feedbackRevisit": "Что повторить",
