@@ -77,7 +77,6 @@ export function LearningLessonRuntime({
       <section className="space-y-4">
         <LearningProgressSummary
           lessonProgressPercent={lessonProgressPercent}
-          courseProgressPercent={courseProgressPercent}
           estimatedMinutes={lesson.estimated_minutes}
           stepsCount={steps.length}
           completedStepsCount={completedStepsCount}

@@ -4,7 +4,6 @@ import { useI18n } from "@/components/i18n/LanguageProvider";
 
 type LearningProgressSummaryProps = {
   lessonProgressPercent: number;
-  courseProgressPercent: number;
   estimatedMinutes: number;
   stepsCount: number;
   completedStepsCount: number;
@@ -28,7 +27,6 @@ function Metric({
 
 export function LearningProgressSummary({
   lessonProgressPercent,
-  courseProgressPercent,
   estimatedMinutes,
   stepsCount,
   completedStepsCount,
@@ -42,9 +40,6 @@ export function LearningProgressSummary({
       <div className="flex flex-wrap items-center gap-2">
         <span className="pv-chip-brand">
           {t("learn.stepPosition", { current: activeStepIndex + 1, total: stepsCount })}
-        </span>
-        <span className="inline-flex items-center rounded-full border border-[var(--pv-border)] bg-white/90 px-3 py-1 text-xs font-semibold text-zinc-950">
-          {courseProgressPercent}%
         </span>
         <Metric label={t("learn.lessonProgress")} value={`${lessonProgressPercent}%`} />
         <Metric label={t("learn.lessonEstimated")} value={`${estimatedMinutes}m`} />
