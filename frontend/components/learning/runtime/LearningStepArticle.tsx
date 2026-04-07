@@ -115,6 +115,15 @@ export function LearningStepArticle({
             {t("learn.stepCompletionValue", { done: completedStepsCount, total: stepsCount })}
           </p>
           <h3 className="mt-2 text-xl font-bold tracking-[-0.04em] text-zinc-950">{activeStep.title}</h3>
+          {isPracticeStep && theoryStepSlug && theoryStepSlug !== activeStep.slug ? (
+            <Link
+              href={stepHref(theoryStepSlug)}
+              className="mt-3 inline-flex items-center text-base font-semibold text-[var(--pv-brand-strong)] hover:text-[var(--pv-brand)]"
+            >
+              {"← "}
+              {t("learn.backToTheory")}
+            </Link>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="pv-chip-brand">{t("learn.stepMinutesLabel", { count: activeStep.estimated_minutes })}</span>
@@ -145,13 +154,6 @@ export function LearningStepArticle({
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("learn.practiceAction")}</p>
               {isPracticeStep ? <p className="mt-2 text-sm text-zinc-600">{t("learn.practiceFocusHint")}</p> : null}
               <p className="mt-2">{activeStep.task}</p>
-              {isPracticeStep && theoryStepSlug && theoryStepSlug !== activeStep.slug ? (
-                <div className="mt-3">
-                  <Link href={stepHref(theoryStepSlug)} className="pv-button-secondary !w-auto">
-                    {t("learn.backToTheory")}
-                  </Link>
-                </div>
-              ) : null}
             </section>
           ) : null}
 

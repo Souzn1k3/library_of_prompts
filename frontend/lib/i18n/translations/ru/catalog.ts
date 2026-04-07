@@ -139,7 +139,7 @@ export const ruCatalog = {
   "learn.practiceAction": "Действие",
   "learn.practiceFocusHint":
     "Выполните задание ниже: дайте конкретный ответ по требованиям шага, без пересказа теории.",
-  "learn.backToTheory": "Вернуться к теории",
+  "learn.backToTheory": "Назад к теории",
   "learn.precheck": "Проверка перед отправкой",
   "learn.precheckWords": "Слова: {current}/{min}",
   "learn.precheckMarkersOk": "Все обязательные маркеры присутствуют.",
