@@ -61,26 +61,6 @@ export default async function LearnIndexPage() {
           }
         />
 
-        <section className="pv-panel px-6 py-6 sm:px-7">
-          <div className="pv-section-head">
-            <div className="pv-section-copy">
-              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
-                <T k="learn.learningSystemTitle" />
-              </h2>
-              <p className="mt-2 text-sm text-zinc-600">
-                <T k="learn.learningSystemBody" />
-              </p>
-            </div>
-          </div>
-          <ol className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            <li className="rounded-[1rem] border border-[var(--pv-border)] bg-white/85 px-3 py-3 text-sm text-zinc-700">1. <T k="learn.learningLoopTheory" /></li>
-            <li className="rounded-[1rem] border border-[var(--pv-border)] bg-white/85 px-3 py-3 text-sm text-zinc-700">2. <T k="learn.learningLoopPractice" /></li>
-            <li className="rounded-[1rem] border border-[var(--pv-border)] bg-white/85 px-3 py-3 text-sm text-zinc-700">3. <T k="learn.learningLoopCheck" /></li>
-            <li className="rounded-[1rem] border border-[var(--pv-border)] bg-white/85 px-3 py-3 text-sm text-zinc-700">4. <T k="learn.learningLoopFeedback" /></li>
-            <li className="rounded-[1rem] border border-[var(--pv-border)] bg-white/85 px-3 py-3 text-sm text-zinc-700">5. <T k="learn.learningLoopReinforce" /></li>
-          </ol>
-        </section>
-
         {catalog.courses.length === 0 ? (
           <div className="pv-alert pv-alert-warning">
             <T k="learn.noLessons" />
@@ -165,6 +145,26 @@ export default async function LearnIndexPage() {
             </div>
           </section>
         )}
+
+        <section className="pv-panel px-6 py-6 sm:px-7">
+          <div className="pv-section-head">
+            <div className="pv-section-copy">
+              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
+                <T k="learn.learningSystemTitle" />
+              </h2>
+              <p className="mt-2 text-sm text-zinc-600">
+                <T k="learn.learningSystemBody" />
+              </p>
+            </div>
+          </div>
+          <ol className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <li className="rounded-[1rem] border border-[var(--pv-border)] bg-white/85 px-3 py-3 text-sm text-zinc-700">1. <T k="learn.learningLoopTheory" /></li>
+            <li className="rounded-[1rem] border border-[var(--pv-border)] bg-white/85 px-3 py-3 text-sm text-zinc-700">2. <T k="learn.learningLoopPractice" /></li>
+            <li className="rounded-[1rem] border border-[var(--pv-border)] bg-white/85 px-3 py-3 text-sm text-zinc-700">3. <T k="learn.learningLoopCheck" /></li>
+            <li className="rounded-[1rem] border border-[var(--pv-border)] bg-white/85 px-3 py-3 text-sm text-zinc-700">4. <T k="learn.learningLoopFeedback" /></li>
+            <li className="rounded-[1rem] border border-[var(--pv-border)] bg-white/85 px-3 py-3 text-sm text-zinc-700">5. <T k="learn.learningLoopReinforce" /></li>
+          </ol>
+        </section>
       </div>
     );
   } catch (error) {
