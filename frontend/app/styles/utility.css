@@ -6,7 +6,7 @@
 }
 
 .pv-card-muted.pv-catalog-filter-card-white {
-  background: #ffffff !important;
+  background: var(--pv-surface-strong) !important;
 }
 
 .pv-floating-menu {

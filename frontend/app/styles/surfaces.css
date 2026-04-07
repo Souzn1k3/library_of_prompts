@@ -311,7 +311,7 @@
   line-height: 1.14;
   font-weight: 700;
   letter-spacing: -0.045em;
-  color: #0f172a;
+  color: var(--pv-text);
 }
 
 .pv-hero-preview-body {

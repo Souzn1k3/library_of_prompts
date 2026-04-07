@@ -88,7 +88,7 @@ export function Header() {
 
             <button
               type="button"
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.95rem] border border-[rgba(15,23,42,0.12)] bg-white/88 text-zinc-700 transition hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pv-brand)]/35 lg:hidden"
+              className="pv-header-mobile-trigger inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.95rem] border border-[rgba(15,23,42,0.12)] bg-white/88 text-zinc-700 transition hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pv-brand)]/35 lg:hidden"
               aria-controls="mobile-navigation-panel"
               aria-expanded={isMobileMenuOpen}
               aria-label={isMobileMenuOpen ? t("header.closeMenu") : t("header.openMenu")}

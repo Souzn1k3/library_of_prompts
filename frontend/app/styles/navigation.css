@@ -140,11 +140,11 @@
   font-weight: 800;
   letter-spacing: -0.07em;
   line-height: 1;
-  color: #10131c;
+  color: var(--pv-text);
 }
 
 .pv-header-brand:hover {
-  color: #0f172a;
+  color: color-mix(in srgb, var(--pv-text) 88%, white);
   opacity: 0.86;
 }
 

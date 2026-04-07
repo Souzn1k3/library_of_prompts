@@ -159,7 +159,7 @@
 }
 
 .pv-card-muted.pv-catalog-filter-card-white {
-  background: #ffffff;
+  background: var(--pv-surface-strong);
 }
 
 .pv-breadcrumbs {

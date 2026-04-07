@@ -121,6 +121,26 @@ html[data-theme="dark"] .pv-lmn-token-glow {
   opacity: 0.5;
 }
 
+html[data-theme="dark"] .pv-header-brand {
+  color: #e2e8f0;
+}
+
+html[data-theme="dark"] .pv-header-brand:hover {
+  color: #f8fafc;
+}
+
+html[data-theme="dark"] .pv-header-mobile-trigger {
+  border-color: rgba(148, 163, 184, 0.32);
+  background: rgba(20, 30, 50, 0.86);
+  color: #dbe4fb;
+}
+
+html[data-theme="dark"] .pv-header-mobile-trigger:hover {
+  border-color: rgba(96, 165, 250, 0.44);
+  background: rgba(37, 99, 235, 0.2);
+  color: #eff6ff;
+}
+
 html[data-theme="dark"] .pv-button-primary,
 html[data-theme="dark"] .pv-header-primary-button {
   border-color: transparent;
@@ -237,6 +257,21 @@ html[data-theme="dark"] .pv-select:focus,
 html[data-theme="dark"] .pv-header-search:focus-within {
   border-color: rgba(96, 165, 250, 0.6);
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+html[data-theme="dark"] .pv-select option,
+html[data-theme="dark"] .pv-select optgroup {
+  background: #0f172b;
+  color: #e5edff;
+}
+
+html[data-theme="dark"] .pv-hero-preview-title {
+  color: #f8fafc;
+}
+
+html[data-theme="dark"] .pv-card-muted.pv-catalog-filter-card-white {
+  border-color: var(--pv-border) !important;
+  background: #121b2f !important;
 }
 
 html[data-theme="dark"] .pv-progress {
