@@ -36,23 +36,23 @@ export function buildScenarioLiveResult(params: {
   if (isRuFamily) {
     if (outputDepth === "concise") {
       return [
-        "Результат AI-сценария:",
+        "Результат AI-промпта:",
         "",
-        `Сценарий: ${scenario.title}`,
+        `Промпт: ${scenario.title}`,
         `Категория: ${categoryLabel}`,
         `Фокус: ${focus}`,
         variant,
         "",
         "• Итог: есть рабочий результат для запуска без дополнительных шагов",
-        "• Следующий шаг: откройте сценарий и примените к вашим данным",
+        "• Следующий шаг: откройте промпт и примените к вашим данным",
         "• Метрика: ценность за первые 10 минут выполнения",
       ].join("\n");
     }
 
     return [
-      "Результат AI-сценария:",
+      "Результат AI-промпта:",
       "",
-      `Сценарий: ${scenario.title}`,
+      `Промпт: ${scenario.title}`,
       `Категория: ${categoryLabel}`,
       `Фокус: ${focus}`,
       variant,
@@ -62,7 +62,7 @@ export function buildScenarioLiveResult(params: {
       "",
       "2) План выполнения",
       "- Подтвердить входные параметры",
-      "- Запустить базовый сценарий",
+      "- Запустить базовый промпт",
       "- Зафиксировать результат в повторяемый шаблон",
       "",
       "3) Готовый output",
@@ -72,23 +72,23 @@ export function buildScenarioLiveResult(params: {
 
   if (outputDepth === "concise") {
     return [
-      "AI scenario result:",
+      "AI prompt result:",
       "",
-      `Scenario: ${scenario.title}`,
+      `Prompt: ${scenario.title}`,
       `Category: ${categoryLabel}`,
       `Focus: ${focus}`,
       variant,
       "",
       "• Outcome: execution-ready output with no extra setup",
-      "• Next step: open and run the full scenario",
+      "• Next step: open and run the full prompt",
       "• Metric: tangible value in the first 10 minutes",
     ].join("\n");
   }
 
   return [
-    "AI scenario result:",
+    "AI prompt result:",
     "",
-    `Scenario: ${scenario.title}`,
+    `Prompt: ${scenario.title}`,
     `Category: ${categoryLabel}`,
     `Focus: ${focus}`,
     variant,
@@ -98,7 +98,7 @@ export function buildScenarioLiveResult(params: {
     "",
     "2) Execution plan",
     "- Confirm missing inputs",
-    "- Run the base scenario",
+    "- Run the base prompt",
     "- Convert result into a reusable workflow",
     "",
     "3) Ready output",
@@ -119,6 +119,6 @@ function scenarioCategoryRu(category: ScenarioDefinition["category"]): string {
     case "growth":
       return "Рост";
     default:
-      return "Сценарий";
+      return "Промпт";
   }
 }

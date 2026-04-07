@@ -314,7 +314,7 @@ export const ruAccount = {
   "dashboard.notPublicYet": "Пока не публично. Появится в каталоге после одобрения.",
   "dashboard.moderationFeedback": "Комментарий модерации",
   "dashboard.finishOnboardingTitle":
-    "Завершите онбординг, чтобы открыть персональный стартовый сценарий.",
+    "Завершите онбординг, чтобы открыть персональный стартовый промпт.",
   "dashboard.finishOnboardingPrefix": "",
   "dashboard.finishOnboardingLink": "Пройти онбординг из 3 шагов",
   "dashboard.finishOnboardingSuffix":

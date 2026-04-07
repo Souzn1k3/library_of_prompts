@@ -74,7 +74,7 @@ export const ruMissions = {
   "missions.rewardBadge.workflow-builder": "Конструктор процесса",
   "missions.rewardBadge.lesson-practitioner": "Практик уроков",
   "missions.rewardBadge.practice-streak": "Серия практики",
-  "missions.rewardBadge.workflow-shipper": "Автор рабочего сценария",
+  "missions.rewardBadge.workflow-shipper": "Автор рабочего промпта",
   "missions.rewardBadge.routine-builder": "Сборщик рутины",
   "missions.catalog.onboarding-first-win.title": "Получите первый результат с ИИ",
   "missions.catalog.onboarding-first-win.description":
@@ -90,7 +90,7 @@ export const ruMissions = {
   "missions.catalog.copy-a-prompt-and-run-it.completion": "Скопировать один связанный промпт.",
   "missions.catalog.save-your-first-workflow.title": "Соберите свой переиспользуемый стек промптов",
   "missions.catalog.save-your-first-workflow.description":
-    "Сохраните промпты, к которым планируете возвращаться, и соберите личную библиотеку сценариев.",
+    "Сохраните промпты, к которым планируете возвращаться, и соберите личную библиотеку промптов.",
   "missions.catalog.save-your-first-workflow.objective":
     "Создать переиспользуемый набор промптов для будущих задач.",
   "missions.catalog.save-your-first-workflow.completion": "Сохранить один связанный промпт.",
@@ -113,11 +113,11 @@ export const ruMissions = {
     "Оставаться активным в течение трех отдельных дней.",
   "missions.catalog.three-day-practice-streak.completion":
     "Запустить активность серии три раза.",
-  "missions.catalog.ship-a-real-ai-workflow.title": "Соберите реальный AI-сценарий",
+  "missions.catalog.ship-a-real-ai-workflow.title": "Соберите реальный AI-промпт",
   "missions.catalog.ship-a-real-ai-workflow.description":
     "Отправьте практический промпт, чтобы превратить обучение в переиспользуемую ценность продукта.",
   "missions.catalog.ship-a-real-ai-workflow.objective":
-    "Отправить один реальный сценарий промпта.",
+    "Отправить один реальный рабочий промпт.",
   "missions.catalog.ship-a-real-ai-workflow.completion": "Отправить один промпт на проверку.",
   "missions.catalog.build-your-ai-routine.title": "Соберите свою AI-рутину",
   "missions.catalog.build-your-ai-routine.description":
@@ -133,7 +133,7 @@ export const ruMissions = {
     "Используйте промпт и подтвердите, что он дал практический результат.",
   "missions.catalog.build-your-ai-routine.steps.2.title": "Завершите один урок",
   "missions.catalog.build-your-ai-routine.steps.2.description":
-    "Замкните цикл и разберитесь, почему этот сценарий работает.",
+    "Замкните цикл и разберитесь, почему этот промпт работает.",
   "missionDetail.signInPrefix": "Пожалуйста,",
   "missionDetail.signInLink": "войдите",
   "missionDetail.signInSuffix": "чтобы открыть это задание.",
@@ -162,9 +162,9 @@ export const ruMissions = {
   "onboardingWizard.goalProductivityLabel": "Продуктивность",
   "onboardingWizard.goalProductivityHint": "Экономьте время на повторяемых процессах.",
   "onboardingWizard.contextGeneralLabel": "Общий ассистент",
-  "onboardingWizard.contextGeneralHint": "Диалоговые сценарии с ИИ.",
+  "onboardingWizard.contextGeneralHint": "Диалоговые промпты с ИИ.",
   "onboardingWizard.contextCodeLabel": "Код-ассистент",
-  "onboardingWizard.contextCodeHint": "Сценарии разработки и отладки.",
+  "onboardingWizard.contextCodeHint": "Промпты разработки и отладки.",
   "onboardingWizard.contextSchoolLabel": "Школа/ВУЗ",
   "onboardingWizard.contextSchoolHint": "Конспекты, объяснения, подготовка.",
   "onboardingWizard.contextWorkLabel": "Рабочие задачи",

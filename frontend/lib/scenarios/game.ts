@@ -44,8 +44,8 @@ export const SCENARIO_GAME_CHALLENGES: ScenarioGameChallenge[] = [
   },
   {
     id: "challenge-2",
-    promptEn: "You need a launch plan in 24 hours. Choose the highest-leverage scenario.",
-    promptRu: "Нужен план запуска за 24 часа. Выбери сценарий с максимальной пользой.",
+    promptEn: "You need a launch plan in 24 hours. Choose the highest-leverage prompt.",
+    promptRu: "Нужен план запуска за 24 часа. Выбери промпт с максимальной пользой.",
     choices: [
       {
         en: "Give random launch ideas.",
@@ -72,8 +72,8 @@ export const SCENARIO_GAME_CHALLENGES: ScenarioGameChallenge[] = [
   },
   {
     id: "challenge-3",
-    promptEn: "You need better customer interviews. Select the scenario that increases signal quality.",
-    promptRu: "Нужно улучшить интервью с клиентами. Выбери сценарий, который повышает качество инсайтов.",
+    promptEn: "You need better customer interviews. Select the prompt that increases signal quality.",
+    promptRu: "Нужно улучшить интервью с клиентами. Выбери промпт, который повышает качество инсайтов.",
     choices: [
       {
         en: "Generate 5 generic questions.",
@@ -87,7 +87,7 @@ export const SCENARIO_GAME_CHALLENGES: ScenarioGameChallenge[] = [
         ru: "Создай скрипт интервью: гипотезы, уточняющие вопросы, анти-байас ловушки и формат синтеза.",
         reward: 6,
         feedbackEn: "Excellent. This drives better decisions from each interview.",
-        feedbackRu: "Отлично. Такой сценарий делает каждое интервью полезнее для решений.",
+        feedbackRu: "Отлично. Такой промпт делает каждое интервью полезнее для решений.",
       },
       {
         en: "Ask users if they like the product.",

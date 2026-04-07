@@ -1,15 +1,7 @@
-import { redirect } from "next/navigation";
-
 import { LoginForm } from "@/components/LoginForm";
 import { T } from "@/components/i18n/T";
-import { getServerAuthCookieState } from "@/lib/server-auth";
 
-export default async function LoginPage() {
-  const authState = await getServerAuthCookieState();
-  if (authState.hasAnyAuthCookie) {
-    redirect("/dashboard");
-  }
-
+export default function LoginPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,0.85fr)] lg:items-start">

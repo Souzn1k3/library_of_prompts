@@ -1,4 +1,5 @@
 import {
+  fetchPrompts,
   fetchPromptBySlug,
   fetchScenarioHomeAggregate,
 } from "@/lib/api";
@@ -26,12 +27,25 @@ export async function loadHomePageData({
     limit: 8,
   }).catch(() => null);
 
-  const recommendedPrompts = aggregate?.recommended ?? [];
-  const entryPrompts = dedupePrompts([
+  const scenarioRecommendedPrompts = aggregate?.recommended ?? [];
+  const scenarioEntryPrompts = dedupePrompts([
     ...(aggregate?.featured ?? []),
-    ...recommendedPrompts,
+    ...scenarioRecommendedPrompts,
     ...(aggregate?.retention ?? []),
   ]).slice(0, 24);
+  const fallbackPrompts = scenarioEntryPrompts.length
+    ? []
+    : await fetchPrompts({
+      limit: 24,
+      sort: "trending",
+      accessToken,
+      language,
+    }).catch(() => []);
+
+  const entryPrompts = scenarioEntryPrompts.length ? scenarioEntryPrompts : fallbackPrompts;
+  const recommendedPrompts = (
+    scenarioRecommendedPrompts.length ? scenarioRecommendedPrompts : fallbackPrompts.slice(0, 6)
+  );
   const retentionPrompts = dedupePrompts(aggregate?.retention ?? []).slice(0, 8);
 
   const heroPrompt = entryPrompts[0];
