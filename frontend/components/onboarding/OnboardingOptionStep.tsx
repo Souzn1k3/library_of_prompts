@@ -29,8 +29,8 @@ export function OnboardingOptionStep({
             onClick={() => onSelect(option.value)}
             className={`rounded-[1.25rem] border px-4 py-4 text-left transition ${
               selected === option.value
-                ? "border-[var(--pv-brand)] bg-[var(--pv-brand)] text-white"
-                : "border-zinc-200 bg-white text-zinc-900 hover:border-[var(--pv-border-strong)]"
+                ? "border-[var(--pv-brand)] bg-[linear-gradient(135deg,var(--pv-brand),#4d7dff)] text-white shadow-[0_18px_34px_rgba(37,92,255,0.2)]"
+                : "border-zinc-200 bg-white text-zinc-900 hover:-translate-y-0.5 hover:border-[var(--pv-border-strong)]"
             }`}
           >
             <div className="flex items-start justify-between gap-3">

@@ -153,25 +153,25 @@ export function HomeWorkbenchSelectionPanel({
                   onClick={() => onSelectScenario(scenario.slug)}
                   className={`rounded-[1rem] border p-3 text-left transition ${
                     isActive
-                      ? "border-[var(--pv-brand-strong)] bg-[var(--pv-brand-soft)]"
-                      : "border-zinc-200 bg-white hover:border-zinc-300"
+                      ? "border-[var(--pv-brand-strong)] bg-[var(--pv-brand-soft)] shadow-[0_8px_20px_rgba(37,92,255,0.12)]"
+                      : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-[0_8px_18px_rgba(15,23,42,0.07)]"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
                     <p className="line-clamp-2 text-sm font-semibold leading-snug text-zinc-900">{scenario.title}</p>
-                    <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-semibold text-zinc-500">
+                    <span className="rounded-full bg-white/80 px-2 py-0.5 text-[11px] font-semibold text-zinc-500">
                       {scenario.category}
                     </span>
                   </div>
                   <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-zinc-600">{scenario.summary}</p>
                   <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] text-zinc-500">
                     {scenario.qualityScore > 0 ? (
-                      <span className="rounded-full bg-zinc-100 px-2 py-0.5">
+                      <span className="rounded-full bg-white/70 px-2 py-0.5">
                         {t("prompt.metricQuality", { count: scenario.qualityScore })}
                       </span>
                     ) : null}
                     {scenario.saveCount > 0 ? (
-                      <span className="rounded-full bg-zinc-100 px-2 py-0.5">
+                      <span className="rounded-full bg-white/70 px-2 py-0.5">
                         {t("prompt.metricSaves", { count: scenario.saveCount })}
                       </span>
                     ) : null}
