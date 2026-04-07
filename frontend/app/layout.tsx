@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import Script from "next/script";
 
 import { AnalyticsPageTracker } from "@/components/analytics/AnalyticsPageTracker";
 import { AuthProvider } from "@/components/auth/AuthProvider";
@@ -22,6 +23,7 @@ import "./styles/navigation.css";
 import "./styles/components.css";
 import "./styles/economy.css";
 import "./styles/utility.css";
+import "./styles/theme-dark.css";
 
 const manrope = localFont({
   src: "./fonts/manrope/Manrope[wght].ttf",
@@ -54,6 +56,19 @@ const ibmPlexMono = localFont({
 });
 
 const siteUrl = getSiteUrl();
+const themeInitScript = `
+(() => {
+  try {
+    const key = "pv-theme";
+    const stored = window.localStorage.getItem(key);
+    const system = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    const theme = stored === "dark" || stored === "light" ? stored : system;
+    document.documentElement.setAttribute("data-theme", theme);
+  } catch {
+    document.documentElement.setAttribute("data-theme", "light");
+  }
+})();
+`;
 
 export async function generateMetadata(): Promise<Metadata> {
   const language = await getServerLanguage();
@@ -113,8 +128,11 @@ export default async function RootLayout({
   ]);
 
   return (
-    <html lang={language}>
+    <html lang={language} data-theme="light" suppressHydrationWarning>
       <body className={`${manrope.variable} ${ibmPlexMono.variable} min-h-screen antialiased`}>
+        <Script id="theme-init" strategy="beforeInteractive">
+          {themeInitScript}
+        </Script>
         <div className="relative isolate flex min-h-screen flex-col">
           <LanguageProvider initialLanguage={language}>
             <AuthProvider initialHasAuthCookie={authState.hasAnyAuthCookie}>

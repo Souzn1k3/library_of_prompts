@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useI18n } from "@/components/i18n/LanguageProvider";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 import { HeaderPrimaryNav } from "./HeaderPrimaryNav";
 import { HeaderNav } from "./HeaderNav";
@@ -81,6 +82,7 @@ export function Header() {
 
             <div className="hidden shrink-0 items-center justify-end gap-2 lg:flex">
               <LanguageSwitcher />
+              <ThemeToggle />
               <HeaderNav />
             </div>
 
@@ -128,6 +130,7 @@ export function Header() {
                 </div>
 
                 <LanguageSwitcher mobile />
+                <ThemeToggle mobile />
                 <HeaderNav mobile onNavigate={() => setIsMobileMenuOpen(false)} />
               </div>
             </div>
