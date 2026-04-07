@@ -158,6 +158,7 @@ export const enCatalog = {
   "learn.formatChecklist": "Format checklist",
   "learn.answerFormatHint":
     "Follow the requested format in the task (for example, use bullet points when asked).",
+  "learn.promptEnglishHint": "For best quality, writing prompts in English is usually more effective.",
   "learn.reflectionHint":
     "Briefly note what worked, what you missed, and what you will change in your next prompt.",
   "learn.readyPrompt": "Ready prompt example",
@@ -172,6 +173,8 @@ export const enCatalog = {
   "learn.stepPassedDetailed": "Step passed: {score}/100 (target {target}). Continue.",
   "learn.stepNeedsRevision": "Step needs revision. Use feedback and retry.",
   "learn.stepNeedsRevisionDetailed": "Needs revision: {score}/100 (target {target}). Apply feedback and retry.",
+  "learn.submitStepFallbackError": "Could not submit this step. Please try again.",
+  "learn.minutesCompact": "{count} min",
   "learn.lessonCompleted": "Lesson completed. Rewards and mission progress updated.",
   "learn.courseCompleted": "Course completed. Badge awarded.",
   "learn.outcomeAndMethod": "Outcome and method",

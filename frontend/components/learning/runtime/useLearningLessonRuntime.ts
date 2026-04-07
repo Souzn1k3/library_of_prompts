@@ -157,7 +157,7 @@ export function useLearningLessonRuntime({
           setStatusMessage(result.passed ? t("learn.stepPassed") : t("learn.stepNeedsRevision"));
         }
       } catch (error) {
-        setSubmitError(extractErrorMessage(error));
+        setSubmitError(extractErrorMessage(error, t("learn.submitStepFallbackError")));
       } finally {
         submittingStepRef.current = null;
         setSubmittingStepSlug(null);

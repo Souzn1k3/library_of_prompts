@@ -159,6 +159,8 @@ export const ruCatalog = {
   "learn.formatChecklist": "Чеклист формата",
   "learn.answerFormatHint":
     "Соблюдайте формат из задания (например, используйте маркеры, если это указано).",
+  "learn.promptEnglishHint":
+    "Для лучшего качества обычно эффективнее писать промпты на английском языке.",
   "learn.reflectionHint":
     "Коротко зафиксируйте: что сработало, что упустили и что измените в следующем промпте.",
   "learn.readyPrompt": "Пример промпта",
@@ -174,7 +176,9 @@ export const ruCatalog = {
   "learn.stepPassedDetailed": "Шаг пройден: {score}/100 (порог {target}). Продолжайте.",
   "learn.stepNeedsRevision": "Шаг требует доработки. Используйте обратную связь и повторите.",
   "learn.stepNeedsRevisionDetailed":
-    "Нужна доработка: {score}/100 (порог {target}). Исправьте по feedback и отправьте снова.",
+    "Нужна доработка: {score}/100 (порог {target}). Исправьте по обратной связи и отправьте снова.",
+  "learn.submitStepFallbackError": "Не удалось отправить этот шаг. Попробуйте ещё раз.",
+  "learn.minutesCompact": "{count} мин",
   "learn.lessonCompleted": "Урок завершен. Награды и прогресс заданий обновлены.",
   "learn.courseCompleted": "Курс завершен. Бейдж получен.",
   "learn.outcomeAndMethod": "Результат и метод",
@@ -184,7 +188,7 @@ export const ruCatalog = {
   "learn.learningLoopTheory": "Короткая теория только по сути.",
   "learn.learningLoopPractice": "Обязательное действие на конкретной задаче.",
   "learn.learningLoopCheck": "Неформальная, но измеримая проверка по порогу.",
-  "learn.learningLoopFeedback": "Feedback с объяснением ошибки и направлением исправления.",
+  "learn.learningLoopFeedback": "Обратная связь с объяснением ошибки и направлением исправления.",
   "learn.learningLoopReinforce": "Закрепление на собственном реальном кейсе.",
   "learn.moduleStructureBody":
     "Модули идут по зависимости навыков. Завершайте уроки по порядку, чтобы открывать следующие.",

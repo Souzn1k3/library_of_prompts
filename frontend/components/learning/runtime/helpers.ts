@@ -16,11 +16,11 @@ export function buildInitialChoiceAnswers(steps: LearningLessonStep[]): Record<s
   );
 }
 
-export function extractErrorMessage(error: unknown): string {
+export function extractErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message.trim()) {
     return error.message;
   }
-  return "Could not submit this step. Please try again.";
+  return fallback;
 }
 
 export function suggestedTemplate(step: LearningLessonStep, t: LearningTranslation): string | null {

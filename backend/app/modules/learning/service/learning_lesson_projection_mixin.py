@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from app.core.i18n import SupportedLanguage
 from app.infrastructure.db.models import LearningLessonProgress, LearningStepProgress
-from app.modules.learning.content.common import pick_text
+from app.modules.learning.content.common import localize_forbidden_phrases, pick_text
 from app.modules.learning.model.learning import (
     LearningLessonOutlineRead,
     LearningLessonStatus,
@@ -66,7 +66,10 @@ class LearningLessonProjectionMixin:
                     min_words=int(submission["min_words"]) if submission.get("min_words") is not None else None,
                     required_markers=[str(marker) for marker in submission.get("required_markers", [])],
                     bonus_markers=[str(marker) for marker in submission.get("bonus_markers", [])],
-                    forbidden_phrases=[str(marker) for marker in submission.get("forbidden_phrases", [])],
+                    forbidden_phrases=localize_forbidden_phrases(
+                        [str(marker) for marker in submission.get("forbidden_phrases", [])],
+                        language,
+                    ),
                     submission_type=submission_type,
                     unlocked=unlocked,
                     completed=completed,

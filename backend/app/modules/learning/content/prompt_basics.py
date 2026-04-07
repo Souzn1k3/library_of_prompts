@@ -8,7 +8,20 @@ _BASE_TEXT_VALIDATOR = {
     "min_words": 35,
     "required_markers": ["[ROLE]", "[CONTEXT]", "[TASK]", "[CONSTRAINTS]", "[OUTPUT]"],
     "bonus_markers": ["[CHECK]", "[EXAMPLE]"],
-    "forbidden_phrases": ["any format", "as you wish", "whatever works", "сделай нормально"],
+    "forbidden_phrases": [
+        "any format",
+        "as you wish",
+        "whatever works",
+        "just make it good",
+        "в любом формате",
+        "как хотите",
+        "как угодно",
+        "сделай нормально",
+        "теләсә нинди форматта",
+        "үзеңчә",
+        "ничек булса да ярый",
+        "нормаль итеп эшлә",
+    ],
 }
 
 
@@ -308,7 +321,7 @@ PROMPT_BASICS_COURSE = {
                             "submission": _quiz(
                                 question=tr(
                                     "What block is missing: '[ROLE] Career coach [TASK] Build a roadmap [OUTPUT] table'?",
-                                    "Какой блок отсутствует: '[ROLE] Карьерный коуч [TASK] Построй roadmap [OUTPUT] таблица'?",
+                                    "Какой блок отсутствует: '[ROLE] Карьерный коуч [TASK] Построй дорожную карту [OUTPUT] таблица'?",
                                     "Кайсы блок җитми: '[ROLE] Карьера коучы [TASK] План төзе [OUTPUT] таблица'?",
                                 ),
                                 a=tr("[CHECK]", "[CHECK]", "[CHECK]"),
@@ -338,8 +351,8 @@ PROMPT_BASICS_COURSE = {
                             "estimated_minutes": 8,
                             "task": tr(
                                 "Write a reusable template with placeholders like <topic>, <audience>, <time_limit>.",
-                                "Напишите переиспользуемый шаблон с плейсхолдерами <topic>, <audience>, <time_limit>.",
-                                "<topic>, <audience>, <time_limit> кебек плейсхолдерлар белән кабат кулланыла торган шаблон языгыз.",
+                                "Напишите переиспользуемый шаблон с плейсхолдерами <тема>, <аудитория>, <лимит_времени>.",
+                                "<тема>, <аудитория>, <вакыт_лимиты> кебек плейсхолдерлар белән кабат кулланыла торган шаблон языгыз.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -566,8 +579,8 @@ PROMPT_BASICS_COURSE = {
                             "estimated_minutes": 8,
                             "task": tr(
                                 "Start from your previous prompt and produce Version A + Version B with one targeted change.",
-                                "Возьмите прошлый промпт и сделайте Version A + Version B с одной целевой правкой.",
-                                "Алдагы промпттан башлап Version A + Version B ясагыз, бер максатчан үзгәреш белән.",
+                                "Возьмите прошлый промпт и сделайте Версию 1 и Версию 2 с одной целевой правкой.",
+                                "Алдагы промпттан чыгып 1 нче версия һәм 2 нче версия төзегез, бер максатчан үзгәреш белән.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -627,7 +640,7 @@ PROMPT_BASICS_COURSE = {
                             "task": tr(
                                 "Write a mini debug prompt that asks the model to explain why its previous answer failed.",
                                 "Сделайте мини debug-промпт, где модель объясняет, почему прошлый ответ был слабым.",
-                                "Модельдән алдагы җавап нигә көчсез булганын аңлату өчен mini debug-промпт төзегез.",
+                                "Модельдән алдагы җавап нигә көчсез булганын аңлату өчен кыска диагностика промпты төзегез.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -800,12 +813,12 @@ PROMPT_BASICS_COURSE = {
                         {
                             "slug": "pe-final-guided",
                             "kind": "guided_practice",
-                            "title": tr("Draft v1", "Черновик v1", "Каралама v1"),
+                            "title": tr("Draft v1", "Черновик версии 1", "1 нче версия караламасы"),
                             "estimated_minutes": 8,
                             "task": tr(
                                 "Submit Prompt v1 with all required markers plus [CHECK] quality metric.",
-                                "Отправьте Prompt v1 со всеми маркерами и метрикой качества в [CHECK].",
-                                "Prompt v1 җибәрегез: барлык маркер + [CHECK] эчендә сыйфат метрикасы.",
+                                "Отправьте Промпт версии 1 со всеми маркерами и метрикой качества в [CHECK].",
+                                "1 нче версия промптын җибәрегез: барлык маркерлар һәм [CHECK] эчендә сыйфат метрикасы булсын.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -868,12 +881,12 @@ PROMPT_BASICS_COURSE = {
                         {
                             "slug": "pe-final-applied",
                             "kind": "applied_exercise",
-                            "title": tr("Refined v2", "Доработка v2", "Яхшыртылган v2"),
+                            "title": tr("Refined v2", "Доработка версии 2", "2 нче версияне яхшырту"),
                             "estimated_minutes": 10,
                             "task": tr(
                                 "Submit Prompt v2 and explicitly state what you changed and why.",
-                                "Отправьте Prompt v2 и явно укажите, что изменили и почему.",
-                                "Prompt v2 җибәрегез һәм ниләрне ни өчен үзгәрткәнегезне ачык языгыз.",
+                                "Отправьте Промпт версии 2 и явно укажите, что изменили и почему.",
+                                "2 нче версия промптын җибәрегез һәм нәрсәне ни өчен үзгәрткәнегезне ачык языгыз.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,

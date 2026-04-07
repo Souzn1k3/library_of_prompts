@@ -8,7 +8,20 @@ _BASE_TEXT_VALIDATOR = {
     "min_words": 35,
     "required_markers": ["[ROLE]", "[CONTEXT]", "[TASK]", "[CONSTRAINTS]", "[OUTPUT]"],
     "bonus_markers": ["[CHECK]", "[EXAMPLE]"],
-    "forbidden_phrases": ["any format", "as you wish", "whatever works", "сделай нормально"],
+    "forbidden_phrases": [
+        "any format",
+        "as you wish",
+        "whatever works",
+        "just make it good",
+        "в любом формате",
+        "как хотите",
+        "как угодно",
+        "сделай нормально",
+        "теләсә нинди форматта",
+        "үзеңчә",
+        "ничек булса да ярый",
+        "нормаль итеп эшлә",
+    ],
 }
 
 
@@ -50,7 +63,7 @@ WORKFLOWS_COURSE = {
     "description": tr(
         "A practical continuation course: build reusable workflows for research, writing, analysis, and daily execution with AI.",
         "Продолжение базового курса: соберите переиспользуемые workflow для исследований, письма, анализа и повседневной работы с ИИ.",
-        "База курсын дәвам итү: тикшеренү, язу, анализ һәм көндәлек эш өчен AI workflow төзегез.",
+        "База курсын дәвам итү: тикшеренү, язу, анализ һәм көндәлек эш өчен ЯИ эш агымы төзегез.",
     ),
     "difficulty": "intermediate",
     "estimated_minutes": 330,
@@ -583,7 +596,7 @@ WORKFLOWS_COURSE = {
                             "task": tr(
                                 "Write a debug prompt that asks for failure diagnosis + targeted revision plan.",
                                 "Сделайте debug-промпт: диагностика сбоя + план точечной доработки.",
-                                "Debug-промпт языгыз: хата диагнозы + төгәл яхшырту планы.",
+                                "Диагностика промпты языгыз: хата диагнозы + төгәл яхшырту планы.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -651,7 +664,7 @@ WORKFLOWS_COURSE = {
                 },
                 {
                     "slug": "wf-capstone",
-                    "title": tr("Workflow Capstone", "Финальный capstone", "Финал capstone"),
+                    "title": tr("Workflow Capstone", "Финальный проект процесса", "Эш агымының финал проекты"),
                     "summary": tr(
                         "Deliver one end-to-end workflow for your own real scenario.",
                         "Соберите один end-to-end workflow для вашего реального сценария.",
@@ -665,7 +678,7 @@ WORKFLOWS_COURSE = {
                         {
                             "slug": "wf-capstone-brief",
                             "kind": "theory",
-                            "title": tr("Capstone Brief", "Бриф capstone", "Capstone брифы"),
+                            "title": tr("Capstone Brief", "Бриф финального проекта", "Финал проект брифы"),
                             "estimated_minutes": 5,
                             "content": [
                                 tr(
@@ -679,12 +692,12 @@ WORKFLOWS_COURSE = {
                         {
                             "slug": "wf-capstone-v1",
                             "kind": "guided_practice",
-                            "title": tr("Workflow v1", "Workflow v1", "Workflow v1"),
+                            "title": tr("Workflow v1", "Процесс версия 1", "Эш агымы 1 нче версия"),
                             "estimated_minutes": 8,
                             "task": tr(
                                 "Submit your end-to-end workflow v1 with clear stage boundaries.",
-                                "Отправьте workflow v1 с четкими границами этапов.",
-                                "Этап чикләре ачык булган workflow v1 җибәрегез.",
+                                "Отправьте процесс версии 1 с четкими границами этапов.",
+                                "Этап чикләре ачык булган 1 нче версия эш агымын җибәрегез.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -716,12 +729,12 @@ WORKFLOWS_COURSE = {
                         {
                             "slug": "wf-capstone-v2",
                             "kind": "applied_exercise",
-                            "title": tr("Workflow v2", "Workflow v2", "Workflow v2"),
+                            "title": tr("Workflow v2", "Процесс версия 2", "Эш агымы 2 нче версия"),
                             "estimated_minutes": 12,
                             "task": tr(
                                 "Submit v2 with one measurable upgrade and one fallback path if output quality drops.",
-                                "Отправьте v2 с одним измеримым улучшением и одним fallback-путем при падении качества.",
-                                "v2 җибәрегез: бер үлчәнә торган яхшырту һәм сыйфат төшсә бер fallback юлы булсын.",
+                                "Отправьте версию 2 с одним измеримым улучшением и одним резервным путем при падении качества.",
+                                "2 нче версияне җибәрегез: бер үлчәнә торган яхшырту һәм сыйфат төшсә бер резерв юл булсын.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -738,8 +751,8 @@ WORKFLOWS_COURSE = {
                             "estimated_minutes": 11,
                             "task": tr(
                                 "Write your deployment note: where this workflow will be used, by whom, and how success is tracked.",
-                                "Напишите deployment note: где workflow используется, кем и как измеряется успех.",
-                                "Deployment note языгыз: workflow кайда кулланыла, кем куллана һәм уңыш ничек үлчәнә.",
+                                "Напишите заметку по внедрению: где используется этот процесс, кем и как измеряется успех.",
+                                "Кертү искәрмәсе языгыз: бу эш агымы кайда кулланыла, кем куллана һәм уңыш ничек үлчәнә.",
                             ),
                             "submission": {
                                 "type": "text",

@@ -42,7 +42,7 @@ export function LearningProgressSummary({
           {t("learn.stepPosition", { current: activeStepIndex + 1, total: stepsCount })}
         </span>
         <Metric label={t("learn.lessonProgress")} value={`${lessonProgressPercent}%`} />
-        <Metric label={t("learn.lessonEstimated")} value={`${estimatedMinutes}m`} />
+        <Metric label={t("learn.lessonEstimated")} value={t("learn.minutesCompact", { count: estimatedMinutes })} />
       </div>
 
       <div

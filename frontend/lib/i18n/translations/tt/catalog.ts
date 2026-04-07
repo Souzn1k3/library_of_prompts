@@ -149,6 +149,8 @@ export const ttCatalog = {
   "learn.formatChecklist": "Формат чек-листы",
   "learn.answerFormatHint":
     "Биремдә соралган форматны саклагыз (мәсәлән, күрсәтелсә маркерлар кулланыгыз).",
+  "learn.promptEnglishHint":
+    "Иң яхшы нәтиҗә өчен промптларны еш кына инглиз телендә язу отышлырак.",
   "learn.reflectionHint":
     "Кыскача языгыз: нәрсә эшләде, нәрсә җитмәде һәм киләсе промптта нәрсәне үзгәртәчәксез.",
   "learn.readyPrompt": "Әзер промпт үрнәге",
@@ -164,6 +166,8 @@ export const ttCatalog = {
   "learn.stepNeedsRevision": "Адымны яхшыртырга кирәк. Фидбек буенча яңадан эшләгез.",
   "learn.stepNeedsRevisionDetailed":
     "Яхшырту кирәк: {score}/100 (чиге {target}). Фидбек буенча төзәтеп яңадан җибәрегез.",
+  "learn.submitStepFallbackError": "Бу адымны җибәреп булмады. Тагын бер тапкыр сынагыз.",
+  "learn.minutesCompact": "{count} мин",
   "learn.lessonCompleted": "Дәрес тәмамланды. Бүләкләр һәм бирем прогрессы яңартылды.",
   "learn.courseCompleted": "Курс тәмамланды. Бейдж бирелде.",
   "learn.outcomeAndMethod": "Нәтиҗә һәм ысул",
