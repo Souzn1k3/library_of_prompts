@@ -119,14 +119,29 @@ WORKFLOWS_COURSE = {
                             "estimated_minutes": 5,
                             "content": [
                                 tr(
-                                    "A workflow starts with a brief, not a random prompt.",
-                                    "Workflow начинается с брифа, а не со случайного промпта.",
-                                    "Workflow очраклы промпттан түгел, брифттан башлана.",
+                                    "Workflow quality is decided before generation: clear brief first, prompt text second.",
+                                    "Качество workflow решается до генерации: сначала четкий бриф, потом текст промпта.",
+                                    "Workflow сыйфаты генерациягә кадәр хәл ителә: башта төгәл бриф, аннары промпт тексты.",
                                 ),
                                 tr(
-                                    "Capture objective, constraints, stakeholders, and acceptance criteria.",
-                                    "Фиксируйте цель, ограничения, заинтересованные роли и критерии приемки.",
-                                    "Максат, чикләү, катнашучылар һәм кабул итү критерийларын теркәгез.",
+                                    "A strong brief captures objective, constraints, stakeholders, and acceptance criteria.",
+                                    "Сильный бриф фиксирует цель, ограничения, роли участников и критерии приемки.",
+                                    "Көчле бриф максатны, чикләүләрне, катнашучы рольләрне һәм кабул итү критерийларын терки.",
+                                ),
+                                tr(
+                                    "If acceptance criteria are missing, teams confuse output volume with output quality.",
+                                    "Если критериев приемки нет, команда путает объем ответа с его качеством.",
+                                    "Кабул итү критерийлары булмаса, команда җавап күләмен сыйфат белән бутый.",
+                                ),
+                                tr(
+                                    "Briefing also reduces rework: hidden assumptions become explicit before execution.",
+                                    "Брифинг снижает переделки: скрытые предположения становятся явными до запуска.",
+                                    "Брифинг кабат эшне киметә: яшерен фаразлар эшләтү алдыннан ук ачыклана.",
+                                ),
+                                tr(
+                                    "Operational rule: if another teammate cannot run your brief, it is still under-specified.",
+                                    "Операционное правило: если другой участник команды не может запустить ваш бриф, он недоспецифицирован.",
+                                    "Операцион кагыйдә: башка команда әгъзасы сезнең бриф белән эшли алмаса, ул әле җитәрлек төгәл түгел.",
                                 ),
                             ],
                             "submission": {"type": "none"},
@@ -137,9 +152,9 @@ WORKFLOWS_COURSE = {
                             "title": tr("Guided Practice", "Практика с опорой", "Юнәлешле практика"),
                             "estimated_minutes": 8,
                             "task": tr(
-                                "Transform this request into a brief prompt workflow: 'Need a better project plan.'",
-                                "Преобразуйте запрос в workflow-бриф: «Нужен план проекта получше».",
-                                "Бу сорауны workflow-брифка әйләндерегез: «Проект планы яхшырак кирәк».",
+                                "Transform this request into a workflow brief: 'Need a better project plan.' Require scope, deadline, owner, and acceptance criteria in [CHECK].",
+                                "Преобразуйте запрос в workflow-бриф: «Нужен план проекта получше». Обязательно задайте scope, дедлайн, owner и критерии приемки в [CHECK].",
+                                "«Проект планы яхшырак кирәк» соравын workflow-брифка әйләндерегез. [CHECK] эчендә scope, дедлайн, owner һәм кабул итү критерийларын мәҗбүри куегыз.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -195,9 +210,9 @@ WORKFLOWS_COURSE = {
                             "title": tr("Applied Exercise", "Прикладное упражнение", "Кулланма күнегү"),
                             "estimated_minutes": 8,
                             "task": tr(
-                                "Create a brief for a real task: exam prep, sprint planning, or client response.",
-                                "Соберите бриф для реальной задачи: подготовка к экзамену, план спринта или ответ клиенту.",
-                                "Реаль эш өчен бриф төзегез: имтихан әзерлеге, спринт планы яки клиент җавабы.",
+                                "Create a brief for a real task (exam prep, sprint planning, or client response) and include one risk trigger plus fallback action.",
+                                "Соберите бриф для реальной задачи (экзамен, спринт или ответ клиенту) и добавьте один risk trigger и fallback-действие.",
+                                "Реаль бурыч өчен бриф төзегез (имтихан, спринт яки клиент җавабы) һәм бер risk trigger белән fallback гамәлен кертегез.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -247,9 +262,29 @@ WORKFLOWS_COURSE = {
                             "estimated_minutes": 5,
                             "content": [
                                 tr(
-                                    "Split research into stages: collect facts, compare claims, draft synthesis.",
-                                    "Разделите исследование на этапы: сбор фактов, сравнение утверждений, синтез.",
-                                    "Тикшеренүне этапларга бүлегез: факт җыю, фикер чагыштыру, синтез.",
+                                    "Research workflows prevent hallucination drift by splitting work into explicit stages.",
+                                    "Research-workflow защищает от дрейфа в галлюцинации за счет явных этапов.",
+                                    "Research-workflow ачык этаплар ярдәмендә галлюцинация дрейфын киметә.",
+                                ),
+                                tr(
+                                    "Core sequence: collect evidence, compare claims, mark uncertainty, then synthesize.",
+                                    "Базовая последовательность: собрать evidence, сравнить claims, отметить неопределенность, затем синтезировать.",
+                                    "Төп эзлеклелек: evidence җыю, claims чагыштыру, билгесезлекне билгеләү, аннары синтез.",
+                                ),
+                                tr(
+                                    "Without uncertainty flags, confident-sounding answers can still be wrong.",
+                                    "Без флагов неопределенности даже уверенный ответ может быть неверным.",
+                                    "Билгесезлек флаглары булмаса, ышанычлы яңгыраган җавап та ялгыш булырга мөмкин.",
+                                ),
+                                tr(
+                                    "Good synthesis preserves traceability: every key claim points to supporting evidence.",
+                                    "Хороший синтез сохраняет прослеживаемость: каждый ключевой тезис связан с evidence.",
+                                    "Яхшы синтез эзлеклелекне саклый: һәр төп фикер evidence белән бәйләнгән.",
+                                ),
+                                tr(
+                                    "The output should separate known facts, assumptions, and open questions.",
+                                    "В выходе нужно разделять подтвержденные факты, предположения и открытые вопросы.",
+                                    "Нәтиҗәдә расланган фактлар, фаразлар һәм ачык сораулар аерым күрсәтелергә тиеш.",
                                 )
                             ],
                             "submission": {"type": "none"},
@@ -260,9 +295,9 @@ WORKFLOWS_COURSE = {
                             "title": tr("Guided Practice", "Практика с опорой", "Юнәлешле практика"),
                             "estimated_minutes": 8,
                             "task": tr(
-                                "Build a prompt that asks for a 2-source comparison and explicit uncertainty flags.",
-                                "Соберите промпт для сравнения 2 источников с явными флагами неопределенности.",
-                                "2 чыганак чагыштыру һәм билгесезлек флаглары өчен промпт төзегез.",
+                                "Build a prompt for a 2-source comparison that returns: claims table, evidence quality, uncertainty flags, and missing-data requests.",
+                                "Соберите промпт для сравнения 2 источников с выходом: таблица claims, качество evidence, флаги неопределенности и запросы недостающих данных.",
+                                "2 чыганак чагыштыру өчен промпт төзегез: claims таблицасы, evidence сыйфаты, билгесезлек флаглары һәм җитмәгән мәгълүмат сораулары кайтсын.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -311,9 +346,9 @@ WORKFLOWS_COURSE = {
                             "title": tr("Applied Exercise", "Прикладное упражнение", "Кулланма күнегү"),
                             "estimated_minutes": 9,
                             "task": tr(
-                                "Draft a research workflow prompt for choosing between two learning plans.",
-                                "Соберите research-workflow промпт для выбора между двумя учебными планами.",
-                                "Ике уку планы арасыннан сайлау өчен research-workflow промпт төзегез.",
+                                "Draft a research workflow prompt for choosing between two learning plans with final recommendation confidence and one counterargument.",
+                                "Соберите research-workflow промпт для выбора между двумя учебными планами: итоговая уверенность рекомендации и один контраргумент обязательны.",
+                                "Ике уку планы арасыннан сайлау өчен research-workflow промпт төзегез: финал ышаныч дәрәҗәсе һәм бер контраргумент мәҗбүри булсын.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -363,9 +398,29 @@ WORKFLOWS_COURSE = {
                             "estimated_minutes": 5,
                             "content": [
                                 tr(
-                                    "Writing workflows need role switch: planner -> writer -> editor.",
-                                    "В workflow для текста важна смена роли: planner -> writer -> editor.",
-                                    "Язу workflow өчен роль алышу мөһим: planner -> writer -> editor.",
+                                    "Strong writing workflows separate thinking modes: planner, writer, and editor should not be collapsed into one step.",
+                                    "Сильный writing-workflow разделяет режимы мышления: planner, writer и editor не стоит смешивать в один шаг.",
+                                    "Көчле writing-workflow фикерләү режимнарын аера: planner, writer һәм editor бер адымга кушылмаска тиеш.",
+                                ),
+                                tr(
+                                    "Planner defines structure and audience, writer produces draft, editor checks logic, clarity, and factual risk.",
+                                    "Planner задает структуру и аудиторию, writer создает черновик, editor проверяет логику, ясность и фактические риски.",
+                                    "Planner структура һәм аудиторияне билгели, writer каралама яза, editor логиканы, ачыклыкны һәм факт рисгын тикшерә.",
+                                ),
+                                tr(
+                                    "When these roles are merged, output often sounds fluent but misses intent and precision.",
+                                    "Когда роли смешаны, текст часто звучит гладко, но теряет намерение и точность.",
+                                    "Рольләр кушылса, текст шома күренә, ләкин ниятне һәм төгәллекне югалта.",
+                                ),
+                                tr(
+                                    "A good workflow includes checkpoints: objective fit, evidence support, and readability for target audience.",
+                                    "Хороший workflow включает контрольные точки: соответствие цели, опора на evidence и читаемость для целевой аудитории.",
+                                    "Яхшы workflow контроль нокталарын кертә: максатка туры килү, evidenceка таяну һәм аудитория өчен укылу җиңеллеге.",
+                                ),
+                                tr(
+                                    "This is how writing becomes reproducible instead of depending on mood or inspiration.",
+                                    "Так текст становится воспроизводимым, а не зависящим от настроения или вдохновения.",
+                                    "Шулай итеп язу кәефкә яки илһамга түгел, кабатлана торган процесска әйләнә.",
                                 )
                             ],
                             "submission": {"type": "none"},
@@ -376,9 +431,9 @@ WORKFLOWS_COURSE = {
                             "title": tr("Guided Practice", "Практика с опорой", "Юнәлешле практика"),
                             "estimated_minutes": 8,
                             "task": tr(
-                                "Create a prompt that produces outline, draft, and edit checklist in one flow.",
-                                "Соберите промпт, который выдаст план, черновик и чек-лист редактуры в одном потоке.",
-                                "Бер агымда план, каралама һәм редактура чек-листы чыгаручы промпт төзегез.",
+                                "Create a prompt that produces outline, draft, and edit checklist in one flow, with separate headings for each stage and a quality gate in [CHECK].",
+                                "Соберите промпт, который дает план, черновик и чек-лист редактуры в одном потоке, с отдельными заголовками этапов и quality gate в [CHECK].",
+                                "Бер агымда план, каралама һәм редактура чек-листы чыгара торган промпт төзегез: һәр этап өчен аерым башлам һәм [CHECK] эчендә quality gate булсын.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -412,9 +467,9 @@ WORKFLOWS_COURSE = {
                             "title": tr("Applied Exercise", "Прикладное упражнение", "Кулланма күнегү"),
                             "estimated_minutes": 10,
                             "task": tr(
-                                "Build a writing workflow prompt for a post, email, or documentation page.",
-                                "Соберите writing-workflow промпт для поста, письма или документации.",
-                                "Пост, хат яки документация өчен writing-workflow промпт төзегез.",
+                                "Build a writing workflow prompt for a post, email, or documentation page with explicit audience level, tone constraints, and final edit rubric.",
+                                "Соберите writing-workflow промпт для поста, письма или документации с явным уровнем аудитории, ограничениями тона и финальной рубрикой редактуры.",
+                                "Пост, хат яки документация өчен writing-workflow промпт төзегез: аудитория дәрәҗәсе, тон чикләүләре һәм финал редактура рубрикасы ачык булсын.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -481,9 +536,29 @@ WORKFLOWS_COURSE = {
                             "estimated_minutes": 5,
                             "content": [
                                 tr(
-                                    "Analysis prompts should force trade-offs, not generic summaries.",
-                                    "Аналитические промпты должны вскрывать компромиссы, а не давать общие резюме.",
-                                    "Анализ промпты гомуми кыскачага түгел, компромиссларны ачуга юнәлсен.",
+                                    "Analysis workflows are for decisions, so they must expose options, criteria, and trade-offs explicitly.",
+                                    "Аналитические workflow нужны для решений, поэтому должны явно показывать варианты, критерии и компромиссы.",
+                                    "Анализ workflow карар өчен кирәк, шуңа вариантлар, критерийлар һәм компромисслар ачык күрсәтелергә тиеш.",
+                                ),
+                                tr(
+                                    "A useful analysis output compares alternatives under the same criteria, not separate free-form paragraphs.",
+                                    "Полезный аналитический выход сравнивает альтернативы по одним и тем же критериям, а не в разных свободных абзацах.",
+                                    "Файдалы анализ нәтиҗәсе альтернативаларны бер үк критерийлар буенча чагыштыра, ирекле аерым абзацларда түгел.",
+                                ),
+                                tr(
+                                    "Include confidence and downside risk, otherwise recommendations look precise but are fragile in practice.",
+                                    "Добавляйте уверенность и downside-риск, иначе рекомендации выглядят точными, но разваливаются в реальной работе.",
+                                    "Ышаныч дәрәҗәсе һәм downside риск кертегез, югыйсә тәкъдим төгәл күренә, әмма практикада какшый.",
+                                ),
+                                tr(
+                                    "Decision-ready prompts should always include the reason not to choose each option.",
+                                    "Решение-ready промпт обязан содержать причину, почему каждый вариант можно не выбирать.",
+                                    "Карарга әзер промпт һәр вариантны нигә сайламаска мөмкин икәнен дә күрсәтергә тиеш.",
+                                ),
+                                tr(
+                                    "This creates better judgment: the learner sees trade-offs, not only a final answer.",
+                                    "Так формируется зрелое мышление: ученик видит компромиссы, а не только финальный ответ.",
+                                    "Бу җитлеккән фикерләү бирә: укучы финал җавапны гына түгел, компромиссларны да күрә.",
                                 )
                             ],
                             "submission": {"type": "none"},
@@ -494,9 +569,9 @@ WORKFLOWS_COURSE = {
                             "title": tr("Guided Practice", "Практика с опорой", "Юнәлешле практика"),
                             "estimated_minutes": 8,
                             "task": tr(
-                                "Create a decision prompt with options, trade-offs, and recommendation confidence.",
-                                "Соберите decision-промпт с вариантами, компромиссами и уверенностью рекомендации.",
-                                "Вариант, компромисс һәм ышаныч дәрәҗәсе булган decision-промпт төзегез.",
+                                "Create a decision prompt with at least 3 options, trade-offs per option, recommendation confidence, and one 'do-nothing' baseline.",
+                                "Соберите decision-промпт минимум с 3 вариантами, компромиссами по каждому варианту, уверенностью рекомендации и baseline «ничего не менять».",
+                                "Decision-промпт төзегез: кимендә 3 вариант, һәр вариантка компромисслар, тәкъдим ышанычы һәм «берни үзгәртмәү» baseline булсын.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -529,9 +604,9 @@ WORKFLOWS_COURSE = {
                             "title": tr("Applied Exercise", "Прикладное упражнение", "Кулланма күнегү"),
                             "estimated_minutes": 9,
                             "task": tr(
-                                "Build an analysis prompt for choosing a weekly priority under limited time.",
-                                "Соберите аналитический промпт для выбора недельного приоритета при дефиците времени.",
-                                "Вакыт чикле булганда атналык приоритет сайлау өчен анализ промпт төзегез.",
+                                "Build an analysis prompt for choosing a weekly priority under limited time with criteria weights and an explicit rejected option.",
+                                "Соберите аналитический промпт для выбора недельного приоритета при дефиците времени с весами критериев и явно отклоненным вариантом.",
+                                "Вакыт чикле шартта атналык приоритет сайлау өчен анализ промпт төзегез: критерий авырлыклары һәм ачык кире кагылган вариант булсын.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -581,9 +656,29 @@ WORKFLOWS_COURSE = {
                             "estimated_minutes": 5,
                             "content": [
                                 tr(
-                                    "Debugging starts with failure labels: vague, off-target, shallow, unsafe.",
-                                    "Отладка начинается с ярлыков сбоя: размыто, мимо задачи, поверхностно, небезопасно.",
-                                    "Төзәтү хата ярлыкларыннан башлана: томан, максаттан чит, өстән-өстән, куркыныч.",
+                                    "Debugging workflows convert frustration into method: label failure, isolate cause, test one repair.",
+                                    "Workflow отладки превращает фрустрацию в метод: маркировка сбоя, изоляция причины, тест одной правки.",
+                                    "Төзәтү workflow фрустрацияне ысулга әйләндерә: хатаны тамгалау, сәбәпне аеру, бер төзәтмәне тестлау.",
+                                ),
+                                tr(
+                                    "Start with failure labels such as vague, off-target, shallow, unsafe, or structurally incomplete.",
+                                    "Начинайте с ярлыков сбоя: размыто, мимо задачи, поверхностно, небезопасно, структурно неполно.",
+                                    "Хата ярлыкларыннан башлагыз: томан, максаттан чит, өстән-өстән, куркыныч, структура җитми.",
+                                ),
+                                tr(
+                                    "Then map each label to likely prompt blocks: context gaps, weak constraints, unclear output, or missing checks.",
+                                    "Затем свяжите ярлык с вероятным блоком промпта: пробелы контекста, слабые ограничения, неясный output или отсутствие проверок.",
+                                    "Аннары ярлыкны ихтимал блок белән бәйләгез: контекст җитмәве, йомшак чикләү, томан output яки тикшерү юклыгы.",
+                                ),
+                                tr(
+                                    "Repair quality improves when you change one block and compare before/after evidence.",
+                                    "Качество правки растет, когда вы меняете один блок и сравниваете evidence «до/после».",
+                                    "Сыйфат төзәлеше бер блокны үзгәртеп «до/после» evidence чагыштырганда арта.",
+                                ),
+                                tr(
+                                    "This is the bridge from trial-and-error to disciplined improvement loops.",
+                                    "Это переход от случайных проб к дисциплинированному циклу улучшений.",
+                                    "Бу очраклы сынаудан дисциплиналы яхшырту циклына күчеш.",
                                 )
                             ],
                             "submission": {"type": "none"},
@@ -594,9 +689,9 @@ WORKFLOWS_COURSE = {
                             "title": tr("Guided Practice", "Практика с опорой", "Юнәлешле практика"),
                             "estimated_minutes": 8,
                             "task": tr(
-                                "Write a debug prompt that asks for failure diagnosis + targeted revision plan.",
-                                "Сделайте debug-промпт: диагностика сбоя + план точечной доработки.",
-                                "Диагностика промпты языгыз: хата диагнозы + төгәл яхшырту планы.",
+                                "Write a debug prompt that outputs: failure label, root cause hypothesis, targeted revision, and expected quality delta.",
+                                "Сделайте debug-промпт с выходом: ярлык сбоя, гипотеза причины, точечная правка и ожидаемый прирост качества.",
+                                "Debug-промпт языгыз: хата ярлыгы, төп сәбәп гипотезасы, төгәл төзәтмә һәм көтелгән сыйфат үсеше кайтсын.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -629,9 +724,9 @@ WORKFLOWS_COURSE = {
                             "title": tr("Applied Exercise", "Прикладное упражнение", "Кулланма күнегү"),
                             "estimated_minutes": 10,
                             "task": tr(
-                                "Choose a weak prompt from your own work and write a debug+fix workflow.",
-                                "Возьмите слабый промпт из своей практики и соберите workflow отладки и исправления.",
-                                "Үз эшегездән көчсез промпт алып, төзәтү workflow языгыз.",
+                                "Choose a weak prompt from your own work and write a debug+fix workflow with two revision cycles and one rollback condition.",
+                                "Возьмите слабый промпт из своей практики и соберите workflow отладки с двумя циклами правок и одним условием отката.",
+                                "Үз эшегездән көчсез промпт алып, ике төзәтү циклы һәм бер rollback шарты булган debug+fix workflow языгыз.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -682,9 +777,24 @@ WORKFLOWS_COURSE = {
                             "estimated_minutes": 5,
                             "content": [
                                 tr(
-                                    "Package your workflow as if another teammate will run it tomorrow.",
-                                    "Оформите workflow так, как будто завтра его запускает другой участник команды.",
-                                    "Workflow-ны иртәгә башка команда әгъзасы эшләтерлек итеп әзерләгез.",
+                                    "Capstone standard: package your workflow so another teammate can run it tomorrow without your help.",
+                                    "Стандарт капстоуна: оформите workflow так, чтобы завтра его мог запустить другой участник команды без вашей помощи.",
+                                    "Капстоун стандарты: workflowны иртәгә башка команда әгъзасы сезнең ярдәмсез үк эшләтә алырлык итеп җыегыз.",
+                                ),
+                                tr(
+                                    "A production-like package includes stage boundaries, checks, fallback actions, and ownership notes.",
+                                    "Пакет уровня production включает границы этапов, проверки, fallback-действия и заметки по ownership.",
+                                    "Production дәрәҗәсенә якын пакет этап чиген, тикшерүләрне, fallback гамәлләрен һәм ownership язмаларын кертә.",
+                                ),
+                                tr(
+                                    "Your goal is transferability: the workflow should survive handoff and context switching.",
+                                    "Цель - переносимость: workflow должен переживать handoff и переключение контекста.",
+                                    "Максат - күчерелеш: workflow handoff һәм контекст алышынуны узарга тиеш.",
+                                ),
+                                tr(
+                                    "Final quality is proven by measurable checks and clear failure recovery, not by elegant wording.",
+                                    "Финальное качество доказывается измеримыми проверками и ясным восстановлением после сбоев, а не красивой формулировкой.",
+                                    "Финал сыйфат матур формулировка белән түгел, ә үлчәнә торган тикшерү һәм ачык recovery белән дәлилләнә.",
                                 )
                             ],
                             "submission": {"type": "none"},
@@ -695,9 +805,9 @@ WORKFLOWS_COURSE = {
                             "title": tr("Workflow v1", "Процесс версия 1", "Эш агымы 1 нче версия"),
                             "estimated_minutes": 8,
                             "task": tr(
-                                "Submit your end-to-end workflow v1 with clear stage boundaries.",
-                                "Отправьте процесс версии 1 с четкими границами этапов.",
-                                "Этап чикләре ачык булган 1 нче версия эш агымын җибәрегез.",
+                                "Submit end-to-end workflow v1 with stage boundaries, measurable [CHECK], and explicit owner for each stage.",
+                                "Отправьте end-to-end workflow v1 с границами этапов, измеримым [CHECK] и явным owner для каждого этапа.",
+                                "End-to-end workflow v1 җибәрегез: этап чиге, үлчәнә торган [CHECK] һәм һәр этап өчен ачык owner булсын.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -732,9 +842,9 @@ WORKFLOWS_COURSE = {
                             "title": tr("Workflow v2", "Процесс версия 2", "Эш агымы 2 нче версия"),
                             "estimated_minutes": 12,
                             "task": tr(
-                                "Submit v2 with one measurable upgrade and one fallback path if output quality drops.",
-                                "Отправьте версию 2 с одним измеримым улучшением и одним резервным путем при падении качества.",
-                                "2 нче версияне җибәрегез: бер үлчәнә торган яхшырту һәм сыйфат төшсә бер резерв юл булсын.",
+                                "Submit v2 with one measurable upgrade, one fallback path if quality drops, and one regression test you will run weekly.",
+                                "Отправьте v2 с одним измеримым улучшением, одним fallback-путем при падении качества и одним регрессионным тестом на еженедельный запуск.",
+                                "v2 җибәрегез: бер үлчәнә торган яхшырту, сыйфат төшсә бер fallback юлы һәм атна саен эшләтеләчәк бер regression тест булсын.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,

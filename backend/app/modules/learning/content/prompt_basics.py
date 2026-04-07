@@ -123,14 +123,29 @@ PROMPT_BASICS_COURSE = {
                             "estimated_minutes": 5,
                             "content": [
                                 tr(
-                                    "Strong prompts define the job before the wording.",
-                                    "Сильный промпт сначала определяет задачу, а потом формулировку.",
-                                    "Көчле промпт башта эшне билгели, аннары формулировканы.",
+                                    "Prompt engineering starts from a contract: goal, audience, constraints, and definition of done.",
+                                    "Промпт-инжиниринг начинается с контракта: цель, аудитория, ограничения и определение «готово».",
+                                    "Промпт-инжиниринг контракттан башлана: максат, аудитория, чикләүләр һәм «әзер» билгеләмәсе.",
                                 ),
                                 tr(
-                                    "Use a short brief: target result, user context, constraints, output format.",
-                                    "Используйте краткий бриф: результат, контекст, ограничения, формат ответа.",
-                                    "Кыска бриф кулланыгыз: нәтиҗә, контекст, чикләү, җавап форматы.",
+                                    "A stable prompt usually has five layers: role, context, task, constraints, and output format.",
+                                    "Стабильный промпт обычно состоит из пяти слоев: роль, контекст, задача, ограничения и формат результата.",
+                                    "Тотрыклы промпт гадәттә биш катламнан тора: роль, контекст, бурыч, чикләүләр һәм нәтиҗә форматы.",
+                                ),
+                                tr(
+                                    "Small wording changes can strongly shift output quality when one of these layers is missing.",
+                                    "Даже небольшая смена формулировки резко меняет качество, если один из этих слоев отсутствует.",
+                                    "Бу катламнарның берсе юк икән, кечкенә генә формулировка үзгәреше дә сыйфатны нык үзгәртә.",
+                                ),
+                                tr(
+                                    "Most beginner failures are predictable: vague verbs, no target level, and no concrete output shape.",
+                                    "Большинство ошибок новичка предсказуемы: размытые глаголы, нет уровня аудитории и нет формы результата.",
+                                    "Башлангыч хаталар еш бер үк: томан фигыльләр, аудитория дәрәҗәсе юк, нәтиҗә формасы юк.",
+                                ),
+                                tr(
+                                    "Quick self-check: if a classmate can run your prompt and get a similar structure, your prompt is likely well-specified.",
+                                    "Быстрая самопроверка: если одноклассник может запустить ваш промпт и получить похожую структуру, значит спецификация сильная.",
+                                    "Тиз үз-үзеңне тикшерү: сыйныфташыгыз сезнең промптны эшләтеп охшаш структура алса, спецификация яхшы.",
                                 ),
                             ],
                             "submission": {"type": "none"},
@@ -142,15 +157,15 @@ PROMPT_BASICS_COURSE = {
                             "estimated_minutes": 8,
                             "content": [
                                 tr(
-                                    "Rewrite this request into a structured prompt: 'Help me study better.'",
-                                    "Перепишите запрос в структурированный промпт: «Помоги мне лучше учиться».",
-                                    "Бу сорауны структур промптка әйләндерегез: «Укуда яхшырак булыш».",
+                                    "Rewrite this request into a structured prompt: 'Help me study better.' Use a real school context and measurable result.",
+                                    "Перепишите запрос в структурированный промпт: «Помоги мне лучше учиться». Используйте реальный школьный контекст и измеримый результат.",
+                                    "«Укуда яхшырак булыш» соравын структур промптка әйләндерегез: чын мәктәп контексты һәм үлчәнә торган нәтиҗә булсын.",
                                 )
                             ],
                             "task": tr(
-                                "Your answer must include markers [ROLE], [CONTEXT], [TASK], [CONSTRAINTS], [OUTPUT], [CHECK]. Fill each marker with concrete details, not placeholders.",
-                                "В вашем ответе обязательно используйте маркеры [ROLE], [CONTEXT], [TASK], [CONSTRAINTS], [OUTPUT], [CHECK]. Каждый маркер нужно заполнить конкретикой, а не шаблоном.",
-                                "Җавапта [ROLE], [CONTEXT], [TASK], [CONSTRAINTS], [OUTPUT], [CHECK] маркерлары мәҗбүри. Һәр маркер эченә конкрет мәгълүмат языгыз.",
+                                "Include [ROLE], [CONTEXT], [TASK], [CONSTRAINTS], [OUTPUT], [CHECK]. In [CHECK] set two measurable signals: completion rate and review quality.",
+                                "Используйте [ROLE], [CONTEXT], [TASK], [CONSTRAINTS], [OUTPUT], [CHECK]. В [CHECK] задайте два измеримых сигнала: процент выполнения и качество повторения.",
+                                "[ROLE], [CONTEXT], [TASK], [CONSTRAINTS], [OUTPUT], [CHECK] кулланыгыз. [CHECK] эчендә ике үлчәнә торган сигнал куегыз: үтәү проценты һәм кабатлау сыйфаты.",
                             ),
                             "placeholder": tr(
                                 "[ROLE] You are a calm study coach for high-school students.\n[CONTEXT] I prepare for biology twice a week and lose focus after 20 minutes.\n[TASK] Build a 7-day study plan with micro-sessions and one review block.\n[CONSTRAINTS] Keep each day under 30 minutes and include 1 rest day.\n[OUTPUT] Return a table: day | focus | task | time.\n[CHECK] At the end, verify that every day has a clear action and a measurable result.",
@@ -218,9 +233,9 @@ PROMPT_BASICS_COURSE = {
                                 )
                             ],
                             "task": tr(
-                                "Write a practical prompt using markers [ROLE], [CONTEXT], [TASK], [CONSTRAINTS], [OUTPUT]. Explain the real task and expected result in concrete words.",
-                                "Напишите прикладной промпт с маркерами [ROLE], [CONTEXT], [TASK], [CONSTRAINTS], [OUTPUT]. Опишите реальную задачу и ожидаемый результат конкретно.",
-                                "Практик промпт языгыз: [ROLE], [CONTEXT], [TASK], [CONSTRAINTS], [OUTPUT]. Реаль бурычны һәм көтелгән нәтиҗәне төгәл күрсәтегез.",
+                                "Write a real prompt with [ROLE], [CONTEXT], [TASK], [CONSTRAINTS], [OUTPUT], [CHECK]. The task must be executable today and include one failure-risk in [CHECK].",
+                                "Напишите реальный промпт с [ROLE], [CONTEXT], [TASK], [CONSTRAINTS], [OUTPUT], [CHECK]. Задачу нужно выполнить сегодня и указать один риск провала в [CHECK].",
+                                "[ROLE], [CONTEXT], [TASK], [CONSTRAINTS], [OUTPUT], [CHECK] белән реаль промпт языгыз. Бирем бүген үк үтәлә торган булсын һәм [CHECK] эчендә бер хата рискы булсын.",
                             ),
                             "placeholder": tr(
                                 "[ROLE] ...\n[CONTEXT] ...\n[TASK] ...\n[CONSTRAINTS] ...\n[OUTPUT] ...",
@@ -229,6 +244,7 @@ PROMPT_BASICS_COURSE = {
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
+                                "required_markers": ["[ROLE]", "[CONTEXT]", "[TASK]", "[CONSTRAINTS]", "[OUTPUT]", "[CHECK]"],
                                 "min_words": 45,
                                 "weak_area_tags": ["transfer", "task-translation"],
                             },
@@ -246,9 +262,9 @@ PROMPT_BASICS_COURSE = {
                                 )
                             ],
                             "task": tr(
-                                "Reflection is needed to identify your weak point before the next lesson. Write one skipped block + one concrete change for your next prompt.",
-                                "Рефлексия нужна, чтобы зафиксировать слабое место перед следующим уроком. Напишите: какой блок пропускаете и что конкретно измените в следующем промпте.",
-                                "Рефлексия киләсе дәрес алдыннан көчсез урынны табу өчен кирәк. Кайсы блокны калдырасыз һәм киләсе промптта нәрсә үзгәртәчәксез - шуны языгыз.",
+                                "Reflection is needed to lock in improvement before the next lesson: name one skipped block, one consequence, and one concrete fix in your next prompt.",
+                                "Рефлексия нужна, чтобы закрепить улучшение перед следующим уроком: назовите один пропускаемый блок, одно последствие и одну конкретную правку в следующем промпте.",
+                                "Рефлексия киләсе дәрес алдыннан үсешне ныгыту өчен кирәк: еш калдырылган бер блокны, бер нәтиҗәсен һәм киләсе промпттагы бер төгәл төзәтмәне языгыз.",
                             ),
                             "placeholder": tr(
                                 "I often skip [OUTPUT], so my answers become vague. In my next prompt I will add a strict output format with an example.",
@@ -291,9 +307,29 @@ PROMPT_BASICS_COURSE = {
                             "estimated_minutes": 6,
                             "content": [
                                 tr(
-                                    "Role sets perspective, context sets boundaries, task sets action, output sets shape.",
-                                    "Role задает перспективу, context — границы, task — действие, output — форму результата.",
-                                    "Role перспектива бирә, context чик куя, task эш билгели, output форма бирә.",
+                                    "Role-Context-Task-Output is not decoration; it is a control system for model behavior.",
+                                    "Role-Context-Task-Output - это не украшение, а система управления поведением модели.",
+                                    "Role-Context-Task-Output бизәк түгел, ә модель тәртибен идарә итү системасы.",
+                                ),
+                                tr(
+                                    "Role defines viewpoint, context defines boundaries, task defines action, output defines how quality can be inspected.",
+                                    "Role задает позицию, context задает границы, task задает действие, output задает форму проверяемого результата.",
+                                    "Role карашны, context чикләрне, task эшне, output тикшерелә торган нәтиҗә формасын билгели.",
+                                ),
+                                tr(
+                                    "If you skip context, the model invents assumptions. If you skip output shape, you cannot compare answers.",
+                                    "Если пропустить context, модель додумает предположения. Если пропустить output-форму, ответы нельзя сравнивать.",
+                                    "Context юк икән, модель үзе фаразлый. Output формасы юк икән, җавапларны чагыштырып булмый.",
+                                ),
+                                tr(
+                                    "For beginners, this pattern reduces anxiety: you always know which block to improve instead of rewriting everything.",
+                                    "Для начинающих этот паттерн снижает тревогу: вы всегда понимаете, какой блок улучшать, не переписывая всё.",
+                                    "Башлангыч дәрәҗә өчен бу паттерн борчылуны киметә: барысын яңадан язмыйча, кайсы блокны яхшыртырга икәнен күрәсез.",
+                                ),
+                                tr(
+                                    "A useful habit: keep each block short and concrete, then test one block change at a time.",
+                                    "Полезная привычка: делайте каждый блок коротким и конкретным, затем тестируйте изменения по одному блоку.",
+                                    "Файдалы гадәт: һәр блокны кыска һәм төгәл языгыз, аннары үзгәрешне бер блок буенча гына тикшерегез.",
                                 )
                             ],
                             "submission": {"type": "none"},
@@ -304,12 +340,13 @@ PROMPT_BASICS_COURSE = {
                             "title": tr("Build with the Pattern", "Соберите по паттерну", "Паттерн буенча төзегез"),
                             "estimated_minutes": 8,
                             "task": tr(
-                                "Create a prompt for planning a one-week study sprint. Use all required markers.",
-                                "Соберите промпт для планирования учебного спринта на неделю. Используйте все обязательные маркеры.",
-                                "Бер атналык уку спринтын планлау өчен промпт төзегез. Барлык маркерларны кулланыгыз.",
+                                "Create a prompt for a one-week study sprint. Include [CHECK] with day-by-day completion criteria and one escalation rule if the student falls behind.",
+                                "Соберите промпт для недельного учебного спринта. Добавьте [CHECK] с критериями по дням и одно правило эскалации, если ученик отстает.",
+                                "Бер атналык уку спринты өчен промпт төзегез. [CHECK] эчендә көнлек критерийлар һәм укучы артта калса бер эскалация кагыйдәсе булсын.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
+                                "required_markers": ["[ROLE]", "[CONTEXT]", "[TASK]", "[CONSTRAINTS]", "[OUTPUT]", "[CHECK]"],
                                 "weak_area_tags": ["pattern-usage", "planning"],
                             },
                         },
@@ -350,9 +387,9 @@ PROMPT_BASICS_COURSE = {
                             "title": tr("Prompt Template Draft", "Черновик шаблона", "Шаблон каралама"),
                             "estimated_minutes": 8,
                             "task": tr(
-                                "Write a reusable template with placeholders like <topic>, <audience>, <time_limit>.",
-                                "Напишите переиспользуемый шаблон с плейсхолдерами <тема>, <аудитория>, <лимит_времени>.",
-                                "<тема>, <аудитория>, <вакыт_лимиты> кебек плейсхолдерлар белән кабат кулланыла торган шаблон языгыз.",
+                                "Write a reusable template with placeholders like <topic>, <audience>, <time_limit>, <difficulty>. Add one quality gate in [CHECK] so the template does not produce generic output.",
+                                "Напишите переиспользуемый шаблон с плейсхолдерами <тема>, <аудитория>, <лимит_времени>, <сложность>. Добавьте один quality gate в [CHECK], чтобы шаблон не выдавал шаблонную «воду».",
+                                "<тема>, <аудитория>, <вакыт_лимиты>, <катлаулылык> кебек плейсхолдерлы шаблон языгыз. [CHECK] эченә бер quality gate өстәгез, шаблон гомуми «су» бирмәсен.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -407,14 +444,29 @@ PROMPT_BASICS_COURSE = {
                             "estimated_minutes": 6,
                             "content": [
                                 tr(
-                                    "Constraints should guide output, not suffocate reasoning.",
-                                    "Ограничения должны направлять ответ, а не «душить» рассуждение.",
-                                    "Чикләү җавапны юнәлтсен, фикер йөртүне томаламасын.",
+                                    "Constraints are quality rails: they narrow bad outputs while preserving useful reasoning.",
+                                    "Ограничения - это рельсы качества: они сужают плохие ответы, но сохраняют полезное рассуждение.",
+                                    "Чикләүләр - сыйфат рельслары: алар начар җавапны кыса, әмма файдалы фикерне саклый.",
                                 ),
                                 tr(
-                                    "Examples reduce ambiguity if they represent the target style.",
-                                    "Примеры снижают неоднозначность, если отражают целевой стиль.",
-                                    "Мисаллар максат стильне чагылдырса, аңлашылмаучылыкны киметә.",
+                                    "Use hard constraints for non-negotiables (format, safety) and soft constraints for style and depth.",
+                                    "Жесткие ограничения задавайте для обязательного (формат, безопасность), мягкие - для стиля и глубины.",
+                                    "Каты чикләүне мәҗбүри өлешкә бирегез (формат, куркынычсызлык), йомшак чикләүне стиль һәм тирәнлеккә кулланыгыз.",
+                                ),
+                                tr(
+                                    "Examples work when they show target structure, not when they are copied blindly.",
+                                    "Примеры работают, когда показывают целевую структуру, а не когда их бездумно копируют.",
+                                    "Мисаллар максат структураны күрсәтсә генә файдалы, уйламыйча күчереп алганда түгел.",
+                                ),
+                                tr(
+                                    "Common failure: too many rigid rules create brittle prompts that fail on slightly new tasks.",
+                                    "Типичный сбой: слишком много жестких правил делает промпт хрупким и неустойчивым к новым задачам.",
+                                    "Еш очрый торган хата: артык күп каты кагыйдә промптны какшата һәм яңа бурычта ватылуга китерә.",
+                                ),
+                                tr(
+                                    "Your goal is controllable flexibility: enough structure to verify quality, enough freedom to solve the task.",
+                                    "Ваша цель - управляемая гибкость: структуры достаточно для проверки качества, свободы достаточно для решения задачи.",
+                                    "Максат - идарә ителә торган сыгылмалылык: сыйфатны тикшерергә җитәрлек структура һәм бурычны чишәргә җитәрлек ирек.",
                                 ),
                             ],
                             "submission": {"type": "none"},
@@ -425,9 +477,9 @@ PROMPT_BASICS_COURSE = {
                             "title": tr("Constraint Practice", "Практика ограничений", "Чикләү практикасы"),
                             "estimated_minutes": 8,
                             "task": tr(
-                                "Write a prompt for 'summarize an article' with exactly 4 constraints and one output example.",
-                                "Напишите промпт для «суммаризируй статью» с ровно 4 ограничениями и одним примером выхода.",
-                                "«Мәкаләне кыскача яз» өчен нәкъ 4 чикләү һәм бер чыгыш мисалы булган промпт төзегез.",
+                                "Write a prompt for 'summarize an article' with exactly 4 constraints: 2 hard + 2 soft, plus one [EXAMPLE] and one [CHECK] rule.",
+                                "Напишите промпт для «суммаризируй статью» с ровно 4 ограничениями: 2 жестких + 2 мягких, плюс один [EXAMPLE] и одно правило [CHECK].",
+                                "«Мәкаләне кыскача яз» өчен нәкъ 4 чикләү куегыз: 2 каты + 2 йомшак, өстәп бер [EXAMPLE] һәм бер [CHECK] кагыйдәсе.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -439,6 +491,7 @@ PROMPT_BASICS_COURSE = {
                                     "[CONSTRAINTS]",
                                     "[OUTPUT]",
                                     "[EXAMPLE]",
+                                    "[CHECK]",
                                 ],
                                 "weak_area_tags": ["constraints", "example-design"],
                             },
@@ -492,9 +545,9 @@ PROMPT_BASICS_COURSE = {
                             "title": tr("Applied Scenario", "Прикладной сценарий", "Кулланма сценарий"),
                             "estimated_minutes": 9,
                             "task": tr(
-                                "You lead a small team. Draft a prompt to generate a weekly status report format.",
-                                "Вы ведете небольшую команду. Соберите промпт для генерации формата еженедельного статуса.",
-                                "Сез кечкенә команда алып барасыз. Атналык статус форматы өчен промпт төзегез.",
+                                "You lead a small team. Draft a weekly status prompt that forces evidence-based updates, explicit risks, and next actions with deadlines.",
+                                "Вы ведете небольшую команду. Соберите weekly status промпт, который требует обновления на основе фактов, явные риски и следующие действия с дедлайнами.",
+                                "Сез кечкенә команда алып барасыз. Фактка нигезләнгән яңарту, ачык рисклар һәм дедлайнлы киләсе адымнар таләп иткән weekly status промпт төзегез.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -565,9 +618,29 @@ PROMPT_BASICS_COURSE = {
                             "estimated_minutes": 5,
                             "content": [
                                 tr(
-                                    "Use a loop: Run 1 -> identify failure -> edit one block -> run again.",
-                                    "Используйте цикл: запуск 1 -> обнаружение сбоя -> правка одного блока -> запуск 2.",
-                                    "Цикл кулланыгыз: 1 нче запуск -> проблема -> бер блокны төзәтү -> яңадан запуск.",
+                                    "Professional prompting is iterative engineering: baseline output, diagnose failure, patch one block, retest.",
+                                    "Профессиональный промптинг - это итерационная инженерия: базовый выход, диагноз сбоя, правка одного блока, повторный тест.",
+                                    "Профессиональ промптинг итерацион инженерия ул: базовый нәтиҗә, хата диагнозы, бер блокны төзәтү, кабат тест.",
+                                ),
+                                tr(
+                                    "Changing one block at a time gives causal clarity: you can see what actually improved quality.",
+                                    "Изменение одного блока за раз дает причинную ясность: видно, что реально улучшило качество.",
+                                    "Бер блокны гына үзгәртү сәбәпне ача: кайсы үзгәрешнең чынлап яхшыртканын күрәсез.",
+                                ),
+                                tr(
+                                    "Keep a micro-log: version, change, observed effect, next hypothesis.",
+                                    "Ведите микро-лог: версия, правка, наблюдаемый эффект, следующая гипотеза.",
+                                    "Микро-лог алып барыгыз: версия, төзәтмә, күзәтелгән эффект, киләсе гипотеза.",
+                                ),
+                                tr(
+                                    "Most teams stall because they rewrite everything and lose learning signal.",
+                                    "Многие команды застревают, потому что переписывают всё и теряют сигнал обучения.",
+                                    "Күп командалар тыгыла, чөнки барысын яңадан яза һәм өйрәнү сигналын югалта.",
+                                ),
+                                tr(
+                                    "Iteration becomes a skill when each loop ends with a specific decision: keep, modify, or rollback.",
+                                    "Итерация становится навыком, когда каждый цикл заканчивается конкретным решением: оставить, изменить или откатить.",
+                                    "Һәр цикл ачык карар белән тәмамланса, итерация чын күнекмәгә әйләнә: калдырыргамы, үзгәртергәме, кире кайтарыргамы.",
                                 )
                             ],
                             "submission": {"type": "none"},
@@ -578,9 +651,9 @@ PROMPT_BASICS_COURSE = {
                             "title": tr("Guided Iteration", "Управляемая итерация", "Юнәлешле итерация"),
                             "estimated_minutes": 8,
                             "task": tr(
-                                "Start from your previous prompt and produce Version A + Version B with one targeted change.",
-                                "Возьмите прошлый промпт и сделайте Версию 1 и Версию 2 с одной целевой правкой.",
-                                "Алдагы промпттан чыгып 1 нче версия һәм 2 нче версия төзегез, бер максатчан үзгәреш белән.",
+                                "Start from your previous prompt and produce Version A + Version B with one targeted change. Add a short diff note: what changed, why, and what metric should improve.",
+                                "Возьмите прошлый промпт и сделайте Версию A и Версию B с одной целевой правкой. Добавьте короткий diff-комментарий: что изменили, зачем и какая метрика должна вырасти.",
+                                "Алдагы промпттан Version A һәм Version B ясагыз, бер максатчан үзгәреш белән. Кыска diff-язма өстәгез: нәрсә үзгәрде, ни өчен һәм кайсы метрика үсәргә тиеш.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -638,9 +711,9 @@ PROMPT_BASICS_COURSE = {
                             "title": tr("Applied Exercise", "Прикладное упражнение", "Кулланма күнегү"),
                             "estimated_minutes": 9,
                             "task": tr(
-                                "Write a mini debug prompt that asks the model to explain why its previous answer failed.",
-                                "Сделайте мини debug-промпт, где модель объясняет, почему прошлый ответ был слабым.",
-                                "Модельдән алдагы җавап нигә көчсез булганын аңлату өчен кыска диагностика промпты төзегез.",
+                                "Write a mini debug prompt that labels failure mode, identifies root cause, and proposes one focused revision. Require a before/after expectation.",
+                                "Сделайте мини debug-промпт, где модель маркирует тип сбоя, находит корень проблемы и предлагает одну точечную правку. Потребуйте ожидание «до/после».",
+                                "Мини debug-промпт языгыз: хата төрен тамгалагыз, төп сәбәбен табыгыз һәм бер төгәл төзәтмә тәкъдим итегез. «До/после» көтелгән нәтиҗәсен мәҗбүри итегез.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -690,9 +763,29 @@ PROMPT_BASICS_COURSE = {
                             "estimated_minutes": 5,
                             "content": [
                                 tr(
-                                    "Evaluate by relevance, completeness, factual safety, and actionability.",
-                                    "Оценивайте по релевантности, полноте, фактической корректности и применимости.",
-                                    "Релевантлык, тулылык, факт куркынычсызлыгы һәм куллану мөмкинлеге буенча бәяләгез.",
+                                    "A quality rubric turns 'looks good' into measurable judgment.",
+                                    "Рубрика качества превращает «выглядит нормально» в измеримую оценку.",
+                                    "Сыйфат рубрикасы «ярый кебек» бәясен үлчәнә торган бәяләүгә әйләндерә.",
+                                ),
+                                tr(
+                                    "Use four baseline criteria: relevance, completeness, factual safety, and actionability.",
+                                    "Используйте четыре базовых критерия: релевантность, полнота, фактическая корректность и применимость.",
+                                    "Дүрт төп критерий кулланыгыз: релевантлык, тулылык, факт дөреслеге һәм куллану мөмкинлеге.",
+                                ),
+                                tr(
+                                    "Score each criterion separately before writing a final score; this prevents halo bias.",
+                                    "Оценивайте каждый критерий отдельно до итогового балла; это снижает эффект ореола.",
+                                    "Финал балл куйганчы һәр критерийны аерым бәяләгез; бу ореол хатасын киметә.",
+                                ),
+                                tr(
+                                    "A rubric is useful only if it triggers action: revise prompt, add context, or tighten output format.",
+                                    "Рубрика полезна только если запускает действие: правка промпта, добавление контекста или ужесточение формата.",
+                                    "Рубрика гамәл тудырса гына файдалы: промпт төзәтү, контекст өстәү яки форматны катыландыру.",
+                                ),
+                                tr(
+                                    "For school-level learners, this creates confidence: quality is checked by rules, not by guessing.",
+                                    "Для школьника это снижает хаос: качество проверяется по правилам, а не по догадкам.",
+                                    "Укучы өчен бу ышаныч бирә: сыйфат фараз белән түгел, кагыйдә белән тикшерелә.",
                                 )
                             ],
                             "submission": {"type": "none"},
@@ -703,9 +796,9 @@ PROMPT_BASICS_COURSE = {
                             "title": tr("Rubric Practice", "Практика по рубрике", "Рубрика практикасы"),
                             "estimated_minutes": 8,
                             "task": tr(
-                                "Write a prompt that forces the model to self-score on 4 criteria at the end.",
-                                "Соберите промпт, который заставит модель самооценить ответ по 4 критериям.",
-                                "Модель җавап ахырында 4 критерий буенча үзе бәя бирерлек промпт төзегез.",
+                                "Write a prompt that forces the model to self-score on 4 criteria at the end and justify each score with one sentence and one evidence quote.",
+                                "Соберите промпт, который заставит модель оценить себя по 4 критериям и обосновать каждый балл одной фразой и одной ссылкой на фрагмент ответа.",
+                                "Модельне ахырда 4 критерий буенча үз-үзен бәяләргә мәҗбүр итүче промпт языгыз: һәр баллга бер җөмлә нигез һәм җаваптан бер дәлил китерелсен.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -751,9 +844,9 @@ PROMPT_BASICS_COURSE = {
                             "title": tr("Applied Exercise", "Прикладное упражнение", "Кулланма күнегү"),
                             "estimated_minutes": 9,
                             "task": tr(
-                                "Create a prompt for feedback on a resume and require a final score + top 3 fixes.",
-                                "Сделайте промпт для обратной связи по резюме и потребуйте итоговый score + топ-3 правки.",
-                                "Резюме буенча фикер алу өчен промпт төзегез: финал бәя + топ-3 төзәтмә мәҗбүри.",
+                                "Create a prompt for resume feedback with scorecard output: criterion scores, top 3 fixes, and a rewrite plan for the weakest section.",
+                                "Сделайте промпт для обратной связи по резюме с форматом scorecard: баллы по критериям, топ-3 правки и план переписывания самого слабого блока.",
+                                "Резюме өчен scorecard форматлы фикер промпты төзегез: критерий баллары, топ-3 төзәтмә һәм иң көчсез бүлекне яңадан язу планы.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -803,9 +896,24 @@ PROMPT_BASICS_COURSE = {
                             "estimated_minutes": 5,
                             "content": [
                                 tr(
-                                    "Choose one real task and deliver a prompt workflow: draft -> evaluate -> refine.",
-                                    "Выберите реальную задачу и сдайте workflow: черновик -> оценка -> доработка.",
-                                    "Бер реаль эш сайлагыз һәм workflow тапшырыгыз: каралама -> бәяләү -> яхшырту.",
+                                    "Capstone proves transfer: you must apply the framework to a new real task, not repeat lesson examples.",
+                                    "Капстоун проверяет перенос навыка: нужно применить фреймворк к новой реальной задаче, а не повторить пример из урока.",
+                                    "Капстоун күнекмә күчешен тикшерә: фреймворкны дәрестәге мисалга түгел, яңа реаль бурычка кулланырга кирәк.",
+                                ),
+                                tr(
+                                    "Your workflow must show the full loop: brief, prompt v1, quality check, revision logic, and prompt v2.",
+                                    "Ваш workflow должен показать полный цикл: бриф, промпт v1, проверка качества, логика правки и промпт v2.",
+                                    "Workflow тулы циклны күрсәтергә тиеш: бриф, промпт v1, сыйфат тикшерүе, төзәтү логикасы һәм промпт v2.",
+                                ),
+                                tr(
+                                    "Use measurable checks so another person can review your result without guessing your intent.",
+                                    "Используйте измеримые проверки, чтобы другой человек мог ревьюить работу без угадывания ваших намерений.",
+                                    "Үлчәнә торган тикшерүләр кулланыгыз, башка кеше сезнең ниятне чамаламыйча ревью ясый алсын.",
+                                ),
+                                tr(
+                                    "A strong final submission explains not only what changed, but why that change should improve output.",
+                                    "Сильная финальная работа объясняет не только что изменилось, но и почему это улучшает результат.",
+                                    "Көчле финал эштә нәрсә үзгәргән генә түгел, ә бу үзгәрешнең ни өчен сыйфатны арттыруы да аңлатыла.",
                                 )
                             ],
                             "submission": {"type": "none"},
@@ -816,9 +924,9 @@ PROMPT_BASICS_COURSE = {
                             "title": tr("Draft v1", "Черновик версии 1", "1 нче версия караламасы"),
                             "estimated_minutes": 8,
                             "task": tr(
-                                "Submit Prompt v1 with all required markers plus [CHECK] quality metric.",
-                                "Отправьте Промпт версии 1 со всеми маркерами и метрикой качества в [CHECK].",
-                                "1 нче версия промптын җибәрегез: барлык маркерлар һәм [CHECK] эчендә сыйфат метрикасы булсын.",
+                                "Submit Prompt v1 with all required markers plus [CHECK] quality metrics and one explicit risk you still expect.",
+                                "Отправьте Промпт v1 со всеми маркерами, метриками качества в [CHECK] и одним явным риском, который пока остается.",
+                                "Промпт v1 җибәрегез: барлык маркерлар, [CHECK] эчендә сыйфат метрикалары һәм әле дә калган бер ачык риск булсын.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -884,9 +992,9 @@ PROMPT_BASICS_COURSE = {
                             "title": tr("Refined v2", "Доработка версии 2", "2 нче версияне яхшырту"),
                             "estimated_minutes": 10,
                             "task": tr(
-                                "Submit Prompt v2 and explicitly state what you changed and why.",
-                                "Отправьте Промпт версии 2 и явно укажите, что изменили и почему.",
-                                "2 нче версия промптын җибәрегез һәм нәрсәне ни өчен үзгәрткәнегезне ачык языгыз.",
+                                "Submit Prompt v2 and explicitly state what changed, why it should improve quality, and which metric moved from v1.",
+                                "Отправьте Промпт v2 и явно укажите: что изменили, почему это улучшает качество и какая метрика изменилась относительно v1.",
+                                "Промпт v2 җибәрегез һәм ачык языгыз: нәрсә үзгәрде, ни өчен сыйфат яхшырырга тиеш, һәм v1 белән чагыштырганда кайсы метрика үзгәрде.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,

@@ -230,8 +230,11 @@ PRODUCTION_SYSTEMS_COURSE = {
                             "title": tr("Theory", "Теория", "Теория"),
                             "estimated_minutes": 6,
                             "content": [
-                                tr("Production prompting starts with a spec: what comes in, what happens, what comes out, and how you judge success.", "Продакшен-промптинг начинается со спецификации: что приходит, что происходит, что выходит и как измеряется успех.", "Продакшен-промптинг спецификациядән башлана: нәрсә керә, нәрсә була, нәрсә чыга һәм уңыш ничек үлчәнә."),
-                                tr("If the interfaces are fuzzy, the prompt text will absorb hidden complexity and break under variation.", "Если интерфейсы размыты, текст промпта поглотит скрытую сложность и сломается при изменениях.", "Интерфейс томан булса, промпт тексты яшерен катлаулылыкны йота һәм үзгәрештә ватыла."),
+                                tr("Production prompting starts with a system spec: inputs, stage contracts, outputs, and explicit success rules.", "Продакшен-промптинг начинается с system spec: входы, контракты этапов, выходы и явные правила успеха.", "Продакшен-промптинг system specтан башлана: керүләр, этап контрактлары, нәтиҗәләр һәм ачык уңыш кагыйдәләре."),
+                                tr("A spec turns prompting from artisanal writing into an operating process that can be reviewed by others.", "Спецификация переводит промптинг из ремесленного письма в операционный процесс, который можно ревьюить командой.", "Спецификация промптингны кул эшеннән команда ревьюлый ала торган операцион процесска күчерә."),
+                                tr("Interfaces should define what each stage receives and what it must return; otherwise stage boundaries collapse.", "Интерфейсы должны задавать, что получает каждый этап и что он обязан вернуть, иначе границы этапов распадаются.", "Интерфейслар һәр этапның нәрсә алуын һәм нәрсә кайтарырга тиешлеген билгеләргә тиеш, югыйсә этап чиге җимерелә."),
+                                tr("When interfaces are fuzzy, prompt text absorbs hidden complexity and becomes brittle under variation.", "Когда интерфейсы размыты, текст промпта поглощает скрытую сложность и становится хрупким при изменениях.", "Интерфейс томан булганда, промпт тексты яшерен катлаулылыкны йота һәм үзгәрешләргә какшак була."),
+                                tr("A review-ready spec must be testable: another teammate should detect pass/fail without asking the author.", "Ревью-пригодная спецификация должна быть тестируемой: другой участник команды должен определить pass/fail без вопросов к автору.", "Ревьюга яраклы спецификация тестлана торган булырга тиеш: башка команда әгъзасы pass/failны автордан сорамыйча ачыкларга тиеш."),
                             ],
                             "submission": {"type": "none"},
                         },
@@ -241,9 +244,9 @@ PRODUCTION_SYSTEMS_COURSE = {
                             "title": tr("Guided Practice", "Практика с опорой", "Юнәлешле практика"),
                             "estimated_minutes": 8,
                             "task": tr(
-                                "Convert the request 'Need a weekly research memo' into a system spec with markers [GOAL], [INPUTS], [STAGES], [OUTPUT], [EVAL].",
-                                "Преобразуйте запрос «нужна еженедельная research memo» в system spec с маркерами [GOAL], [INPUTS], [STAGES], [OUTPUT], [EVAL].",
-                                "«Атналык research memo кирәк» соравын [GOAL], [INPUTS], [STAGES], [OUTPUT], [EVAL] маркерлары белән system specка әйләндерегез.",
+                                "Convert 'Need a weekly research memo' into a system spec with [GOAL], [INPUTS], [STAGES], [OUTPUT], [EVAL], and one [RISK] trigger.",
+                                "Преобразуйте «нужна еженедельная research memo» в system spec с [GOAL], [INPUTS], [STAGES], [OUTPUT], [EVAL] и одним [RISK]-триггером.",
+                                "«Атналык research memo кирәк» соравын system specка әйләндерегез: [GOAL], [INPUTS], [STAGES], [OUTPUT], [EVAL] һәм бер [RISK] триггеры булсын.",
                             ),
                             "placeholder": tr(
                                 "[GOAL] Deliver a weekly research memo for product leads.\n[INPUTS] Notes, source links, open questions, deadline.\n[STAGES] 1. Gather facts. 2. Compare claims. 3. Draft memo. 4. Score memo.\n[OUTPUT] Memo with summary, evidence table, open risks.\n[EVAL] Pass only if every claim has evidence and one explicit confidence level.",
@@ -276,9 +279,9 @@ PRODUCTION_SYSTEMS_COURSE = {
                             "title": tr("Applied Exercise", "Прикладное упражнение", "Кулланма күнегү"),
                             "estimated_minutes": 10,
                             "task": tr(
-                                "Write a system spec for one recurring task from your own work. Keep the markers and make the interfaces concrete.",
-                                "Напишите system spec для одной повторяющейся задачи из своей практики. Сохраните маркеры и сделайте интерфейсы конкретными.",
-                                "Үз эшегездән бер кабатлана торган бирем өчен system spec языгыз. Маркерларны саклагыз һәм интерфейсларны конкрет итегез.",
+                                "Write a system spec for one recurring task from your work/study. Keep markers concrete and include owner handoff notes per stage.",
+                                "Напишите system spec для одной повторяющейся задачи из работы/учебы. Сохраните маркеры конкретными и добавьте owner-handoff заметки по этапам.",
+                                "Эш/укудагы бер кабатлана торган бурыч өчен system spec языгыз. Маркерларны төгәл саклагыз һәм һәр этапка owner-handoff язмалары өстәгез.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -353,8 +356,11 @@ PRODUCTION_SYSTEMS_COURSE = {
                             "title": tr("Theory", "Теория", "Теория"),
                             "estimated_minutes": 6,
                             "content": [
-                                tr("If you cannot define pass and fail, you cannot tell whether a prompt system improved.", "Если вы не можете определить pass и fail, вы не сможете понять, улучшилась ли система.", "Pass һәм fail ны билгели алмасагыз, система яхшырдымы икәнен аңлый алмассыз."),
-                                tr("A lightweight evaluation harness can be enough: sample cases, fail labels, pass threshold, and a short report format.", "Даже легкого evaluation harness достаточно: sample cases, fail labels, pass threshold и короткий формат отчета.", "Җиңел evaluation harness та җитә: sample cases, fail labels, pass threshold һәм кыска хисап форматы."),
+                                tr("Evaluation harness is the quality memory of a prompt system: it tells whether changes help or harm.", "Evaluation harness - это память качества prompt-системы: он показывает, изменения улучшают систему или вредят ей.", "Evaluation harness prompt-системаның сыйфат хәтере: үзгәрешнең файда китерүенме яки зыян салуынмы күрсәтә."),
+                                tr("If pass/fail is undefined, every tweak looks promising and regressions stay invisible.", "Если pass/fail не определены, каждая правка кажется «улучшением», а регрессии остаются невидимыми.", "Pass/fail билгеләнмәсә, һәр үзгәреш «яхшырту» булып күренә, ә регрессияләр күренми кала."),
+                                tr("A minimal but strong harness includes sample cases, failure labels, threshold rules, and report structure.", "Минимальный, но сильный harness включает sample cases, ярлыки сбоев, threshold-правила и структуру отчета.", "Минималь ләкин көчле harness sample cases, хата ярлыклары, threshold кагыйдәләре һәм хисап структурасын кертә."),
+                                tr("Failure labels must be actionable: they should point to concrete repair decisions, not vague criticism.", "Ярлыки сбоев должны вести к действию: указывать на конкретную правку, а не на размытую критику.", "Хата ярлыклары гамәлгә илтергә тиеш: томан тәнкыйтькә түгел, төгәл төзәтүгә күрсәтергә."),
+                                tr("Measure trend over time, not one run: production quality is stability across iterations.", "Оценивайте тренд во времени, а не один запуск: production-качество - это стабильность в итерациях.", "Бер запускка түгел, вакыт буенча трендка карагыз: production-сыйфат итерацияләрдә тотрыклылык ул."),
                             ],
                             "submission": {"type": "none"},
                         },
@@ -364,9 +370,9 @@ PRODUCTION_SYSTEMS_COURSE = {
                             "title": tr("Guided Practice", "Практика с опорой", "Юнәлешле практика"),
                             "estimated_minutes": 8,
                             "task": tr(
-                                "Draft an evaluation harness using [TASK], [SAMPLE_CASES], [FAIL_LABELS], [PASS_RULE], [REPORT].",
-                                "Соберите evaluation harness с [TASK], [SAMPLE_CASES], [FAIL_LABELS], [PASS_RULE], [REPORT].",
-                                "[TASK], [SAMPLE_CASES], [FAIL_LABELS], [PASS_RULE], [REPORT] белән evaluation harness төзегез.",
+                                "Draft an evaluation harness using [TASK], [SAMPLE_CASES], [FAIL_LABELS], [PASS_RULE], [REPORT] and add one regression guard.",
+                                "Соберите evaluation harness с [TASK], [SAMPLE_CASES], [FAIL_LABELS], [PASS_RULE], [REPORT] и добавьте один regression guard.",
+                                "[TASK], [SAMPLE_CASES], [FAIL_LABELS], [PASS_RULE], [REPORT] белән evaluation harness төзегез һәм бер regression guard өстәгез.",
                             ),
                             "placeholder": tr(
                                 "[TASK] Answer onboarding questions for new team members.\n[SAMPLE_CASES] 3 questions covering policy, tooling, and escalation.\n[FAIL_LABELS] inaccurate | incomplete | unsafe | off-policy.\n[PASS_RULE] Pass only if 3/3 answers avoid unsafe and off-policy labels.\n[REPORT] Return per case: score | fail label | fix recommendation.",
@@ -400,9 +406,9 @@ PRODUCTION_SYSTEMS_COURSE = {
                             "title": tr("Applied Exercise", "Прикладное упражнение", "Кулланма күнегү"),
                             "estimated_minutes": 10,
                             "task": tr(
-                                "Create an evaluation harness for a workflow you already use or plan to ship.",
-                                "Создайте evaluation harness для workflow, который уже используете или хотите внедрить.",
-                                "Инде куллана торган яки кертмәкче булган workflow өчен evaluation harness төзегез.",
+                                "Create an evaluation harness for a workflow you use (or plan to ship) with baseline vs candidate comparison and release threshold.",
+                                "Создайте evaluation harness для workflow, который используете (или планируете внедрить), с сравнением baseline vs candidate и release-threshold.",
+                                "Куллана торган (яки кертмәкче булган) workflow өчен evaluation harness төзегез: baseline vs candidate чагыштыруы һәм release-threshold булсын.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -489,8 +495,11 @@ PRODUCTION_SYSTEMS_COURSE = {
                             "title": tr("Theory", "Теория", "Теория"),
                             "estimated_minutes": 6,
                             "content": [
-                                tr("Reliable workflows decide what context is required, what is optional, and what must be ignored to reduce noise.", "Надежный workflow решает, какой контекст обязателен, какой опционален и что нужно игнорировать, чтобы убрать шум.", "Ышанычлы workflow кайсы контекст мәҗбүри, кайсысы өстәмә һәм шауны киметү өчен нәрсәне читкә куярга кирәклеген билгели."),
-                                tr("Guardrails start with trigger conditions and fallback actions, not with vague hopes that the model will stay safe.", "Guardrails начинаются с trigger conditions и fallback actions, а не с надежды, что модель сама останется безопасной.", "Guardrails trigger conditions һәм fallback actions белән башлана, модель үзе куркынычсыз калыр дигән өмет белән түгел."),
+                                tr("Context control is selective exposure: decide what the system must see, may see, and must ignore.", "Контроль контекста - это селективная подача: что система обязана видеть, может видеть и должна игнорировать.", "Контекст контроле - сайлап бирү: система нәрсәне мәҗбүри күрә, нәрсәне өстәмә күрә һәм нәрсәне читкә куя."),
+                                tr("More context is not always better; excess noise degrades reasoning and increases contradiction risk.", "Больше контекста не всегда лучше: лишний шум ухудшает рассуждение и повышает риск противоречий.", "Күбрәк контекст һәрвакыт яхшы түгел: артык шау фикер йөртүне боза һәм каршылык рисгын арттыра."),
+                                tr("Guardrails are operational rules: trigger conditions plus fallback actions and escalation ownership.", "Guardrails - это операционные правила: trigger-условия плюс fallback-действия и ownership эскалации.", "Guardrails - операцион кагыйдәләр: trigger шартлары, fallback гамәлләре һәм эскалация ownershipы."),
+                                tr("Stage handoff contracts prevent hidden assumptions when context moves between steps.", "Контракты handoff между этапами предотвращают скрытые предположения при передаче контекста.", "Этаплар арасындагы handoff контрактлары контекст күчкәндә яшерен фаразларны кисәтә."),
+                                tr("Reliable systems fail safely: they stop guessing and escalate when confidence drops below threshold.", "Надежные системы падают безопасно: прекращают догадки и эскалируют при падении уверенности ниже порога.", "Ышанычлы системалар куркынычсыз рәвештә туктый: ышаныч порогтан төшсә, фаразны туктата һәм эскалацияли."),
                             ],
                             "submission": {"type": "none"},
                         },
@@ -500,9 +509,9 @@ PRODUCTION_SYSTEMS_COURSE = {
                             "title": tr("Guided Practice", "Практика с опорой", "Юнәлешле практика"),
                             "estimated_minutes": 8,
                             "task": tr(
-                                "Write a context-control plan using [TASK], [REQUIRED_CONTEXT], [OPTIONAL_CONTEXT], [IGNORE], [FALLBACK], [OUTPUT].",
-                                "Соберите план управления контекстом с [TASK], [REQUIRED_CONTEXT], [OPTIONAL_CONTEXT], [IGNORE], [FALLBACK], [OUTPUT].",
-                                "[TASK], [REQUIRED_CONTEXT], [OPTIONAL_CONTEXT], [IGNORE], [FALLBACK], [OUTPUT] белән контекст идарәсе планын языгыз.",
+                                "Write a context-control plan with [TASK], [REQUIRED_CONTEXT], [OPTIONAL_CONTEXT], [IGNORE], [FALLBACK], [OUTPUT], and one [ESCALATE] condition.",
+                                "Соберите план управления контекстом с [TASK], [REQUIRED_CONTEXT], [OPTIONAL_CONTEXT], [IGNORE], [FALLBACK], [OUTPUT] и одним условием [ESCALATE].",
+                                "Контекст идарәсе планын языгыз: [TASK], [REQUIRED_CONTEXT], [OPTIONAL_CONTEXT], [IGNORE], [FALLBACK], [OUTPUT] һәм бер [ESCALATE] шарты булсын.",
                             ),
                             "placeholder": tr(
                                 "[TASK] Answer a support question and suggest a doc update.\n[REQUIRED_CONTEXT] Policy excerpt, product version, user issue.\n[OPTIONAL_CONTEXT] Recent similar cases.\n[IGNORE] Marketing copy, unrelated backlog notes.\n[FALLBACK] If policy is missing or contradictory, escalate instead of guessing.\n[OUTPUT] Return answer + doc update note + escalation flag if needed.",
@@ -536,9 +545,9 @@ PRODUCTION_SYSTEMS_COURSE = {
                             "title": tr("Applied Exercise", "Прикладное упражнение", "Кулланма күнегү"),
                             "estimated_minutes": 10,
                             "task": tr(
-                                "Create a context and guardrail plan for a workflow you want to rely on in real operations.",
-                                "Соберите план контекста и guardrails для workflow, на который вы хотите опираться в реальной работе.",
-                                "Реаль эштә таянырга теләгән workflow өчен контекст һәм guardrails планын төзегез.",
+                                "Create a context and guardrail plan for a workflow you rely on in real operations, including one safe-fail path and one monitoring metric.",
+                                "Соберите план контекста и guardrails для workflow, на который вы опираетесь в реальной работе, включая один safe-fail путь и одну метрику мониторинга.",
+                                "Реаль эштә таянган workflow өчен контекст һәм guardrails планы төзегез: бер safe-fail юлы һәм бер мониторинг метрикасы булсын.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -614,7 +623,10 @@ PRODUCTION_SYSTEMS_COURSE = {
                             "title": tr("Capstone Brief", "Бриф капстоуна", "Капстоун брифы"),
                             "estimated_minutes": 6,
                             "content": [
-                                tr("Your final package should read like an operating note for a teammate: what the system does, how it is evaluated, when it escalates, and how success is tracked.", "Финальный пакет должен читаться как operating note для коллеги: что делает система, как она оценивается, когда эскалирует и как отслеживается успех.", "Финал пакет команда әгъзасы өчен operating note кебек булырга тиеш: система нәрсә эшли, ничек бәяләнә, кайчан эскалацияли һәм уңыш ничек күзәтелә."),
+                                tr("Capstone means production intent: deliver a package another teammate can run, review, and maintain.", "Капстоун означает production-намерение: сдайте пакет, который другой участник команды сможет запускать, ревьюить и сопровождать.", "Капстоун production ниятен аңлата: башка команда әгъзасы эшләтә, ревьюлый һәм алып бара ала торган пакет тапшырыгыз."),
+                                tr("Your package should read like an operating note: purpose, interfaces, checks, fallback, owner, cadence.", "Пакет должен читаться как operating note: цель, интерфейсы, проверки, fallback, owner, cadence.", "Пакет operating note кебек укылырга тиеш: максат, интерфейслар, тикшерү, fallback, owner, cadence."),
+                                tr("Do not optimize for perfect wording; optimize for reliable operation under normal and failure conditions.", "Оптимизируйте не красивую формулировку, а надежную работу в обычных и аварийных условиях.", "Максатыгыз матур формулировка түгел, ә гадәти һәм авария шартларында ышанычлы эш булсын."),
+                                tr("A complete submission includes measurable success criteria and first-response actions for quality drops.", "Полная работа включает измеримые критерии успеха и действия первой реакции при просадке качества.", "Тулы эштә үлчәнә торган уңыш критерийлары һәм сыйфат төшкәндә беренче реакция гамәлләре булырга тиеш."),
                             ],
                             "submission": {"type": "none"},
                         },
@@ -624,9 +636,9 @@ PRODUCTION_SYSTEMS_COURSE = {
                             "title": tr("Workflow Package v1", "Workflow package v1", "Workflow package v1"),
                             "estimated_minutes": 9,
                             "task": tr(
-                                "Submit v1 using [GOAL], [INPUTS], [STAGES], [GUARDRAILS], [OUTPUT], [EVAL], [OWNER].",
-                                "Отправьте v1 с [GOAL], [INPUTS], [STAGES], [GUARDRAILS], [OUTPUT], [EVAL], [OWNER].",
-                                "[GOAL], [INPUTS], [STAGES], [GUARDRAILS], [OUTPUT], [EVAL], [OWNER] белән v1 җибәрегез.",
+                                "Submit v1 using [GOAL], [INPUTS], [STAGES], [GUARDRAILS], [OUTPUT], [EVAL], [OWNER] plus one [CADENCE] note for monitoring frequency.",
+                                "Отправьте v1 с [GOAL], [INPUTS], [STAGES], [GUARDRAILS], [OUTPUT], [EVAL], [OWNER] и одной пометкой [CADENCE] о частоте мониторинга.",
+                                "v1 җибәрегез: [GOAL], [INPUTS], [STAGES], [GUARDRAILS], [OUTPUT], [EVAL], [OWNER] һәм мониторинг ешлыгы өчен бер [CADENCE] язмасы булсын.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
@@ -658,9 +670,9 @@ PRODUCTION_SYSTEMS_COURSE = {
                             "title": tr("Workflow Package v2", "Workflow package v2", "Workflow package v2"),
                             "estimated_minutes": 12,
                             "task": tr(
-                                "Submit v2 with one measurable improvement and one fallback change based on your review of v1.",
-                                "Отправьте v2 с одним измеримым улучшением и одной правкой fallback на основе ревью v1.",
-                                "v1 ревьюсына нигезләнеп, бер үлчәнә торган яхшырту һәм бер fallback төзәтү белән v2 җибәрегез.",
+                                "Submit v2 with one measurable improvement, one fallback change from v1 review, and one explicit rollback trigger.",
+                                "Отправьте v2 с одним измеримым улучшением, одной правкой fallback по результатам ревью v1 и одним явным триггером отката.",
+                                "v2 җибәрегез: бер үлчәнә торган яхшырту, v1 ревьюсыннан бер fallback төзәтүе һәм бер ачык rollback триггеры булсын.",
                             ),
                             "submission": {
                                 **_BASE_TEXT_VALIDATOR,
