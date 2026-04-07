@@ -162,8 +162,8 @@ export function LearningLessonRuntime({
       </div>
 
       {isFullscreen ? (
-        <div className="fixed inset-0 z-[140] bg-[var(--pv-bg)]">
-          <div className="mx-auto flex h-full w-full max-w-[1700px] flex-col overflow-y-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-8">
+        <div className="fixed inset-0 z-[140] overflow-y-auto overscroll-contain bg-[var(--pv-bg)]">
+          <div className="mx-auto w-full max-w-[1700px] px-4 py-4 pb-10 sm:px-6 sm:py-6 sm:pb-12 lg:px-8">
             <div className="mb-4 flex items-center justify-end">
               <button type="button" className="pv-button-secondary !w-auto" onClick={() => void closeFullscreen()}>
                 {t("learn.exitFullscreen")}
