@@ -13,7 +13,7 @@ type LearningLessonStepViewProps = {
 };
 
 export function LearningLessonStepView({ language, data }: LearningLessonStepViewProps) {
-  const { lesson, course, step, canSubmit } = data;
+  const { course, step, canSubmit } = data;
 
   return (
     <article className="pv-page">
@@ -32,34 +32,11 @@ export function LearningLessonStepView({ language, data }: LearningLessonStepVie
       ) : null}
 
       <LearningLessonRuntime
-        lesson={lesson}
+        lesson={data.lesson}
         courseTitle={course.title}
         canSubmit={canSubmit}
         activeStepSlug={step.slug}
       />
-
-      <section className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-        <div className="hidden lg:block" aria-hidden="true" />
-        <div className="sticky bottom-4 z-30">
-          <div className="pv-panel px-6 py-5 backdrop-blur-sm sm:px-7">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <Link href={lesson.return_to_course_href} className="pv-button-secondary !w-auto">
-                <T k="learn.returnToCourse" />
-              </Link>
-              {lesson.previous_lesson_href ? (
-                <Link href={lesson.previous_lesson_href} className="pv-button-secondary !w-auto">
-                  <T k="learn.previousLesson" />
-                </Link>
-              ) : null}
-              {lesson.next_lesson_href && lesson.status === "completed" ? (
-                <Link href={lesson.next_lesson_href} className="pv-button-primary !w-auto">
-                  <T k="learn.nextLesson" />
-                </Link>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      </section>
     </article>
   );
 }
