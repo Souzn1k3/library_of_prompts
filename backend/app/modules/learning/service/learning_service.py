@@ -72,16 +72,14 @@ class LearningService(LearningReadMixin, LearningLessonMixin, LearningSubmission
         ordered_lessons: list[tuple[int, dict, int, dict, int]],
         completed_lessons: set[str],
     ) -> dict[str, bool]:
-        can_unlock_next_lesson = True
         unlock_map: dict[str, bool] = {}
         for _, _, _, lesson, _ in ordered_lessons:
             slug = str(lesson["slug"])
             explicit_requirements = [str(item) for item in lesson.get("unlock_after_lessons", [])]
             explicit_ready = all(req in completed_lessons for req in explicit_requirements)
-            unlocked = (can_unlock_next_lesson and explicit_ready) or slug in completed_lessons
+            # Lessons are open by default unless explicit prerequisites are defined.
+            unlocked = explicit_ready or slug in completed_lessons
             unlock_map[slug] = unlocked
-            if slug not in completed_lessons:
-                can_unlock_next_lesson = False
         return unlock_map
 
     def _status_from_row(self, row: LearningCourseProgress | None) -> LearningProgressStatus:

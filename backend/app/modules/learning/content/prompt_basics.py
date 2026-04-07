@@ -385,7 +385,7 @@ PROMPT_BASICS_COURSE = {
                     "estimated_minutes": 34,
                     "reward_lmn": 24,
                     "is_final_assessment": True,
-                    "unlock_after_lessons": ["pe-foundations", "pe-structure-pattern"],
+                    "unlock_after_lessons": [],
                     "steps": [
                         {
                             "slug": "pe-constraints-theory",
