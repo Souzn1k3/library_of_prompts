@@ -141,111 +141,101 @@ export function LearningStepArticle({
         </div>
       ) : null}
 
-      <div
-        className={`mt-5 grid gap-5 ${
-          isFullscreen
-            ? "xl:grid-cols-[minmax(0,1fr)_360px] 2xl:grid-cols-[minmax(0,1fr)_420px]"
-            : "xl:grid-cols-[minmax(0,1fr)_320px]"
-        }`}
-      >
-        <div>
-          {!isPracticeStep && activeStep.content.length > 0 ? (
-            <section>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("learn.theoryShort")}</p>
-              <div className="mt-2 space-y-3 text-sm leading-relaxed text-zinc-700">
-                {activeStep.content.map((line, lineIdx) => (
-                  <p key={`${activeStep.slug}-content-${lineIdx}`}>{line}</p>
-                ))}
-              </div>
-            </section>
-          ) : null}
+      <div className={`mt-5 space-y-4 ${isFullscreen ? "mx-auto w-full max-w-[1180px]" : ""}`}>
+        {!isPracticeStep && activeStep.content.length > 0 ? (
+          <section>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("learn.theoryShort")}</p>
+            <div className="mt-2 space-y-3 text-sm leading-relaxed text-zinc-700">
+              {activeStep.content.map((line, lineIdx) => (
+                <p key={`${activeStep.slug}-content-${lineIdx}`}>{line}</p>
+              ))}
+            </div>
+          </section>
+        ) : null}
 
-          {activeStep.task ? (
-            <section className="mt-4 rounded-[1.1rem] border border-[var(--pv-border)] bg-white/80 p-4 text-sm text-zinc-700">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("learn.practiceAction")}</p>
-              {isPracticeStep ? <p className="mt-2 text-sm text-zinc-600">{t("learn.practiceFocusHint")}</p> : null}
-              <p className="mt-2">{activeStep.task}</p>
-            </section>
-          ) : null}
+        {activeStep.task ? (
+          <section className="rounded-[1.1rem] border border-[var(--pv-border)] bg-white/80 p-4 text-sm text-zinc-700">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("learn.practiceAction")}</p>
+            {isPracticeStep ? <p className="mt-2 text-sm text-zinc-600">{t("learn.practiceFocusHint")}</p> : null}
+            <p className="mt-2">{activeStep.task}</p>
+          </section>
+        ) : null}
 
-          {activeStep.submission_type === "choice" ? (
-            <LearningStepChoiceInput
-              step={activeStep}
-              selectedChoiceId={selectedChoiceId}
-              canSubmit={canSubmit}
-              isSubmitting={isSubmitting}
-              onSelectChoice={onChoiceChange}
-            />
-          ) : null}
+        <section className="rounded-[1rem] border border-[var(--pv-border)] bg-white/85 p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("learn.successCriteria")}</p>
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+            <CriteriaItem label={t("learn.passScoreShort")} value={`${activeStep.pass_score}/100`} />
+            {activeStep.submission_type === "text" && activeStep.min_words ? (
+              <CriteriaItem label={t("learn.minWords")} value={String(activeStep.min_words)} />
+            ) : null}
+            {activeStep.submission_type === "choice" ? (
+              <CriteriaItem label={t("learn.answerType")} value={t("learn.singleChoice")} />
+            ) : null}
+            {activeStep.required_markers.length > 0 ? (
+              <CriteriaItem label={t("learn.requiredMarkers")} value={activeStep.required_markers.join(", ")} />
+            ) : null}
+            {activeStep.forbidden_phrases.length > 0 ? (
+              <CriteriaItem label={t("learn.avoidPhrases")} value={activeStep.forbidden_phrases.join(", ")} />
+            ) : null}
+          </ul>
+        </section>
 
-          {activeStep.submission_type === "text" ? (
-            <LearningStepTextInput
-              step={activeStep}
-              textAnswer={textAnswer}
-              canSubmit={canSubmit}
-              isSubmitting={isSubmitting}
-              onTextChange={onTextChange}
-            />
-          ) : null}
+        {activeStep.submission_type === "choice" ? (
+          <LearningStepChoiceInput
+            step={activeStep}
+            selectedChoiceId={selectedChoiceId}
+            canSubmit={canSubmit}
+            isSubmitting={isSubmitting}
+            onSelectChoice={onChoiceChange}
+          />
+        ) : null}
 
-          <LearningStepFeedbackPanel step={activeStep} />
-        </div>
+        {activeStep.submission_type === "text" ? (
+          <LearningStepTextInput
+            step={activeStep}
+            textAnswer={textAnswer}
+            canSubmit={canSubmit}
+            isSubmitting={isSubmitting}
+            onTextChange={onTextChange}
+          />
+        ) : null}
 
-        <aside className="space-y-3">
+        {textDiagnostics ? (
           <section className="rounded-[1rem] border border-[var(--pv-border)] bg-white/85 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("learn.successCriteria")}</p>
-            <ul className="mt-3 grid gap-2">
-              <CriteriaItem label={t("learn.passScoreShort")} value={`${activeStep.pass_score}/100`} />
-              {activeStep.submission_type === "text" && activeStep.min_words ? (
-                <CriteriaItem label={t("learn.minWords")} value={String(activeStep.min_words)} />
-              ) : null}
-              {activeStep.submission_type === "choice" ? (
-                <CriteriaItem label={t("learn.answerType")} value={t("learn.singleChoice")} />
-              ) : null}
-              {activeStep.required_markers.length > 0 ? (
-                <CriteriaItem label={t("learn.requiredMarkers")} value={activeStep.required_markers.join(", ")} />
-              ) : null}
-              {activeStep.forbidden_phrases.length > 0 ? (
-                <CriteriaItem label={t("learn.avoidPhrases")} value={activeStep.forbidden_phrases.join(", ")} />
-              ) : null}
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("learn.precheck")}</p>
+            <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+              <ChecklistRow
+                ok={textDiagnostics.wordCount >= textDiagnostics.minWords}
+                label={t("learn.precheckWords", {
+                  current: textDiagnostics.wordCount,
+                  min: textDiagnostics.minWords,
+                })}
+              />
+              <ChecklistRow
+                ok={textDiagnostics.missingMarkers.length === 0}
+                label={
+                  textDiagnostics.missingMarkers.length === 0
+                    ? t("learn.precheckMarkersOk")
+                    : t("learn.precheckMarkersMissing", {
+                        markers: textDiagnostics.missingMarkers.join(", "),
+                      })
+                }
+              />
+              <ChecklistRow
+                ok={textDiagnostics.forbiddenHits.length === 0}
+                label={
+                  textDiagnostics.forbiddenHits.length === 0
+                    ? t("learn.precheckForbiddenOk")
+                    : t("learn.precheckForbiddenHit", {
+                        markers: textDiagnostics.forbiddenHits.join(", "),
+                      })
+                }
+              />
             </ul>
           </section>
+        ) : null}
 
-          {textDiagnostics ? (
-            <section className="rounded-[1rem] border border-[var(--pv-border)] bg-white/85 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("learn.precheck")}</p>
-              <ul className="mt-3 grid gap-2">
-                <ChecklistRow
-                  ok={textDiagnostics.wordCount >= textDiagnostics.minWords}
-                  label={t("learn.precheckWords", {
-                    current: textDiagnostics.wordCount,
-                    min: textDiagnostics.minWords,
-                  })}
-                />
-                <ChecklistRow
-                  ok={textDiagnostics.missingMarkers.length === 0}
-                  label={
-                    textDiagnostics.missingMarkers.length === 0
-                      ? t("learn.precheckMarkersOk")
-                      : t("learn.precheckMarkersMissing", {
-                          markers: textDiagnostics.missingMarkers.join(", "),
-                        })
-                  }
-                />
-                <ChecklistRow
-                  ok={textDiagnostics.forbiddenHits.length === 0}
-                  label={
-                    textDiagnostics.forbiddenHits.length === 0
-                      ? t("learn.precheckForbiddenOk")
-                      : t("learn.precheckForbiddenHit", {
-                          markers: textDiagnostics.forbiddenHits.join(", "),
-                        })
-                  }
-                />
-              </ul>
-            </section>
-          ) : null}
-        </aside>
+        <LearningStepFeedbackPanel step={activeStep} />
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">
