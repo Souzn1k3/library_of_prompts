@@ -137,13 +137,13 @@ export function PlansClient({ plans, error }: PlansClientProps) {
   return (
     <div className="space-y-5">
       {error ? (
-        <div className="pv-alert pv-alert-warning text-sm">
+        <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           {error}
         </div>
       ) : null}
 
       {actionError ?? portalError ? (
-        <div className="pv-alert pv-alert-error text-sm">
+        <div className="rounded-[1.5rem] border border-red-200 bg-red-50 p-4 text-sm text-red-800">
           {actionError ?? portalError}
         </div>
       ) : null}

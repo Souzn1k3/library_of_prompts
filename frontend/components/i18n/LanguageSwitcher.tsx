@@ -45,13 +45,13 @@ export function LanguageSwitcher({ mobile = false }: LanguageSwitcherProps) {
 
   if (mobile) {
     return (
-      <div className="pv-card-muted p-3.5">
+      <div className="rounded-[1.25rem] border border-[rgba(15,23,42,0.08)] bg-white/72 p-3.5 shadow-[0_14px_28px_rgba(15,23,42,0.04)]">
         <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-zinc-500">
           {t("a11y.languageSwitcher")}
         </p>
 
         <div
-          className="mt-3 inline-flex rounded-[0.7rem] border border-[var(--pv-border)] bg-[var(--pv-surface-strong)] p-1"
+          className="mt-3 inline-flex rounded-full border border-[rgba(15,23,42,0.08)] bg-white p-1"
           role="group"
           aria-label={t("a11y.languageSwitcher")}
         >
@@ -63,7 +63,7 @@ export function LanguageSwitcher({ mobile = false }: LanguageSwitcherProps) {
               onClick={() => setLanguage(langCode)}
               className={`min-h-[2.5rem] rounded-full px-3.5 text-sm font-semibold transition ${
                 language === langCode
-                  ? "bg-[var(--pv-brand)] text-white"
+                  ? "bg-[var(--pv-brand)] text-white shadow-[0_10px_20px_rgba(37,92,255,0.18)]"
                   : "text-zinc-500 hover:text-zinc-950"
               }`}
               aria-pressed={language === langCode}

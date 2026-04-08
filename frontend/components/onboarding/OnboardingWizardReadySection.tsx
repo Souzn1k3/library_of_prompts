@@ -115,7 +115,7 @@ export function OnboardingWizardReadySection({
         </section>
       </div>
 
-      <div className="pv-action-bar pv-action-bar-start">
+      <div className="flex flex-wrap gap-3">
         <Link href={APP_ROUTES.dashboard} className="pv-button-primary">
           {t("onboardingWizard.goDashboard")}
         </Link>

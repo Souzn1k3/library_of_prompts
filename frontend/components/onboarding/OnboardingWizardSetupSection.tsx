@@ -70,7 +70,7 @@ export function OnboardingWizardSetupSection({
         />
       ) : null}
 
-      <div className="pv-action-bar">
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
         <button
           type="button"
           onClick={goBack}

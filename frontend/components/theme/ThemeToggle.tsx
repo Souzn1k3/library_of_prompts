@@ -27,7 +27,7 @@ function resolveTheme(): ThemeMode {
     return stored;
   }
 
-  return "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 function applyTheme(theme: ThemeMode) {
@@ -130,7 +130,7 @@ export function ThemeToggle({ mobile = false }: ThemeToggleProps) {
       <button
         type="button"
         onClick={toggleTheme}
-        className="inline-flex w-full items-center justify-between rounded-[0.85rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-4 py-3 text-sm font-semibold text-zinc-900"
+        className="inline-flex w-full items-center justify-between rounded-[1rem] border border-[rgba(15,23,42,0.08)] bg-white/72 px-4 py-3 text-sm font-semibold text-zinc-900"
         aria-label={actionLabel}
       >
         <span className="text-zinc-600">{t("a11y.themeSwitcher")}</span>

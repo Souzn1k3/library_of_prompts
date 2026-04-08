@@ -88,7 +88,7 @@ export function Header() {
 
             <button
               type="button"
-              className="pv-header-ghost-button pv-header-mobile-trigger inline-flex h-10 w-10 shrink-0 items-center justify-center px-0 lg:hidden"
+              className="pv-header-mobile-trigger inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.95rem] border border-[rgba(15,23,42,0.12)] bg-white/88 text-zinc-700 transition hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pv-brand)]/35 lg:hidden"
               aria-controls="mobile-navigation-panel"
               aria-expanded={isMobileMenuOpen}
               aria-label={isMobileMenuOpen ? t("header.closeMenu") : t("header.openMenu")}
@@ -125,7 +125,7 @@ export function Header() {
               <div className="space-y-4 px-4 pb-4 pt-4 sm:px-5">
                 <HeaderSearch mobile onSearch={() => setIsMobileMenuOpen(false)} />
 
-                <div className="pv-card-muted p-2">
+                <div className="rounded-[1.25rem] border border-[rgba(15,23,42,0.08)] bg-white/72 p-2 shadow-[0_14px_28px_rgba(15,23,42,0.04)]">
                   <HeaderPrimaryNav mobile onNavigate={() => setIsMobileMenuOpen(false)} />
                 </div>
 

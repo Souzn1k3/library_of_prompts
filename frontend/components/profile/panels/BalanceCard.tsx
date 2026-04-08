@@ -16,7 +16,7 @@ export function BalanceCard({ summary, payouts, locale }: BalanceCardProps) {
     : t("profile.noData");
 
   return (
-    <div className="pv-panel p-6 sm:p-7">
+    <div className="rounded-[1.75rem] border border-zinc-200 bg-white p-6 shadow-[0_1px_0_rgba(0,0,0,0.04)] sm:p-7">
       <p className="pv-kicker">{t("profile.sellerBalanceTitle")}</p>
       <p className="mt-3 text-xs uppercase tracking-[0.2em] text-zinc-500">{t("profile.availableToPayout")}</p>
       <p className="mt-2 text-[2rem] font-bold leading-tight tracking-[-0.05em] text-zinc-950 sm:text-[2.65rem]">

@@ -111,8 +111,8 @@ export function usePlansClientModel({
 
   const currentTier = billing?.plan_tier ?? user?.plan_tier ?? "free";
   const currentBillingStatusLabel = localizedBillingStatus(billing?.status, t);
-  const currentTierClass = currentTier === "enterprise" ? "text-[var(--pv-brand-strong)]" : "text-zinc-900";
-  const currentStatusClass = billing?.status === "active" ? "text-[var(--pv-brand-strong)]" : "text-zinc-900";
+  const currentTierClass = currentTier === "enterprise" ? "text-emerald-700" : "text-zinc-900";
+  const currentStatusClass = billing?.status === "active" ? "text-emerald-700" : "text-zinc-900";
 
   async function openBillingPortal() {
     setActionError(null);

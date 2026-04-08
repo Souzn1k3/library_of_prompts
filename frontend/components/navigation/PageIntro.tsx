@@ -52,7 +52,6 @@ export function PageIntro({
 }: PageIntroProps) {
   const lastBreadcrumbLabel = breadcrumbs[breadcrumbs.length - 1]?.label;
   const eyebrowText = getNodeText(eyebrow);
-  const hasRail = Boolean(actions || aside);
   const shouldShowEyebrow =
     eyebrowText.length > 0 &&
     eyebrowText !== getNodeText(title) &&
@@ -62,8 +61,8 @@ export function PageIntro({
     <section className="pv-hero px-6 py-7 sm:px-8 sm:py-8">
       {breadcrumbs.length > 0 ? <AppBreadcrumbs items={breadcrumbs} /> : null}
 
-      <div className={`grid gap-6 ${hasRail ? "xl:grid-cols-[minmax(0,1fr)_minmax(280px,0.86fr)]" : ""}`}>
-        <div className="pv-page-intro-main space-y-5">
+      <div className={`grid gap-6 ${aside ? "xl:grid-cols-[minmax(0,1.18fr)_minmax(280px,0.82fr)]" : ""}`}>
+        <div className="space-y-5">
           <div className="space-y-3">
             {shouldShowEyebrow ? <p className="pv-kicker">{eyebrow}</p> : null}
             <h1 className="pv-title max-w-4xl text-zinc-950">{title}</h1>
@@ -76,15 +75,11 @@ export function PageIntro({
               <div className="mt-1">{hint}</div>
             </div>
           ) : null}
+          {actions ? <div className="pv-cta-group">{actions}</div> : null}
           {children}
         </div>
 
-        {hasRail ? (
-          <div className="pv-page-intro-rail space-y-4">
-            {actions ? <div className="pv-page-intro-actions">{actions}</div> : null}
-            {aside ? <div className="pv-page-intro-aside">{aside}</div> : null}
-          </div>
-        ) : null}
+        {aside ? <div>{aside}</div> : null}
       </div>
     </section>
   );
