@@ -187,6 +187,12 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.88);
 }
 
+.pv-header-search input:focus,
+.pv-header-search input:focus-visible {
+  box-shadow: none !important;
+  outline: none;
+}
+
 .pv-header-search-mobile {
   width: 100%;
   min-height: 3.1rem;

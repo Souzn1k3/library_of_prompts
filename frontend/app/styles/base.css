@@ -44,8 +44,14 @@
 html {
   min-height: 100%;
   overflow-x: clip;
-  scrollbar-gutter: stable both-edges;
+  scrollbar-gutter: stable;
   background: linear-gradient(180deg, #faf8f3 0%, #f7f4ed 100%);
+}
+
+@media (max-width: 768px) {
+  html {
+    scrollbar-gutter: auto;
+  }
 }
 
 body {
