@@ -1,1 +1,3 @@
 approval_policy = "never"
+[shell]
+program = "powershell"

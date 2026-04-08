@@ -1,0 +1,1078 @@
+{
+  "generatedAt": "2026-04-07T21:34:13.368Z",
+  "baseUrl": "http://127.0.0.1:3000",
+  "outputDir": "C:\\Users\\14\\Desktop\\PROJECTS\\WEBSITE\\frontend\\artifacts\\screenshots\\dark-full-sections-2026-04-08-v2",
+  "counts": {
+    "desktop": 76,
+    "mobile": 76,
+    "total": 152
+  },
+  "desktop": [
+    {
+      "route": "/",
+      "file": "desktop-001-home.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/"
+    },
+    {
+      "route": "/catalog",
+      "file": "desktop-002-catalog.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/catalog"
+    },
+    {
+      "route": "/dashboard",
+      "file": "desktop-003-dashboard.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/dashboard"
+    },
+    {
+      "route": "/home-workbench",
+      "file": "desktop-004-home-workbench.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/home-workbench"
+    },
+    {
+      "route": "/learn",
+      "file": "desktop-005-learn.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn"
+    },
+    {
+      "route": "/learn/start",
+      "file": "desktop-006-learn__start.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/production-prompt-systems/lesson/adv-spec-and-interfaces"
+    },
+    {
+      "route": "/learn/my",
+      "file": "desktop-007-learn__my.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/my"
+    },
+    {
+      "route": "/missions",
+      "file": "desktop-008-missions.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/missions"
+    },
+    {
+      "route": "/wallet",
+      "file": "desktop-009-wallet.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/wallet"
+    },
+    {
+      "route": "/profile",
+      "file": "desktop-010-profile.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/profile"
+    },
+    {
+      "route": "/submit",
+      "file": "desktop-011-submit.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/submit"
+    },
+    {
+      "route": "/pricing",
+      "file": "desktop-012-pricing.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/pricing"
+    },
+    {
+      "route": "/store",
+      "file": "desktop-013-store.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/store"
+    },
+    {
+      "route": "/plans",
+      "file": "desktop-014-plans.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/plans"
+    },
+    {
+      "route": "/onboarding",
+      "file": "desktop-015-onboarding.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/onboarding"
+    },
+    {
+      "route": "/login",
+      "file": "desktop-016-login.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/login"
+    },
+    {
+      "route": "/signup",
+      "file": "desktop-017-signup.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/signup"
+    },
+    {
+      "route": "/prompt/product-requirements-drafter",
+      "file": "desktop-018-prompt__product-requirements-drafter.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/prompt/product-requirements-drafter"
+    },
+    {
+      "route": "/prompt/api-design-review",
+      "file": "desktop-019-prompt__api-design-review.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/prompt/api-design-review"
+    },
+    {
+      "route": "/prompt/onboarding-email-sequence",
+      "file": "desktop-020-prompt__onboarding-email-sequence.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/prompt/onboarding-email-sequence"
+    },
+    {
+      "route": "/prompt/study-topic-explainer",
+      "file": "desktop-021-prompt__study-topic-explainer.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/prompt/study-topic-explainer"
+    },
+    {
+      "route": "/learn/pe-foundations",
+      "file": "desktop-022-learn__pe-foundations.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/pe-foundations"
+    },
+    {
+      "route": "/learn/pe-structure-pattern",
+      "file": "desktop-023-learn__pe-structure-pattern.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/pe-structure-pattern"
+    },
+    {
+      "route": "/learn/pe-constraints-and-examples",
+      "file": "desktop-024-learn__pe-constraints-and-examples.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/pe-constraints-and-examples"
+    },
+    {
+      "route": "/learn/pe-iteration-loop",
+      "file": "desktop-025-learn__pe-iteration-loop.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/pe-iteration-loop"
+    },
+    {
+      "route": "/category/it",
+      "file": "desktop-026-category__it.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/it"
+    },
+    {
+      "route": "/category/marketing",
+      "file": "desktop-027-category__marketing.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/marketing"
+    },
+    {
+      "route": "/category/business",
+      "file": "desktop-028-category__business.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/business"
+    },
+    {
+      "route": "/category/education",
+      "file": "desktop-029-category__education.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/education"
+    },
+    {
+      "route": "/category/arts",
+      "file": "desktop-030-category__arts.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/arts"
+    },
+    {
+      "route": "/category/engineering",
+      "file": "desktop-031-category__engineering.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/engineering"
+    },
+    {
+      "route": "/prompt/react-debug-checklist",
+      "file": "desktop-032-prompt__react-debug-checklist.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/prompt/react-debug-checklist"
+    },
+    {
+      "route": "/prompt/meeting-summary-extractor",
+      "file": "desktop-033-prompt__meeting-summary-extractor.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/prompt/meeting-summary-extractor"
+    },
+    {
+      "route": "/prompt/content-calendar-generator",
+      "file": "desktop-034-prompt__content-calendar-generator.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/prompt/content-calendar-generator"
+    },
+    {
+      "route": "/prompt/unit-test-generator",
+      "file": "desktop-035-prompt__unit-test-generator.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/prompt/unit-test-generator"
+    },
+    {
+      "route": "/prompt/cold-outreach-personalizer",
+      "file": "desktop-036-prompt__cold-outreach-personalizer.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/prompt/cold-outreach-personalizer"
+    },
+    {
+      "route": "/prompt/research-brief-analyst",
+      "file": "desktop-037-prompt__research-brief-analyst.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/prompt/research-brief-analyst"
+    },
+    {
+      "route": "/learn/course/production-prompt-systems/lesson/adv-spec-and-interfaces",
+      "file": "desktop-038-learn__course__production-prompt-systems__lesson__adv-spec-and-interfaces.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/production-prompt-systems/lesson/adv-spec-and-interfaces"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations/lesson/pe-foundations",
+      "file": "desktop-039-learn__course__prompt-engineering-foundations__lesson__pe-foundations.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-foundations"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations",
+      "file": "desktop-040-learn__course__prompt-engineering-foundations.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations"
+    },
+    {
+      "route": "/learn/course/prompt-workflows-study-and-work/lesson/wf-task-briefing",
+      "file": "desktop-041-learn__course__prompt-workflows-study-and-work__lesson__wf-task-briefing.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-task-briefing"
+    },
+    {
+      "route": "/learn/course/prompt-workflows-study-and-work",
+      "file": "desktop-042-learn__course__prompt-workflows-study-and-work.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work"
+    },
+    {
+      "route": "/learn/course/production-prompt-systems",
+      "file": "desktop-043-learn__course__production-prompt-systems.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/production-prompt-systems"
+    },
+    {
+      "route": "/learn/course/production-prompt-systems/lesson/adv-spec-and-interfaces/step/adv-spec-theory",
+      "file": "desktop-044-learn__course__production-prompt-systems__lesson__adv-spec-and-interfaces__step__adv-spec-theory.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/production-prompt-systems/lesson/adv-spec-and-interfaces/step/adv-spec-theory"
+    },
+    {
+      "route": "/learn/course/production-prompt-systems/lesson/adv-evaluation-harness",
+      "file": "desktop-045-learn__course__production-prompt-systems__lesson__adv-evaluation-harness.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/production-prompt-systems/lesson/adv-evaluation-harness"
+    },
+    {
+      "route": "/learn/course/production-prompt-systems/lesson/adv-context-and-guardrails",
+      "file": "desktop-046-learn__course__production-prompt-systems__lesson__adv-context-and-guardrails.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/production-prompt-systems/lesson/adv-context-and-guardrails"
+    },
+    {
+      "route": "/learn/course/production-prompt-systems/lesson/adv-production-capstone",
+      "file": "desktop-047-learn__course__production-prompt-systems__lesson__adv-production-capstone.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/production-prompt-systems/lesson/adv-production-capstone"
+    },
+    {
+      "route": "/missions/daily-lumen-check-in",
+      "file": "desktop-048-missions__daily-lumen-check-in.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/missions/daily-lumen-check-in"
+    },
+    {
+      "route": "/missions/onboarding-first-win",
+      "file": "desktop-049-missions__onboarding-first-win.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/missions/onboarding-first-win"
+    },
+    {
+      "route": "/missions/build-your-ai-routine",
+      "file": "desktop-050-missions__build-your-ai-routine.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/missions/build-your-ai-routine"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations/lesson/pe-foundations/step/pe-foundations-theory",
+      "file": "desktop-051-learn__course__prompt-engineering-foundations__lesson__pe-foundations__step__pe-foundations-theory.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-foundations/step/pe-foundations-theory"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations/lesson/pe-structure-pattern",
+      "file": "desktop-052-learn__course__prompt-engineering-foundations__lesson__pe-structure-pattern.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-structure-pattern"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations/lesson/pe-constraints-and-examples",
+      "file": "desktop-053-learn__course__prompt-engineering-foundations__lesson__pe-constraints-and-examples.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-constraints-and-examples"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations/lesson/pe-iteration-loop",
+      "file": "desktop-054-learn__course__prompt-engineering-foundations__lesson__pe-iteration-loop.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-iteration-loop"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations/lesson/pe-evaluate-quality",
+      "file": "desktop-055-learn__course__prompt-engineering-foundations__lesson__pe-evaluate-quality.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-evaluate-quality"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations/lesson/pe-final-studio",
+      "file": "desktop-056-learn__course__prompt-engineering-foundations__lesson__pe-final-studio.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-final-studio"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations/lesson/pe-structure-pattern/step/pe-structure-theory",
+      "file": "desktop-057-learn__course__prompt-engineering-foundations__lesson__pe-structure-pattern__step__pe-structure-theory.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-structure-pattern/step/pe-structure-theory"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations/lesson/pe-constraints-and-examples/step/pe-constraints-theory",
+      "file": "desktop-058-learn__course__prompt-engineering-foundations__lesson__pe-constraints-and-examples__step__pe-constraints-theory.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-constraints-and-examples/step/pe-constraints-theory"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations/lesson/pe-iteration-loop/step/pe-iteration-theory",
+      "file": "desktop-059-learn__course__prompt-engineering-foundations__lesson__pe-iteration-loop__step__pe-iteration-theory.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-iteration-loop/step/pe-iteration-theory"
+    },
+    {
+      "route": "/category/it/intent/debugging",
+      "file": "desktop-060-category__it__intent__debugging.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/it/intent/debugging"
+    },
+    {
+      "route": "/category/it/intent/analysis",
+      "file": "desktop-061-category__it__intent__analysis.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/it/intent/analysis"
+    },
+    {
+      "route": "/category/marketing/intent/writing",
+      "file": "desktop-062-category__marketing__intent__writing.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/marketing/intent/writing"
+    },
+    {
+      "route": "/category/marketing/intent/planning",
+      "file": "desktop-063-category__marketing__intent__planning.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/marketing/intent/planning"
+    },
+    {
+      "route": "/category/business/intent/analysis",
+      "file": "desktop-064-category__business__intent__analysis.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/business/intent/analysis"
+    },
+    {
+      "route": "/category/business/intent/planning",
+      "file": "desktop-065-category__business__intent__planning.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/business/intent/planning"
+    },
+    {
+      "route": "/learn/course/prompt-workflows-study-and-work/lesson/wf-task-briefing/step/wf-brief-theory",
+      "file": "desktop-066-learn__course__prompt-workflows-study-and-work__lesson__wf-task-briefing__step__wf-brief-theory.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-task-briefing/step/wf-brief-theory"
+    },
+    {
+      "route": "/learn/course/prompt-workflows-study-and-work/lesson/wf-research-and-synthesis",
+      "file": "desktop-067-learn__course__prompt-workflows-study-and-work__lesson__wf-research-and-synthesis.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-research-and-synthesis"
+    },
+    {
+      "route": "/learn/course/prompt-workflows-study-and-work/lesson/wf-writing-workflow",
+      "file": "desktop-068-learn__course__prompt-workflows-study-and-work__lesson__wf-writing-workflow.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-writing-workflow"
+    },
+    {
+      "route": "/learn/course/prompt-workflows-study-and-work/lesson/wf-analysis-workflow",
+      "file": "desktop-069-learn__course__prompt-workflows-study-and-work__lesson__wf-analysis-workflow.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-analysis-workflow"
+    },
+    {
+      "route": "/learn/course/prompt-workflows-study-and-work/lesson/wf-prompt-debugging",
+      "file": "desktop-070-learn__course__prompt-workflows-study-and-work__lesson__wf-prompt-debugging.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-prompt-debugging"
+    },
+    {
+      "route": "/learn/course/prompt-workflows-study-and-work/lesson/wf-capstone",
+      "file": "desktop-071-learn__course__prompt-workflows-study-and-work__lesson__wf-capstone.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-capstone"
+    },
+    {
+      "route": "/learn/course/production-prompt-systems/lesson/adv-evaluation-harness/step/adv-eval-theory",
+      "file": "desktop-072-learn__course__production-prompt-systems__lesson__adv-evaluation-harness__step__adv-eval-theory.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/production-prompt-systems/lesson/adv-evaluation-harness/step/adv-eval-theory"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations/lesson/pe-evaluate-quality/step/pe-quality-theory",
+      "file": "desktop-073-learn__course__prompt-engineering-foundations__lesson__pe-evaluate-quality__step__pe-quality-theory.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-evaluate-quality/step/pe-quality-theory"
+    },
+    {
+      "route": "/learn/course/prompt-workflows-study-and-work/lesson/wf-research-and-synthesis/step/wf-research-theory",
+      "file": "desktop-074-learn__course__prompt-workflows-study-and-work__lesson__wf-research-and-synthesis__step__wf-research-theory.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-research-and-synthesis/step/wf-research-theory"
+    },
+    {
+      "route": "/learn/course/prompt-workflows-study-and-work/lesson/wf-analysis-workflow/step/wf-analysis-theory",
+      "file": "desktop-075-learn__course__prompt-workflows-study-and-work__lesson__wf-analysis-workflow__step__wf-analysis-theory.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-analysis-workflow/step/wf-analysis-theory"
+    },
+    {
+      "route": "/learn/course/prompt-workflows-study-and-work/lesson/wf-prompt-debugging/step/wf-debug-theory",
+      "file": "desktop-076-learn__course__prompt-workflows-study-and-work__lesson__wf-prompt-debugging__step__wf-debug-theory.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-prompt-debugging/step/wf-debug-theory"
+    }
+  ],
+  "mobile": [
+    {
+      "route": "/",
+      "file": "mobile-001-home.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/"
+    },
+    {
+      "route": "/catalog",
+      "file": "mobile-002-catalog.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/catalog"
+    },
+    {
+      "route": "/dashboard",
+      "file": "mobile-003-dashboard.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/dashboard"
+    },
+    {
+      "route": "/home-workbench",
+      "file": "mobile-004-home-workbench.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/home-workbench"
+    },
+    {
+      "route": "/learn",
+      "file": "mobile-005-learn.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn"
+    },
+    {
+      "route": "/learn/start",
+      "file": "mobile-006-learn__start.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/production-prompt-systems/lesson/adv-spec-and-interfaces"
+    },
+    {
+      "route": "/learn/my",
+      "file": "mobile-007-learn__my.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/my"
+    },
+    {
+      "route": "/missions",
+      "file": "mobile-008-missions.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/missions"
+    },
+    {
+      "route": "/wallet",
+      "file": "mobile-009-wallet.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/wallet"
+    },
+    {
+      "route": "/profile",
+      "file": "mobile-010-profile.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/profile"
+    },
+    {
+      "route": "/submit",
+      "file": "mobile-011-submit.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/submit"
+    },
+    {
+      "route": "/pricing",
+      "file": "mobile-012-pricing.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/pricing"
+    },
+    {
+      "route": "/store",
+      "file": "mobile-013-store.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/store"
+    },
+    {
+      "route": "/plans",
+      "file": "mobile-014-plans.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/plans"
+    },
+    {
+      "route": "/onboarding",
+      "file": "mobile-015-onboarding.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/onboarding"
+    },
+    {
+      "route": "/login",
+      "file": "mobile-016-login.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/login"
+    },
+    {
+      "route": "/signup",
+      "file": "mobile-017-signup.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/signup"
+    },
+    {
+      "route": "/prompt/product-requirements-drafter",
+      "file": "mobile-018-prompt__product-requirements-drafter.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/prompt/product-requirements-drafter"
+    },
+    {
+      "route": "/prompt/api-design-review",
+      "file": "mobile-019-prompt__api-design-review.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/prompt/api-design-review"
+    },
+    {
+      "route": "/prompt/onboarding-email-sequence",
+      "file": "mobile-020-prompt__onboarding-email-sequence.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/prompt/onboarding-email-sequence"
+    },
+    {
+      "route": "/prompt/study-topic-explainer",
+      "file": "mobile-021-prompt__study-topic-explainer.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/prompt/study-topic-explainer"
+    },
+    {
+      "route": "/learn/pe-foundations",
+      "file": "mobile-022-learn__pe-foundations.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/pe-foundations"
+    },
+    {
+      "route": "/learn/pe-structure-pattern",
+      "file": "mobile-023-learn__pe-structure-pattern.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/pe-structure-pattern"
+    },
+    {
+      "route": "/learn/pe-constraints-and-examples",
+      "file": "mobile-024-learn__pe-constraints-and-examples.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/pe-constraints-and-examples"
+    },
+    {
+      "route": "/learn/pe-iteration-loop",
+      "file": "mobile-025-learn__pe-iteration-loop.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/pe-iteration-loop"
+    },
+    {
+      "route": "/category/it",
+      "file": "mobile-026-category__it.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/it"
+    },
+    {
+      "route": "/category/marketing",
+      "file": "mobile-027-category__marketing.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/marketing"
+    },
+    {
+      "route": "/category/business",
+      "file": "mobile-028-category__business.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/business"
+    },
+    {
+      "route": "/category/education",
+      "file": "mobile-029-category__education.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/education"
+    },
+    {
+      "route": "/category/arts",
+      "file": "mobile-030-category__arts.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/arts"
+    },
+    {
+      "route": "/category/engineering",
+      "file": "mobile-031-category__engineering.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/engineering"
+    },
+    {
+      "route": "/prompt/react-debug-checklist",
+      "file": "mobile-032-prompt__react-debug-checklist.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/prompt/react-debug-checklist"
+    },
+    {
+      "route": "/prompt/meeting-summary-extractor",
+      "file": "mobile-033-prompt__meeting-summary-extractor.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/prompt/meeting-summary-extractor"
+    },
+    {
+      "route": "/prompt/content-calendar-generator",
+      "file": "mobile-034-prompt__content-calendar-generator.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/prompt/content-calendar-generator"
+    },
+    {
+      "route": "/prompt/unit-test-generator",
+      "file": "mobile-035-prompt__unit-test-generator.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/prompt/unit-test-generator"
+    },
+    {
+      "route": "/prompt/cold-outreach-personalizer",
+      "file": "mobile-036-prompt__cold-outreach-personalizer.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/prompt/cold-outreach-personalizer"
+    },
+    {
+      "route": "/prompt/research-brief-analyst",
+      "file": "mobile-037-prompt__research-brief-analyst.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/prompt/research-brief-analyst"
+    },
+    {
+      "route": "/learn/course/production-prompt-systems/lesson/adv-spec-and-interfaces",
+      "file": "mobile-038-learn__course__production-prompt-systems__lesson__adv-spec-and-interfaces.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/production-prompt-systems/lesson/adv-spec-and-interfaces"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations/lesson/pe-foundations",
+      "file": "mobile-039-learn__course__prompt-engineering-foundations__lesson__pe-foundations.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-foundations"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations",
+      "file": "mobile-040-learn__course__prompt-engineering-foundations.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations"
+    },
+    {
+      "route": "/learn/course/prompt-workflows-study-and-work/lesson/wf-task-briefing",
+      "file": "mobile-041-learn__course__prompt-workflows-study-and-work__lesson__wf-task-briefing.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-task-briefing"
+    },
+    {
+      "route": "/learn/course/prompt-workflows-study-and-work",
+      "file": "mobile-042-learn__course__prompt-workflows-study-and-work.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work"
+    },
+    {
+      "route": "/learn/course/production-prompt-systems",
+      "file": "mobile-043-learn__course__production-prompt-systems.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/production-prompt-systems"
+    },
+    {
+      "route": "/learn/course/production-prompt-systems/lesson/adv-spec-and-interfaces/step/adv-spec-theory",
+      "file": "mobile-044-learn__course__production-prompt-systems__lesson__adv-spec-and-interfaces__step__adv-spec-theory.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/production-prompt-systems/lesson/adv-spec-and-interfaces/step/adv-spec-theory"
+    },
+    {
+      "route": "/learn/course/production-prompt-systems/lesson/adv-evaluation-harness",
+      "file": "mobile-045-learn__course__production-prompt-systems__lesson__adv-evaluation-harness.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/production-prompt-systems/lesson/adv-evaluation-harness"
+    },
+    {
+      "route": "/learn/course/production-prompt-systems/lesson/adv-context-and-guardrails",
+      "file": "mobile-046-learn__course__production-prompt-systems__lesson__adv-context-and-guardrails.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/production-prompt-systems/lesson/adv-context-and-guardrails"
+    },
+    {
+      "route": "/learn/course/production-prompt-systems/lesson/adv-production-capstone",
+      "file": "mobile-047-learn__course__production-prompt-systems__lesson__adv-production-capstone.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/production-prompt-systems/lesson/adv-production-capstone"
+    },
+    {
+      "route": "/missions/daily-lumen-check-in",
+      "file": "mobile-048-missions__daily-lumen-check-in.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/missions/daily-lumen-check-in"
+    },
+    {
+      "route": "/missions/onboarding-first-win",
+      "file": "mobile-049-missions__onboarding-first-win.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/missions/onboarding-first-win"
+    },
+    {
+      "route": "/missions/build-your-ai-routine",
+      "file": "mobile-050-missions__build-your-ai-routine.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/missions/build-your-ai-routine"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations/lesson/pe-foundations/step/pe-foundations-theory",
+      "file": "mobile-051-learn__course__prompt-engineering-foundations__lesson__pe-foundations__step__pe-foundations-theory.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-foundations/step/pe-foundations-theory"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations/lesson/pe-structure-pattern",
+      "file": "mobile-052-learn__course__prompt-engineering-foundations__lesson__pe-structure-pattern.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-structure-pattern"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations/lesson/pe-constraints-and-examples",
+      "file": "mobile-053-learn__course__prompt-engineering-foundations__lesson__pe-constraints-and-examples.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-constraints-and-examples"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations/lesson/pe-iteration-loop",
+      "file": "mobile-054-learn__course__prompt-engineering-foundations__lesson__pe-iteration-loop.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-iteration-loop"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations/lesson/pe-evaluate-quality",
+      "file": "mobile-055-learn__course__prompt-engineering-foundations__lesson__pe-evaluate-quality.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-evaluate-quality"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations/lesson/pe-final-studio",
+      "file": "mobile-056-learn__course__prompt-engineering-foundations__lesson__pe-final-studio.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-final-studio"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations/lesson/pe-structure-pattern/step/pe-structure-theory",
+      "file": "mobile-057-learn__course__prompt-engineering-foundations__lesson__pe-structure-pattern__step__pe-structure-theory.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-structure-pattern/step/pe-structure-theory"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations/lesson/pe-constraints-and-examples/step/pe-constraints-theory",
+      "file": "mobile-058-learn__course__prompt-engineering-foundations__lesson__pe-constraints-and-examples__step__pe-constraints-theory.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-constraints-and-examples/step/pe-constraints-theory"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations/lesson/pe-iteration-loop/step/pe-iteration-theory",
+      "file": "mobile-059-learn__course__prompt-engineering-foundations__lesson__pe-iteration-loop__step__pe-iteration-theory.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-iteration-loop/step/pe-iteration-theory"
+    },
+    {
+      "route": "/category/it/intent/debugging",
+      "file": "mobile-060-category__it__intent__debugging.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/it/intent/debugging"
+    },
+    {
+      "route": "/category/it/intent/analysis",
+      "file": "mobile-061-category__it__intent__analysis.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/it/intent/analysis"
+    },
+    {
+      "route": "/category/marketing/intent/writing",
+      "file": "mobile-062-category__marketing__intent__writing.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/marketing/intent/writing"
+    },
+    {
+      "route": "/category/marketing/intent/planning",
+      "file": "mobile-063-category__marketing__intent__planning.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/marketing/intent/planning"
+    },
+    {
+      "route": "/category/business/intent/analysis",
+      "file": "mobile-064-category__business__intent__analysis.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/business/intent/analysis"
+    },
+    {
+      "route": "/category/business/intent/planning",
+      "file": "mobile-065-category__business__intent__planning.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/category/business/intent/planning"
+    },
+    {
+      "route": "/learn/course/prompt-workflows-study-and-work/lesson/wf-task-briefing/step/wf-brief-theory",
+      "file": "mobile-066-learn__course__prompt-workflows-study-and-work__lesson__wf-task-briefing__step__wf-brief-theory.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-task-briefing/step/wf-brief-theory"
+    },
+    {
+      "route": "/learn/course/prompt-workflows-study-and-work/lesson/wf-research-and-synthesis",
+      "file": "mobile-067-learn__course__prompt-workflows-study-and-work__lesson__wf-research-and-synthesis.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-research-and-synthesis"
+    },
+    {
+      "route": "/learn/course/prompt-workflows-study-and-work/lesson/wf-writing-workflow",
+      "file": "mobile-068-learn__course__prompt-workflows-study-and-work__lesson__wf-writing-workflow.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-writing-workflow"
+    },
+    {
+      "route": "/learn/course/prompt-workflows-study-and-work/lesson/wf-analysis-workflow",
+      "file": "mobile-069-learn__course__prompt-workflows-study-and-work__lesson__wf-analysis-workflow.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-analysis-workflow"
+    },
+    {
+      "route": "/learn/course/prompt-workflows-study-and-work/lesson/wf-prompt-debugging",
+      "file": "mobile-070-learn__course__prompt-workflows-study-and-work__lesson__wf-prompt-debugging.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-prompt-debugging"
+    },
+    {
+      "route": "/learn/course/prompt-workflows-study-and-work/lesson/wf-capstone",
+      "file": "mobile-071-learn__course__prompt-workflows-study-and-work__lesson__wf-capstone.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-capstone"
+    },
+    {
+      "route": "/learn/course/production-prompt-systems/lesson/adv-evaluation-harness/step/adv-eval-theory",
+      "file": "mobile-072-learn__course__production-prompt-systems__lesson__adv-evaluation-harness__step__adv-eval-theory.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/production-prompt-systems/lesson/adv-evaluation-harness/step/adv-eval-theory"
+    },
+    {
+      "route": "/learn/course/prompt-engineering-foundations/lesson/pe-evaluate-quality/step/pe-quality-theory",
+      "file": "mobile-073-learn__course__prompt-engineering-foundations__lesson__pe-evaluate-quality__step__pe-quality-theory.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-engineering-foundations/lesson/pe-evaluate-quality/step/pe-quality-theory"
+    },
+    {
+      "route": "/learn/course/prompt-workflows-study-and-work/lesson/wf-research-and-synthesis/step/wf-research-theory",
+      "file": "mobile-074-learn__course__prompt-workflows-study-and-work__lesson__wf-research-and-synthesis__step__wf-research-theory.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-research-and-synthesis/step/wf-research-theory"
+    },
+    {
+      "route": "/learn/course/prompt-workflows-study-and-work/lesson/wf-analysis-workflow/step/wf-analysis-theory",
+      "file": "mobile-075-learn__course__prompt-workflows-study-and-work__lesson__wf-analysis-workflow__step__wf-analysis-theory.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-analysis-workflow/step/wf-analysis-theory"
+    },
+    {
+      "route": "/learn/course/prompt-workflows-study-and-work/lesson/wf-prompt-debugging/step/wf-debug-theory",
+      "file": "mobile-076-learn__course__prompt-workflows-study-and-work__lesson__wf-prompt-debugging__step__wf-debug-theory.png",
+      "navError": null,
+      "shotError": null,
+      "finalUrl": "http://127.0.0.1:3000/learn/course/prompt-workflows-study-and-work/lesson/wf-prompt-debugging/step/wf-debug-theory"
+    }
+  ]
+}
