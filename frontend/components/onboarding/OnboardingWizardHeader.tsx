@@ -18,7 +18,7 @@ export function OnboardingWizardHeader({
   const { t } = useI18n();
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="pv-panel flex flex-wrap items-center justify-between gap-3 px-5 py-4">
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
           {t("onboardingWizard.activationSetup")}{" "}
@@ -41,7 +41,7 @@ export function OnboardingWizardHeader({
         type="button"
         onClick={() => void onSkip()}
         disabled={skipPending}
-        className="pv-button-ghost !w-auto px-0 py-0 text-sm text-zinc-600 disabled:opacity-60"
+        className="pv-button-secondary !w-auto disabled:opacity-60"
       >
         {skipPending ? t("onboardingWizard.skipping") : t("onboardingWizard.skipForNow")}
       </button>

@@ -150,12 +150,12 @@ export function PlansClient({ plans, error }: PlansClientProps) {
 
       <section
         aria-label={t("plans.title")}
-        className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory [scrollbar-gutter:stable]"
+        className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
       >
         {sortedPlans.map((plan) => (
           <div
             key={plan.tier}
-            className="w-[min(22rem,calc(100vw-2.5rem))] shrink-0 snap-start lg:w-[min(24rem,calc(100vw-6rem))]"
+            className="h-full"
           >
             <PlanPricingCard
               plan={plan}
@@ -266,18 +266,18 @@ export function PlansClient({ plans, error }: PlansClientProps) {
         <p className="text-sm text-zinc-600">{t("dashboard.loading")}</p>
       ) : isAuthenticated ? (
         <section className="pv-panel px-5 py-5 text-sm text-zinc-700 sm:px-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p>
-              {t("plans.currentTier")}:{" "}
-              <span className={`font-medium ${currentTierClass}`}>{t(getTierTranslationKey(currentTier))}</span>
-              {currentBillingStatusLabel ? (
-                <>
-                  {" "}
-                  · {t("plans.subscriptionStatus")}:{" "}
-                  <span className={`font-medium ${currentStatusClass}`}>{currentBillingStatusLabel}</span>
-                </>
-              ) : null}
-            </p>
+          <p>
+            {t("plans.currentTier")}:{" "}
+            <span className={`font-medium ${currentTierClass}`}>{t(getTierTranslationKey(currentTier))}</span>
+            {currentBillingStatusLabel ? (
+              <>
+                {" "}
+                · {t("plans.subscriptionStatus")}:{" "}
+                <span className={`font-medium ${currentStatusClass}`}>{currentBillingStatusLabel}</span>
+              </>
+            ) : null}
+          </p>
+          <div className="pv-action-bar pv-action-bar-start pv-action-bar-compact mt-3">
             <button
               type="button"
               onClick={() => void openBillingPortal()}

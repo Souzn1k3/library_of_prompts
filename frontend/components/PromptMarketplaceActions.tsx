@@ -102,7 +102,7 @@ export function PromptMarketplaceActions({ promptId, promptSlug, price, access, 
 
       {bodyLocked ? (
         access?.catalog_action === "signin" ? (
-          <div className="flex flex-wrap gap-3">
+          <div className="pv-action-bar pv-action-bar-start">
             <Link href="/login" className="pv-button-primary">
               {t("prompt.marketplace.signin")}
             </Link>
@@ -111,7 +111,7 @@ export function PromptMarketplaceActions({ promptId, promptSlug, price, access, 
             </Link>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="pv-action-bar pv-action-bar-start">
             <button
               type="button"
               onClick={() => void onBuyWithLumens()}

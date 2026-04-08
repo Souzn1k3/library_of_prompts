@@ -83,7 +83,7 @@ export function LearningCoursePageView({ language, data }: LearningCoursePageVie
             </ul>
           </section>
         ) : null}
-        <div className="pv-cta-group">
+        <div className="pv-section-toolbar">
           <Link href={primaryHref} className="pv-button-primary">
             {course.start_or_continue_label}
           </Link>
@@ -190,7 +190,7 @@ export function LearningCoursePageView({ language, data }: LearningCoursePageVie
                       ) : null}
                     </div>
 
-                    <div className="mt-3 flex flex-wrap gap-3">
+                    <div className="pv-action-bar pv-action-bar-start">
                       <Link
                         href={lesson.continue_href}
                         className={`pv-button-secondary !w-auto ${lesson.unlocked ? "" : "pointer-events-none opacity-50"}`}
@@ -224,9 +224,11 @@ export function LearningCoursePageView({ language, data }: LearningCoursePageVie
               {course.product_action.body ? (
                 <p className="mt-3 text-sm leading-relaxed text-zinc-700">{course.product_action.body}</p>
               ) : null}
-              <Link href={course.product_action.href} className="pv-button-primary mt-4 !w-auto">
-                {course.product_action.label}
-              </Link>
+              <div className="pv-action-bar pv-action-bar-start">
+                <Link href={course.product_action.href} className="pv-button-primary !w-auto">
+                  {course.product_action.label}
+                </Link>
+              </div>
             </section>
           ) : null}
         </section>

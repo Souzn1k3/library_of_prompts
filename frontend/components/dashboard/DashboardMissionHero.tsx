@@ -21,6 +21,16 @@ export function DashboardMissionHero(props: DashboardMissionHeroProps) {
       eyebrow={t("dashboard.title")}
       title={t("dashboard.title")}
       description={t("dashboard.subtitle")}
+      actions={(
+        <>
+          <Link href={props.primaryAction.href} className="pv-button-primary">
+            {props.primaryAction.label}
+          </Link>
+          <Link href={APP_ROUTES.learnMy} className="pv-button-secondary">
+            {t("learn.myModules")}
+          </Link>
+        </>
+      )}
     >
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-12">
         <div className="pv-card pv-card-hover-lift flex h-full min-h-[12rem] flex-col gap-4 p-5 md:col-span-2 xl:col-span-6 sm:p-6">
@@ -32,10 +42,9 @@ export function DashboardMissionHero(props: DashboardMissionHeroProps) {
             <p className="text-sm leading-relaxed text-zinc-600">{viewModel.nextStepBody}</p>
           </div>
 
-          <div className="mt-auto border-t border-[rgba(15,23,42,0.08)] pt-3">
-            <Link href={props.primaryAction.href} className="pv-inline-link flex w-full justify-between">
+          <div className="pv-action-bar pv-action-bar-start">
+            <Link href={props.primaryAction.href} className="pv-button-secondary !w-auto">
               {props.primaryAction.label}
-              <span aria-hidden="true">↗</span>
             </Link>
           </div>
         </div>

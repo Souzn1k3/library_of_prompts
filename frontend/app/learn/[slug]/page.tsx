@@ -50,7 +50,7 @@ export default async function LegacyLessonCompatibilityPage(props: Props) {
   return (
     <div className="pv-page-sm space-y-4">
       <div className="pv-alert pv-alert-warning">{getTranslation(language, "learn.lessonLoadFailed")}</div>
-      <div className="flex flex-wrap gap-3">
+      <div className="pv-action-bar pv-action-bar-start">
         <Link href={appRoute.learnCourse(LEARNING_FOUNDATIONS_COURSE_SLUG)} className="pv-button-primary !w-auto">
           {getTranslation(language, "home.startLearning")}
         </Link>

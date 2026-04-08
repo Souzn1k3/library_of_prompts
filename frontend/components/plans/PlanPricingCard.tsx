@@ -49,7 +49,7 @@ export function PlanPricingCard({
 
   return (
     <div
-      className={`pv-card p-5 ${
+      className={`pv-card flex h-full flex-col p-5 ${
         preferredTier === plan.tier
           ? "border-zinc-900 ring-1 ring-zinc-900/20"
           : ""
@@ -90,18 +90,18 @@ export function PlanPricingCard({
       <button
         type="button"
         onClick={onToggleExpanded}
-        className="mt-4 text-sm font-semibold text-[var(--pv-brand-strong)]"
+        className="mt-4 pv-inline-link"
       >
         {expanded ? t("plans.hideFeatures") : t("plans.showFeatures")}
       </button>
       {expanded ? (
-        <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-zinc-700">
+        <ul className="mt-3 space-y-1 rounded-[0.75rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] p-3 text-sm text-zinc-700">
           {plan.full_features.map((feature) => (
             <li key={feature}>{feature}</li>
           ))}
         </ul>
       ) : null}
-      <div className="mt-4">
+      <div className="pv-action-bar pv-action-bar-start mt-auto">
         {status === "loading" ? (
           <span className="inline-flex items-center rounded-md bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-700">
             {t("dashboard.loading")}

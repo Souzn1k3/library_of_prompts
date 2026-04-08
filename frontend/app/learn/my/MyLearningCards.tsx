@@ -63,7 +63,7 @@ export function ActiveCourseCard({
         </div>
       </dl>
 
-      <div className="mt-4 flex flex-wrap gap-3">
+      <div className="pv-action-bar pv-action-bar-start">
         <Link
           href={course.continue_href ?? appRoute.learnCourse(course.slug)}
           className="pv-button-primary !w-auto"
@@ -110,7 +110,7 @@ export function CompletedCourseCard({
         ) : null}
       </div>
 
-      <div className="mt-4 flex gap-3">
+      <div className="pv-action-bar pv-action-bar-start">
         <Link href={appRoute.learnCourse(course.slug)} className="pv-button-secondary !w-auto">
           <T k="learn.reviewCourse" />
         </Link>
@@ -125,13 +125,11 @@ export function WeakAreaCard({ area }: { area: LearningWeakArea }) {
       <p className="text-sm font-semibold text-zinc-950">{area.tag}</p>
       <p className="mt-2 text-sm text-zinc-700">{area.recommendation}</p>
       {area.lesson_slug ? (
-        <Link
-          href={appRoute.learnBySlug(area.lesson_slug)}
-          className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[var(--pv-brand-strong)]"
-        >
-          <T k="learn.goToRecommendedLesson" />
-          <span aria-hidden="true">↗</span>
-        </Link>
+        <div className="pv-action-bar pv-action-bar-start">
+          <Link href={appRoute.learnBySlug(area.lesson_slug)} className="pv-button-secondary !w-auto">
+            <T k="learn.goToRecommendedLesson" />
+          </Link>
+        </div>
       ) : null}
     </li>
   );

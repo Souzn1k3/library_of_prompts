@@ -62,7 +62,7 @@ export function PromptPageHeader({ language, prompt, category }: PromptPageHeade
             <li>{getTranslation(language, "prompt.proBenefitCopy")}</li>
             <li>{getTranslation(language, "prompt.proBenefitAdvanced")}</li>
           </ul>
-          <div className="mt-4 flex flex-wrap gap-3">
+          <div className="pv-action-bar pv-action-bar-start">
             <TrackedUpgradeButton
               href="/pricing?tier=starter"
               page={`/prompt/${prompt.slug}`}

@@ -168,7 +168,7 @@ export default async function LearnIndexPage() {
                       <div className="pv-progress-fill" style={{ width: `${course.progress_percent}%` }} />
                     </div>
 
-                    <div className="mt-5 flex flex-wrap gap-3">
+                    <div className="pv-action-bar pv-action-bar-start">
                       <Link href={destination} className="pv-button-primary !w-auto">
                         {ctaLabel}
                       </Link>

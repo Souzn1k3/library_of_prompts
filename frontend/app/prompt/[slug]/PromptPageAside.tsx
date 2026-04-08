@@ -37,7 +37,7 @@ export function PromptPageAside({
               : getTranslation(language, "prompt.upgradeToUnlock")
             : getTranslation(language, "dashboard.tryNow")}
         </p>
-        <div className="mt-4 flex flex-col gap-3">
+        <div className="pv-action-bar pv-action-bar-start">
           {!prompt.body_locked ? (
             <a
               href="https://t.me/prompts_souz_bot"
