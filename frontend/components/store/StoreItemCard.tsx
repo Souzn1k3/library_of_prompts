@@ -87,7 +87,7 @@ export function StoreItemCard({
           <button
             type="button"
             disabled
-            className={`mt-auto inline-flex min-h-[2.9rem] items-center justify-center rounded-full bg-[var(--pv-brand)] px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(37,92,255,0.3)] transition disabled:cursor-not-allowed disabled:opacity-75 ${tone.button}`}
+            className={`pv-button-primary mt-auto disabled:cursor-not-allowed disabled:opacity-75 ${tone.button}`}
           >
             {t("store.owned")}
           </button>
@@ -95,7 +95,7 @@ export function StoreItemCard({
           <button
             type="button"
             disabled
-            className={`mt-auto inline-flex min-h-[2.9rem] items-center justify-center rounded-full bg-[var(--pv-brand)] px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(37,92,255,0.3)] transition disabled:cursor-not-allowed disabled:opacity-75 ${tone.button}`}
+            className={`pv-button-primary mt-auto disabled:cursor-not-allowed disabled:opacity-75 ${tone.button}`}
           >
             {t("store.soldOut")}
           </button>
@@ -104,7 +104,7 @@ export function StoreItemCard({
             type="button"
             onClick={() => void onPurchase(item)}
             disabled={disabled}
-            className={`mt-auto inline-flex min-h-[2.9rem] items-center justify-center gap-2 rounded-full bg-[var(--pv-brand)] px-4 py-3 text-sm font-semibold text-white shadow-[0_12px_24px_rgba(37,92,255,0.3)] transition disabled:cursor-not-allowed disabled:opacity-75 ${tone.button}`}
+            className={`pv-button-primary mt-auto gap-2 disabled:cursor-not-allowed disabled:opacity-75 ${tone.button}`}
           >
             {purchasing === item.slug ? (
               t("missions.loading")

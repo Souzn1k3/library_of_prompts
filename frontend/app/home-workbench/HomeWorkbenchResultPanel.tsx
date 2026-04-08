@@ -105,8 +105,8 @@ export function HomeWorkbenchResultPanel({
           </p>
           <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{selectedScenario.title}</h2>
           <p className="mt-2 text-sm leading-relaxed text-zinc-600">{t("home.entryLiveStageSubtitle")}</p>
-          {engagementMessage ? <p className="mt-2 text-xs font-semibold text-emerald-700">{engagementMessage}</p> : null}
-          {guardMessage ? <p className="mt-1 text-xs font-semibold text-amber-700">{guardMessage}</p> : null}
+          {engagementMessage ? <p className="mt-2 text-xs font-semibold text-[var(--pv-success)]">{engagementMessage}</p> : null}
+          {guardMessage ? <p className="mt-1 text-xs font-semibold text-[var(--pv-warning)]">{guardMessage}</p> : null}
           {lastRunAt ? (
             <p className="mt-1 text-xs text-zinc-500">{t("home.entryLastRun", { time: lastRunAt.toLocaleTimeString() })}</p>
           ) : null}
@@ -171,20 +171,20 @@ export function HomeWorkbenchResultPanel({
           {liveResult}
         </pre>
 
-        <div className="space-y-2 rounded-[1rem] border border-zinc-200 bg-zinc-50/70 p-3">
+        <div className="space-y-2 rounded-[1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] p-3">
           <p className="text-sm font-semibold text-zinc-900">{t("home.entryProGateTitle")}</p>
           <p className="text-sm leading-relaxed text-zinc-600">{t("home.entryProGateBody")}</p>
           {demoStatus.isPro ? (
-            <p className="text-xs text-emerald-700">{t("home.entryDemoRunsUnlimited")}</p>
+            <p className="text-xs text-[var(--pv-success)]">{t("home.entryDemoRunsUnlimited")}</p>
           ) : (
             <p className="text-xs text-zinc-500">
               {t("home.entryDemoRunsLeft", { count: demoStatus.remainingRuns ?? 0 })}
             </p>
           )}
-          {demoStatus.capReached ? <p className="text-xs text-amber-700">{t("home.entryDemoCapReached")}</p> : null}
+          {demoStatus.capReached ? <p className="text-xs text-[var(--pv-warning)]">{t("home.entryDemoCapReached")}</p> : null}
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="pv-action-bar pv-action-bar-start">
           <button type="button" onClick={onRunNow} className="pv-button-primary" disabled={runPending || demoStatus.capReached}>
             {runPending ? t("home.entryRunPending") : t("home.entryRunNow")}
           </button>

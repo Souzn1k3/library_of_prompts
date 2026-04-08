@@ -24,6 +24,7 @@ import "./styles/components.css";
 import "./styles/economy.css";
 import "./styles/utility.css";
 import "./styles/theme-dark.css";
+import "./styles/theme-stepik.css";
 
 const manrope = localFont({
   src: "./fonts/manrope/Manrope[wght].ttf",
@@ -61,8 +62,7 @@ const themeInitScript = `
   try {
     const key = "pv-theme";
     const stored = window.localStorage.getItem(key);
-    const system = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    const theme = stored === "dark" || stored === "light" ? stored : system;
+    const theme = stored === "dark" || stored === "light" ? stored : "light";
     document.documentElement.setAttribute("data-theme", theme);
   } catch {
     document.documentElement.setAttribute("data-theme", "light");

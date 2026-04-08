@@ -5,9 +5,9 @@ import { getContributorTierTranslationKey } from "@/lib/i18n";
 import type { ContributorTier } from "@/lib/types";
 
 function tierClasses(tier: ContributorTier | null | undefined): string {
-  if (tier === "top") return "border border-[#e9d8af] bg-[#f8f2e5] text-[#8a6119]";
-  if (tier === "verified") return "border border-[#cae5da] bg-[#edf8f2] text-[#1b6a53]";
-  if (tier === "new") return "border border-[#d8e4ff] bg-[#eff4ff] text-[#3d568d]";
+  if (tier === "top") return "border border-[var(--pv-border-strong)] bg-[var(--pv-brand-soft)] text-[var(--pv-brand-strong)]";
+  if (tier === "verified") return "border border-[rgba(38,122,94,0.3)] bg-[#edf8f3] text-[#1f5e49]";
+  if (tier === "new") return "border border-zinc-200 bg-zinc-50 text-zinc-700";
   return "border border-zinc-200 bg-zinc-100 text-zinc-700";
 }
 

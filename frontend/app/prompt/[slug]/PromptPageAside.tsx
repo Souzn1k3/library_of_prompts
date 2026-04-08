@@ -124,7 +124,7 @@ function VerifiedContributorBadge({ label }: { label: string }) {
     >
       <svg
         viewBox="0 0 20 20"
-        className="h-full w-full drop-shadow-[0_1px_2px_rgba(15,23,42,0.18)]"
+        className="h-full w-full"
         aria-hidden="true"
         focusable="false"
       >

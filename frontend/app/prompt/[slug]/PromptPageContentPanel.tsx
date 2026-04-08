@@ -49,20 +49,20 @@ export function PromptPageContentPanel({
           </div>
         ) : null}
         <pre
-          className={`overflow-x-auto whitespace-pre-wrap rounded-[1.25rem] border border-[var(--pv-border)] bg-white/80 p-5 font-mono text-sm leading-relaxed text-zinc-900 ${!bodyLocked ? "pr-14" : ""} ${bodyLocked ? "select-none blur-[2px]" : ""}`}
+          className={`overflow-x-auto whitespace-pre-wrap rounded-[1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] p-5 font-mono text-sm leading-relaxed text-zinc-900 ${!bodyLocked ? "pr-14" : ""} ${bodyLocked ? "select-none blur-[1.5px]" : ""}`}
         >
           {previewBody}
         </pre>
 
         {bodyLocked ? (
-          <div className="absolute inset-x-4 bottom-4 rounded-[1rem] border border-zinc-200 bg-white/95 p-4 shadow-[0_16px_30px_rgba(15,23,42,0.14)]">
+          <div className="absolute inset-x-4 bottom-4 rounded-[0.85rem] border border-[var(--pv-border)] bg-[var(--pv-surface-strong)] p-4">
             <p className="text-sm font-semibold text-zinc-950">
               {getTranslation(language, "prompt.scenarioLockedOverlayTitle")}
             </p>
             <p className="mt-1 text-sm leading-relaxed text-zinc-600">
               {getTranslation(language, "prompt.scenarioLockedOverlayBody")}
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="pv-action-bar pv-action-bar-start">
               <Link href="/pricing?tier=starter" className="pv-button-primary !w-auto">
                 {getTranslation(language, "prompt.upgradeToUnlock")}
               </Link>

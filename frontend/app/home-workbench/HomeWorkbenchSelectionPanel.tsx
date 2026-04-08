@@ -114,7 +114,7 @@ export function HomeWorkbenchSelectionPanel({
                   onClick={() => onToggleFacet(option.value)}
                   className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
                     selectedFacet === option.value
-                      ? "border-[var(--pv-brand-strong)] bg-[var(--pv-brand-soft)] text-[var(--pv-brand-strong)]"
+                      ? "border-[var(--pv-border-strong)] bg-[var(--pv-brand-soft)] text-[var(--pv-brand-strong)]"
                       : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-900"
                   }`}
                 >
@@ -153,8 +153,8 @@ export function HomeWorkbenchSelectionPanel({
                   onClick={() => onSelectScenario(scenario.slug)}
                   className={`rounded-[1rem] border p-3 text-left transition ${
                     isActive
-                      ? "border-[var(--pv-brand-strong)] bg-[var(--pv-brand-soft)] shadow-[0_8px_20px_rgba(37,92,255,0.12)]"
-                      : "border-zinc-200 bg-white hover:border-zinc-300 hover:shadow-[0_8px_18px_rgba(15,23,42,0.07)]"
+                      ? "border-[var(--pv-border-strong)] bg-[var(--pv-brand-soft)]"
+                      : "border-zinc-200 bg-white hover:border-zinc-300"
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">

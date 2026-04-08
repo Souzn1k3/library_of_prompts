@@ -55,7 +55,7 @@ export function DashboardBillingSection({
           <p className="mt-1 text-sm text-zinc-700">{t("dashboard.billingActionHint")}</p>
         </div>
       </div>
-      <div className="mt-5 flex flex-wrap gap-3">
+      <div className="pv-action-bar pv-action-bar-start">
         <button
           type="button"
           onClick={onOpenPortal}
