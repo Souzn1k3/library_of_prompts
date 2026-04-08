@@ -44,12 +44,18 @@ export function BestNextPurchase({ bestItem, balance, estimatedDaysToAfford }: B
 
   return (
     <section className="pv-panel px-5 py-5">
-      <div className="flex items-start justify-between gap-3">
+      <div className="pv-wallet-best-next-head flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="pv-kicker">{t("wallet.nextSpend")}</p>
           <h2 className="mt-2 text-xl font-bold tracking-[-0.04em] text-zinc-950">{bestItem.title}</h2>
         </div>
-        <LmnAmount amount={bestItem.price} symbol={TOKEN_SHORT_CODE} strong state="spent" />
+        <LmnAmount
+          amount={bestItem.price}
+          symbol={TOKEN_SHORT_CODE}
+          strong
+          state="spent"
+          className="pv-wallet-best-next-price"
+        />
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">

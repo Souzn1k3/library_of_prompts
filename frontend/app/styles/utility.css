@@ -184,6 +184,15 @@
     justify-content: center;
   }
 
+  .pv-wallet-best-next-head {
+    flex-wrap: wrap;
+  }
+
+  .pv-wallet-best-next-price.pv-lmn-token[data-strong="true"] {
+    width: auto;
+    justify-content: flex-start;
+  }
+
   .pv-lmn-balance-card {
     border-radius: 1.25rem;
     padding: 1rem;
