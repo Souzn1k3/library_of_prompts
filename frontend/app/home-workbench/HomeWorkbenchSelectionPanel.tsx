@@ -72,12 +72,15 @@ export function HomeWorkbenchSelectionPanel({
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
             {t("home.entryFilterTechnique")}
           </p>
-          <div className="mt-2 pv-segmented">
+          <div className="mt-2 flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => onSelectTechnique("all")}
-              data-active={selectedTechnique === "all" ? "true" : "false"}
-              className="pv-segment-button"
+              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                selectedTechnique === "all"
+                  ? "border-zinc-900 bg-zinc-900 text-white"
+                  : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-900"
+              }`}
             >
               {t("home.entryFilterAll")}
             </button>
@@ -86,8 +89,11 @@ export function HomeWorkbenchSelectionPanel({
                 key={`home-technique-${technique}`}
                 type="button"
                 onClick={() => onSelectTechnique(technique)}
-                data-active={selectedTechnique === technique ? "true" : "false"}
-                className="pv-segment-button"
+                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                  selectedTechnique === technique
+                    ? "border-zinc-900 bg-zinc-900 text-white"
+                    : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-900"
+                }`}
               >
                 {t(getTechniqueTranslationKey(technique))}
               </button>
@@ -100,14 +106,17 @@ export function HomeWorkbenchSelectionPanel({
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
               {t("home.entryQuickScenarios")}
             </p>
-            <div className="mt-2 pv-segmented">
+            <div className="mt-2 flex flex-wrap gap-2">
               {quickFacetOptions.map((option) => (
                 <button
                   key={`home-use-case-${option.value}`}
                   type="button"
                   onClick={() => onToggleFacet(option.value)}
-                  data-active={selectedFacet === option.value ? "true" : "false"}
-                  className="pv-segment-button"
+                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                    selectedFacet === option.value
+                      ? "border-[var(--pv-border-strong)] bg-[var(--pv-brand-soft)] text-[var(--pv-brand-strong)]"
+                      : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-900"
+                  }`}
                 >
                   {option.label}
                 </button>
@@ -126,7 +135,7 @@ export function HomeWorkbenchSelectionPanel({
             <button
               type="button"
               onClick={onResetFilters}
-              className="pv-inline-link"
+              className="text-sm font-semibold text-zinc-500 transition hover:text-zinc-900"
             >
               {t("home.entryResetFilters")}
             </button>
@@ -172,14 +181,13 @@ export function HomeWorkbenchSelectionPanel({
             })}
           </div>
         ) : (
-          <div className="pv-surface-block">
+          <div className="rounded-[1rem] border border-dashed border-zinc-300 bg-zinc-50/85 p-4">
             <p className="text-sm font-semibold text-zinc-900">{t("home.entryNoResultsTitle")}</p>
             <p className="mt-1 text-sm leading-relaxed text-zinc-600">{t("home.entryNoResultsBody")}</p>
-            <div className="pv-action-bar pv-action-bar-start">
-              <Link href="/catalog" className="pv-button-secondary !w-auto">
-                {t("home.entryNoResultsAction")}
-              </Link>
-            </div>
+            <Link href="/catalog" className="pv-inline-link mt-3 text-sm">
+              {t("home.entryNoResultsAction")}
+              <span aria-hidden="true">↗</span>
+            </Link>
           </div>
         )}
       </div>

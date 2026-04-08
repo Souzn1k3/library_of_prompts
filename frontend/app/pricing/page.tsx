@@ -1,9 +1,8 @@
-import Link from "next/link";
 import type { Metadata } from "next";
 
 import { PlansClient } from "@/components/PlansClient";
 import { T } from "@/components/i18n/T";
-import { PageIntro } from "@/components/navigation/PageIntro";
+import { AppBreadcrumbs } from "@/components/navigation/AppBreadcrumbs";
 import { ApiRequestError, fetchPlans } from "@/lib/api";
 import { getTranslation } from "@/lib/i18n";
 import { getServerAuthCookieState } from "@/lib/server-auth";
@@ -41,41 +40,18 @@ export default async function PricingPage() {
   }
 
   return (
-    <div className="pv-page">
-      <PageIntro
-        breadcrumbs={breadcrumbs}
-        eyebrow={<T k="nav.plans" />}
-        title={<T k="plans.title" />}
-        description={<T k="plans.subtitle" />}
-        actions={(
-          <>
-            <Link href={authState.hasAnyAuthCookie ? "/dashboard" : "/signup"} className="pv-button-primary">
-              <T k={authState.hasAnyAuthCookie ? "nav.dashboard" : "nav.signup"} />
-            </Link>
-            <Link href="/catalog" className="pv-button-secondary">
-              <T k="home.explorePrompts" />
-            </Link>
-          </>
-        )}
-        aside={(
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-            <div className="pv-stat-card">
-              <p className="pv-stat-label">
-                <T k="nav.plans" />
-              </p>
-              <p className="mt-3 text-2xl font-semibold text-zinc-950">{plans.length}</p>
-            </div>
-            <div className="pv-stat-card">
-              <p className="pv-stat-label">
-                <T k="plans.compareTitle" />
-              </p>
-              <p className="mt-3 text-sm text-zinc-600">
-                <T k="plans.compareSubtitle" />
-              </p>
-            </div>
-          </div>
-        )}
-      />
+    <div className="pv-page-sm">
+      <section className="pv-panel px-5 py-5 sm:px-7 sm:py-6">
+        <AppBreadcrumbs items={breadcrumbs} />
+        <div className="mt-3 space-y-2">
+          <h1 className="text-4xl font-bold tracking-[-0.04em] text-zinc-950 sm:text-5xl">
+            <T k="plans.title" />
+          </h1>
+          <p className="max-w-3xl text-base leading-7 text-zinc-600">
+            <T k="plans.subtitle" />
+          </p>
+        </div>
+      </section>
       <PlansClient plans={plans} error={error} />
     </div>
   );

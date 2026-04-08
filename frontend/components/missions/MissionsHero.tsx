@@ -126,11 +126,10 @@ function MissionNavCard({
       ) : null}
 
       {href ? (
-        <div className="pv-action-bar pv-action-bar-start mt-auto">
-          <Link href={href} className="pv-button-secondary !w-auto">
-            {ctaLabel}
-          </Link>
-        </div>
+        <Link href={href} className="mt-auto pv-inline-link">
+          {ctaLabel}
+          <span aria-hidden="true">↗</span>
+        </Link>
       ) : null}
     </article>
   );

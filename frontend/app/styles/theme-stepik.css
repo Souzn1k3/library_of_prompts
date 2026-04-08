@@ -225,12 +225,6 @@ body {
   padding-top: 0.85rem;
 }
 
-.pv-action-bar-compact {
-  border-top: 0;
-  margin-top: 0;
-  padding-top: 0;
-}
-
 .pv-action-bar-start {
   justify-content: flex-start;
 }
@@ -240,73 +234,6 @@ body {
 .pv-action-bar > .pv-button-ghost,
 .pv-action-bar > .pv-inline-link {
   width: auto;
-}
-
-.pv-section-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.55rem;
-}
-
-.pv-segmented {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.pv-segment-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.38rem;
-  min-height: 2.2rem;
-  border: 1px solid var(--pv-border);
-  border-radius: 999px;
-  background: #fff;
-  padding: 0.45rem 0.82rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  color: #4c5a6d;
-  transition:
-    border-color 160ms ease,
-    background-color 160ms ease,
-    color 160ms ease;
-}
-
-.pv-segment-button:hover {
-  border-color: var(--pv-border-strong);
-  background: #f8fbff;
-  color: var(--pv-brand-strong);
-}
-
-.pv-segment-button[data-active="true"] {
-  border-color: rgba(47, 111, 189, 0.36);
-  background: var(--pv-brand-soft);
-  color: var(--pv-brand-strong);
-}
-
-.pv-segment-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.42rem;
-  border-radius: 999px;
-  background: rgba(15, 23, 42, 0.08);
-  padding: 0.05rem 0.38rem;
-  font-size: 0.64rem;
-  font-weight: 700;
-  line-height: 1.1;
-  color: inherit;
-}
-
-.pv-surface-block {
-  border: 1px solid var(--pv-border);
-  border-radius: 0.9rem;
-  background: var(--pv-surface-muted);
-  padding: 0.95rem;
 }
 
 .pv-button-primary,
@@ -1033,29 +960,6 @@ html[data-theme="dark"] .pv-workspace-status {
   border-color: var(--pv-border);
   background: #17263e;
   color: var(--pv-text);
-}
-
-html[data-theme="dark"] .pv-segment-button {
-  border-color: var(--pv-border);
-  background: #17263e;
-  color: var(--pv-text);
-}
-
-html[data-theme="dark"] .pv-segment-button:hover {
-  border-color: var(--pv-border-strong);
-  background: rgba(92, 149, 217, 0.2);
-  color: #eff6ff;
-}
-
-html[data-theme="dark"] .pv-segment-button[data-active="true"] {
-  border-color: var(--pv-border-strong);
-  background: rgba(92, 149, 217, 0.2);
-  color: #cfe3fb;
-}
-
-html[data-theme="dark"] .pv-surface-block {
-  border-color: var(--pv-border);
-  background: rgba(15, 23, 42, 0.36);
 }
 
 html[data-theme="dark"] .pv-header-mobile-trigger {

@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { PageIntro } from "@/components/navigation/PageIntro";
 import { PromptCard } from "@/components/PromptCard";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { formatTranslation, getTranslation, type Language } from "@/lib/i18n";
@@ -18,7 +17,7 @@ export function CategoryPageView({ language, data }: CategoryPageViewProps) {
   const canonical = absoluteUrl(`/category/${category.slug}`);
 
   return (
-    <div className="pv-page">
+    <div className="space-y-8">
       <JsonLd
         id={`ld-category-${category.slug}`}
         data={{
@@ -39,58 +38,32 @@ export function CategoryPageView({ language, data }: CategoryPageViewProps) {
         }}
       />
 
-      <PageIntro
-        breadcrumbs={[
-          { label: getTranslation(language, "brand.name"), href: "/" },
-          { label: getTranslation(language, "nav.catalog"), href: "/catalog" },
-          { label: category.name },
-        ]}
-        eyebrow={getTranslation(language, "nav.catalog")}
-        title={`${category.name} ${getTranslation(language, "category.promptsSuffix")}`}
-        description={formatTranslation(language, "category.intro", { category: category.name })}
-        actions={(
-          <>
-            <Link href="/catalog" className="pv-button-secondary">
-              {getTranslation(language, "category.backToCatalog")}
-            </Link>
-            {intents[0] ? (
-              <Link
-                href={`/category/${encodeURIComponent(category.slug)}/intent/${encodeURIComponent(intents[0].slug)}`}
-                className="pv-button-primary"
-              >
-                {getTranslation(language, "category.popularIntents")}
-              </Link>
-            ) : null}
-          </>
-        )}
-        aside={(
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-            <div className="pv-stat-card">
-              <p className="pv-stat-label">{getTranslation(language, "catalog.prompts")}</p>
-              <p className="mt-3 text-2xl font-semibold text-zinc-950">{trending.length + mostSaved.length + newest.length}</p>
-            </div>
-            <div className="pv-stat-card">
-              <p className="pv-stat-label">{getTranslation(language, "category.popularIntents")}</p>
-              <p className="mt-3 text-2xl font-semibold text-zinc-950">{intents.length}</p>
-            </div>
-          </div>
-        )}
-      />
+      <header className="space-y-3">
+        <Link href="/catalog" className="text-xs font-medium text-zinc-500 transition hover:text-zinc-800">
+          ← {getTranslation(language, "category.backToCatalog")}
+        </Link>
+        <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
+          {category.name} {getTranslation(language, "category.promptsSuffix")}
+        </h1>
+        <p className="max-w-3xl text-sm leading-relaxed text-zinc-700">
+          {formatTranslation(language, "category.intro", { category: category.name })}
+        </p>
+      </header>
 
       {intents.length ? (
-        <section className="pv-panel px-6 py-6 sm:px-7">
-          <h2 className="text-lg font-semibold text-zinc-900">
+        <section className="space-y-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4">
+          <h2 className="text-sm font-semibold text-zinc-900">
             {getTranslation(language, "category.popularIntents")}
           </h2>
-          <p className="mt-1 text-sm text-zinc-600">
+          <p className="text-xs text-zinc-600">
             {getTranslation(language, "category.popularIntentsBody")}
           </p>
-          <div className="mt-4 pv-section-toolbar">
+          <div className="flex flex-wrap gap-2">
             {intents.map((intent) => (
               <Link
                 key={`${category.slug}-${intent.slug}`}
                 href={`/category/${encodeURIComponent(category.slug)}/intent/${encodeURIComponent(intent.slug)}`}
-                className="pv-segment-button"
+                className="rounded-full border border-zinc-300 bg-white px-3 py-1 text-xs font-medium text-zinc-800 transition hover:border-zinc-400"
               >
                 {intent.name} ({intent.count})
               </Link>
@@ -99,11 +72,11 @@ export function CategoryPageView({ language, data }: CategoryPageViewProps) {
         </section>
       ) : null}
 
-      <section className="pv-panel px-6 py-6 sm:px-7">
-        <h2 className="text-xl font-semibold text-zinc-950">
+      <section className="space-y-3">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
           {formatTranslation(language, "category.trendingIn", { category: category.name })}
         </h2>
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           {trending.map((prompt) => (
             <PromptCard key={prompt.id} prompt={prompt} />
           ))}
@@ -111,11 +84,11 @@ export function CategoryPageView({ language, data }: CategoryPageViewProps) {
       </section>
 
       {mostSaved.length ? (
-        <section className="pv-panel px-6 py-6 sm:px-7">
-          <h2 className="text-xl font-semibold text-zinc-950">
+        <section className="space-y-3">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
             {getTranslation(language, "category.mostSaved")}
           </h2>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             {mostSaved.map((prompt) => (
               <PromptCard key={`saved-${prompt.id}`} prompt={prompt} />
             ))}
@@ -124,11 +97,11 @@ export function CategoryPageView({ language, data }: CategoryPageViewProps) {
       ) : null}
 
       {newest.length ? (
-        <section className="pv-panel px-6 py-6 sm:px-7">
-          <h2 className="text-xl font-semibold text-zinc-950">
+        <section className="space-y-3">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
             {formatTranslation(language, "category.newestIn", { category: category.name })}
           </h2>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             {newest.map((prompt) => (
               <PromptCard key={`new-${prompt.id}`} prompt={prompt} />
             ))}
@@ -137,19 +110,19 @@ export function CategoryPageView({ language, data }: CategoryPageViewProps) {
       ) : null}
 
       {relatedLessons.length ? (
-        <section className="pv-panel px-6 py-6 sm:px-7">
-          <h2 className="text-xl font-semibold text-zinc-950">
+        <section className="space-y-3">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
             {getTranslation(language, "category.relatedLessons")}
           </h2>
-          <p className="mt-1 text-sm text-zinc-600">
+          <p className="text-sm text-zinc-600">
             {getTranslation(language, "category.relatedLessonsBody")}
           </p>
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-2">
             {relatedLessons.map((lesson) => (
               <Link
                 key={lesson.id}
                 href={`/learn/${encodeURIComponent(lesson.slug)}`}
-                className="pv-card p-4 text-sm"
+                className="rounded-lg border border-zinc-200 bg-white px-4 py-3 text-sm shadow-card transition hover:border-zinc-300"
               >
                 <p className="font-medium text-zinc-900">{lesson.title}</p>
                 <p className="mt-1 text-xs text-zinc-500">

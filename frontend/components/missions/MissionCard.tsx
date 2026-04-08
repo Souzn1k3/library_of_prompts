@@ -45,6 +45,7 @@ export function MissionCard({ mission }: MissionCardProps) {
 
   return (
     <article className="pv-card p-5">
+      <div className={`pointer-events-none absolute right-4 top-4 h-20 w-20 rounded-full blur-2xl ${tone.glow}`} />
       <div className="relative flex h-full flex-col gap-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-2">
@@ -53,12 +54,12 @@ export function MissionCard({ mission }: MissionCardProps) {
                 {t(`missions.type.${mission.mission.mission_type}` as TranslationKey)}
               </span>
               <span
-                className={`pv-badge ${
+                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                   mission.mission.status === "completed"
-                    ? "pv-badge-success"
+                    ? "bg-emerald-100 text-emerald-900"
                     : mission.mission.status === "in_progress"
-                      ? "pv-badge-brand"
-                      : "pv-badge"
+                      ? "bg-blue-100 text-blue-900"
+                      : "bg-zinc-100 text-zinc-700"
                 }`}
               >
                 {t(getMissionStatusTranslationKey(mission.mission.status))}
@@ -109,7 +110,7 @@ export function MissionCard({ mission }: MissionCardProps) {
           ) : null}
         </div>
 
-        <div className="pv-action-bar pv-action-bar-start">
+        <div className="mt-auto flex flex-wrap gap-2">
           {mission.nextStep ? (
             <Link href={mission.nextStep.href} onClick={trackNextStep} className="pv-button-primary">
               {mission.nextStep.label}

@@ -42,11 +42,11 @@ export function DashboardRecommendationsSection({
         {needsOnboarding ? (
           <div className="pv-alert pv-alert-warning">
             <p className="font-medium">{t("dashboard.finishOnboardingTitle")}</p>
-            <div className="pv-action-bar pv-action-bar-start">
-              <Link href={APP_ROUTES.onboarding} className="pv-button-secondary !w-auto">
+            <p className="mt-2">
+              <Link href={APP_ROUTES.onboarding} className="underline">
                 {t("dashboard.finishOnboardingLink")}
               </Link>
-            </div>
+            </p>
           </div>
         ) : null}
 

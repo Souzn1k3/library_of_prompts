@@ -133,27 +133,33 @@ export function HomeWorkbenchResultPanel({
 
         <div className="space-y-2">
           <p className="pv-label">{t("home.entryOutputDepthLabel")}</p>
-          <div className="pv-segmented">
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => onOutputDepthChange("detailed")}
-              data-active={outputDepth === "detailed" ? "true" : "false"}
-              className="pv-segment-button"
+              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                outputDepth === "detailed"
+                  ? "border-zinc-900 bg-zinc-900 text-white"
+                  : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-900"
+              }`}
             >
               {t("home.entryOutputDepthDetailed")}
             </button>
             <button
               type="button"
               onClick={() => onOutputDepthChange("concise")}
-              data-active={outputDepth === "concise" ? "true" : "false"}
-              className="pv-segment-button"
+              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                outputDepth === "concise"
+                  ? "border-zinc-900 bg-zinc-900 text-white"
+                  : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:text-zinc-900"
+              }`}
             >
               {t("home.entryOutputDepthConcise")}
             </button>
             <button
               type="button"
               onClick={onRunNow}
-              className="pv-segment-button"
+              className="rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-600 transition hover:border-zinc-300 hover:text-zinc-900"
               disabled={runPending}
             >
               {t("home.entryRefreshResult")}

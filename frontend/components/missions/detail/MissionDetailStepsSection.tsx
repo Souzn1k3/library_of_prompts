@@ -48,7 +48,7 @@ export function MissionDetailStepsSection({ missionView }: MissionDetailStepsSec
                 ) : null}
               </div>
             </div>
-            <div className="pv-action-bar pv-action-bar-start">
+            <div className="mt-3 flex flex-wrap gap-3">
               {step.prompt ? (
                 <Link href={appRoute.promptBySlug(step.prompt.slug)} className="pv-inline-link">
                   {step.prompt.title}

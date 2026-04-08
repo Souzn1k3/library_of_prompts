@@ -20,7 +20,7 @@ export function LearningLessonStepView({ language, data }: LearningLessonStepVie
       {!canSubmit ? (
         <section className="pv-alert pv-alert-warning">
           <p className="font-medium">{getTranslation(language, "learn.signInToSubmit")}</p>
-          <div className="pv-action-bar pv-action-bar-start">
+          <div className="mt-3 flex flex-wrap gap-3">
             <Link href={APP_ROUTES.login} className="pv-button-secondary !w-auto">
               <T k="nav.login" />
             </Link>

@@ -28,7 +28,7 @@ export function MissionsSectionList({
   if (sections.length === 0) {
     return (
       <section className="pv-panel px-6 py-6 sm:px-7">
-        <div className="mb-5 pv-section-toolbar">
+        <div className="mb-5 flex flex-wrap gap-2">
           <FilterButton
             active={selectedView === "active"}
             label={t("missions.heroFilter.active")}
@@ -68,7 +68,7 @@ export function MissionsSectionList({
         </span>
       </div>
 
-      <div className="mt-4 pv-section-toolbar">
+      <div className="mt-4 flex flex-wrap gap-2">
         <FilterButton
           active={selectedView === "active"}
           label={t("missions.heroFilter.active")}
@@ -128,11 +128,10 @@ function FilterButton({
     <button
       type="button"
       onClick={onClick}
-      className="pv-segment-button"
-      data-active={active ? "true" : "false"}
+      className={active ? "pv-button-primary !w-auto" : "pv-button-secondary !w-auto"}
     >
       {label}
-      <span className="pv-segment-count">
+      <span className="ml-2 rounded-full bg-black/10 px-2 py-0.5 text-[11px] font-semibold">
         {count}
       </span>
     </button>
