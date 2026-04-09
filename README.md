@@ -40,3 +40,7 @@ docker compose up --build
 - Keep product code inside `frontend/` and `backend/`.
 - Keep docs in `docs/`.
 - Avoid committing local IDE/workspace files (`.idea`, `.vscode`) and machine-specific temporary artifacts.
+
+## Deployment
+
+- Ubuntu 22.04 without domain (by server IP): see [docs/deploy-ubuntu-no-domain.md](docs/deploy-ubuntu-no-domain.md)
