@@ -29,7 +29,7 @@ export function OnboardingWizardReadySection({
       <div className="pv-alert pv-alert-success">{t("onboardingWizard.readyBody")}</div>
 
       {starter?.action ? (
-        <section className="pv-panel space-y-4 px-5 py-5 sm:px-6">
+        <section className="pv-hero space-y-4 px-5 py-5 sm:px-6">
           <div className="space-y-2">
             <p className="pv-kicker">{t("onboardingWizard.firstWinTitle")}</p>
             <h2 className="text-2xl font-semibold tracking-[-0.04em] text-zinc-900">
@@ -80,7 +80,7 @@ export function OnboardingWizardReadySection({
                 <li key={prompt.id}>
                   <Link
                     href={appRoute.promptBySlug(prompt.slug)}
-                    className="block rounded-[1.25rem] border border-zinc-200 bg-white/80 px-3 py-3 transition hover:border-zinc-300"
+                    className="block rounded-[1.25rem] border border-zinc-200 bg-zinc-50/90 px-3 py-3 transition hover:border-zinc-300"
                   >
                     <p className="text-sm font-medium text-zinc-900">{prompt.title}</p>
                     {prompt.summary ? <p className="text-xs text-zinc-600">{prompt.summary}</p> : null}

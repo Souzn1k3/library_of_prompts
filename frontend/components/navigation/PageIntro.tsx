@@ -58,32 +58,28 @@ export function PageIntro({
     eyebrowText !== getNodeText(lastBreadcrumbLabel);
 
   return (
-    <section className="pv-page-intro">
+    <section className="pv-hero px-6 py-7 sm:px-8 sm:py-8">
       {breadcrumbs.length > 0 ? <AppBreadcrumbs items={breadcrumbs} /> : null}
 
-      <div className={`pv-page-intro-grid ${aside ? "pv-page-intro-grid-has-aside" : ""}`}>
-        <div className="pv-page-intro-main">
-          <div className="space-y-4">
-            {shouldShowEyebrow ? <p className="pv-kicker pv-page-intro-kicker">{eyebrow}</p> : null}
-            <h1 className="pv-page-intro-title">{title}</h1>
-            {description ? <p className="pv-page-intro-description">{description}</p> : null}
+      <div className={`grid gap-6 ${aside ? "xl:grid-cols-[minmax(0,1.18fr)_minmax(280px,0.82fr)]" : ""}`}>
+        <div className="space-y-5">
+          <div className="space-y-3">
+            {shouldShowEyebrow ? <p className="pv-kicker">{eyebrow}</p> : null}
+            <h1 className="pv-title max-w-4xl text-zinc-950">{title}</h1>
+            {description ? <p className="pv-lead max-w-3xl">{description}</p> : null}
           </div>
 
-          {children ? <div className="pv-page-intro-body">{children}</div> : null}
+          {hint ? (
+            <div className="pv-note">
+              <p className="pv-hint-badge">{hintLabel ?? <T k="common.hintBadge" />}</p>
+              <div className="mt-1">{hint}</div>
+            </div>
+          ) : null}
+          {actions ? <div className="pv-cta-group">{actions}</div> : null}
+          {children}
         </div>
 
-        {hint || actions || aside ? (
-          <div className="pv-page-intro-side">
-            {hint ? (
-              <div className="pv-note">
-                <p className="pv-hint-badge">{hintLabel ?? <T k="common.hintBadge" />}</p>
-                <div className="mt-1">{hint}</div>
-              </div>
-            ) : null}
-            {actions ? <div className="pv-cta-group">{actions}</div> : null}
-            {aside}
-          </div>
-        ) : null}
+        {aside ? <div>{aside}</div> : null}
       </div>
     </section>
   );

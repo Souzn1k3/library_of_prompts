@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import type { ReactNode } from "react";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
+import { PlanPricingCard } from "@/components/plans/PlanPricingCard";
 import { usePlansClientModel } from "@/components/plans/usePlansClientModel";
 import { APP_ROUTES } from "@/lib/constants/routes";
 import { getTierTranslationKey, languageToIntlLocale, type TranslationKey } from "@/lib/i18n";
@@ -14,37 +16,34 @@ type PlansClientProps = {
   error: string | null;
 };
 
-type ComparisonItem = {
-  labelKey: TranslationKey;
-  value: string;
+const tierWorkloadLevel: Record<string, number> = {
+  free: 1,
+  starter: 2,
+  pro: 3,
+  enterprise: 4,
 };
 
-function formatPlanPrice(plan: PlanRecord, locale: string) {
-  const amount = plan.price_rub_month > 0 ? plan.price_rub_month : plan.price_usd_month;
-  const currency = plan.price_rub_month > 0 ? "RUB" : "USD";
+type ComparisonRow = {
+  id: string;
+  labelKey: TranslationKey;
+  renderValue: (plan: PlanRecord) => ReactNode;
+};
 
-  if (amount === 0) {
-    return null;
-  }
+function computeMomentumScore(
+  plan: PlanRecord,
+  metrics: {
+    maxUnlocks: number;
+    maxDirectDiscount: number;
+    maxTokenDiscount: number;
+    maxFeatures: number;
+  },
+): number {
+  const unlockPart = plan.monthly_paid_prompt_limit / metrics.maxUnlocks;
+  const directPart = plan.prompt_purchase_discount_percent / metrics.maxDirectDiscount;
+  const tokenPart = plan.lumen_purchase_discount_percent / metrics.maxTokenDiscount;
+  const featurePart = plan.full_features.length / metrics.maxFeatures;
 
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
-
-function bestFitKeyForTier(tier: string): TranslationKey {
-  switch (tier) {
-    case "free":
-      return "plans.compareWorkload.free";
-    case "starter":
-      return "plans.compareWorkload.starter";
-    case "pro":
-      return "plans.compareWorkload.pro";
-    default:
-      return "plans.compareWorkload.enterprise";
-  }
+  return Math.round((unlockPart * 0.55 + directPart * 0.2 + tokenPart * 0.2 + featurePart * 0.05) * 100);
 }
 
 export function PlansClient({ plans, error }: PlansClientProps) {
@@ -82,8 +81,61 @@ export function PlansClient({ plans, error }: PlansClientProps) {
     t,
   });
 
+  const metrics = {
+    maxUnlocks: Math.max(...sortedPlans.map((plan) => plan.monthly_paid_prompt_limit), 1),
+    maxDirectDiscount: Math.max(...sortedPlans.map((plan) => plan.prompt_purchase_discount_percent), 1),
+    maxTokenDiscount: Math.max(...sortedPlans.map((plan) => plan.lumen_purchase_discount_percent), 1),
+    maxFeatures: Math.max(...sortedPlans.map((plan) => plan.full_features.length), 1),
+  };
+
+  const comparisonRows: ComparisonRow[] = [
+    {
+      id: "included",
+      labelKey: "plans.compareIncludedUnlocks",
+      renderValue: (plan) => plan.monthly_paid_prompt_limit.toLocaleString(locale),
+    },
+    {
+      id: "direct-discount",
+      labelKey: "plans.compareDirectDiscount",
+      renderValue: (plan) => `${plan.prompt_purchase_discount_percent}%`,
+    },
+    {
+      id: "token-discount",
+      labelKey: "plans.compareTokenDiscount",
+      renderValue: (plan) => `${plan.lumen_purchase_discount_percent}%`,
+    },
+    {
+      id: "features",
+      labelKey: "plans.compareFeatureCoverage",
+      renderValue: (plan) => plan.full_features.length.toLocaleString(locale),
+    },
+    {
+      id: "workload",
+      labelKey: "plans.compareWorkloadFit",
+      renderValue: (plan) => t(`plans.compareWorkload.${plan.tier}` as TranslationKey),
+    },
+    {
+      id: "momentum",
+      labelKey: "plans.compareMomentumScore",
+      renderValue: (plan) => {
+        const score = computeMomentumScore(plan, metrics);
+        return (
+          <div className="space-y-1.5">
+            <div className="h-2 overflow-hidden rounded-full bg-zinc-200">
+              <div
+                className="h-full rounded-full bg-zinc-900"
+                style={{ width: `${score}%` }}
+              />
+            </div>
+            <p className="text-xs font-semibold text-zinc-700">{score}/100</p>
+          </div>
+        );
+      },
+    },
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {error ? (
         <div className="rounded-[1.5rem] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           {error}
@@ -96,184 +148,124 @@ export function PlansClient({ plans, error }: PlansClientProps) {
         </div>
       ) : null}
 
-      <section className="grid gap-4 xl:grid-cols-4">
-        {sortedPlans.map((plan) => {
-          const isCurrent = currentTier === plan.tier;
-          const isPreferred = preferredTier === plan.tier;
-          const priceLabel = formatPlanPrice(plan, locale);
-          const isExpanded = expandedTier === plan.tier;
-          const comparison: ComparisonItem[] = [
-            {
-              labelKey: "plans.compareIncludedUnlocks",
-              value: plan.monthly_paid_prompt_limit.toLocaleString(locale),
-            },
-            {
-              labelKey: "plans.compareDirectDiscount",
-              value: `${plan.prompt_purchase_discount_percent}%`,
-            },
-            {
-              labelKey: "plans.compareTokenDiscount",
-              value: `${plan.lumen_purchase_discount_percent}%`,
-            },
-            {
-              labelKey: "plans.compareWorkloadFit",
-              value: t(bestFitKeyForTier(plan.tier)),
-            },
-          ];
-          const featureList = isExpanded ? plan.full_features : plan.highlights.slice(0, 4);
-
-          return (
-            <article
-              key={plan.tier}
-              className={`pv-card flex h-full flex-col p-6 ${
-                isCurrent
-                  ? "border-[var(--pv-brand)]/30 shadow-[0_20px_42px_rgba(15,91,255,0.12)]"
-                  : isPreferred
-                    ? "border-[var(--pv-border-strong)]"
-                    : ""
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-2">
-                  <p className="pv-kicker">{t(getTierTranslationKey(plan.tier))}</p>
-                  <h2 className="text-2xl font-semibold tracking-[-0.05em] text-zinc-950">
-                    {plan.name}
-                  </h2>
-                  <p className="text-sm leading-relaxed text-zinc-600">
-                    {plan.description || t(bestFitKeyForTier(plan.tier))}
-                  </p>
-                </div>
-                {isCurrent ? (
-                  <span className="pv-chip-brand">{t("plans.currentTier")}</span>
-                ) : isPreferred ? (
-                  <span className="pv-chip-brand">{t(getTierTranslationKey(plan.tier))}</span>
-                ) : null}
-              </div>
-
-              <div className="mt-6 rounded-[1.4rem] border border-[var(--pv-border)] bg-white/78 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
-                  {priceLabel ? t("plans.title") : t("plans.currentTier")}
-                </p>
-                <p className="mt-2 text-3xl font-semibold tracking-[-0.06em] text-zinc-950">
-                  {priceLabel ?? t("plans.priceFree")}
-                </p>
-                <p className="mt-2 text-sm text-zinc-600">
-                  {plan.highlights[0] ?? t(bestFitKeyForTier(plan.tier))}
-                </p>
-              </div>
-
-              <div className="mt-5 grid gap-2">
-                {comparison.map((item) => (
-                  <div
-                    key={`${plan.tier}-${item.labelKey}`}
-                    className="flex items-center justify-between gap-3 rounded-[1rem] border border-[var(--pv-border)] bg-white/68 px-4 py-3"
-                  >
-                    <span className="text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">
-                      {t(item.labelKey)}
-                    </span>
-                    <span className="text-sm font-semibold text-zinc-950">{item.value}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-5 space-y-2">
-                {featureList.map((feature) => (
-                  <div key={`${plan.tier}-${feature}`} className="rounded-[1rem] bg-[var(--pv-brand-soft)]/40 px-3 py-2.5 text-sm text-zinc-700">
-                    {feature}
-                  </div>
-                ))}
-              </div>
-
-              {plan.full_features.length > plan.highlights.length ? (
-                <button
-                  type="button"
-                  onClick={() => setExpandedTier((current) => (current === plan.tier ? null : plan.tier))}
-                  className="mt-4 text-left text-sm font-semibold text-[var(--pv-brand-strong)]"
-                >
-                  {isExpanded ? t("plans.hideFeatures") : t("plans.showFeatures")}
-                </button>
-              ) : null}
-
-              <div className="mt-auto pt-6">
-                {!isAuthenticated ? (
-                  <Link href={APP_ROUTES.signup} className="pv-button-primary w-full">
-                    {t("plans.createAccount")}
-                  </Link>
-                ) : isCurrent ? (
-                  <button
-                    type="button"
-                    onClick={() => void openBillingPortal()}
-                    disabled={portalPending}
-                    className="pv-button-primary w-full disabled:opacity-60"
-                  >
-                    {portalPending ? t("plans.openingCheckout") : t("plans.manageBilling")}
-                  </button>
-                ) : isLowerOrEqualTier(plan.tier) ? (
-                  <button
-                    type="button"
-                    disabled
-                    className="pv-button-secondary w-full cursor-not-allowed opacity-70"
-                  >
-                    {t("plans.currentTier")}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => void upgrade(plan.tier)}
-                    disabled={pendingTier === plan.tier}
-                    className="pv-button-primary w-full disabled:opacity-60"
-                  >
-                    {pendingTier === plan.tier
-                      ? t("plans.openingCheckout")
-                      : t("plans.upgradeTo", { plan: t(getTierTranslationKey(plan.tier)) })}
-                  </button>
-                )}
-              </div>
-            </article>
-          );
-        })}
+      <section
+        aria-label={t("plans.title")}
+        className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory [scrollbar-gutter:stable]"
+      >
+        {sortedPlans.map((plan) => (
+          <div
+            key={plan.tier}
+            className="w-[min(22rem,calc(100vw-2.5rem))] shrink-0 snap-start lg:w-[min(24rem,calc(100vw-6rem))]"
+          >
+            <PlanPricingCard
+              plan={plan}
+              preferredTier={preferredTier}
+              locale={locale}
+              status={status}
+              isAuthenticated={isAuthenticated}
+              currentTier={currentTier}
+              pendingTier={pendingTier}
+              expanded={expandedTier === plan.tier}
+              t={t}
+              onToggleExpanded={() =>
+                setExpandedTier((current) => (current === plan.tier ? null : plan.tier))
+              }
+              onUpgrade={(tier) => void upgrade(tier)}
+              isLowerOrEqualTier={isLowerOrEqualTier}
+            />
+          </div>
+        ))}
       </section>
 
-      <section className="pv-panel px-6 py-6 sm:px-7">
-        <div className="pv-section-head">
-          <div className="pv-section-copy">
-            <h2 className="text-2xl font-bold tracking-[-0.05em] text-zinc-950">{t("plans.compareTitle")}</h2>
-            <p className="text-sm leading-relaxed text-zinc-600">{t("plans.compareSubtitle")}</p>
-          </div>
+      <section className="pv-panel px-5 py-5 sm:px-6">
+        <div className="space-y-1.5">
+          <h2 className="text-lg font-semibold tracking-[-0.03em] text-zinc-950">{t("plans.compareTitle")}</h2>
+          <p className="text-sm text-zinc-600">{t("plans.compareSubtitle")}</p>
         </div>
 
-        <div className="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
-          {sortedPlans.map((plan) => (
-            <article key={`summary-${plan.tier}`} className="rounded-[1.5rem] border border-[var(--pv-border)] bg-white/72 p-5">
-              <p className="pv-kicker">{t(getTierTranslationKey(plan.tier))}</p>
-              <h3 className="mt-2 text-xl font-semibold tracking-[-0.04em] text-zinc-950">{plan.name}</h3>
-              <div className="mt-4 space-y-3 text-sm text-zinc-700">
-                <div className="flex items-center justify-between gap-3">
-                  <span>{t("plans.compareIncludedUnlocks")}</span>
-                  <span className="font-semibold text-zinc-950">{plan.monthly_paid_prompt_limit}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span>{t("plans.compareDirectDiscount")}</span>
-                  <span className="font-semibold text-zinc-950">{plan.prompt_purchase_discount_percent}%</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span>{t("plans.compareTokenDiscount")}</span>
-                  <span className="font-semibold text-zinc-950">{plan.lumen_purchase_discount_percent}%</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span>{t("plans.compareFeatureCoverage")}</span>
-                  <span className="font-semibold text-zinc-950">{plan.full_features.length}</span>
-                </div>
-              </div>
-            </article>
-          ))}
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[46rem] border-separate border-spacing-0 text-left">
+            <thead>
+              <tr>
+                <th className="sticky left-0 z-10 rounded-l-[0.95rem] border border-[var(--pv-border)] bg-white px-3 py-3 text-xs uppercase tracking-[0.12em] text-zinc-500">
+                  {t("plans.compareMetric")}
+                </th>
+                {sortedPlans.map((plan, index) => {
+                  const isLast = index === sortedPlans.length - 1;
+                  const isMaxPlan = plan.tier === "enterprise";
+
+                  return (
+                    <th
+                      key={plan.tier}
+                      className={`border border-[var(--pv-border)] px-3 py-3 text-center text-sm font-semibold text-zinc-900 ${
+                        isLast ? "rounded-r-[0.95rem]" : ""
+                      } ${isMaxPlan ? "bg-zinc-900/[0.04]" : "bg-white"}`}
+                    >
+                      {t(getTierTranslationKey(plan.tier))}
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {comparisonRows.map((row, rowIndex) => {
+                const isLastRow = rowIndex === comparisonRows.length - 1;
+
+                return (
+                  <tr key={row.id}>
+                    <th
+                      scope="row"
+                      className={`sticky left-0 z-10 border border-[var(--pv-border)] bg-white px-3 py-3 text-sm font-medium text-zinc-700 ${
+                        isLastRow ? "rounded-bl-[0.95rem]" : ""
+                      }`}
+                    >
+                      {t(row.labelKey)}
+                    </th>
+                    {sortedPlans.map((plan, colIndex) => {
+                      const isLastCol = colIndex === sortedPlans.length - 1;
+                      const isMaxPlan = plan.tier === "enterprise";
+
+                      return (
+                        <td
+                          key={`${row.id}-${plan.tier}`}
+                          className={`border border-[var(--pv-border)] px-3 py-3 text-center text-sm text-zinc-900 ${
+                            isLastRow && isLastCol ? "rounded-br-[0.95rem]" : ""
+                          } ${isMaxPlan ? "bg-zinc-900/[0.04]" : "bg-white"}`}
+                        >
+                          {row.id === "workload" ? (
+                            <div className="space-y-1">
+                              <p className="font-medium">{row.renderValue(plan)}</p>
+                              <div className="flex justify-center gap-1">
+                                {Array.from({ length: 4 }).map((_, dotIndex) => (
+                                  <span
+                                    key={`${plan.tier}-dot-${dotIndex}`}
+                                    className={`h-1.5 w-1.5 rounded-full ${
+                                      dotIndex < (tierWorkloadLevel[plan.tier] ?? 1)
+                                        ? "bg-zinc-900"
+                                        : "bg-zinc-300"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            row.renderValue(plan)
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </section>
 
       {status === "loading" ? (
         <p className="text-sm text-zinc-600">{t("dashboard.loading")}</p>
       ) : isAuthenticated ? (
-        <section className="pv-panel px-6 py-5 text-sm text-zinc-700 sm:px-7">
+        <section className="pv-panel px-5 py-5 text-sm text-zinc-700 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p>
               {t("plans.currentTier")}:{" "}
@@ -290,7 +282,7 @@ export function PlansClient({ plans, error }: PlansClientProps) {
               type="button"
               onClick={() => void openBillingPortal()}
               disabled={portalPending}
-              className="pv-button-secondary !w-auto disabled:opacity-60"
+              className="pv-button-secondary disabled:opacity-60"
             >
               {portalPending ? t("plans.openingCheckout") : t("plans.manageBilling")}
             </button>
@@ -306,6 +298,7 @@ export function PlansClient({ plans, error }: PlansClientProps) {
           </p>
         </section>
       )}
+
     </div>
   );
 }

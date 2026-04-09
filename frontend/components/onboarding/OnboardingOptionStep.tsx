@@ -16,9 +16,9 @@ export function OnboardingOptionStep({
   onSelect,
 }: OnboardingOptionStepProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div>
-        <h2 className="text-2xl font-semibold tracking-[-0.05em] text-zinc-900">{title}</h2>
+        <h2 className="text-xl font-semibold tracking-[-0.03em] text-zinc-900">{title}</h2>
         <p className="text-sm leading-relaxed text-zinc-600">{subtitle}</p>
       </div>
       <div className="grid gap-2">
@@ -27,10 +27,10 @@ export function OnboardingOptionStep({
             key={option.value}
             type="button"
             onClick={() => onSelect(option.value)}
-            className={`rounded-[1.35rem] border px-4 py-4 text-left transition ${
+            className={`rounded-[1.25rem] border px-4 py-4 text-left transition ${
               selected === option.value
-                ? "border-[var(--pv-brand)]/35 bg-[var(--pv-brand-soft)]/70 text-zinc-950 shadow-[0_16px_32px_rgba(15,91,255,0.1)]"
-                : "border-zinc-200 bg-white/82 text-zinc-900 hover:-translate-y-0.5 hover:border-[var(--pv-border-strong)]"
+                ? "border-[var(--pv-brand)] bg-[linear-gradient(135deg,var(--pv-brand),#4d7dff)] text-white shadow-[0_18px_34px_rgba(37,92,255,0.2)]"
+                : "border-zinc-200 bg-white text-zinc-900 hover:-translate-y-0.5 hover:border-[var(--pv-border-strong)]"
             }`}
           >
             <div className="flex items-start justify-between gap-3">
@@ -38,16 +38,16 @@ export function OnboardingOptionStep({
                 <p className="text-sm font-semibold">{option.label}</p>
                 <p
                   className={`mt-1 text-xs leading-relaxed ${
-                    selected === option.value ? "text-zinc-700" : "text-zinc-600"
+                    selected === option.value ? "text-zinc-200" : "text-zinc-600"
                   }`}
                 >
                   {option.hint}
                 </p>
               </div>
               <span
-                className={`mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[10px] ${
+                className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[10px] ${
                   selected === option.value
-                    ? "border-[var(--pv-brand)] bg-white text-[var(--pv-brand)]"
+                    ? "border-white/60 bg-white/15 text-white"
                     : "border-zinc-300 text-zinc-400"
                 }`}
               >
