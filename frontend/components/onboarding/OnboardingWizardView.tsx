@@ -4,7 +4,6 @@ import Link from "next/link";
 
 import type { AuthStatus } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/LanguageProvider";
-import { OnboardingWizardHeader } from "@/components/onboarding/OnboardingWizardHeader";
 import type { OnboardingOption } from "@/components/onboarding/options";
 import { OnboardingWizardReadySection } from "@/components/onboarding/OnboardingWizardReadySection";
 import { OnboardingWizardSetupSection } from "@/components/onboarding/OnboardingWizardSetupSection";
@@ -78,6 +77,11 @@ export function OnboardingWizardView({
   completeFirstWin,
 }: OnboardingWizardViewProps) {
   const { t } = useI18n();
+  const steps = [
+    t("onboardingWizard.stepRoleTitle"),
+    t("onboardingWizard.stepGoalTitle"),
+    t("onboardingWizard.stepContextTitle"),
+  ];
 
   if (status === "loading") {
     return <p className="text-sm text-zinc-500">{t("onboardingWizard.loading")}</p>;
@@ -111,44 +115,104 @@ export function OnboardingWizardView({
   }
 
   return (
-    <div className="space-y-6">
-      <OnboardingWizardHeader
-        needsWizard={needsWizard}
-        progress={progress}
-        skipPending={skipPending}
-        onSkip={skipFlow}
-      />
+    <div className="grid gap-6 xl:grid-cols-[18rem_minmax(0,1fr)]">
+      <aside className="pv-panel space-y-5 px-5 py-5 sm:px-6">
+        <div className="space-y-3">
+          <p className="pv-kicker">{t("onboardingWizard.activationSetup")}</p>
+          <h2 className="text-2xl font-semibold tracking-[-0.05em] text-zinc-950">
+            {needsWizard ? t("onboarding.pageTitle") : t("dashboard.finishOnboardingTitle")}
+          </h2>
+          <p className="text-sm leading-relaxed text-zinc-600">
+            {needsWizard ? t("onboarding.pageSubtitle") : t("onboardingWizard.readyBody")}
+          </p>
+        </div>
 
-      {needsWizard && step < 3 ? (
-        <OnboardingWizardSetupSection
-          step={step}
-          role={role}
-          goal={goal}
-          aiContext={aiContext}
-          pending={pending}
-          roleOptions={roleOptions}
-          goalOptions={goalOptions}
-          contextOptions={contextOptions}
-          selectRole={selectRole}
-          selectGoal={selectGoal}
-          selectAiContext={selectAiContext}
-          goBack={goBack}
-          goNext={goNext}
-          completeOnboardingFlow={completeOnboardingFlow}
-        />
-      ) : null}
+        <div className="space-y-2">
+          {steps.map((label, index) => {
+            const isActive = needsWizard && index === step;
+            const isDone = !needsWizard || index < progress;
 
-      {!needsWizard || step >= 3 ? (
-        <OnboardingWizardReadySection
-          starter={starter}
-          firstWinDone={firstWinDone}
-          firstWinPending={firstWinPending}
-          firstWinEconomy={firstWinEconomy}
-          completeFirstWin={completeFirstWin}
-        />
-      ) : null}
+            return (
+              <div
+                key={label}
+                className={`rounded-[1.2rem] border px-4 py-3 transition ${
+                  isActive
+                    ? "border-[var(--pv-brand)]/30 bg-[var(--pv-brand-soft)]/65"
+                    : isDone
+                      ? "border-emerald-200 bg-emerald-50/70"
+                      : "border-[var(--pv-border)] bg-white/65"
+                }`}
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">0{index + 1}</p>
+                <p className="mt-2 text-sm font-semibold text-zinc-950">{label}</p>
+              </div>
+            );
+          })}
+        </div>
 
-      {error ? <div className="pv-alert pv-alert-error">{error}</div> : null}
+        <button
+          type="button"
+          onClick={() => void skipFlow()}
+          disabled={skipPending}
+          className="pv-button-secondary w-full disabled:opacity-60"
+        >
+          {skipPending ? t("onboardingWizard.skipping") : t("onboardingWizard.skipForNow")}
+        </button>
+      </aside>
+
+      <div className="space-y-5">
+        {needsWizard && step < 3 ? (
+          <section className="pv-panel space-y-5 px-5 py-5 sm:px-6">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-medium text-zinc-700">
+                  {t("onboardingWizard.stepCounter", { step: progress })}
+                </p>
+                <p className="text-sm text-zinc-500">3</p>
+              </div>
+              <div className="flex gap-2">
+                {Array.from({ length: 3 }).map((_, index) => (
+                  <span
+                    key={`progress-${index + 1}`}
+                    className={`h-2 flex-1 rounded-full ${
+                      index < progress ? "bg-[var(--pv-brand)]" : "bg-zinc-200"
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <OnboardingWizardSetupSection
+              step={step}
+              role={role}
+              goal={goal}
+              aiContext={aiContext}
+              pending={pending}
+              roleOptions={roleOptions}
+              goalOptions={goalOptions}
+              contextOptions={contextOptions}
+              selectRole={selectRole}
+              selectGoal={selectGoal}
+              selectAiContext={selectAiContext}
+              goBack={goBack}
+              goNext={goNext}
+              completeOnboardingFlow={completeOnboardingFlow}
+            />
+          </section>
+        ) : null}
+
+        {!needsWizard || step >= 3 ? (
+          <OnboardingWizardReadySection
+            starter={starter}
+            firstWinDone={firstWinDone}
+            firstWinPending={firstWinPending}
+            firstWinEconomy={firstWinEconomy}
+            completeFirstWin={completeFirstWin}
+          />
+        ) : null}
+
+        {error ? <div className="pv-alert pv-alert-error">{error}</div> : null}
+      </div>
     </div>
   );
 }

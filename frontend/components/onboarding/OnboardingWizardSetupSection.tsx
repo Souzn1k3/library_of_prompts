@@ -41,7 +41,7 @@ export function OnboardingWizardSetupSection({
   const { t } = useI18n();
 
   return (
-    <div className="pv-hero space-y-5 px-5 py-5 sm:px-6">
+    <div className="space-y-6">
       {step === 0 ? (
         <OnboardingOptionStep
           title={t("onboardingWizard.stepRoleTitle")}

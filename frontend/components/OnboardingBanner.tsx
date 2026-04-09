@@ -14,6 +14,7 @@ export function OnboardingBanner() {
   const { status } = useAuth();
   const { t } = useI18n();
   const pathname = usePathname();
+  const shouldRenderBanner = pathname === "/catalog" || pathname === "/learn";
 
   useEffect(() => {
     try {
@@ -32,7 +33,7 @@ export function OnboardingBanner() {
     setVisible(false);
   }
 
-  if (!visible || status !== "unauthenticated" || pathname === "/") {
+  if (!visible || status !== "unauthenticated" || !shouldRenderBanner) {
     return null;
   }
 

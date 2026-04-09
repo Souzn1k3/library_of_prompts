@@ -24,6 +24,7 @@ import "./styles/components.css";
 import "./styles/economy.css";
 import "./styles/utility.css";
 import "./styles/theme-dark.css";
+import "./styles/redesign.css";
 
 const manrope = localFont({
   src: "./fonts/manrope/Manrope[wght].ttf",
@@ -129,11 +130,11 @@ export default async function RootLayout({
 
   return (
     <html lang={language} data-theme="light" suppressHydrationWarning>
-      <body className={`${manrope.variable} ${ibmPlexMono.variable} min-h-screen antialiased`}>
+      <body className={`${manrope.variable} ${ibmPlexMono.variable} pv-app-body min-h-screen antialiased`}>
         <Script id="theme-init" strategy="beforeInteractive">
           {themeInitScript}
         </Script>
-        <div className="relative isolate flex min-h-screen flex-col">
+        <div className="pv-app-shell relative isolate flex min-h-screen flex-col">
           <LanguageProvider initialLanguage={language}>
             <AuthProvider initialHasAuthCookie={authState.hasAnyAuthCookie}>
               <AnalyticsPageTracker />
@@ -143,15 +144,19 @@ export default async function RootLayout({
               </a>
               <OrganizationJsonLd />
               <WebSiteJsonLd />
-              <OnboardingBanner />
-              <Header />
-              <main
-                id="main-content"
-                className="pv-main-shell mx-auto w-full max-w-[1280px] flex-1 px-4 pb-16 pt-8 sm:px-6 sm:pb-20 lg:px-8"
-                tabIndex={-1}
-              >
-                {children}
-              </main>
+              <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-5 px-4 pb-10 pt-4 sm:px-6 lg:flex-row lg:gap-6 lg:px-8">
+                <Header />
+                <div className="min-w-0 flex-1">
+                  <OnboardingBanner />
+                  <main
+                    id="main-content"
+                    className="pv-main-shell min-w-0 pb-20 pt-0 sm:pb-24"
+                    tabIndex={-1}
+                  >
+                    {children}
+                  </main>
+                </div>
+              </div>
               <Footer />
             </AuthProvider>
           </LanguageProvider>

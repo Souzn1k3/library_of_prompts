@@ -58,37 +58,21 @@ export function Header() {
   }, [isMobileMenuOpen]);
 
   return (
-    <header className="sticky top-0 z-50 px-4 pt-3 sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-[1280px]">
-        <div className={`pv-header-shell ${isScrolled ? "pv-header-shell-scrolled" : ""}`}>
-          <div
-            className={`flex items-center gap-3 px-4 transition-[min-height,padding] duration-200 sm:px-5 lg:px-6 ${
-              isScrolled ? "min-h-[4.2rem]" : "min-h-[4.7rem]"
-            }`}
-          >
-            <div className="flex min-w-0 flex-1 items-center gap-4 lg:gap-6">
-              <Link href="/" className="pv-header-brand whitespace-nowrap">
-                {t("brand.name")}
-              </Link>
-
-              <div className="hidden min-w-0 lg:flex lg:flex-1">
-                <HeaderPrimaryNav />
-              </div>
-            </div>
-
-            <div className="hidden shrink-0 xl:flex xl:justify-center xl:overflow-visible">
-              <HeaderSearch />
-            </div>
-
-            <div className="hidden shrink-0 items-center justify-end gap-2 lg:flex">
-              <LanguageSwitcher />
-              <ThemeToggle />
-              <HeaderNav />
-            </div>
+    <>
+      <header className="lg:hidden">
+        <div className={`pv-site-header ${isScrolled ? "pv-site-header-compact" : ""}`}>
+          <div className="pv-site-header-top">
+            <Link href="/" className="pv-site-brand" aria-label={t("brand.name")}>
+              <span className="pv-site-brand-mark">PV</span>
+              <span className="pv-site-brand-copy">
+                <span className="pv-site-brand-title">{t("brand.name")}</span>
+                <span className="pv-site-brand-subtitle">{t("home.kicker")}</span>
+              </span>
+            </Link>
 
             <button
               type="button"
-              className="pv-header-mobile-trigger inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[0.95rem] border border-[rgba(15,23,42,0.12)] bg-white/88 text-zinc-700 transition hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pv-brand)]/35 lg:hidden"
+              className="pv-header-mobile-trigger inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-[1rem] border border-[rgba(15,23,42,0.12)] bg-white/86 text-zinc-700 transition hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pv-brand)]/35"
               aria-controls="mobile-navigation-panel"
               aria-expanded={isMobileMenuOpen}
               aria-label={isMobileMenuOpen ? t("header.closeMenu") : t("header.openMenu")}
@@ -121,11 +105,11 @@ export function Header() {
           </div>
 
           {isMobileMenuOpen ? (
-            <div id="mobile-navigation-panel" className="border-t border-[rgba(15,23,42,0.08)] lg:hidden">
-              <div className="space-y-4 px-4 pb-4 pt-4 sm:px-5">
+            <div id="mobile-navigation-panel" className="pv-site-header-mobile">
+              <div className="space-y-4">
                 <HeaderSearch mobile onSearch={() => setIsMobileMenuOpen(false)} />
 
-                <div className="rounded-[1.25rem] border border-[rgba(15,23,42,0.08)] bg-white/72 p-2 shadow-[0_14px_28px_rgba(15,23,42,0.04)]">
+                <div className="rounded-[1.35rem] border border-[rgba(15,23,42,0.08)] bg-white/78 p-2 shadow-[0_16px_30px_rgba(15,23,42,0.05)]">
                   <HeaderPrimaryNav mobile onNavigate={() => setIsMobileMenuOpen(false)} />
                 </div>
 
@@ -136,7 +120,35 @@ export function Header() {
             </div>
           ) : null}
         </div>
-      </div>
-    </header>
+      </header>
+
+      <aside className={`pv-shell-sidebar hidden lg:flex ${isScrolled ? "pv-shell-sidebar-compact" : ""}`}>
+        <div className="space-y-5">
+          <Link href="/" className="pv-site-brand" aria-label={t("brand.name")}>
+            <span className="pv-site-brand-mark">PV</span>
+            <span className="pv-site-brand-copy">
+              <span className="pv-site-brand-title">{t("brand.name")}</span>
+              <span className="pv-site-brand-subtitle">{t("home.kicker")}</span>
+            </span>
+          </Link>
+
+          <div className="pv-shell-sidebar-search">
+            <HeaderSearch />
+          </div>
+
+          <div className="pv-shell-sidebar-nav">
+            <HeaderPrimaryNav mobile />
+          </div>
+        </div>
+
+        <div className="mt-auto space-y-3">
+          <div className="grid gap-2">
+            <LanguageSwitcher />
+            <ThemeToggle />
+          </div>
+          <HeaderNav />
+        </div>
+      </aside>
+    </>
   );
 }

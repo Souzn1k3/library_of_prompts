@@ -2,7 +2,6 @@ import Link from "next/link";
 
 import { HomeHeroActions } from "@/components/HomeHeroActions";
 import { T } from "@/components/i18n/T";
-import { PromptCard } from "@/components/PromptCard";
 import { JsonLd } from "@/components/seo/JsonLd";
 import {
   fetchDiscoverySections,
@@ -76,48 +75,85 @@ export default async function HomePage() {
         }}
       />
 
-      <section className="pv-hero px-6 py-8 sm:px-8 sm:py-12">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(280px,360px)] lg:items-center xl:gap-12">
-          <div className="pv-hero-copy space-y-7">
-            <div className="max-w-[40rem] space-y-4">
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.18fr)_minmax(20rem,0.82fr)] xl:items-stretch">
+        <section className="pv-hero px-6 py-7 sm:px-8 sm:py-9">
+          <div className="space-y-8">
+            <div className="max-w-[44rem] space-y-4">
               <p className="pv-kicker">
                 <T k="home.kicker" />
               </p>
-              <h1 className="pv-display max-w-[15ch] text-zinc-950">
+              <h1 className="pv-display max-w-[13ch] text-zinc-950">
                 <T k="home.title" />
               </h1>
-              <p className="pv-lead max-w-[35rem]">
+              <p className="pv-lead max-w-[36rem]">
                 <T k="home.subtitle" />
               </p>
             </div>
 
             <HomeHeroActions initialAuthenticated={Boolean(accessToken)} />
-          </div>
 
-          <HeroPreview prompt={heroPrompt} language={language} promptBody={heroPromptBody} />
-        </div>
+            <div className="grid gap-3 md:grid-cols-3">
+              <ProductModeCard
+                title={getTranslation(language, "nav.catalog")}
+                body={promptsTitle}
+                href="/catalog"
+                hrefLabel={getTranslation(language, "home.seeAll")}
+              />
+              <ProductModeCard
+                title={getTranslation(language, "learn.title")}
+                body={getTranslation(language, "learn.catalogPathHint")}
+                href="/learn"
+                hrefLabel={getTranslation(language, "home.viewAllLessons")}
+              />
+              <ProductModeCard
+                title={getTranslation(language, "nav.missions")}
+                body={getTranslation(language, "missions.subtitle")}
+                href="/missions"
+                hrefLabel={getTranslation(language, "nav.missions")}
+              />
+            </div>
+          </div>
+        </section>
+
+        <HeroPreview prompt={heroPrompt} language={language} promptBody={heroPromptBody} />
       </section>
 
-      <ShelfSection
-        title={promptsTitle}
-        href="/catalog"
-        hrefLabel={getTranslation(language, "home.seeAll")}
-        prompts={featuredPrompts}
-        idPrefix="home-featured"
-      />
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+        <section className="pv-panel px-6 py-6 sm:px-7">
+          <div className="pv-section-head">
+            <div className="pv-section-copy">
+              <p className="pv-kicker">
+                <T k="catalog.prompts" />
+              </p>
+              <h2 className="text-2xl font-bold tracking-[-0.05em] text-zinc-950">{promptsTitle}</h2>
+              <p className="text-sm leading-relaxed text-zinc-600">
+                <T k="home.subtitle" />
+              </p>
+            </div>
+            <Link href="/catalog" className="pv-inline-link">
+              <T k="home.seeAll" />
+              <span aria-hidden="true">↗</span>
+            </Link>
+          </div>
 
-      {popularLessons.length ? (
+          <div className="mt-6 grid gap-3">
+            {featuredPrompts.slice(0, 4).map((prompt) => (
+              <PromptWorkbenchRow key={`home-featured-${prompt.id}`} prompt={prompt} language={language} />
+            ))}
+          </div>
+        </section>
+
         <section className="pv-panel px-6 py-6 sm:px-7">
           <div className="pv-section-head">
             <div className="pv-section-copy">
               <p className="pv-kicker">
                 <T k="learn.title" />
               </p>
-              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
+              <h2 className="text-2xl font-bold tracking-[-0.05em] text-zinc-950">
                 <T k="home.popularLessons" />
               </h2>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                <T k="learn.subtitle" />
+              <p className="text-sm leading-relaxed text-zinc-600">
+                <T k="learn.releaseSubtitle" />
               </p>
             </div>
             <Link href="/learn" className="pv-inline-link">
@@ -126,33 +162,32 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            {popularLessons.map((lesson) => (
+          <div className="mt-6 grid gap-3">
+            {popularLessons.slice(0, 4).map((lesson, index) => (
               <Link
                 key={`home-lesson-${lesson.id}`}
                 href={`/learn/${encodeURIComponent(lesson.slug)}`}
                 className="pv-card block p-5"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+                      0{index + 1}
+                    </p>
                     <p className="text-base font-semibold tracking-[-0.03em] text-zinc-950">{lesson.title}</p>
-                    <p className="mt-2 text-sm text-zinc-600">
+                    <p className="text-sm text-zinc-600">
                       {lesson.completion_count} <T k="learn.completions" />
                     </p>
                   </div>
-                  <span className="pv-chip-brand">
+                  <span className="pv-chip-brand shrink-0">
                     <T k={lesson.locked ? "learn.locked" : "learn.open"} />
                   </span>
                 </div>
-                <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[var(--pv-brand-strong)]">
-                  <T k="learn.openLesson" />
-                  <span aria-hidden="true">↗</span>
-                </span>
               </Link>
             ))}
           </div>
         </section>
-      ) : null}
+      </section>
     </div>
   );
 }
@@ -177,88 +212,83 @@ function HeroPreview({
       : getHeroStrongPromptFallback(language, previewTitle, previewBody);
 
   return (
-    <div className="pv-hero-visual">
-      <div className="pv-hero-preview-shell">
-        <p className="pv-hero-preview-label">{getTranslation(language, "home.previewLabel")}</p>
-
-        <div className="pv-hero-preview-card">
-          <span className="pv-chip-brand w-fit">{techniqueLabel}</span>
-          <div className="space-y-3">
-            <h2 className="pv-hero-preview-title">{previewTitle}</h2>
-            <p className="pv-hero-preview-body line-clamp-4">{previewBody}</p>
-          </div>
-
-          <details className="pv-hero-preview-dropdown">
-            <summary className="pv-hero-preview-foot pv-hero-preview-foot-toggle">
-              <span>{getTranslation(language, "home.previewFooter")}</span>
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 20 20"
-                className="pv-hero-preview-chevron h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="m5.5 8 4.5 4 4.5-4" />
-              </svg>
-            </summary>
-
-            <div className="pv-hero-preview-dropdown-body">
-              <pre className="pv-hero-preview-prompt">{readyPromptTemplate}</pre>
-              {prompt ? (
-                <Link
-                  href={`/prompt/${encodeURIComponent(prompt.slug)}`}
-                  className="pv-inline-link text-sm text-[var(--pv-brand-strong)]"
-                >
-                  {getTranslation(language, "prompt.openPrompt")}
-                </Link>
-              ) : null}
-            </div>
-          </details>
-        </div>
+    <aside className="pv-panel flex h-full flex-col gap-4 px-6 py-6 sm:px-7">
+      <div className="space-y-2">
+        <p className="pv-kicker">{getTranslation(language, "home.previewLabel")}</p>
+        <h2 className="text-2xl font-semibold tracking-[-0.05em] text-zinc-950">{previewTitle}</h2>
+        <p className="text-sm leading-relaxed text-zinc-600">{previewBody}</p>
       </div>
-    </div>
+
+      <div className="flex flex-wrap gap-2 text-xs text-zinc-600">
+        <span className="pv-chip-brand">{techniqueLabel}</span>
+        <span className="pv-chip">{getTranslation(language, "catalog.prompts")}</span>
+      </div>
+
+      <div className="rounded-[1.4rem] border border-[var(--pv-border)] bg-white/80 p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">
+          {getTranslation(language, "home.previewFooter")}
+        </p>
+        <pre className="mt-3 whitespace-pre-wrap text-xs leading-6 text-zinc-700">{readyPromptTemplate}</pre>
+      </div>
+
+      {prompt ? (
+        <Link
+          href={`/prompt/${encodeURIComponent(prompt.slug)}`}
+          className="pv-button-primary !w-auto self-start"
+        >
+          {getTranslation(language, "prompt.openPrompt")}
+        </Link>
+      ) : null}
+    </aside>
   );
 }
 
-function ShelfSection({
+function ProductModeCard({
   title,
+  body,
   href,
   hrefLabel,
-  prompts,
-  idPrefix,
 }: {
   title: string;
+  body: string;
   href: string;
   hrefLabel: string;
-  prompts: PromptListItem[];
-  idPrefix: string;
 }) {
-  if (!prompts.length) return null;
+  return (
+    <Link href={href} className="pv-card block p-4">
+      <p className="text-sm font-semibold tracking-[-0.03em] text-zinc-950">{title}</p>
+      <p className="mt-2 text-sm leading-relaxed text-zinc-600">{body}</p>
+      <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--pv-brand-strong)]">
+        {hrefLabel}
+        <span aria-hidden="true">↗</span>
+      </span>
+    </Link>
+  );
+}
+
+function PromptWorkbenchRow({
+  prompt,
+  language,
+}: {
+  prompt: PromptListItem;
+  language: Language;
+}) {
+  const techniqueLabel = getTranslation(language, getTechniqueTranslationKey(prompt.technique));
 
   return (
-    <section className="pv-panel px-6 py-6 sm:px-7">
-      <div className="pv-section-head">
-        <div className="pv-section-copy">
-          <p className="pv-kicker">
-            <T k="catalog.prompts" />
-          </p>
-          <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{title}</h2>
+    <Link href={`/prompt/${encodeURIComponent(prompt.slug)}`} className="pv-card block p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="pv-chip-brand">{techniqueLabel}</span>
+            {prompt.is_paid ? <span className="pv-chip">{getTranslation(language, "plans.title")}</span> : null}
+          </div>
+          <h3 className="text-lg font-semibold tracking-[-0.04em] text-zinc-950">{prompt.title}</h3>
+          <p className="text-sm leading-relaxed text-zinc-600">{prompt.summary}</p>
         </div>
-        <Link href={href} className="pv-inline-link">
-          {hrefLabel}
-          <span aria-hidden="true">↗</span>
-        </Link>
+        <span className="hidden text-sm font-semibold text-zinc-400 sm:inline">↗</span>
       </div>
-
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        {prompts.map((prompt) => (
-          <PromptCard key={`${idPrefix}-${prompt.id}`} prompt={prompt} />
-        ))}
-      </div>
-    </section>
+    </Link>
   );
 }
 
