@@ -3,12 +3,7 @@ import { SignupForm } from "@/components/SignupForm";
 
 export default function SignupPage() {
   return (
-    <AuthShell
-      titleKey="signup.pageTitle"
-      subtitleKey="signup.pageSubtitle"
-      formTitleKey="signup.pageTitle"
-      formSubtitleKey="signup.pageSubtitle"
-    >
+    <AuthShell titleKey="signup.pageTitle">
       <SignupForm />
     </AuthShell>
   );

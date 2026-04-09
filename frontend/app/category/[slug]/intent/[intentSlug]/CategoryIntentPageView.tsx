@@ -44,25 +44,19 @@ export function CategoryIntentPageView({ language, data }: CategoryIntentPageVie
         }}
       />
 
-      <header className="space-y-3">
+      <header className="space-y-2">
         <Link
           href={`/category/${encodeURIComponent(current.category_slug)}`}
           className="text-xs font-medium text-zinc-500 transition hover:text-zinc-800"
         >
           ← {formatTranslation(language, "categoryIntent.backToCategory", { category: current.category_name })}
         </Link>
-        <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
           {formatTranslation(language, "categoryIntent.heading", {
             intent: current.intent_name,
             category: current.category_name,
           })}
         </h1>
-        <p className="max-w-3xl text-sm leading-relaxed text-zinc-700">
-          {formatTranslation(language, "categoryIntent.intro", {
-            intent: current.intent_name,
-            category: current.category_name,
-          })}
-        </p>
       </header>
 
       {siblings.length ? (

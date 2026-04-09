@@ -8,6 +8,7 @@ type PageIntroProps = {
   eyebrow?: ReactNode;
   title: ReactNode;
   description?: ReactNode;
+  showDescription?: boolean;
   hint?: ReactNode;
   hintLabel?: ReactNode;
   actions?: ReactNode;
@@ -44,6 +45,7 @@ export function PageIntro({
   eyebrow,
   title,
   description,
+  showDescription = false,
   hint,
   hintLabel,
   actions,
@@ -58,17 +60,19 @@ export function PageIntro({
     eyebrowText !== getNodeText(lastBreadcrumbLabel);
 
   return (
-    <section className="pv-hero px-6 py-8 sm:px-8 sm:py-9">
+    <section className="pv-hero px-5 py-4 sm:px-6 sm:py-5">
       {breadcrumbs.length > 0 ? <AppBreadcrumbs items={breadcrumbs} /> : null}
 
       <div
-        className={`grid gap-8 ${aside ? "xl:grid-cols-[minmax(0,1.12fr)_minmax(320px,0.88fr)] xl:items-start" : ""}`}
+        className={`grid gap-4 ${aside ? "xl:grid-cols-[minmax(0,1.12fr)_minmax(320px,0.88fr)] xl:items-start" : ""}`}
       >
-        <div className="space-y-5">
-          <div className="space-y-3">
+        <div className="space-y-3">
+          <div className="space-y-2">
             {shouldShowEyebrow ? <p className="pv-kicker">{eyebrow}</p> : null}
-            <h1 className="pv-title max-w-4xl text-zinc-950">{title}</h1>
-            {description ? <p className="pv-lead max-w-3xl">{description}</p> : null}
+            <h1 className="max-w-4xl text-2xl font-semibold tracking-[-0.05em] text-zinc-950 sm:text-3xl">
+              {title}
+            </h1>
+            {showDescription && description ? <p className="pv-lead max-w-3xl">{description}</p> : null}
           </div>
 
           {hint ? (

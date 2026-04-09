@@ -38,16 +38,13 @@ export function CategoryPageView({ language, data }: CategoryPageViewProps) {
         }}
       />
 
-      <header className="space-y-3">
+      <header className="space-y-2">
         <Link href="/catalog" className="text-xs font-medium text-zinc-500 transition hover:text-zinc-800">
           ← {getTranslation(language, "category.backToCatalog")}
         </Link>
-        <h1 className="text-3xl font-semibold tracking-tight text-zinc-900">
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl">
           {category.name} {getTranslation(language, "category.promptsSuffix")}
         </h1>
-        <p className="max-w-3xl text-sm leading-relaxed text-zinc-700">
-          {formatTranslation(language, "category.intro", { category: category.name })}
-        </p>
       </header>
 
       {intents.length ? (
