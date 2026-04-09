@@ -36,28 +36,44 @@ export function DashboardSubmissionsSection({
       {submissions.length === 0 ? (
         <div className="pv-empty-state mt-6 text-sm text-zinc-600">{t("dashboard.noSubmissions")}</div>
       ) : (
-        <div className="mt-6 space-y-3">
+        <div className="pv-data-table mt-6">
           {submissions.slice(0, 4).map((submission) => (
-            <div key={submission.id} className="pv-card p-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
+            <div key={submission.id} className="pv-data-row">
+              <div className="min-w-0">
+                <p className="pv-data-label">{t("dashboard.mySubmissions")}</p>
                 {submission.moderation_state === "approved" ? (
                   <Link
                     href={appRoute.promptBySlug(submission.slug)}
-                    className="text-sm font-semibold text-zinc-900 underline"
+                    className="mt-2 block text-base font-semibold tracking-[-0.03em] text-zinc-950"
                   >
                     {submission.title}
                   </Link>
                 ) : (
-                  <p className="text-sm font-semibold text-zinc-900">{submission.title}</p>
+                  <p className="mt-2 text-base font-semibold tracking-[-0.03em] text-zinc-950">
+                    {submission.title}
+                  </p>
                 )}
-                <SubmissionStateBadge state={submission.moderation_state} />
+                {submission.moderation_notes ? (
+                  <p className="mt-2 text-sm leading-relaxed text-zinc-600">{submission.moderation_notes}</p>
+                ) : null}
               </div>
-              <p className="mt-2 text-xs text-zinc-500">
-                {t("dashboard.createdAt")} {formatDateTime(submission.created_at, locale)}
-              </p>
-              {submission.moderation_notes ? (
-                <p className="mt-2 text-sm text-zinc-600">{submission.moderation_notes}</p>
-              ) : null}
+
+              <div>
+                <p className="pv-data-label">{t("dashboard.createdAt")}</p>
+                <p className="mt-2 text-sm text-zinc-700">{formatDateTime(submission.created_at, locale)}</p>
+              </div>
+
+              <div className="flex items-center justify-between gap-3 lg:block lg:text-right">
+                <SubmissionStateBadge state={submission.moderation_state} />
+                {submission.moderation_state === "approved" ? (
+                  <Link
+                    href={appRoute.promptBySlug(submission.slug)}
+                    className="mt-0 text-sm font-medium text-[var(--pv-brand-strong)] lg:mt-3 lg:block"
+                  >
+                    {t("prompt.openPrompt")}
+                  </Link>
+                ) : null}
+              </div>
             </div>
           ))}
         </div>

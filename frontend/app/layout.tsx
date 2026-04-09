@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
 import Script from "next/script";
+import localFont from "next/font/local";
 
 import { AnalyticsPageTracker } from "@/components/analytics/AnalyticsPageTracker";
 import { AuthProvider } from "@/components/auth/AuthProvider";
@@ -24,13 +24,7 @@ import "./styles/components.css";
 import "./styles/economy.css";
 import "./styles/utility.css";
 import "./styles/theme-dark.css";
-
-const manrope = localFont({
-  src: "./fonts/manrope/Manrope[wght].ttf",
-  variable: "--font-sans",
-  display: "swap",
-  weight: "200 800",
-});
+import "./styles/redesign.css";
 
 const ibmPlexMono = localFont({
   src: [
@@ -61,8 +55,7 @@ const themeInitScript = `
   try {
     const key = "pv-theme";
     const stored = window.localStorage.getItem(key);
-    const system = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    const theme = stored === "dark" || stored === "light" ? stored : system;
+    const theme = stored === "dark" || stored === "light" ? stored : "light";
     document.documentElement.setAttribute("data-theme", theme);
   } catch {
     document.documentElement.setAttribute("data-theme", "light");
@@ -129,7 +122,7 @@ export default async function RootLayout({
 
   return (
     <html lang={language} data-theme="light" suppressHydrationWarning>
-      <body className={`${manrope.variable} ${ibmPlexMono.variable} min-h-screen antialiased`}>
+      <body className={`${ibmPlexMono.variable} min-h-screen antialiased`}>
         <Script id="theme-init" strategy="beforeInteractive">
           {themeInitScript}
         </Script>
@@ -147,7 +140,7 @@ export default async function RootLayout({
               <Header />
               <main
                 id="main-content"
-                className="pv-main-shell mx-auto w-full max-w-[1280px] flex-1 px-4 pb-16 pt-8 sm:px-6 sm:pb-20 lg:px-8"
+                className="pv-main-shell mx-auto w-full max-w-[1360px] flex-1 px-4 pb-16 pt-6 sm:px-6 sm:pb-20 sm:pt-8 lg:px-8"
                 tabIndex={-1}
               >
                 {children}

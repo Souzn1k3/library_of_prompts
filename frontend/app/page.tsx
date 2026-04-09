@@ -10,7 +10,7 @@ import {
   fetchPromptBySlug,
   fetchPromptRecommendations,
 } from "@/lib/api";
-import { getTechniqueTranslationKey, getTranslation, type Language } from "@/lib/i18n";
+import { getTechniqueTranslationKey, getTranslation, languageToIntlLocale, type Language } from "@/lib/i18n";
 import { absoluteUrl } from "@/lib/seo";
 import { getServerAccessToken } from "@/lib/server-auth";
 import { getServerLanguage } from "@/lib/server-i18n";
@@ -49,6 +49,30 @@ export default async function HomePage() {
       ? getTranslation(language, "dashboard.recommendedForYou")
       : getTranslation(language, "home.trendingPrompts");
   const heroPrompt = featuredPrompts[0];
+  const numberFormatter = new Intl.NumberFormat(languageToIntlLocale(language));
+  const qualityScoreTop = featuredPrompts.reduce((max, item) => Math.max(max, item.quality_score ?? 0), 0);
+  const signalCount = featuredPrompts.reduce(
+    (sum, item) => sum + (item.save_count ?? 0) + (item.copy_count ?? 0),
+    0,
+  );
+  const heroMetrics = [
+    {
+      value: numberFormatter.format(featuredPrompts.length),
+      label: getTranslation(language, "home.proofPromptCount"),
+    },
+    {
+      value: numberFormatter.format(signalCount),
+      label: getTranslation(language, "home.proofSaveAndCopy"),
+    },
+    {
+      value: numberFormatter.format(popularLessons.length),
+      label: getTranslation(language, "home.proofLessonCount"),
+    },
+    {
+      value: qualityScoreTop > 0 ? numberFormatter.format(qualityScoreTop) : "—",
+      label: getTranslation(language, "home.proofTopScore"),
+    },
+  ];
   const heroPromptBody = heroPrompt
     ? await fetchPromptBySlug(heroPrompt.slug, accessToken, language)
         .then((detail) => (detail.body_locked ? null : detail.body?.trim() || null))
@@ -77,24 +101,56 @@ export default async function HomePage() {
       />
 
       <section className="pv-hero px-6 py-8 sm:px-8 sm:py-12">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.08fr)_minmax(280px,360px)] lg:items-center xl:gap-12">
-          <div className="pv-hero-copy space-y-7">
-            <div className="max-w-[40rem] space-y-4">
+        <div className="grid gap-10 xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,420px)] xl:items-start">
+          <div className="pv-hero-copy space-y-8">
+            <div className="max-w-[44rem] space-y-4">
               <p className="pv-kicker">
                 <T k="home.kicker" />
               </p>
-              <h1 className="pv-display max-w-[15ch] text-zinc-950">
+              <h1 className="pv-display max-w-[11ch] text-zinc-950">
                 <T k="home.title" />
               </h1>
-              <p className="pv-lead max-w-[35rem]">
+              <p className="pv-lead max-w-[34rem]">
                 <T k="home.subtitle" />
               </p>
             </div>
 
             <HomeHeroActions initialAuthenticated={Boolean(accessToken)} />
+
+            <div className="pv-auth-card-grid">
+              <article className="pv-auth-card">
+                <p className="pv-auth-card-title">
+                  <T k="home.structuredLibraryTitle" />
+                </p>
+                <p className="pv-auth-card-body">
+                  <T k="home.structuredLibraryBody" />
+                </p>
+              </article>
+              <article className="pv-auth-card">
+                <p className="pv-auth-card-title">
+                  <T k="home.builtToLearnTitle" />
+                </p>
+                <p className="pv-auth-card-body">
+                  <T k="home.builtToLearnBody" />
+                </p>
+              </article>
+              <article className="pv-auth-card">
+                <p className="pv-auth-card-title">
+                  <T k="home.seriousToolTitle" />
+                </p>
+                <p className="pv-auth-card-body">
+                  <T k="home.seriousToolBody" />
+                </p>
+              </article>
+            </div>
           </div>
 
-          <HeroPreview prompt={heroPrompt} language={language} promptBody={heroPromptBody} />
+          <HeroPreview
+            prompt={heroPrompt}
+            language={language}
+            promptBody={heroPromptBody}
+            metrics={heroMetrics}
+          />
         </div>
       </section>
 
@@ -126,28 +182,29 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <div className="mt-6 space-y-3">
             {popularLessons.map((lesson) => (
               <Link
                 key={`home-lesson-${lesson.id}`}
                 href={`/learn/${encodeURIComponent(lesson.slug)}`}
-                className="pv-card block p-5"
+                className="pv-card block px-5 py-4 sm:px-6"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
+                <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-center">
+                  <div className="min-w-0">
                     <p className="text-base font-semibold tracking-[-0.03em] text-zinc-950">{lesson.title}</p>
                     <p className="mt-2 text-sm text-zinc-600">
                       {lesson.completion_count} <T k="learn.completions" />
                     </p>
                   </div>
-                  <span className="pv-chip-brand">
+                  <span className="pv-chip-brand w-fit">
                     <T k={lesson.locked ? "learn.locked" : "learn.open"} />
                   </span>
+
+                  <span className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--pv-brand-strong)] md:justify-self-end">
+                    <T k="learn.openLesson" />
+                    <span aria-hidden="true">↗</span>
+                  </span>
                 </div>
-                <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[var(--pv-brand-strong)]">
-                  <T k="learn.openLesson" />
-                  <span aria-hidden="true">↗</span>
-                </span>
               </Link>
             ))}
           </div>
@@ -161,10 +218,12 @@ function HeroPreview({
   prompt,
   language,
   promptBody,
+  metrics,
 }: {
   prompt: PromptListItem | undefined;
   language: Language;
   promptBody: string | null;
+  metrics: Array<{ value: string; label: string }>;
 }) {
   const techniqueLabel = prompt
     ? getTranslation(language, getTechniqueTranslationKey(prompt.technique))
@@ -186,6 +245,18 @@ function HeroPreview({
           <div className="space-y-3">
             <h2 className="pv-hero-preview-title">{previewTitle}</h2>
             <p className="pv-hero-preview-body line-clamp-4">{previewBody}</p>
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-2">
+            {metrics.map((metric) => (
+              <div
+                key={metric.label}
+                className="rounded-[1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-3 py-3"
+              >
+                <p className="text-[1.1rem] font-semibold tracking-[-0.04em] text-zinc-950">{metric.value}</p>
+                <p className="mt-1 text-xs leading-relaxed text-zinc-500">{metric.label}</p>
+              </div>
+            ))}
           </div>
 
           <details className="pv-hero-preview-dropdown">

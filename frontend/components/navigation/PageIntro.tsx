@@ -58,10 +58,12 @@ export function PageIntro({
     eyebrowText !== getNodeText(lastBreadcrumbLabel);
 
   return (
-    <section className="pv-hero px-6 py-7 sm:px-8 sm:py-8">
+    <section className="pv-hero px-6 py-8 sm:px-8 sm:py-9">
       {breadcrumbs.length > 0 ? <AppBreadcrumbs items={breadcrumbs} /> : null}
 
-      <div className={`grid gap-6 ${aside ? "xl:grid-cols-[minmax(0,1.18fr)_minmax(280px,0.82fr)]" : ""}`}>
+      <div
+        className={`grid gap-8 ${aside ? "xl:grid-cols-[minmax(0,1.12fr)_minmax(320px,0.88fr)] xl:items-start" : ""}`}
+      >
         <div className="space-y-5">
           <div className="space-y-3">
             {shouldShowEyebrow ? <p className="pv-kicker">{eyebrow}</p> : null}

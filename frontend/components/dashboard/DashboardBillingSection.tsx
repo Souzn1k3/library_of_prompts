@@ -38,24 +38,26 @@ export function DashboardBillingSection({
         </div>
         <span className={`pv-workspace-status ${highlightedPlanClassName}`}>{planLabel}</span>
       </div>
-      <div className="mt-6 grid gap-3 sm:grid-cols-3">
-        <div className="pv-card p-4">
+      <div className="mt-6 grid gap-3 lg:grid-cols-3">
+        <div className="pv-card-muted p-4">
           <p className="pv-kicker">{t("plans.currentTier")}</p>
-          <p className={`mt-2 text-base font-semibold ${highlightedPlanClassName}`}>{planLabel}</p>
+          <p className={`mt-3 text-lg font-semibold ${highlightedPlanClassName}`}>{planLabel}</p>
         </div>
-        <div className="pv-card p-4">
+        <div className="pv-card-muted p-4">
           <p className="pv-kicker">{t("plans.subscriptionStatus")}</p>
-          <p className={`mt-2 text-base font-semibold ${highlightedStatusClassName}`}>
+          <p className={`mt-3 text-lg font-semibold ${highlightedStatusClassName}`}>
             {localizedBillingStatus ?? t("plans.billingStatus.unknown")}
           </p>
         </div>
-        <div className="pv-card p-4">
+        <div className="pv-card-muted p-4">
           <p className="pv-kicker">{t("dashboard.manageBilling")}</p>
-          <p className="mt-2 pv-hint-badge">{t("common.hintBadge")}</p>
-          <p className="mt-1 text-sm text-zinc-700">{t("dashboard.billingActionHint")}</p>
+          <p className="mt-3 text-sm leading-relaxed text-zinc-700">{t("dashboard.billingActionHint")}</p>
         </div>
       </div>
       <div className="mt-5 flex flex-wrap gap-3">
+        <Link href={APP_ROUTES.pricing} className="pv-button-primary">
+          {t("dashboard.changePlan")}
+        </Link>
         <button
           type="button"
           onClick={onOpenPortal}
@@ -64,11 +66,8 @@ export function DashboardBillingSection({
         >
           {portalPending ? t("plans.openingCheckout") : t("dashboard.manageBilling")}
         </button>
-        <Link href={APP_ROUTES.pricing} className="pv-button-primary">
-          {t("dashboard.changePlan")}
-        </Link>
       </div>
-      {portalError ? <p className="mt-3 text-sm text-red-700">{portalError}</p> : null}
+      {portalError ? <div className="pv-alert pv-alert-error mt-4 text-sm">{portalError}</div> : null}
     </section>
   );
 }

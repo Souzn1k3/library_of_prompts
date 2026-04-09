@@ -28,6 +28,10 @@ export default async function LearnIndexPage() {
 
   try {
     const catalog = await fetchLearningCatalog(accessToken, language);
+    const recommendedCourse =
+      catalog.courses.find((course) => course.slug === catalog.recommended_course_slug) ?? catalog.courses[0] ?? null;
+    const totalModules = catalog.courses.reduce((sum, course) => sum + course.module_count, 0);
+    const totalLessons = catalog.courses.reduce((sum, course) => sum + course.lesson_count, 0);
 
     return (
       <div className="pv-page">
@@ -49,6 +53,46 @@ export default async function LearnIndexPage() {
               </Link>
             </>
           }
+          aside={
+            recommendedCourse ? (
+              <div className="pv-card flex h-full flex-col gap-4 p-5 sm:p-6">
+                <p className="pv-kicker">
+                  <T k="learn.recommended" />
+                </p>
+                <div className="space-y-2">
+                  <h2 className="text-[1.45rem] font-semibold tracking-[-0.05em] text-zinc-950">
+                    {recommendedCourse.title}
+                  </h2>
+                  <p className="text-sm leading-relaxed text-zinc-600">
+                    {recommendedCourse.result_headline || recommendedCourse.description}
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
+                  <div className="rounded-[1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-3 py-3">
+                    <p className="pv-data-label">
+                      <T k="learn.modulesShort" />
+                    </p>
+                    <p className="mt-2 text-lg font-semibold text-zinc-950">{totalModules}</p>
+                  </div>
+                  <div className="rounded-[1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-3 py-3">
+                    <p className="pv-data-label">
+                      <T k="learn.lessonsShort" />
+                    </p>
+                    <p className="mt-2 text-lg font-semibold text-zinc-950">{totalLessons}</p>
+                  </div>
+                  <div className="rounded-[1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-3 py-3">
+                    <p className="pv-data-label">
+                      <T k="learn.effortShort" />
+                    </p>
+                    <p className="mt-2 text-lg font-semibold text-zinc-950">
+                      {recommendedCourse.estimated_minutes}m
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : undefined
+          }
         />
 
         <section className="pv-panel px-6 py-6 sm:px-7">
@@ -65,7 +109,10 @@ export default async function LearnIndexPage() {
 
           <div className="mt-5 grid gap-3 lg:grid-cols-3">
             {catalog.courses.map((course) => (
-              <article key={`track-${course.slug}`} className="rounded-[1rem] border border-[var(--pv-border)] bg-white/85 px-4 py-4">
+              <article
+                key={`track-${course.slug}`}
+                className="rounded-[1.25rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-4 py-4"
+              >
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
                   {getTranslation(language, getDifficultyTranslationKey(course.difficulty))}
                 </p>
@@ -156,7 +203,7 @@ export default async function LearnIndexPage() {
                     </div>
 
                     {course.deliverable_preview ? (
-                      <div className="mt-4 rounded-[0.95rem] border border-[var(--pv-border)] bg-white/85 px-3 py-3 text-sm text-zinc-700">
+                      <div className="mt-4 rounded-[1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-3 py-3 text-sm text-zinc-700">
                         <span className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
                           <T k="learn.deliverablePreviewTitle" />
                         </span>

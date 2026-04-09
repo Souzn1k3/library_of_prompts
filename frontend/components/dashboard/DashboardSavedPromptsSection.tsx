@@ -35,7 +35,7 @@ export function DashboardSavedPromptsSection({
       {items.length === 0 ? (
         <div className="pv-empty-state mt-6 text-sm text-zinc-600">
           {t("dashboard.emptyPrefix")}{" "}
-          <Link href={APP_ROUTES.catalog} className="font-medium text-zinc-900 underline">
+          <Link href={APP_ROUTES.catalog} className="font-medium text-[var(--pv-brand-strong)]">
             {t("dashboard.emptyLink")}
           </Link>{" "}
           {t("dashboard.emptySuffix")}

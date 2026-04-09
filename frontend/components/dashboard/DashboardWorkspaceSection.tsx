@@ -81,11 +81,15 @@ export function DashboardWorkspaceSection({
 
   return (
     <section className="pv-panel px-6 py-6 sm:px-7">
-      <div className="pv-section-copy">
-        <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">
-          {t("dashboard.workspaceNavTitle")}
-        </h2>
-        <p className="mt-2 text-sm text-zinc-600">{t("dashboard.workspaceNavBody")}</p>
+      <div className="pv-section-head">
+        <div className="pv-section-copy">
+          <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">
+            {t("dashboard.workspaceNavTitle")}
+          </h2>
+          <p className="mt-2 text-sm text-zinc-600">{t("dashboard.workspaceNavBody")}</p>
+        </div>
+
+        <span className="pv-workspace-status">{cards.length}</span>
       </div>
 
       <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">

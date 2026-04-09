@@ -105,7 +105,7 @@ export function PromptCard({ prompt }: { prompt: PromptListItem }) {
 function getTechniqueTone(technique: PromptListItem["technique"]) {
   void technique;
   return {
-    badge: "border-[rgba(15,23,42,0.1)] bg-[rgba(248,250,252,0.92)] text-zinc-700",
+    badge: "border-[rgba(29,78,216,0.14)] bg-[var(--pv-brand-soft)] text-[var(--pv-brand-strong)]",
   };
 }
 

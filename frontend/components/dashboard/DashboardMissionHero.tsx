@@ -21,35 +21,36 @@ export function DashboardMissionHero(props: DashboardMissionHeroProps) {
       eyebrow={t("dashboard.title")}
       title={t("dashboard.title")}
       description={t("dashboard.subtitle")}
-    >
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-12">
-        <div className="pv-card pv-card-hover-lift flex h-full min-h-[12rem] flex-col gap-4 p-5 md:col-span-2 xl:col-span-6 sm:p-6">
-          <p className="pv-kicker">{t("dashboard.opsNextStepLabel")}</p>
-          <div className="space-y-2">
-            <h2 className="text-xl font-bold tracking-[-0.035em] text-zinc-950 sm:text-2xl">
+      aside={(
+        <div className="pv-card flex h-full min-h-[14rem] flex-col gap-5 p-5 sm:p-6">
+          <div className="space-y-3">
+            <p className="pv-kicker">{t("dashboard.opsNextStepLabel")}</p>
+            <h2 className="text-[1.55rem] font-semibold tracking-[-0.05em] text-zinc-950 sm:text-[1.75rem]">
               {viewModel.nextStepTitle}
             </h2>
             <p className="text-sm leading-relaxed text-zinc-600">{viewModel.nextStepBody}</p>
           </div>
 
-          <div className="mt-auto border-t border-[rgba(15,23,42,0.08)] pt-3">
+          <div className="mt-auto border-t border-[var(--pv-border)] pt-4">
             <Link href={props.primaryAction.href} className="pv-inline-link flex w-full justify-between">
               {props.primaryAction.label}
               <span aria-hidden="true">↗</span>
             </Link>
           </div>
         </div>
-
+      )}
+    >
+      <div className="pv-dashboard-split">
         <DashboardOpsCard
           eyebrow={t("dashboard.opsLearningLabel")}
           summary={(
             viewModel.learningEmptySummary ? (
-              <p className="text-lg font-semibold tracking-[-0.03em] text-zinc-900">
+              <p className="text-[1.35rem] font-semibold tracking-[-0.04em] text-zinc-900">
                 {t("dashboard.opsLearningStartShort")}
               </p>
             ) : (
               <div className="space-y-1">
-                <p className="text-[clamp(2rem,4vw,2.6rem)] font-extrabold tracking-[-0.08em] text-zinc-950">
+                <p className="text-[clamp(2rem,4vw,2.8rem)] font-semibold tracking-[-0.08em] text-zinc-950">
                   {viewModel.learningProgressPercent}%
                 </p>
                 <p className="text-xs font-medium text-zinc-500">{viewModel.learningSubline}</p>
@@ -59,14 +60,13 @@ export function DashboardMissionHero(props: DashboardMissionHeroProps) {
           body={viewModel.learningBody}
           href={viewModel.learningActionHref}
           actionLabel={viewModel.learningActionLabel}
-          className="xl:col-span-2"
         />
 
         <DashboardOpsCard
           eyebrow={t("dashboard.opsPromptsAndSubmissionsLabel")}
           summary={(
             props.savedPromptsCount === 0 ? (
-              <p className="text-lg font-semibold tracking-[-0.03em] text-zinc-900">
+              <p className="text-[1.35rem] font-semibold tracking-[-0.04em] text-zinc-900">
                 {t("dashboard.opsPromptsEmptyShort")}
               </p>
             ) : (
@@ -80,20 +80,18 @@ export function DashboardMissionHero(props: DashboardMissionHeroProps) {
           body={viewModel.promptsBody}
           href={viewModel.promptsActionHref}
           actionLabel={viewModel.promptsActionLabel}
-          className="xl:col-span-2"
         />
 
         <DashboardOpsCard
           eyebrow={t("dashboard.opsWalletLabel")}
           summary={(
-            <p className="text-[clamp(2rem,4vw,2.6rem)] font-extrabold tracking-[-0.08em] text-zinc-950">
+            <p className="text-[clamp(2rem,4vw,2.8rem)] font-semibold tracking-[-0.08em] text-zinc-950">
               {viewModel.walletBalanceLabel}
             </p>
           )}
           body={viewModel.walletBody}
           href={APP_ROUTES.wallet}
           actionLabel={t("dashboard.openWallet")}
-          className="xl:col-span-2"
         />
       </div>
     </PageIntro>

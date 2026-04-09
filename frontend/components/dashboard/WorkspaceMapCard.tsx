@@ -27,14 +27,14 @@ export function WorkspaceMapCard({
   actionLabel,
 }: WorkspaceMapCardProps) {
   return (
-    <Link href={href} className="pv-card pv-card-hover-lift flex h-full min-h-[12rem] flex-col gap-3 p-5">
+    <Link href={href} className="pv-card pv-card-hover-lift flex h-full min-h-[12rem] flex-col gap-4 p-5">
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-lg font-semibold tracking-[-0.035em] text-zinc-950">{title}</h3>
+        <h3 className="text-lg font-semibold tracking-[-0.04em] text-zinc-950">{title}</h3>
         <span className={workspaceStatusClass(statusTone)}>{statusLabel}</span>
       </div>
       <p className="text-sm leading-relaxed text-zinc-600">{description}</p>
-      <p className="text-xs text-zinc-500">{lastVisitLabel}</p>
-      <span className="pv-inline-link mt-auto flex w-full items-center justify-between border-t border-[rgba(15,23,42,0.07)] pt-3">
+      <p className="text-xs font-medium uppercase tracking-[0.12em] text-zinc-500">{lastVisitLabel}</p>
+      <span className="pv-inline-link mt-auto flex w-full items-center justify-between border-t border-[var(--pv-border)] pt-4">
         {actionLabel}
         <span aria-hidden="true">↗</span>
       </span>

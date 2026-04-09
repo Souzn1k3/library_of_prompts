@@ -41,9 +41,9 @@ export function SignupForm() {
   }
 
   return (
-    <form className="space-y-4" onSubmit={onSubmit}>
+    <form className="space-y-5" onSubmit={onSubmit}>
       {error ? (
-        <div className="rounded-[1rem] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+        <div className="pv-alert pv-alert-error text-sm">
           {error}
         </div>
       ) : null}
@@ -99,12 +99,15 @@ export function SignupForm() {
       >
         {pending ? t("signup.submitPending") : t("signup.submitIdle")}
       </button>
-      <p className="text-center text-sm text-zinc-600">
-        {t("signup.haveAccountPrefix")}{" "}
-        <Link href="/login" className="font-medium text-zinc-900 underline">
-          {t("signup.haveAccountLink")}
-        </Link>
-      </p>
+
+      <div className="border-t border-[var(--pv-border)] pt-4">
+        <p className="text-center text-sm text-zinc-600">
+          {t("signup.haveAccountPrefix")}{" "}
+          <Link href="/login" className="font-medium text-[var(--pv-brand-strong)]">
+            {t("signup.haveAccountLink")}
+          </Link>
+        </p>
+      </div>
     </form>
   );
 }

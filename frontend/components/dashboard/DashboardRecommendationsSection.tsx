@@ -43,7 +43,7 @@ export function DashboardRecommendationsSection({
           <div className="pv-alert pv-alert-warning">
             <p className="font-medium">{t("dashboard.finishOnboardingTitle")}</p>
             <p className="mt-2">
-              <Link href={APP_ROUTES.onboarding} className="underline">
+              <Link href={APP_ROUTES.onboarding} className="font-medium text-[var(--pv-brand-strong)]">
                 {t("dashboard.finishOnboardingLink")}
               </Link>
             </p>
