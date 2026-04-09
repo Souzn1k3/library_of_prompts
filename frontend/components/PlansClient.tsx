@@ -187,19 +187,18 @@ export function PlansClient({ plans, error }: PlansClientProps) {
           <table className="w-full min-w-[46rem] border-separate border-spacing-0 text-left">
             <thead>
               <tr>
-                <th className="sticky left-0 z-10 rounded-l-[0.95rem] border border-[var(--pv-border)] bg-white px-3 py-3 text-xs uppercase tracking-[0.12em] text-zinc-500">
+                <th className="sticky left-0 z-10 border border-[var(--pv-border)] bg-white px-3 py-3 text-xs uppercase tracking-[0.12em] text-zinc-500">
                   {t("plans.compareMetric")}
                 </th>
-                {sortedPlans.map((plan, index) => {
-                  const isLast = index === sortedPlans.length - 1;
+                {sortedPlans.map((plan) => {
                   const isMaxPlan = plan.tier === "enterprise";
 
                   return (
                     <th
                       key={plan.tier}
                       className={`border border-[var(--pv-border)] px-3 py-3 text-center text-sm font-semibold text-zinc-900 ${
-                        isLast ? "rounded-r-[0.95rem]" : ""
-                      } ${isMaxPlan ? "pv-plans-compare-max-col" : "bg-white"}`}
+                        isMaxPlan ? "pv-plans-compare-max-col" : "bg-white"
+                      }`}
                     >
                       {t(getTierTranslationKey(plan.tier))}
                     </th>
