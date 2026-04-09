@@ -100,49 +100,22 @@ export default async function HomePage() {
         }}
       />
 
-      <section className="pv-hero px-6 py-8 sm:px-8 sm:py-12">
-        <div className="grid gap-10 xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,420px)] xl:items-start">
-          <div className="pv-hero-copy space-y-8">
-            <div className="max-w-[44rem] space-y-4">
+      <section className="pv-hero pv-home-hero-compact px-5 py-5 sm:px-7 sm:py-6">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] xl:items-start">
+          <div className="pv-hero-copy space-y-4">
+            <div className="max-w-[36rem] space-y-2.5">
               <p className="pv-kicker">
                 <T k="home.kicker" />
               </p>
-              <h1 className="pv-display max-w-[11ch] text-zinc-950">
+              <h1 className="max-w-[16ch] text-4xl font-[760] leading-[0.95] tracking-[-0.05em] text-zinc-950 sm:text-5xl xl:text-[3.25rem]">
                 <T k="home.title" />
               </h1>
-              <p className="pv-lead max-w-[34rem]">
+              <p className="pv-lead max-w-[30rem] text-sm leading-relaxed sm:text-[0.95rem]">
                 <T k="home.subtitle" />
               </p>
             </div>
 
             <HomeHeroActions initialAuthenticated={Boolean(accessToken)} />
-
-            <div className="pv-auth-card-grid">
-              <article className="pv-auth-card">
-                <p className="pv-auth-card-title">
-                  <T k="home.structuredLibraryTitle" />
-                </p>
-                <p className="pv-auth-card-body">
-                  <T k="home.structuredLibraryBody" />
-                </p>
-              </article>
-              <article className="pv-auth-card">
-                <p className="pv-auth-card-title">
-                  <T k="home.builtToLearnTitle" />
-                </p>
-                <p className="pv-auth-card-body">
-                  <T k="home.builtToLearnBody" />
-                </p>
-              </article>
-              <article className="pv-auth-card">
-                <p className="pv-auth-card-title">
-                  <T k="home.seriousToolTitle" />
-                </p>
-                <p className="pv-auth-card-body">
-                  <T k="home.seriousToolBody" />
-                </p>
-              </article>
-            </div>
           </div>
 
           <HeroPreview
@@ -237,24 +210,24 @@ function HeroPreview({
 
   return (
     <div className="pv-hero-visual">
-      <div className="pv-hero-preview-shell">
+      <div className="pv-hero-preview-shell pv-home-hero-preview-shell">
         <p className="pv-hero-preview-label">{getTranslation(language, "home.previewLabel")}</p>
 
-        <div className="pv-hero-preview-card">
+        <div className="pv-hero-preview-card pv-home-hero-preview-card">
           <span className="pv-chip-brand w-fit">{techniqueLabel}</span>
-          <div className="space-y-3">
-            <h2 className="pv-hero-preview-title">{previewTitle}</h2>
-            <p className="pv-hero-preview-body line-clamp-4">{previewBody}</p>
+          <div className="space-y-2">
+            <h2 className="pv-hero-preview-title line-clamp-2">{previewTitle}</h2>
+            <p className="pv-hero-preview-body line-clamp-2">{previewBody}</p>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-2">
             {metrics.map((metric) => (
               <div
                 key={metric.label}
-                className="rounded-[1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-3 py-3"
+                className="rounded-xl border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-2.5 py-2"
               >
-                <p className="text-[1.1rem] font-semibold tracking-[-0.04em] text-zinc-950">{metric.value}</p>
-                <p className="mt-1 text-xs leading-relaxed text-zinc-500">{metric.label}</p>
+                <p className="text-base font-semibold tracking-[-0.03em] text-zinc-950">{metric.value}</p>
+                <p className="mt-1 text-[11px] leading-4 text-zinc-500">{metric.label}</p>
               </div>
             ))}
           </div>

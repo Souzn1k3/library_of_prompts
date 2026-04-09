@@ -166,6 +166,22 @@ body {
   gap: 0.9rem;
 }
 
+.pv-home-hero-compact .pv-hero-actions {
+  gap: 0.6rem;
+}
+
+.pv-home-hero-compact .pv-hero-button-primary,
+.pv-home-hero-compact .pv-hero-button-secondary {
+  min-height: 2.7rem;
+  min-width: 9.5rem;
+  padding-inline: 1rem;
+}
+
+.pv-home-hero-preview-shell {
+  width: min(100%, 22rem);
+  gap: 0.55rem;
+}
+
 .pv-hero-preview-card,
 .pv-hero-preview-dropdown-body,
 .pv-hero-preview-prompt,
@@ -189,6 +205,11 @@ body {
 .pv-hero-preview-card {
   border-radius: 1.4rem;
   padding: 1.4rem;
+}
+
+.pv-home-hero-preview-card {
+  border-radius: 1.15rem;
+  padding: 1rem;
 }
 
 .pv-hero-preview-title {
@@ -736,5 +757,9 @@ html[data-theme="dark"] footer {
   .pv-home-metric-card,
   .pv-auth-card {
     padding: 0.9rem;
+  }
+
+  .pv-home-hero-preview-shell {
+    width: 100%;
   }
 }
