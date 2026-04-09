@@ -34,6 +34,11 @@ export function ProfilePurchasesSection({
             {t("profile.recentPurchasesTitle")}
           </h2>
           <p className="mt-2 text-sm text-zinc-600">{t("profile.recentPurchasesDescription")}</p>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs text-zinc-500">
+            <span className="pv-chip">{t("profile.recentPurchasesFlowOpen")}</span>
+            <span className="pv-chip">{t("profile.recentPurchasesFlowRate")}</span>
+            <span className="pv-chip">{t("profile.recentPurchasesFlowSave")}</span>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="pv-chip">

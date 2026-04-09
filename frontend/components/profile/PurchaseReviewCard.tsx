@@ -39,6 +39,24 @@ export function PurchaseReviewCard({ locale, purchase, onSubmitted }: PurchaseRe
     setSavedMessage(null);
   }, [purchase.id, purchase.review?.id, purchase.review?.rating, purchase.review?.text, purchase.review?.updated_at]);
 
+  const initialRating = purchase.review?.rating ?? 5;
+  const initialText = purchase.review?.text ?? "";
+  const normalizedText = text.trim();
+  const isDirty = rating !== initialRating || normalizedText !== initialText.trim();
+  const reviewBlockedReason =
+    purchase.status === "refunded"
+      ? t("profile.refundedPurchasesNoReviews")
+      : purchase.status === "completed"
+        ? t("profile.reviewAvailableWhenAttached")
+        : t("profile.reviewAvailableForCompleted");
+
+  function resetDraft() {
+    setRating(initialRating);
+    setText(initialText);
+    setError(null);
+    setSavedMessage(null);
+  }
+
   async function submit() {
     if (!purchase.can_review) {
       return;
@@ -59,10 +77,13 @@ export function PurchaseReviewCard({ locale, purchase, onSubmitted }: PurchaseRe
   }
 
   return (
-    <div className="rounded-[1rem] border border-zinc-200 bg-white/75 p-4">
+    <div className="rounded-[1rem] border border-zinc-200 bg-white/75 p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <Link href={appRoute.promptBySlug(purchase.prompt_slug)} className="font-semibold text-zinc-900 underline">
+        <div className="min-w-0">
+          <Link
+            href={appRoute.promptBySlug(purchase.prompt_slug)}
+            className="inline-block max-w-full truncate text-lg font-semibold text-zinc-900 underline"
+          >
             {purchase.prompt_title}
           </Link>
           <div className="mt-2 flex flex-wrap gap-2 text-xs text-zinc-500">
@@ -89,12 +110,30 @@ export function PurchaseReviewCard({ locale, purchase, onSubmitted }: PurchaseRe
               {t("profile.sellerSettlementRelease", { date: formatDate(purchase.settlement_available_at, locale) })}
             </p>
           ) : null}
+        </div>
+
+        <Link href={appRoute.promptBySlug(purchase.prompt_slug)} className="pv-button-secondary !w-auto">
+          {t("profile.openPromptFromPurchase")}
+        </Link>
+      </div>
+
+      <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <div className="rounded-[0.95rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] p-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+            {t("profile.purchaseFlowStepAccess")}
+          </p>
+          <p className="mt-2 text-sm font-semibold text-zinc-900">
+            {purchase.can_review ? t("profile.purchaseAccessReadyTitle") : t("profile.purchaseAccessLockedTitle")}
+          </p>
+          <p className="mt-1 text-sm text-zinc-600">
+            {purchase.can_review ? t("profile.purchaseAccessReadyBody") : reviewBlockedReason}
+          </p>
           {purchase.review ? (
             <>
-              <p className="mt-2 text-xs text-zinc-500">
+              <p className="mt-3 text-xs text-zinc-500">
                 {t("profile.lastReviewUpdate", { date: formatDate(purchase.review.updated_at, locale) })}
               </p>
-              <p className="mt-2 text-xs text-zinc-500">
+              <p className="mt-1 text-xs text-zinc-500">
                 {t("profile.reviewState", {
                   status: humanizeReviewModerationStatus(purchase.review.moderation_status, t),
                 })}
@@ -106,57 +145,71 @@ export function PurchaseReviewCard({ locale, purchase, onSubmitted }: PurchaseRe
           ) : null}
         </div>
 
-        <div className="flex gap-2">
-          {[1, 2, 3, 4, 5].map((value) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setRating(value)}
-              disabled={!purchase.can_review}
-              className={value <= rating ? "pv-button-secondary disabled:opacity-60" : "pv-chip disabled:opacity-60"}
-            >
-              {value}
-            </button>
-          ))}
+        <div className="rounded-[0.95rem] border border-[var(--pv-border)] bg-white p-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+            {t("profile.purchaseFlowStepRating")}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {[1, 2, 3, 4, 5].map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setRating(value)}
+                disabled={!purchase.can_review}
+                className={`pv-review-rating ${value <= rating ? "pv-review-rating-active" : ""} disabled:opacity-60`}
+              >
+                <span className="pv-review-rating-star" aria-hidden="true">
+                  ★
+                </span>
+                <span>{value}</span>
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-sm text-zinc-600">{t("profile.purchaseRatingSelected", { rating })}</p>
         </div>
       </div>
 
       {purchase.can_review ? (
-        <>
+        <div className="mt-3 rounded-[0.95rem] border border-[var(--pv-border)] bg-white p-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+              {t("profile.purchaseFlowStepComment")}
+            </p>
+            {isDirty ? (
+              <button type="button" onClick={resetDraft} className="pv-button-ghost !w-auto text-xs">
+                {t("profile.reviewResetDraft")}
+              </button>
+            ) : null}
+          </div>
+
           <textarea
             value={text}
             onChange={(event) => setText(event.target.value)}
             rows={4}
-            className="pv-textarea mt-3"
+            className="pv-textarea mt-2"
             placeholder={t("profile.reviewPlaceholder")}
           />
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <button type="button" onClick={() => void submit()} disabled={pending} className="pv-button-primary disabled:opacity-60">
+            <button
+              type="button"
+              onClick={() => void submit()}
+              disabled={pending || !isDirty}
+              className="pv-button-primary disabled:opacity-60"
+            >
               {pending ? t("profile.saving") : purchase.review ? t("profile.updateReview") : t("profile.saveReview")}
             </button>
+            {!isDirty ? <span className="text-sm text-zinc-500">{t("profile.reviewNoChanges")}</span> : null}
             {savedMessage ? <span className="text-sm text-emerald-700">{savedMessage}</span> : null}
             {error ? <span className="text-sm text-red-700">{error}</span> : null}
           </div>
           {purchase.review?.moderation_status === "pending" ? (
-            <p className="mt-3 text-sm text-amber-700">
-              {t("profile.reviewPendingModeration")}
-            </p>
+            <p className="mt-3 text-sm text-amber-700">{t("profile.reviewPendingModeration")}</p>
           ) : null}
           {purchase.review?.moderation_status === "hidden" ? (
-            <p className="mt-3 text-sm text-zinc-600">
-              {t("profile.reviewHiddenNotice")}
-            </p>
+            <p className="mt-3 text-sm text-zinc-600">{t("profile.reviewHiddenNotice")}</p>
           ) : null}
-        </>
-      ) : (
-        <p className="mt-3 text-sm text-zinc-600">
-          {purchase.status === "refunded"
-            ? t("profile.refundedPurchasesNoReviews")
-            : purchase.status === "completed"
-              ? t("profile.reviewAvailableWhenAttached")
-              : t("profile.reviewAvailableForCompleted")}
-        </p>
-      )}
+        </div>
+      ) : null}
     </div>
   );
 }

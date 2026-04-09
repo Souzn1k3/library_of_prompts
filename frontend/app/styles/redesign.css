@@ -615,6 +615,39 @@ footer {
   background: rgba(15, 23, 42, 0.04);
 }
 
+.pv-review-rating {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: 3rem;
+  min-height: 2.5rem;
+  border: 1px solid var(--pv-border);
+  border-radius: 0.78rem;
+  padding-inline: 0.65rem;
+  background: #ffffff;
+  color: var(--pv-muted);
+  font-size: 0.9rem;
+  font-weight: 650;
+  line-height: 1;
+  transition: border-color 0.16s ease, color 0.16s ease, background-color 0.16s ease;
+}
+
+.pv-review-rating:hover {
+  border-color: var(--pv-border-strong);
+  color: var(--pv-brand-strong);
+}
+
+.pv-review-rating-active {
+  border-color: rgba(29, 78, 216, 0.3);
+  background: var(--pv-brand-soft);
+  color: var(--pv-brand-strong);
+}
+
+.pv-review-rating-star {
+  font-size: 0.82rem;
+}
+
 html[data-theme="dark"] {
   color-scheme: dark;
   --pv-bg: #0b1220;
@@ -699,6 +732,23 @@ html[data-theme="dark"] .pv-header-search {
 
 html[data-theme="dark"] .pv-plans-compare-max-col {
   background: rgba(96, 165, 250, 0.14) !important;
+}
+
+html[data-theme="dark"] .pv-review-rating {
+  border-color: var(--pv-border);
+  background: rgba(15, 23, 42, 0.88);
+  color: var(--pv-text);
+}
+
+html[data-theme="dark"] .pv-review-rating:hover {
+  border-color: var(--pv-border-strong);
+  color: var(--pv-brand-strong);
+}
+
+html[data-theme="dark"] .pv-review-rating-active {
+  border-color: rgba(96, 165, 250, 0.34);
+  background: rgba(96, 165, 250, 0.2);
+  color: #dbeafe;
 }
 
 html[data-theme="dark"] .pv-input,
