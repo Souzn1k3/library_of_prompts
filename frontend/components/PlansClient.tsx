@@ -199,7 +199,7 @@ export function PlansClient({ plans, error }: PlansClientProps) {
                       key={plan.tier}
                       className={`border border-[var(--pv-border)] px-3 py-3 text-center text-sm font-semibold text-zinc-900 ${
                         isLast ? "rounded-r-[0.95rem]" : ""
-                      } ${isMaxPlan ? "bg-zinc-900/[0.04]" : "bg-white"}`}
+                      } ${isMaxPlan ? "pv-plans-compare-max-col" : "bg-white"}`}
                     >
                       {t(getTierTranslationKey(plan.tier))}
                     </th>
@@ -230,7 +230,7 @@ export function PlansClient({ plans, error }: PlansClientProps) {
                           key={`${row.id}-${plan.tier}`}
                           className={`border border-[var(--pv-border)] px-3 py-3 text-center text-sm text-zinc-900 ${
                             isLastRow && isLastCol ? "rounded-br-[0.95rem]" : ""
-                          } ${isMaxPlan ? "bg-zinc-900/[0.04]" : "bg-white"}`}
+                          } ${isMaxPlan ? "pv-plans-compare-max-col" : "bg-white"}`}
                         >
                           {row.id === "workload" ? (
                             <div className="space-y-1">
