@@ -30,6 +30,19 @@ export function MissionCard({ mission }: MissionCardProps) {
   );
   const primaryHref = hasDedicatedNextStep ? mission.nextStep!.href : detailsHref;
   const primaryLabel = hasDedicatedNextStep ? mission.nextStep!.label : t("missions.openMissionDetails");
+  const metaSummary = [
+    mission.badgeLabel ? `${t("missions.badge")}: ${mission.badgeLabel}` : null,
+    mission.mission.chain_id
+      ? t("missions.chainProgress", {
+          step: mission.mission.chain_step,
+          total: mission.mission.chain_total || 1,
+        })
+      : null,
+    mission.mission.is_repeatable ? t("missions.repeatable") : null,
+    mission.mission.completion_count > 0 ? `${t("missions.completedTimes")}: ${mission.mission.completion_count}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
 
   function trackNextStep() {
     if (!mission.nextStep || !hasDedicatedNextStep) return;
@@ -51,7 +64,6 @@ export function MissionCard({ mission }: MissionCardProps) {
 
   return (
     <article className="pv-card pv-card-optimized p-5">
-      <div className={`pointer-events-none absolute right-3 top-3 h-16 w-16 rounded-full blur-2xl ${tone.glow}`} />
       <div className="relative flex h-full flex-col gap-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="space-y-2">
@@ -63,27 +75,16 @@ export function MissionCard({ mission }: MissionCardProps) {
                 className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
                   mission.mission.status === "completed"
                     ? "bg-emerald-100 text-emerald-900"
-                    : mission.mission.status === "in_progress"
+                  : mission.mission.status === "in_progress"
                       ? "bg-blue-100 text-blue-900"
                       : "bg-zinc-100 text-zinc-700"
                 }`}
               >
                 {t(getMissionStatusTranslationKey(mission.mission.status))}
               </span>
-              {mission.mission.is_repeatable ? (
-                <span className="pv-badge">{t("missions.repeatable")}</span>
-              ) : null}
-              {mission.mission.chain_id ? (
-                <span className="pv-badge">
-                  {t("missions.chainProgress", {
-                    step: mission.mission.chain_step,
-                    total: mission.mission.chain_total || 1,
-                  })}
-                </span>
-              ) : null}
             </div>
             <h3 className="text-lg font-semibold tracking-[-0.03em] text-zinc-950">{mission.title}</h3>
-            <p className="text-sm leading-relaxed text-zinc-600">{mission.objective}</p>
+            <p className="line-clamp-2 text-sm leading-relaxed text-zinc-600">{mission.objective}</p>
           </div>
 
           {mission.mission.reward.credits > 0 ? (
@@ -98,37 +99,21 @@ export function MissionCard({ mission }: MissionCardProps) {
           ) : null}
         </div>
 
-        <div className="rounded-[1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-3 py-3">
-          <div className="flex items-center justify-between text-xs text-zinc-600">
-            <span>
-              {t("missions.progress")}: {mission.mission.progress_count}/{mission.mission.required_count}
-            </span>
-            <span className="font-semibold text-zinc-700">{pct}%</span>
-          </div>
-          <div className="mt-2 pv-progress">
-            <div className="pv-progress-fill" style={{ width: `${pct}%` }} />
-          </div>
+        <div className="flex items-center justify-between text-xs text-zinc-600">
+          <span>
+            {t("missions.progress")}: {mission.mission.progress_count}/{mission.mission.required_count}
+          </span>
+          <span className="font-semibold text-zinc-700">{pct}%</span>
+        </div>
+        <div className="pv-progress">
+          <div className="pv-progress-fill" style={{ width: `${pct}%` }} />
         </div>
 
-        <div className="flex flex-wrap gap-3 text-xs text-zinc-500">
-          {mission.badgeLabel ? (
-            <span className="pv-chip">
-              {t("missions.badge")}: {mission.badgeLabel}
-            </span>
-          ) : null}
-          {mission.mission.completion_count > 0 ? (
-            <span className="pv-chip">
-              {t("missions.completedTimes")}: {mission.mission.completion_count}
-            </span>
-          ) : null}
-          {mission.mission.adaptive_reason ? (
-            <span className="pv-chip">
-              {t("missions.adaptiveReason", { reason: mission.mission.adaptive_reason })}
-            </span>
-          ) : null}
+        <div className="min-h-4 text-xs text-zinc-500">
+          {metaSummary || "\u00A0"}
         </div>
 
-        <div className="mt-auto flex flex-wrap items-center gap-3 border-t border-[var(--pv-border)] pt-4">
+        <div className="mt-auto flex flex-wrap items-center gap-3 border-t border-[var(--pv-border)] pt-3">
           <Link href={primaryHref} onClick={trackNextStep} className="pv-button-primary !w-auto">
             {primaryLabel}
           </Link>
