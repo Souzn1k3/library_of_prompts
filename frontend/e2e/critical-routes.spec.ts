@@ -32,9 +32,9 @@ test("home renders the new product hero", async ({ page }, testInfo) => {
 
   await expect(page.getByRole("heading", { level: 1 })).toContainText(/proven ai prompt/i);
   await expect(page.getByRole("link", { name: /get starter pack/i })).toBeVisible();
-  await expect(page.getByText(/structured library/i)).toBeVisible();
-  await expect(page.getByText(/built to learn/i)).toBeVisible();
-  await expect(page.getByText(/serious tool/i)).toBeVisible();
+  await expect(page.getByText(/personalized prompts/i).first()).toBeVisible();
+  await expect(page.getByText(/curated for fast execution/i).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: /^see all$/i }).first()).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
   await page.screenshot({ path: testInfo.outputPath("home-desktop.png"), fullPage: true });

@@ -7,10 +7,9 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import {
   fetchDiscoverySections,
   fetchPopularLessons,
-  fetchPromptBySlug,
   fetchPromptRecommendations,
 } from "@/lib/api";
-import { getTechniqueTranslationKey, getTranslation, languageToIntlLocale, type Language } from "@/lib/i18n";
+import { getTechniqueTranslationKey, getTranslation, type Language } from "@/lib/i18n";
 import { absoluteUrl } from "@/lib/seo";
 import { getServerAccessToken } from "@/lib/server-auth";
 import { getServerLanguage } from "@/lib/server-i18n";
@@ -43,41 +42,12 @@ export default async function HomePage() {
       : sections.for_you?.length
         ? sections.for_you
         : sections.trending;
+  const topRecommendedPrompts = featuredPrompts.slice(0, 6);
 
   const promptsTitle =
     accessToken && homeRecommendations.items.length > 0
       ? getTranslation(language, "dashboard.recommendedForYou")
       : getTranslation(language, "home.trendingPrompts");
-  const heroPrompt = featuredPrompts[0];
-  const numberFormatter = new Intl.NumberFormat(languageToIntlLocale(language));
-  const qualityScoreTop = featuredPrompts.reduce((max, item) => Math.max(max, item.quality_score ?? 0), 0);
-  const signalCount = featuredPrompts.reduce(
-    (sum, item) => sum + (item.save_count ?? 0) + (item.copy_count ?? 0),
-    0,
-  );
-  const heroMetrics = [
-    {
-      value: numberFormatter.format(featuredPrompts.length),
-      label: getTranslation(language, "home.proofPromptCount"),
-    },
-    {
-      value: numberFormatter.format(signalCount),
-      label: getTranslation(language, "home.proofSaveAndCopy"),
-    },
-    {
-      value: numberFormatter.format(popularLessons.length),
-      label: getTranslation(language, "home.proofLessonCount"),
-    },
-    {
-      value: qualityScoreTop > 0 ? numberFormatter.format(qualityScoreTop) : "—",
-      label: getTranslation(language, "home.proofTopScore"),
-    },
-  ];
-  const heroPromptBody = heroPrompt
-    ? await fetchPromptBySlug(heroPrompt.slug, accessToken, language)
-        .then((detail) => (detail.body_locked ? null : detail.body?.trim() || null))
-        .catch(() => null)
-    : null;
 
   return (
     <div className="pv-page">
@@ -90,7 +60,7 @@ export default async function HomePage() {
           url: absoluteUrl("/"),
           mainEntity: {
             "@type": "ItemList",
-            itemListElement: featuredPrompts.slice(0, 6).map((prompt, index) => ({
+            itemListElement: topRecommendedPrompts.map((prompt, index) => ({
               "@type": "ListItem",
               position: index + 1,
               name: prompt.title,
@@ -101,7 +71,7 @@ export default async function HomePage() {
       />
 
       <section className="pv-hero pv-home-hero-compact px-5 py-5 sm:px-7 sm:py-6">
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] xl:items-start">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] xl:items-start">
           <div className="pv-hero-copy space-y-4">
             <div className="max-w-[36rem] space-y-2.5">
               <p className="pv-kicker">
@@ -118,11 +88,10 @@ export default async function HomePage() {
             <HomeHeroActions initialAuthenticated={Boolean(accessToken)} />
           </div>
 
-          <HeroPreview
-            prompt={heroPrompt}
+          <HeroRecommendationsPanel
+            title={promptsTitle}
+            prompts={topRecommendedPrompts.slice(0, 3)}
             language={language}
-            promptBody={heroPromptBody}
-            metrics={heroMetrics}
           />
         </div>
       </section>
@@ -131,7 +100,7 @@ export default async function HomePage() {
         title={promptsTitle}
         href="/catalog"
         hrefLabel={getTranslation(language, "home.seeAll")}
-        prompts={featuredPrompts}
+        prompts={topRecommendedPrompts}
         idPrefix="home-featured"
       />
 
@@ -187,81 +156,74 @@ export default async function HomePage() {
   );
 }
 
-function HeroPreview({
-  prompt,
+function HeroRecommendationsPanel({
+  title,
+  prompts,
   language,
-  promptBody,
-  metrics,
 }: {
-  prompt: PromptListItem | undefined;
+  title: string;
+  prompts: PromptListItem[];
   language: Language;
-  promptBody: string | null;
-  metrics: Array<{ value: string; label: string }>;
 }) {
-  const techniqueLabel = prompt
-    ? getTranslation(language, getTechniqueTranslationKey(prompt.technique))
-    : getTranslation(language, "catalog.prompts");
-  const previewTitle = prompt?.title ?? getTranslation(language, "home.previewEmptyTitle");
-  const previewBody = prompt?.summary ?? getTranslation(language, "home.previewEmptyBody");
-  const readyPromptTemplate =
-    promptBody && promptBody.length > 0
-      ? promptBody
-      : getHeroStrongPromptFallback(language, previewTitle, previewBody);
-
   return (
     <div className="pv-hero-visual">
-      <div className="pv-hero-preview-shell pv-home-hero-preview-shell">
-        <p className="pv-hero-preview-label">{getTranslation(language, "home.previewLabel")}</p>
+      <div className="pv-card p-4 sm:p-5">
+        <p className="pv-kicker">
+          <T k="home.personalizedKicker" />
+        </p>
+        <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{title}</h2>
+        <p className="mt-2 text-sm leading-relaxed text-zinc-600">
+          <T k="home.personalizedSubtitle" />
+        </p>
 
-        <div className="pv-hero-preview-card pv-home-hero-preview-card">
-          <span className="pv-chip-brand w-fit">{techniqueLabel}</span>
-          <div className="space-y-2">
-            <h2 className="pv-hero-preview-title line-clamp-2">{previewTitle}</h2>
-            <p className="pv-hero-preview-body line-clamp-2">{previewBody}</p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            {metrics.map((metric) => (
-              <div
-                key={metric.label}
-                className="rounded-xl border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-2.5 py-2"
+        <div className="mt-4 space-y-2.5">
+          {prompts.length ? (
+            prompts.map((prompt, index) => (
+              <Link
+                key={`hero-reco-${prompt.id}`}
+                href={`/prompt/${encodeURIComponent(prompt.slug)}`}
+                className="group block rounded-[1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-3 py-3 transition hover:border-[var(--pv-border-strong)] hover:bg-white"
               >
-                <p className="text-base font-semibold tracking-[-0.03em] text-zinc-950">{metric.value}</p>
-                <p className="mt-1 text-[11px] leading-4 text-zinc-500">{metric.label}</p>
-              </div>
-            ))}
-          </div>
-
-          <details className="pv-hero-preview-dropdown">
-            <summary className="pv-hero-preview-foot pv-hero-preview-foot-toggle">
-              <span>{getTranslation(language, "home.previewFooter")}</span>
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 20 20"
-                className="pv-hero-preview-chevron h-4 w-4"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.7"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="m5.5 8 4.5 4 4.5-4" />
-              </svg>
-            </summary>
-
-            <div className="pv-hero-preview-dropdown-body">
-              <pre className="pv-hero-preview-prompt">{readyPromptTemplate}</pre>
-              {prompt ? (
-                <Link
-                  href={`/prompt/${encodeURIComponent(prompt.slug)}`}
-                  className="pv-inline-link text-sm text-[var(--pv-brand-strong)]"
-                >
-                  {getTranslation(language, "prompt.openPrompt")}
-                </Link>
-              ) : null}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="pv-chip-brand text-[11px]">#{index + 1}</span>
+                  <span className="pv-chip text-[11px]">
+                    {getTranslation(language, getTechniqueTranslationKey(prompt.technique))}
+                  </span>
+                </div>
+                <p className="mt-2 line-clamp-1 text-sm font-semibold tracking-[-0.02em] text-zinc-950 transition group-hover:text-[var(--pv-brand-strong)]">
+                  {prompt.title}
+                </p>
+                <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-zinc-600">
+                  {prompt.summary || getTranslation(language, "prompt.noSummary")}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] text-zinc-500">
+                  {prompt.recommendation_reason_key ? (
+                    <span className="pv-chip">
+                      <T k={prompt.recommendation_reason_key} />
+                    </span>
+                  ) : null}
+                  {prompt.quality_score ? (
+                    <span className="pv-chip">
+                      <T k="prompt.metricQuality" params={{ count: prompt.quality_score }} />
+                    </span>
+                  ) : null}
+                </div>
+              </Link>
+            ))
+          ) : (
+            <div className="rounded-[1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-3 py-3">
+              <p className="text-sm font-semibold text-zinc-950">{getTranslation(language, "home.previewEmptyTitle")}</p>
+              <p className="mt-1 text-xs leading-relaxed text-zinc-600">
+                {getTranslation(language, "home.previewEmptyBody")}
+              </p>
             </div>
-          </details>
+          )}
         </div>
+
+        <Link href="/catalog" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--pv-brand-strong)]">
+          {getTranslation(language, "home.seeAll")}
+          <span aria-hidden="true">↗</span>
+        </Link>
       </div>
     </div>
   );
@@ -283,13 +245,16 @@ function ShelfSection({
   if (!prompts.length) return null;
 
   return (
-    <section className="pv-panel px-6 py-6 sm:px-7">
+    <section className="pv-panel px-6 py-5 sm:px-7">
       <div className="pv-section-head">
         <div className="pv-section-copy">
           <p className="pv-kicker">
             <T k="catalog.prompts" />
           </p>
           <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{title}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-600">
+            <T k="home.personalizedSubtitle" />
+          </p>
         </div>
         <Link href={href} className="pv-inline-link">
           {hrefLabel}
@@ -297,53 +262,11 @@ function ShelfSection({
         </Link>
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+      <div className="mt-5 grid gap-3 lg:grid-cols-2">
         {prompts.map((prompt) => (
           <PromptCard key={`${idPrefix}-${prompt.id}`} prompt={prompt} />
         ))}
       </div>
     </section>
   );
-}
-
-function getHeroStrongPromptFallback(language: Language, title: string, summary: string) {
-  if (language === "ru") {
-    return [
-      "Ты Senior React Debugger. Помоги найти и исправить баги быстро и безопасно.",
-      "",
-      `Контекст: ${title}`,
-      `Симптом: ${summary}`,
-      "",
-      "Сделай:",
-      "1) Сначала перечисли 3-5 наиболее вероятных причин.",
-      "2) Для каждой причины дай шаги проверки (что открыть, что посмотреть, какие логи снять).",
-      "3) Покажи минимальный патч для самой вероятной причины.",
-      "4) Укажи риски регрессии и как их проверить.",
-      "",
-      "Формат ответа:",
-      "- Гипотезы",
-      "- Диагностика",
-      "- Патч",
-      "- Проверка",
-    ].join("\n");
-  }
-
-  return [
-    "You are a Senior React Debugger. Find and fix bugs fast without regressions.",
-    "",
-    `Context: ${title}`,
-    `Symptom: ${summary}`,
-    "",
-    "Do this:",
-    "1) List the top 3-5 likely root causes first.",
-    "2) For each cause, provide concrete validation steps.",
-    "3) Provide the minimal patch for the most likely cause.",
-    "4) List regression risks and how to test them.",
-    "",
-    "Response format:",
-    "- Hypotheses",
-    "- Diagnosis",
-    "- Patch",
-    "- Verification",
-  ].join("\n");
 }
