@@ -29,56 +29,54 @@ export function MissionsHero({
   rewardBadgeCount,
 }: MissionsHeroProps) {
   const { t } = useI18n();
+  const titleAside = (
+    <div className="flex flex-wrap items-start justify-start gap-5 text-left sm:justify-end sm:text-right">
+      <div className="space-y-1">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("missions.progress")}</p>
+        <p className="text-xl font-extrabold tracking-[-0.05em] text-zinc-950">
+          {completedCount}/{totalCount}
+        </p>
+      </div>
+      <div className="space-y-1">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("missions.credits")}</p>
+        <p className="text-xl font-extrabold tracking-[-0.05em] text-zinc-950">{rewardCredits}</p>
+      </div>
+      <div className="space-y-1">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("missions.badges")}</p>
+        <p className="text-xl font-extrabold tracking-[-0.05em] text-zinc-950">{rewardBadgeCount}</p>
+      </div>
+    </div>
+  );
 
   return (
     <PageIntro
       eyebrow={t("nav.missions")}
       title={t("missions.title")}
       description={t("missions.subtitle")}
+      titleAside={titleAside}
     >
-      <div className="space-y-4">
-        <div className="flex justify-end">
-          <div className="flex flex-wrap items-start justify-end gap-5 text-right">
-            <div className="space-y-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("missions.progress")}</p>
-              <p className="text-xl font-extrabold tracking-[-0.05em] text-zinc-950">
-                {completedCount}/{totalCount}
-              </p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("missions.credits")}</p>
-              <p className="text-xl font-extrabold tracking-[-0.05em] text-zinc-950">{rewardCredits}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("missions.badges")}</p>
-              <p className="text-xl font-extrabold tracking-[-0.05em] text-zinc-950">{rewardBadgeCount}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-4 xl:grid-cols-3">
-          <MissionNavCard
-            label={t("missions.heroCurrent")}
-            mission={currentMission}
-            emptyText={t("missions.heroNoneCurrent")}
-            ctaLabel={currentMission?.nextStep?.label ?? t("missions.openMission")}
-            href={currentMission?.nextStep?.href ?? (currentMission ? `/missions/${currentMission.mission.slug}` : null)}
-          />
-          <MissionNavCard
-            label={t("missions.heroNext")}
-            mission={nextMission}
-            emptyText={t("missions.heroNoneNext")}
-            ctaLabel={t("missions.openMission")}
-            href={nextMission ? `/missions/${nextMission.mission.slug}` : null}
-          />
-          <MissionNavCard
-            label={t("missions.heroLatest")}
-            mission={latestCompleted}
-            emptyText={t("missions.heroNoneLatest")}
-            ctaLabel={t("missions.nextStep.viewResult")}
-            href={latestCompleted ? `/missions/${latestCompleted.mission.slug}` : null}
-          />
-        </div>
+      <div className="grid gap-4 xl:grid-cols-3">
+        <MissionNavCard
+          label={t("missions.heroCurrent")}
+          mission={currentMission}
+          emptyText={t("missions.heroNoneCurrent")}
+          ctaLabel={currentMission?.nextStep?.label ?? t("missions.openMission")}
+          href={currentMission?.nextStep?.href ?? (currentMission ? `/missions/${currentMission.mission.slug}` : null)}
+        />
+        <MissionNavCard
+          label={t("missions.heroNext")}
+          mission={nextMission}
+          emptyText={t("missions.heroNoneNext")}
+          ctaLabel={t("missions.openMission")}
+          href={nextMission ? `/missions/${nextMission.mission.slug}` : null}
+        />
+        <MissionNavCard
+          label={t("missions.heroLatest")}
+          mission={latestCompleted}
+          emptyText={t("missions.heroNoneLatest")}
+          ctaLabel={t("missions.nextStep.viewResult")}
+          href={latestCompleted ? `/missions/${latestCompleted.mission.slug}` : null}
+        />
       </div>
     </PageIntro>
   );

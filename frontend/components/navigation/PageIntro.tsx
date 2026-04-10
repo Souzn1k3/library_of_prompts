@@ -7,6 +7,7 @@ type PageIntroProps = {
   breadcrumbs?: Array<{ label: ReactNode; href?: string }>;
   eyebrow?: ReactNode;
   title: ReactNode;
+  titleAside?: ReactNode;
   description?: ReactNode;
   showDescription?: boolean;
   hint?: ReactNode;
@@ -45,6 +46,7 @@ export function PageIntro({
   breadcrumbs = [],
   eyebrow,
   title,
+  titleAside,
   description,
   showDescription = false,
   hint,
@@ -71,9 +73,12 @@ export function PageIntro({
         <div className="space-y-3">
           <div className="space-y-2">
             {shouldShowEyebrow ? <p className="pv-kicker">{eyebrow}</p> : null}
-            <h1 className="max-w-4xl text-2xl font-semibold tracking-[-0.05em] text-zinc-950 sm:text-3xl">
-              {title}
-            </h1>
+            <div className={`gap-3 ${titleAside ? "flex flex-col sm:flex-row sm:items-start sm:justify-between" : ""}`}>
+              <h1 className="max-w-4xl text-2xl font-semibold tracking-[-0.05em] text-zinc-950 sm:text-3xl">
+                {title}
+              </h1>
+              {titleAside ? <div className="shrink-0">{titleAside}</div> : null}
+            </div>
             {showDescription && description ? <p className="pv-lead max-w-3xl">{description}</p> : null}
           </div>
 
