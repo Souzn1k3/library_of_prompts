@@ -3,7 +3,6 @@
 import { MissionCard } from "@/components/missions/MissionCard";
 import { type MissionCollectionView } from "@/components/missions/MissionsHero";
 import type { MissionSectionView } from "@/components/missions/useMissionsViewModel";
-import { type TranslationKey } from "@/lib/i18n";
 
 type Translate = (
   key: TranslationKey,
@@ -25,6 +24,8 @@ export function MissionsSectionList({
   onSelectView,
   filterCounts,
 }: MissionsSectionListProps) {
+  const missionFeed = sections.flatMap((section) => section.items);
+
   if (sections.length === 0) {
     return (
       <section className="pv-panel px-6 py-6 sm:px-7">
@@ -61,11 +62,13 @@ export function MissionsSectionList({
 
   return (
     <section className="pv-panel px-6 py-6 sm:px-7">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="pv-kicker">{t("missions.title")}</p>
-        <span className="pv-chip-brand">
-          {sections.reduce((acc, section) => acc + section.items.length, 0)}
-        </span>
+      <div className="pv-section-head">
+        <div className="pv-section-copy">
+          <p className="pv-kicker">{t("nav.missions")}</p>
+          <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("missions.title")}</h2>
+          <p className="mt-2 text-sm leading-relaxed text-zinc-600">{t("missions.subtitle")}</p>
+        </div>
+        <span className="pv-chip-brand">{missionFeed.length}</span>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
@@ -89,24 +92,9 @@ export function MissionsSectionList({
         />
       </div>
 
-      <div className="mt-6 space-y-8">
-        {sections.map((section, index) => (
-          <div key={section.type} className={index > 0 ? "border-t border-[var(--pv-border)] pt-8" : ""}>
-            <div className="pv-section-head">
-              <div className="pv-section-copy">
-                <p className="pv-kicker">{t(`missions.type.${section.type}` as TranslationKey)}</p>
-                <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
-                  {t(`missions.type.${section.type}` as TranslationKey)}
-                </h2>
-              </div>
-              <span className="pv-chip-brand">{section.items.length}</span>
-            </div>
-            <div className={`mt-6 grid gap-4 ${section.items.length > 1 ? "xl:grid-cols-2" : ""}`}>
-              {section.items.map((mission) => (
-                <MissionCard key={mission.mission.id} mission={mission} />
-              ))}
-            </div>
-          </div>
+      <div className="mt-6 grid gap-4 xl:grid-cols-2">
+        {missionFeed.map((mission) => (
+          <MissionCard key={mission.mission.id} mission={mission} />
         ))}
       </div>
     </section>
@@ -128,10 +116,18 @@ function FilterButton({
     <button
       type="button"
       onClick={onClick}
-      className={active ? "pv-button-primary !w-auto" : "pv-button-secondary !w-auto"}
+      className={`inline-flex items-center gap-2 rounded-[0.95rem] border px-4 py-2 text-sm font-semibold transition ${
+        active
+          ? "border-[var(--pv-brand)] bg-[var(--pv-brand)] text-white"
+          : "border-[var(--pv-border)] bg-white text-zinc-700 hover:border-[var(--pv-border-strong)]"
+      }`}
     >
       {label}
-      <span className="ml-2 rounded-full bg-black/10 px-2 py-0.5 text-[11px] font-semibold">
+      <span
+        className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+          active ? "bg-white/20 text-white" : "bg-zinc-100 text-zinc-600"
+        }`}
+      >
         {count}
       </span>
     </button>
