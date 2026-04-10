@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 import { LanguageSwitcher } from "@/components/i18n/LanguageSwitcher";
 import { useI18n } from "@/components/i18n/LanguageProvider";
@@ -77,7 +77,9 @@ export function Header() {
             </div>
 
             <div className="hidden shrink-0 xl:flex xl:justify-center xl:overflow-visible">
-              <HeaderSearch />
+              <Suspense fallback={<HeaderSearchFallback />}>
+                <HeaderSearch />
+              </Suspense>
             </div>
 
             <div className="hidden shrink-0 items-center justify-end gap-2 lg:flex">
@@ -123,7 +125,9 @@ export function Header() {
           {isMobileMenuOpen ? (
             <div id="mobile-navigation-panel" className="border-t border-[rgba(15,23,42,0.08)] lg:hidden">
               <div className="space-y-4 px-4 pb-4 pt-4 sm:px-5">
-                <HeaderSearch mobile onSearch={() => setIsMobileMenuOpen(false)} />
+                <Suspense fallback={<HeaderSearchFallback mobile />}>
+                  <HeaderSearch mobile onSearch={() => setIsMobileMenuOpen(false)} />
+                </Suspense>
 
                 <div className="rounded-[1.25rem] border border-[rgba(15,23,42,0.08)] bg-white/72 p-2 shadow-[0_14px_28px_rgba(15,23,42,0.04)]">
                   <HeaderPrimaryNav mobile onNavigate={() => setIsMobileMenuOpen(false)} />
@@ -138,5 +142,14 @@ export function Header() {
         </div>
       </div>
     </header>
+  );
+}
+
+function HeaderSearchFallback({ mobile = false }: { mobile?: boolean }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={`pv-header-search ${mobile ? "pv-header-search-mobile" : "pv-header-search-desktop"} opacity-60`}
+    />
   );
 }

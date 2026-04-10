@@ -47,8 +47,8 @@ export function CatalogPageView({ language, data }: CatalogPageViewProps) {
       <PageIntro
         className="!overflow-visible"
         breadcrumbs={[
-          { label: getTranslation(language, "brand.name"), href: "/" },
-          { label: getTranslation(language, "nav.catalog") },
+          { label: <T k="brand.name" />, href: "/" },
+          { label: <T k="nav.catalog" /> },
         ]}
         eyebrow={<T k="catalog.title" />}
         title={<T k="catalog.title" />}

@@ -118,7 +118,7 @@ export async function loadCatalogPageData({
   language,
 }: {
   query: CatalogQueryState;
-  accessToken: string | null | undefined;
+  accessToken?: string | null | undefined;
   language: Language;
 }): Promise<CatalogPageData> {
   let categories: Category[] = [];
@@ -134,9 +134,10 @@ export async function loadCatalogPageData({
   };
   let sections: DiscoverySections = { for_you: [], trending: [], best_for_beginners: [], most_saved: [] };
   let error: string | null = null;
+  const fallbackSections: DiscoverySections = { for_you: [], trending: [], best_for_beginners: [], most_saved: [] };
 
   try {
-    const [loadedCategories, loadedPrompts, loadedDiscoveryFilters, learningCatalog] = await Promise.all([
+    const [loadedCategories, loadedPrompts, loadedDiscoveryFilters, learningCatalog, loadedSections] = await Promise.all([
       fetchCategories(accessToken, language),
       fetchPrompts({
         limit: 24,
@@ -155,20 +156,15 @@ export async function loadCatalogPageData({
       }),
       fetchPromptDiscoveryFilters(accessToken, language),
       query.hasCustomFilters ? Promise.resolve<LearningCatalog | null>(null) : fetchLearningCatalog(accessToken, language).catch(() => null),
+      query.hasCustomFilters
+        ? Promise.resolve(fallbackSections)
+        : fetchDiscoverySections({ limit: 4, accessToken, language }).catch(() => fallbackSections),
     ]);
     categories = loadedCategories;
     prompts = loadedPrompts;
     discoveryFilters = loadedDiscoveryFilters;
     recommendedCourses = selectRecommendedCourses(learningCatalog);
-
-    if (!query.hasCustomFilters) {
-      sections = await fetchDiscoverySections({ limit: 4, accessToken, language }).catch(() => ({
-        for_you: [],
-        trending: [],
-        best_for_beginners: [],
-        most_saved: [],
-      }));
-    }
+    sections = loadedSections;
   } catch (e) {
     if (e instanceof ApiRequestError) {
       error = e.message;

@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import Link from "next/link";
 
 import { HomeHeroActions } from "@/components/HomeHeroActions";
@@ -7,47 +9,29 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import {
   fetchDiscoverySections,
   fetchPopularLessons,
-  fetchPromptRecommendations,
 } from "@/lib/api";
-import { getTranslation } from "@/lib/i18n";
+import { DEFAULT_LANGUAGE } from "@/lib/i18n";
 import { absoluteUrl } from "@/lib/seo";
-import { getServerAccessToken } from "@/lib/server-auth";
-import { getServerLanguage } from "@/lib/server-i18n";
 import type { PromptListItem } from "@/lib/types";
 
+export const dynamic = "force-static";
 export const revalidate = 180;
 
 export default async function HomePage() {
-  const language = await getServerLanguage();
-  const accessToken = await getServerAccessToken();
+  const language = DEFAULT_LANGUAGE;
 
-  const [sections, popularLessons, homeRecommendations] = await Promise.all([
-    fetchDiscoverySections({ limit: 4, accessToken, language }).catch(() => ({
+  const [sections, popularLessons] = await Promise.all([
+    fetchDiscoverySections({ limit: 4, language }).catch(() => ({
       for_you: [],
       trending: [],
       best_for_beginners: [],
       most_saved: [],
     })),
-    fetchPopularLessons({ limit: 4, accessToken, language }).catch(() => []),
-    fetchPromptRecommendations({ context: "home", limit: 4, accessToken, language }).catch(() => ({
-      context: "home" as const,
-      strategy: "cold_start" as const,
-      items: [],
-    })),
+    fetchPopularLessons({ limit: 4, language }).catch(() => []),
   ]);
 
-  const featuredPrompts =
-    homeRecommendations.items.length > 0
-      ? homeRecommendations.items
-      : sections.for_you?.length
-        ? sections.for_you
-        : sections.trending;
+  const featuredPrompts = sections.for_you?.length ? sections.for_you : sections.trending;
   const topRecommendedPrompts = featuredPrompts.slice(0, 6);
-
-  const promptsTitle =
-    accessToken && homeRecommendations.items.length > 0
-      ? getTranslation(language, "dashboard.recommendedForYou")
-      : getTranslation(language, "home.trendingPrompts");
 
   return (
     <div className="pv-page">
@@ -84,14 +68,14 @@ export default async function HomePage() {
           <p className="text-xs text-zinc-500">
             <T k="home.previewFooter" />
           </p>
-          <HomeHeroActions initialAuthenticated={Boolean(accessToken)} />
+          <HomeHeroActions initialAuthenticated={false} />
         </div>
       </section>
 
       <ShelfSection
-        title={promptsTitle}
+        title={<T k="home.trendingPrompts" />}
         href="/catalog"
-        hrefLabel={getTranslation(language, "home.seeAll")}
+        hrefLabel={<T k="home.seeAll" />}
         prompts={topRecommendedPrompts}
         idPrefix="home-featured"
       />
@@ -155,9 +139,9 @@ function ShelfSection({
   prompts,
   idPrefix,
 }: {
-  title: string;
+  title: ReactNode;
   href: string;
-  hrefLabel: string;
+  hrefLabel: ReactNode;
   prompts: PromptListItem[];
   idPrefix: string;
 }) {

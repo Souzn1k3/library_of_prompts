@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Script from "next/script";
 import localFont from "next/font/local";
 
@@ -11,9 +12,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { RouteTransitionLoader } from "@/components/navigation/RouteTransitionLoader";
 import { OrganizationJsonLd, WebSiteJsonLd } from "@/components/seo/JsonLd";
-import { getTranslation, languageToLocale } from "@/lib/i18n";
-import { getServerAuthCookieState } from "@/lib/server-auth";
-import { getServerLanguage } from "@/lib/server-i18n";
+import { DEFAULT_LANGUAGE, getTranslation, languageToLocale } from "@/lib/i18n";
 import { getSiteUrl } from "@/lib/site";
 
 import "./globals.css";
@@ -64,7 +63,7 @@ const themeInitScript = `
 `;
 
 export async function generateMetadata(): Promise<Metadata> {
-  const language = await getServerLanguage();
+  const language = DEFAULT_LANGUAGE;
   const siteTitle = getTranslation(language, "meta.siteTitle");
   const siteDescription = getTranslation(language, "meta.siteDescription");
 
@@ -115,10 +114,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [language, authState] = await Promise.all([
-    getServerLanguage(),
-    getServerAuthCookieState(),
-  ]);
+  const language = DEFAULT_LANGUAGE;
 
   return (
     <html lang={language} data-theme="light" suppressHydrationWarning>
@@ -128,9 +124,13 @@ export default async function RootLayout({
         </Script>
         <div className="relative isolate flex min-h-screen flex-col">
           <LanguageProvider initialLanguage={language}>
-            <AuthProvider initialHasAuthCookie={authState.hasAnyAuthCookie}>
-              <AnalyticsPageTracker />
-              <RouteTransitionLoader />
+            <AuthProvider initialHasAuthCookie={false}>
+              <Suspense fallback={null}>
+                <AnalyticsPageTracker />
+              </Suspense>
+              <Suspense fallback={null}>
+                <RouteTransitionLoader />
+              </Suspense>
               <a href="#main-content" className="skip-link">
                 <T k="a11y.skipToContent" />
               </a>
