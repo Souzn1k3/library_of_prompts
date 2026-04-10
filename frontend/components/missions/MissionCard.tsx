@@ -86,7 +86,7 @@ export function MissionCard({ mission }: MissionCardProps) {
           </div>
 
           {mission.mission.reward.credits > 0 ? (
-            <span className="shrink-0 text-sm font-semibold text-emerald-700">
+            <span className="shrink-0 text-sm font-extrabold text-zinc-900">
               +{mission.mission.reward.credits} {t("missions.credits")}
             </span>
           ) : null}
