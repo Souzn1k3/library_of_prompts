@@ -28,10 +28,6 @@ export default async function LearnIndexPage() {
 
   try {
     const catalog = await fetchLearningCatalog(accessToken, language);
-    const recommendedCourse =
-      catalog.courses.find((course) => course.slug === catalog.recommended_course_slug) ?? catalog.courses[0] ?? null;
-    const totalModules = catalog.courses.reduce((sum, course) => sum + course.module_count, 0);
-    const totalLessons = catalog.courses.reduce((sum, course) => sum + course.lesson_count, 0);
 
     return (
       <div className="pv-page">
@@ -53,49 +49,9 @@ export default async function LearnIndexPage() {
               </Link>
             </>
           }
-          aside={
-            recommendedCourse ? (
-              <div className="pv-card flex h-full flex-col gap-4 p-5 sm:p-6">
-                <p className="pv-kicker">
-                  <T k="learn.recommended" />
-                </p>
-                <div className="space-y-2">
-                  <h2 className="text-[1.45rem] font-semibold tracking-[-0.05em] text-zinc-950">
-                    {recommendedCourse.title}
-                  </h2>
-                  <p className="text-sm leading-relaxed text-zinc-600">
-                    {recommendedCourse.result_headline || recommendedCourse.description}
-                  </p>
-                </div>
-
-                <div className="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-                  <div className="rounded-[1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-3 py-3">
-                    <p className="pv-data-label">
-                      <T k="learn.modulesShort" />
-                    </p>
-                    <p className="mt-2 text-lg font-semibold text-zinc-950">{totalModules}</p>
-                  </div>
-                  <div className="rounded-[1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-3 py-3">
-                    <p className="pv-data-label">
-                      <T k="learn.lessonsShort" />
-                    </p>
-                    <p className="mt-2 text-lg font-semibold text-zinc-950">{totalLessons}</p>
-                  </div>
-                  <div className="rounded-[1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-3 py-3">
-                    <p className="pv-data-label">
-                      <T k="learn.effortShort" />
-                    </p>
-                    <p className="mt-2 text-lg font-semibold text-zinc-950">
-                      {recommendedCourse.estimated_minutes}m
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : undefined
-          }
         />
 
-        <section className="pv-panel px-6 py-6 sm:px-7">
+        <section className="pv-panel px-6 py-5 sm:px-7">
           <div className="pv-section-head">
             <div className="pv-section-copy">
               <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
@@ -107,7 +63,7 @@ export default async function LearnIndexPage() {
             </div>
           </div>
 
-          <div className="mt-5 grid gap-3 lg:grid-cols-3">
+          <div className="mt-4 grid gap-3 lg:grid-cols-3">
             {catalog.courses.map((course) => (
               <article
                 key={`track-${course.slug}`}
@@ -138,7 +94,7 @@ export default async function LearnIndexPage() {
             <T k="learn.noLessons" />
           </div>
         ) : (
-          <section className="pv-panel px-6 py-6 sm:px-7">
+          <section className="pv-panel px-6 py-5 sm:px-7">
             <div className="pv-section-head">
               <div className="pv-section-copy">
                 <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
@@ -150,7 +106,7 @@ export default async function LearnIndexPage() {
               </div>
             </div>
 
-            <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            <div className="mt-5 grid gap-3 lg:grid-cols-2">
               {catalog.courses.map((course) => {
                 const isRecommended = course.slug === catalog.recommended_course_slug;
                 const destination = course.resume_href
@@ -164,7 +120,7 @@ export default async function LearnIndexPage() {
                     : getTranslation(language, "learn.continue");
 
                 return (
-                  <article key={course.slug} className="pv-card p-5">
+                  <article key={course.slug} className="pv-card p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <h3 className="text-lg font-semibold tracking-[-0.04em] text-zinc-950">{course.title}</h3>
@@ -176,12 +132,12 @@ export default async function LearnIndexPage() {
                       </div>
                     </div>
 
-                    <p className="mt-3 text-sm leading-relaxed text-zinc-700">{course.description}</p>
+                    <p className="mt-2 text-sm leading-relaxed text-zinc-700">{course.description}</p>
                     {course.result_headline ? (
-                      <p className="mt-3 text-sm leading-relaxed text-zinc-700">{course.result_headline}</p>
+                      <p className="mt-2 text-sm leading-relaxed text-zinc-700">{course.result_headline}</p>
                     ) : null}
 
-                    <div className="mt-4 grid grid-cols-3 gap-2 text-xs text-zinc-600">
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-zinc-600">
                       <div className="rounded-[0.9rem] border border-[var(--pv-border)] bg-white/80 px-3 py-2">
                         <p className="uppercase tracking-[0.08em] text-zinc-500"><T k="learn.modulesShort" /></p>
                         <p className="mt-1 font-semibold text-zinc-900">{course.module_count}</p>
@@ -196,14 +152,14 @@ export default async function LearnIndexPage() {
                       </div>
                     </div>
 
-                    <div className="mt-4 flex flex-wrap items-center gap-2 text-xs text-zinc-600">
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-zinc-600">
                       <span className="pv-chip">{getTranslation(language, getDifficultyTranslationKey(course.difficulty))}</span>
                       {course.badge_earned ? <span className="pv-chip-brand"><T k="learn.completed" /></span> : null}
                       <TokenAmount amount={`+${course.course_reward_lmn}`} compact showIcon={false} />
                     </div>
 
                     {course.deliverable_preview ? (
-                      <div className="mt-4 rounded-[1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-3 py-3 text-sm text-zinc-700">
+                      <div className="mt-3 rounded-[1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-3 py-3 text-sm text-zinc-700">
                         <span className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
                           <T k="learn.deliverablePreviewTitle" />
                         </span>
@@ -211,11 +167,11 @@ export default async function LearnIndexPage() {
                       </div>
                     ) : null}
 
-                    <div className="mt-4 pv-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={course.progress_percent}>
+                    <div className="mt-3 pv-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={course.progress_percent}>
                       <div className="pv-progress-fill" style={{ width: `${course.progress_percent}%` }} />
                     </div>
 
-                    <div className="mt-5 flex flex-wrap gap-3">
+                    <div className="mt-4 flex flex-wrap gap-3">
                       <Link href={destination} className="pv-button-primary !w-auto">
                         {ctaLabel}
                       </Link>
@@ -230,7 +186,7 @@ export default async function LearnIndexPage() {
           </section>
         )}
 
-        <section className="pv-panel px-6 py-6 sm:px-7">
+        <section className="pv-panel px-6 py-5 sm:px-7">
           <div className="pv-section-head">
             <div className="pv-section-copy">
               <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
@@ -241,7 +197,7 @@ export default async function LearnIndexPage() {
               </p>
             </div>
           </div>
-          <ol className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <ol className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <li className="rounded-[1rem] border border-[var(--pv-border)] bg-white/85 px-3 py-3 text-sm text-zinc-700">1. <T k="learn.learningLoopTheory" /></li>
             <li className="rounded-[1rem] border border-[var(--pv-border)] bg-white/85 px-3 py-3 text-sm text-zinc-700">2. <T k="learn.learningLoopPractice" /></li>
             <li className="rounded-[1rem] border border-[var(--pv-border)] bg-white/85 px-3 py-3 text-sm text-zinc-700">3. <T k="learn.learningLoopCheck" /></li>
