@@ -72,7 +72,7 @@ export function ProfileAccountOverview({
               className="group relative cursor-help lg:col-start-2 lg:row-start-2 lg:-mt-2 lg:justify-self-end lg:w-full lg:max-w-[360px] lg:self-start"
               tabIndex={0}
             >
-              <div className="pv-progress">
+              <div className="pv-progress ml-auto w-[calc(100%-0.75rem)]">
                 <div className="pv-progress-fill" style={{ width: `${rankPercent}%` }} />
               </div>
               <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 w-[min(21rem,88vw)] translate-y-1 rounded-xl border border-[rgba(15,23,42,0.12)] bg-white/96 p-3 shadow-[0_16px_34px_rgba(15,23,42,0.12)] opacity-0 transition duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
