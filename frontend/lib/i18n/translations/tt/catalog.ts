@@ -20,6 +20,7 @@ export const ttCatalog = {
   "catalogFilters.other": "Башка",
   "catalogFilters.apply": "Куллану",
   "catalogFilters.reset": "Бетерү",
+  "catalogFilters.filters": "Фильтрлар",
   "prompt.premium": "Премиум",
   "prompt.paid": "Түләүле",
   "prompt.noSummary": "Тасвирлама юк",

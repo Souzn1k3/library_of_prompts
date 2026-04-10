@@ -20,6 +20,7 @@ export const enCatalog = {
   "catalogFilters.other": "Other",
   "catalogFilters.apply": "Apply",
   "catalogFilters.reset": "Reset",
+  "catalogFilters.filters": "Filters",
   "prompt.premium": "Premium",
   "prompt.paid": "Paid",
   "prompt.noSummary": "No summary",

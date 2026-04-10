@@ -20,6 +20,7 @@ export const ruCatalog = {
   "catalogFilters.other": "Другое",
   "catalogFilters.apply": "Применить",
   "catalogFilters.reset": "Сбросить",
+  "catalogFilters.filters": "Фильтры",
   "prompt.premium": "Премиум",
   "prompt.paid": "Платно",
   "prompt.noSummary": "Нет описания",
