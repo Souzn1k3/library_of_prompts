@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { PageIntro } from "@/components/navigation/PageIntro";
 import { APP_ROUTES } from "@/lib/constants/routes";
@@ -26,30 +24,6 @@ export function ProfileIntro({ authenticated }: ProfileIntroProps) {
       eyebrow={t("profile.title")}
       title={t("profile.title")}
       description={t("profile.subtitle")}
-      actions={
-        authenticated ? (
-          <>
-            <Link href={APP_ROUTES.dashboard} className="pv-button-primary">
-              {t("nav.dashboard")}
-            </Link>
-            <Link href={APP_ROUTES.pricing} className="pv-button-secondary">
-              {t("nav.billing")}
-            </Link>
-            <Link href={APP_ROUTES.wallet} className="pv-button-secondary">
-              {t("nav.wallet")}
-            </Link>
-          </>
-        ) : (
-          <>
-            <Link href={APP_ROUTES.login} className="pv-button-primary">
-              {t("nav.login")}
-            </Link>
-            <Link href={APP_ROUTES.signup} className="pv-button-secondary">
-              {t("nav.signup")}
-            </Link>
-          </>
-        )
-      }
     />
   );
 }
