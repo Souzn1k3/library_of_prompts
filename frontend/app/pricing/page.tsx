@@ -44,7 +44,7 @@ export default async function PricingPage() {
       <section className="pv-panel px-5 py-5 sm:px-7 sm:py-6">
         <AppBreadcrumbs items={breadcrumbs} />
         <div className="mt-2">
-          <h1 className="text-3xl font-semibold tracking-[-0.05em] text-zinc-950 sm:text-4xl">
+          <h1 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">
             <T k="plans.title" />
           </h1>
         </div>
