@@ -2,14 +2,11 @@
 
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/LanguageProvider";
-import { StoreItemGridSection } from "@/components/store/StoreItemGridSection";
+import { StoreItemCard } from "@/components/store/StoreItemCard";
 import { StoreLoadingView, StoreUnauthenticatedView } from "@/components/store/StoreStatusViews";
 import { StorePageIntro } from "@/components/store/StorePageIntro";
 import { StoreSuccessSection } from "@/components/store/StoreSuccessSection";
-import {
-  sectionLabel,
-  type TranslateFn,
-} from "@/components/store/presentation";
+import { type TranslateFn } from "@/components/store/presentation";
 import { useStoreData } from "@/components/store/useStoreData";
 import { useStoreViewModel } from "@/components/store/useStoreViewModel";
 import { useLmnBalanceFeedback } from "@/components/ui/useLmnBalanceFeedback";
@@ -35,13 +32,12 @@ export function StoreClient() {
   const { change: balanceChange, delta: balanceDelta } = useLmnBalanceFeedback(wallet?.balance);
   const {
     affordableItems,
-    nearMissItems,
     bestItem,
     bestItemTitle,
     successPurchaseItemTitle,
     successRewardCopy,
     successDiscountCode,
-    sections,
+    feedItems,
   } = useStoreViewModel({
     items,
     success,
@@ -86,47 +82,20 @@ export function StoreClient() {
 
       {error ? <div className="pv-alert pv-alert-warning">{error}</div> : null}
 
-      {affordableItems.length > 0 ? (
-        <StoreItemGridSection
-          kicker={t("store.readySectionKicker")}
-          title={t("store.availableNow")}
-          body={t("store.availableNowBody")}
-          items={affordableItems}
-          purchasing={purchasing}
-          onPurchase={handlePurchase}
-          locale={locale}
-          keyPrefix="available"
-        />
-      ) : null}
-
-      {nearMissItems.length > 0 ? (
-        <StoreItemGridSection
-          kicker={t("store.almostThere")}
-          title={t("store.almostThere")}
-          body={t("store.almostThereBody")}
-          items={nearMissItems}
-          purchasing={purchasing}
-          onPurchase={handlePurchase}
-          locale={locale}
-          gridClassName={nearMissItems.length > 1 ? "md:grid-cols-2 xl:grid-cols-3" : ""}
-          keyPrefix="near-miss"
-        />
-      ) : null}
-
-      {sections.length === 0 ? (
+      {feedItems.length === 0 ? (
         <div className="pv-empty-state text-sm text-zinc-600">{t("store.empty")}</div>
       ) : (
-        sections.map((section) => (
-          <StoreItemGridSection
-            key={section.kind}
-            title={sectionLabel(section.kind, t)}
-            items={section.items}
-            purchasing={purchasing}
-            onPurchase={handlePurchase}
-            locale={locale}
-            keyPrefix={section.kind}
-          />
-        ))
+        <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {feedItems.map((item) => (
+            <StoreItemCard
+              key={`store-feed-${item.id}`}
+              item={item}
+              purchasing={purchasing}
+              onPurchase={handlePurchase}
+              locale={locale}
+            />
+          ))}
+        </section>
       )}
     </div>
   );

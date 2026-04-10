@@ -10,7 +10,6 @@ import {
 } from "@/components/store/presentation";
 import {
   STORE_NEAR_MISS_ITEMS_LIMIT,
-  STORE_SECTION_ORDER,
 } from "@/lib/constants/economy-ui";
 import {
   getAffordableStoreItems,
@@ -60,14 +59,31 @@ export function useStoreViewModel({ items, success, t }: UseStoreViewModelArgs) 
     [success],
   );
 
-  const sections = useMemo(
-    () =>
-      STORE_SECTION_ORDER.map((kind) => ({
-        kind,
-        items: items.filter((item) => item.kind === kind),
-      })).filter((section) => section.items.length > 0),
-    [items],
-  );
+  const feedItems = useMemo(() => {
+    function rank(item: StoreItem): number {
+      const soldOut = item.availability !== null && item.availability <= 0;
+      if (item.owned) return 4;
+      if (soldOut) return 5;
+      if (item.is_affordable) return 1;
+      if (item.near_miss_delta <= STORE_NEAR_MISS_ITEMS_LIMIT * 5) return 2;
+      return 3;
+    }
+
+    return [...items].sort((left, right) => {
+      const rankDiff = rank(left) - rank(right);
+      if (rankDiff !== 0) return rankDiff;
+
+      if (left.is_affordable && right.is_affordable) {
+        return left.price - right.price;
+      }
+
+      if (!left.is_affordable && !right.is_affordable) {
+        return left.remaining_lumens - right.remaining_lumens;
+      }
+
+      return left.price - right.price;
+    });
+  }, [items]);
 
   return {
     affordableItems,
@@ -77,6 +93,6 @@ export function useStoreViewModel({ items, success, t }: UseStoreViewModelArgs) 
     successPurchaseItemTitle,
     successRewardCopy,
     successDiscountCode,
-    sections,
+    feedItems,
   };
 }
