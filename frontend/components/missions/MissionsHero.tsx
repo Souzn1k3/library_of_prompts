@@ -36,21 +36,23 @@ export function MissionsHero({
       title={t("missions.title")}
       description={t("missions.subtitle")}
     >
-      <div className="space-y-5">
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="pv-card-muted pv-catalog-filter-card-white p-4">
-            <p className="pv-stat-label">{t("missions.progress")}</p>
-            <p className="mt-3 text-2xl font-extrabold tracking-[-0.05em] text-zinc-950">
-              {completedCount}/{totalCount}
-            </p>
-          </div>
-          <div className="pv-card-muted pv-catalog-filter-card-white p-4">
-            <p className="pv-stat-label">{t("missions.credits")}</p>
-            <p className="mt-3 text-2xl font-extrabold tracking-[-0.05em] text-zinc-950">{rewardCredits}</p>
-          </div>
-          <div className="pv-card-muted pv-catalog-filter-card-white p-4">
-            <p className="pv-stat-label">{t("missions.badges")}</p>
-            <p className="mt-3 text-2xl font-extrabold tracking-[-0.05em] text-zinc-950">{rewardBadgeCount}</p>
+      <div className="space-y-4">
+        <div className="flex justify-end">
+          <div className="flex flex-wrap items-start justify-end gap-5 text-right">
+            <div className="space-y-1">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("missions.progress")}</p>
+              <p className="text-xl font-extrabold tracking-[-0.05em] text-zinc-950">
+                {completedCount}/{totalCount}
+              </p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("missions.credits")}</p>
+              <p className="text-xl font-extrabold tracking-[-0.05em] text-zinc-950">{rewardCredits}</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">{t("missions.badges")}</p>
+              <p className="text-xl font-extrabold tracking-[-0.05em] text-zinc-950">{rewardBadgeCount}</p>
+            </div>
           </div>
         </div>
 
