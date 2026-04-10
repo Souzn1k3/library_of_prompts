@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { CatalogFilters } from "@/components/CatalogFilters";
 import { T } from "@/components/i18n/T";
 import { PageIntro } from "@/components/navigation/PageIntro";
@@ -49,34 +47,12 @@ export function CatalogPageView({ language, data }: CatalogPageViewProps) {
         eyebrow={<T k="catalog.title" />}
         title={<T k="catalog.title" />}
         description={<T k="catalog.subtitle" />}
-        hint={<T k="catalog.browseCategoryPages" />}
-        aside={
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-            <div className="pv-stat-card">
-              <p className="pv-stat-label">
-                <T k="catalog.categories" />
-              </p>
-              <p className="mt-3 text-2xl font-extrabold tracking-[-0.05em] text-zinc-950">{categories.length}</p>
-            </div>
-            <div className="pv-stat-card">
-              <p className="pv-stat-label">
-                <T k="catalog.prompts" />
-              </p>
-              <p className="mt-3 text-2xl font-extrabold tracking-[-0.05em] text-zinc-950">{prompts.length}</p>
-            </div>
-          </div>
-        }
       >
-        <div className="flex flex-wrap gap-2">
-          {categories.slice(0, 6).map((category) => (
-            <Link
-              key={`category-link-${category.id}`}
-              href={`/category/${encodeURIComponent(category.slug)}`}
-              className="pv-chip"
-            >
-              {category.name}
-            </Link>
-          ))}
+        <div className="inline-flex items-center gap-2 rounded-full border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-3 py-1.5">
+          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+            <T k="catalog.prompts" />
+          </span>
+          <span className="tabular-nums text-base font-semibold tracking-[-0.02em] text-zinc-950">{prompts.length}</span>
         </div>
       </PageIntro>
 
