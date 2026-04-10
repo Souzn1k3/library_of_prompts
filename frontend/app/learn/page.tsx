@@ -28,6 +28,7 @@ export default async function LearnIndexPage() {
 
   try {
     const catalog = await fetchLearningCatalog(accessToken, language);
+    const pathStages = catalog.courses.slice(0, 3);
 
     return (
       <div className="pv-page">
@@ -56,45 +57,31 @@ export default async function LearnIndexPage() {
               </Link>
             </div>
           }
-        />
-
-        <section className="pv-panel px-6 py-5 sm:px-7">
-          <div className="pv-section-head">
-            <div className="pv-section-copy">
-              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
-                <T k="learn.pathStagesTitle" />
-              </h2>
-              <p className="mt-2 text-sm text-zinc-600">
-                <T k="learn.pathStagesBody" />
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-4 grid gap-3 lg:grid-cols-3">
-            {catalog.courses.map((course) => (
-              <article
-                key={`track-${course.slug}`}
-                className="rounded-[1.25rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-4 py-4"
-              >
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
-                  {getTranslation(language, getDifficultyTranslationKey(course.difficulty))}
-                </p>
-                <h3 className="mt-2 text-base font-semibold text-zinc-950">{course.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-zinc-700">
-                  {course.result_headline || course.description}
-                </p>
-                {course.deliverable_preview ? (
-                  <p className="mt-3 text-xs leading-relaxed text-zinc-500">
-                    <span className="font-semibold text-zinc-700">
-                      <T k="learn.deliverablePreviewTitle" />:
-                    </span>{" "}
-                    {course.deliverable_preview}
+          aside={
+            pathStages.length > 0 ? (
+              <aside className="hidden xl:block">
+                <div className="rounded-[1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-3 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                    <T k="learn.pathStagesTitle" />
                   </p>
-                ) : null}
-              </article>
-            ))}
-          </div>
-        </section>
+                  <div className="mt-2 space-y-2">
+                    {pathStages.map((course) => (
+                      <div
+                        key={`hero-stage-${course.slug}`}
+                        className="rounded-[0.8rem] border border-[var(--pv-border)] bg-white/90 px-2.5 py-2"
+                      >
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
+                          {getTranslation(language, getDifficultyTranslationKey(course.difficulty))}
+                        </p>
+                        <p className="mt-0.5 line-clamp-1 text-xs font-semibold text-zinc-900">{course.title}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </aside>
+            ) : null
+          }
+        />
 
         {catalog.courses.length === 0 ? (
           <div className="pv-alert pv-alert-warning">
