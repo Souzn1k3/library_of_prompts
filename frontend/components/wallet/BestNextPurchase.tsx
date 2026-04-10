@@ -14,22 +14,21 @@ type BestNextPurchaseProps = {
   bestItem: StoreItem | null;
   balance: number;
   estimatedDaysToAfford: number | null;
+};
+
+type WalletMiniMetricsDeckProps = {
   earned: number;
   spent: number;
   readyToBuy: number;
   purchases: number;
   cashback: number;
+  className?: string;
 };
 
 export function BestNextPurchase({
   bestItem,
   balance,
   estimatedDaysToAfford,
-  earned,
-  spent,
-  readyToBuy,
-  purchases,
-  cashback,
 }: BestNextPurchaseProps) {
   const { t, language } = useI18n();
   const locale = languageToIntlLocale(language);
@@ -95,30 +94,45 @@ export function BestNextPurchase({
         </div>
       </div>
 
-      <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+      <div className="mt-4">
         <Link
           href={bestItem.is_affordable ? APP_ROUTES.store : APP_ROUTES.missions}
           className="pv-button-primary w-fit shrink-0"
         >
           {bestItem.is_affordable ? t("wallet.spendNowCta") : t("wallet.earnToUnlockCta")}
         </Link>
-        <div className="grid w-full gap-2 sm:grid-cols-2 lg:ml-4 lg:max-w-[520px] lg:flex-1 lg:grid-cols-3">
-          <MiniMetric
-            label={t("wallet.earned")}
-            value={`${formatNumber(earned, locale)} ${TOKEN_SHORT_CODE}`}
-            tone="positive"
-          />
-          <MiniMetric label={t("wallet.spent")} value={`${formatNumber(spent, locale)} ${TOKEN_SHORT_CODE}`} />
-          <MiniMetric label={t("store.readyToBuyCount")} value={formatNumber(readyToBuy, locale)} tone="positive" />
-          <MiniMetric label={t("wallet.purchaseHistory")} value={formatNumber(purchases, locale)} />
-          <MiniMetric
-            label={t("wallet.pendingCashback")}
-            value={`${formatNumber(cashback, locale)} ${TOKEN_SHORT_CODE}`}
-            tone="positive"
-          />
-        </div>
       </div>
     </section>
+  );
+}
+
+export function WalletMiniMetricsDeck({
+  earned,
+  spent,
+  readyToBuy,
+  purchases,
+  cashback,
+  className,
+}: WalletMiniMetricsDeckProps) {
+  const { t, language } = useI18n();
+  const locale = languageToIntlLocale(language);
+
+  return (
+    <div className={className ?? "grid gap-2 sm:grid-cols-2 lg:grid-cols-3"}>
+      <MiniMetric
+        label={t("wallet.earned")}
+        value={`${formatNumber(earned, locale)} ${TOKEN_SHORT_CODE}`}
+        tone="positive"
+      />
+      <MiniMetric label={t("wallet.spent")} value={`${formatNumber(spent, locale)} ${TOKEN_SHORT_CODE}`} />
+      <MiniMetric label={t("store.readyToBuyCount")} value={formatNumber(readyToBuy, locale)} tone="positive" />
+      <MiniMetric label={t("wallet.purchaseHistory")} value={formatNumber(purchases, locale)} />
+      <MiniMetric
+        label={t("wallet.pendingCashback")}
+        value={`${formatNumber(cashback, locale)} ${TOKEN_SHORT_CODE}`}
+        tone="positive"
+      />
+    </div>
   );
 }
 

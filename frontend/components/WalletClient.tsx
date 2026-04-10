@@ -4,7 +4,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { EconomyActionBanner } from "@/components/ui/EconomyActionBanner";
 import { useLmnBalanceFeedback } from "@/components/ui/useLmnBalanceFeedback";
-import { BestNextPurchase } from "@/components/wallet/BestNextPurchase";
+import { BestNextPurchase, WalletMiniMetricsDeck } from "@/components/wallet/BestNextPurchase";
 import { ProgressAndRewards } from "@/components/wallet/ProgressAndRewards";
 import { WalletActivitySection } from "@/components/wallet/WalletActivitySection";
 import { WalletBenefitsSection } from "@/components/wallet/WalletBenefitsSection";
@@ -114,17 +114,26 @@ export function WalletClient() {
       />
 
       <div className="mx-auto grid w-full max-w-[1280px] grid-cols-12 gap-4 px-6 lg:items-start">
-        <div className="col-span-12 lg:col-span-7">
+        <div className="col-span-12 space-y-4 lg:col-span-7">
           <BestNextPurchase
             bestItem={bestItem}
             balance={wallet.balance}
             estimatedDaysToAfford={estimatedDaysToAfford}
-            earned={wallet.total_earned}
-            spent={wallet.total_spent}
-            readyToBuy={readyToBuyCount}
-            purchases={wallet.recent_purchases.length}
-            cashback={pendingCashbackTotal}
           />
+          <section className="pv-panel px-5 py-5">
+            <div
+              className="rounded-2xl border p-3 sm:p-4"
+              style={{ borderColor: "var(--pv-border-strong)", background: "var(--pv-surface-muted)" }}
+            >
+              <WalletMiniMetricsDeck
+                earned={wallet.total_earned}
+                spent={wallet.total_spent}
+                readyToBuy={readyToBuyCount}
+                purchases={wallet.recent_purchases.length}
+                cashback={pendingCashbackTotal}
+              />
+            </div>
+          </section>
         </div>
         <div className="col-span-12 lg:col-span-5">
           <ProgressAndRewards
