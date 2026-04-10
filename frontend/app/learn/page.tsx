@@ -40,14 +40,21 @@ export default async function LearnIndexPage() {
           title={<T k="learn.title" />}
           description={<T k="learn.releaseSubtitle" />}
           actions={
-            <>
-              <Link href={APP_ROUTES.learnStart} className="pv-button-primary">
-                <T k="home.startLearning" />
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                href={APP_ROUTES.learnStart}
+                className="inline-flex h-10 items-center rounded-[0.95rem] bg-[var(--pv-brand)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--pv-brand-strong)]"
+              >
+                <T k="learn.quickStart" />
               </Link>
-              <Link href={APP_ROUTES.learnMy} className="pv-button-secondary">
+              <Link
+                href={APP_ROUTES.learnMy}
+                className="inline-flex h-10 items-center text-sm font-semibold text-zinc-600 transition hover:text-zinc-900"
+              >
                 <T k="learn.myModules" />
+                <span className="ml-1.5" aria-hidden="true">↗</span>
               </Link>
-            </>
+            </div>
           }
         />
 

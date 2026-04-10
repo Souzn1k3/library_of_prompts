@@ -61,6 +61,7 @@ export const enCatalog = {
   "learn.releaseHintTitle": "Start from your current point",
   "learn.releaseHint":
     "Start from your current point, continue where you stopped, and complete real prompt tasks with validation.",
+  "learn.quickStart": "Quick start",
   "learn.myModules": "My learning modules",
   "learn.myModulesDescription":
     "Continue active courses, review completed ones, and focus on weak areas with guided recommendations.",
