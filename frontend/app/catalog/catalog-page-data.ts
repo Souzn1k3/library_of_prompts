@@ -2,11 +2,19 @@ import {
   ApiRequestError,
   fetchCategories,
   fetchDiscoverySections,
+  fetchLearningCatalog,
   fetchPromptDiscoveryFilters,
   fetchPrompts,
 } from "@/lib/api";
 import { getTranslation, type Language } from "@/lib/i18n";
-import type { Category, DiscoverySections, PromptDiscoveryFilters, PromptListItem } from "@/lib/types";
+import type {
+  Category,
+  DiscoverySections,
+  LearningCatalog,
+  LearningCourseCard,
+  PromptDiscoveryFilters,
+  PromptListItem,
+} from "@/lib/types";
 
 function firstParam(v: string | string[] | undefined): string | undefined {
   if (typeof v === "string") return v;
@@ -37,10 +45,37 @@ export type CatalogPageData = {
   query: CatalogQueryState;
   categories: Category[];
   prompts: PromptListItem[];
+  recommendedCourses: LearningCourseCard[];
   discoveryFilters: PromptDiscoveryFilters;
   sections: DiscoverySections;
   error: string | null;
 };
+
+function selectRecommendedCourses(catalog: LearningCatalog | null, limit = 3): LearningCourseCard[] {
+  if (!catalog || catalog.courses.length === 0 || limit <= 0) {
+    return [];
+  }
+
+  const selected: LearningCourseCard[] = [];
+
+  if (catalog.recommended_course_slug) {
+    const recommended = catalog.courses.find((course) => course.slug === catalog.recommended_course_slug);
+    if (recommended) {
+      selected.push(recommended);
+    }
+  }
+
+  for (const course of catalog.courses) {
+    if (selected.length >= limit) {
+      break;
+    }
+    if (!selected.some((item) => item.slug === course.slug)) {
+      selected.push(course);
+    }
+  }
+
+  return selected;
+}
 
 export function parseCatalogQuery(searchParams: Record<string, string | string[] | undefined>): CatalogQueryState {
   const q = firstParam(searchParams.q);
@@ -88,6 +123,7 @@ export async function loadCatalogPageData({
 }): Promise<CatalogPageData> {
   let categories: Category[] = [];
   let prompts: PromptListItem[] = [];
+  let recommendedCourses: LearningCourseCard[] = [];
   let discoveryFilters: PromptDiscoveryFilters = {
     use_cases: [],
     model_compatibility: [],
@@ -100,7 +136,7 @@ export async function loadCatalogPageData({
   let error: string | null = null;
 
   try {
-    [categories, prompts, discoveryFilters] = await Promise.all([
+    const [loadedCategories, loadedPrompts, loadedDiscoveryFilters, learningCatalog] = await Promise.all([
       fetchCategories(accessToken, language),
       fetchPrompts({
         limit: 24,
@@ -118,7 +154,12 @@ export async function loadCatalogPageData({
         language,
       }),
       fetchPromptDiscoveryFilters(accessToken, language),
+      query.hasCustomFilters ? Promise.resolve<LearningCatalog | null>(null) : fetchLearningCatalog(accessToken, language).catch(() => null),
     ]);
+    categories = loadedCategories;
+    prompts = loadedPrompts;
+    discoveryFilters = loadedDiscoveryFilters;
+    recommendedCourses = selectRecommendedCourses(learningCatalog);
 
     if (!query.hasCustomFilters) {
       sections = await fetchDiscoverySections({ limit: 4, accessToken, language }).catch(() => ({
@@ -140,6 +181,7 @@ export async function loadCatalogPageData({
     query,
     categories,
     prompts,
+    recommendedCourses,
     discoveryFilters,
     sections,
     error,

@@ -1,10 +1,12 @@
 import { CatalogFilters } from "@/components/CatalogFilters";
 import { T } from "@/components/i18n/T";
+import { LearningCourseFeedCard } from "@/components/LearningCourseFeedCard";
 import { PageIntro } from "@/components/navigation/PageIntro";
 import { PromptCard } from "@/components/PromptCard";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { getTranslation, type Language } from "@/lib/i18n";
 import { absoluteUrl } from "@/lib/seo";
+import type { LearningCourseCard, PromptListItem } from "@/lib/types";
 
 import type { CatalogPageData } from "./catalog-page-data";
 
@@ -14,8 +16,11 @@ type CatalogPageViewProps = {
 };
 
 export function CatalogPageView({ language, data }: CatalogPageViewProps) {
-  const { query, categories, prompts, discoveryFilters, sections, error } = data;
-  const secondaryPrompts = sections.for_you?.length ? sections.for_you : sections.trending;
+  const { query, categories, prompts, recommendedCourses, discoveryFilters, sections, error } = data;
+  const discoveryPrompts = sections.for_you?.length ? sections.for_you : sections.trending;
+  const promptFeed = query.hasCustomFilters ? prompts : mergePromptLists(discoveryPrompts, prompts);
+  const courseFeed = query.hasCustomFilters ? [] : recommendedCourses;
+  const feedItems = buildUnifiedFeed(courseFeed, promptFeed);
 
   return (
     <div className="pv-page">
@@ -83,43 +88,65 @@ export function CatalogPageView({ language, data }: CatalogPageViewProps) {
         <div className="pv-section-head">
           <div className="pv-section-copy">
             <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">
-              <T k="catalog.prompts" />
+              <T k={query.hasCustomFilters ? "catalog.prompts" : "catalog.discoveryForYou"} />
             </h2>
           </div>
         </div>
 
-        {prompts.length === 0 ? (
+        {feedItems.length === 0 ? (
           <p className="mt-6 text-sm text-zinc-500">
             <T k="catalog.noPrompts" />
           </p>
         ) : (
           <div className="mt-6 grid gap-4 lg:grid-cols-2">
-            {prompts.map((prompt) => (
-              <PromptCard key={prompt.id} prompt={prompt} />
+            {feedItems.map((item) => (
+              item.kind === "course" ? (
+                <LearningCourseFeedCard key={`course-${item.course.slug}`} course={item.course} />
+              ) : (
+                <PromptCard key={`prompt-${item.prompt.id}`} prompt={item.prompt} />
+              )
             ))}
           </div>
         )}
       </section>
-
-      {!query.hasCustomFilters && secondaryPrompts.length ? (
-        <section className="pv-panel px-6 py-6 sm:px-7">
-          <div className="pv-section-head">
-            <div className="pv-section-copy">
-              <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">
-                {sections.for_you?.length
-                  ? getTranslation(language, "catalog.discoveryForYou")
-                  : getTranslation(language, "catalog.discoveryTrending")}
-              </h2>
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-4 lg:grid-cols-2">
-            {secondaryPrompts.map((prompt) => (
-              <PromptCard key={`secondary-${prompt.id}`} prompt={prompt} />
-            ))}
-          </div>
-        </section>
-      ) : null}
     </div>
   );
+}
+
+type CatalogFeedItem =
+  | { kind: "course"; course: LearningCourseCard }
+  | { kind: "prompt"; prompt: PromptListItem };
+
+function mergePromptLists(primary: PromptListItem[], fallback: PromptListItem[]): PromptListItem[] {
+  const seenIds = new Set<string>();
+  const merged: PromptListItem[] = [];
+
+  for (const prompt of [...primary, ...fallback]) {
+    if (seenIds.has(prompt.id)) {
+      continue;
+    }
+    seenIds.add(prompt.id);
+    merged.push(prompt);
+  }
+
+  return merged;
+}
+
+function buildUnifiedFeed(courses: LearningCourseCard[], prompts: PromptListItem[]): CatalogFeedItem[] {
+  const feed: CatalogFeedItem[] = [];
+  const maxLength = Math.max(courses.length, prompts.length);
+
+  for (let index = 0; index < maxLength; index += 1) {
+    const course = courses[index];
+    const prompt = prompts[index];
+
+    if (course) {
+      feed.push({ kind: "course", course });
+    }
+    if (prompt) {
+      feed.push({ kind: "prompt", prompt });
+    }
+  }
+
+  return feed;
 }
