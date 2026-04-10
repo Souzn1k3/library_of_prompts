@@ -40,8 +40,7 @@ export function ProgressAndRewards({
 }: ProgressAndRewardsProps) {
   const { t, language } = useI18n();
   const locale = languageToIntlLocale(language);
-  const compactLadder = ladder.slice(0, 6);
-  const extendedStep = ladder[6] ?? null;
+  const ladderSteps = ladder.slice(0, 7);
   const rankPercent = Math.max(
     4,
     Math.min(100, Math.round((rankPoints / Math.max(1, rankNextThreshold)) * 100)),
@@ -55,7 +54,7 @@ export function ProgressAndRewards({
             {t("wallet.dailyLadder")}
           </p>
           <div className="mt-3 grid grid-cols-3 gap-2" data-testid="wallet-daily-ladder">
-            {compactLadder.map((step) => (
+            {ladderSteps.map((step) => (
               <div
                 key={step.day}
                 className={`rounded-lg border px-2 py-2 text-center ${
@@ -74,11 +73,6 @@ export function ProgressAndRewards({
               </div>
             ))}
           </div>
-          {extendedStep ? (
-            <p className="mt-2 text-xs text-zinc-500">
-              {t("wallet.dayLabel", { day: extendedStep.day })}: +{extendedStep.reward}
-            </p>
-          ) : null}
         </div>
 
         <div className="rounded-xl border border-[rgba(15,23,42,0.08)] bg-white/80 p-3">
