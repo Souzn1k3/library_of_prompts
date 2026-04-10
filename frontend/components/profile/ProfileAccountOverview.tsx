@@ -33,15 +33,30 @@ export function ProfileAccountOverview({
         Math.min(100, Math.round((wallet.rank_points / Math.max(1, wallet.rank_next_threshold)) * 100)),
       )
     : 0;
+  const renderRankHelp = () => (
+    <>
+      <p className="text-xs font-semibold text-zinc-900">
+        {t("wallet.ownedValueGenerated", {
+          amount: formatNumber(wallet?.owned_value_generated ?? 0, locale),
+        })}
+      </p>
+      <p className="mt-1 text-[0.72rem] leading-relaxed text-zinc-600">{t("wallet.rankExplainer")}</p>
+    </>
+  );
 
   return (
     <section className="pv-panel px-6 py-6 sm:px-7">
-      <p className="pv-kicker">{t("profile.accountTitle")}</p>
-      <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,380px)] lg:items-start">
-        <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">{user.display_name}</h2>
+      <div className="grid gap-x-3 gap-y-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,380px)] lg:items-start">
+        <p className="pv-kicker lg:col-start-1 lg:row-start-1">{t("profile.accountTitle")}</p>
+        <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950 lg:col-start-1 lg:row-start-2">
+          {user.display_name}
+        </h2>
         {wallet ? (
-          <div className="lg:justify-self-end lg:w-full lg:max-w-[360px]">
-            <div className="group relative cursor-help" tabIndex={0}>
+          <>
+            <div
+              className="group relative cursor-help lg:col-start-2 lg:row-start-1 lg:justify-self-end lg:w-full lg:max-w-[360px] lg:self-center"
+              tabIndex={0}
+            >
               <p className="text-right text-[1.05rem] font-semibold tracking-[-0.02em] text-zinc-800">
                 {t("wallet.rankLevelProgress", {
                   level: formatNumber(wallet.rank_level, locale),
@@ -49,20 +64,22 @@ export function ProfileAccountOverview({
                   threshold: formatNumber(wallet.rank_next_threshold, locale),
                 })}
               </p>
-              <div className="mt-2 pv-progress">
-                <div className="pv-progress-fill" style={{ width: `${rankPercent}%` }} />
-              </div>
-
               <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 w-[min(21rem,88vw)] translate-y-1 rounded-xl border border-[rgba(15,23,42,0.12)] bg-white/96 p-3 shadow-[0_16px_34px_rgba(15,23,42,0.12)] opacity-0 transition duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
-                <p className="text-xs font-semibold text-zinc-900">
-                  {t("wallet.ownedValueGenerated", {
-                    amount: formatNumber(wallet.owned_value_generated, locale),
-                  })}
-                </p>
-                <p className="mt-1 text-[0.72rem] leading-relaxed text-zinc-600">{t("wallet.rankExplainer")}</p>
+                {renderRankHelp()}
               </div>
             </div>
-          </div>
+            <div
+              className="group relative cursor-help lg:col-start-2 lg:row-start-2 lg:justify-self-end lg:w-full lg:max-w-[360px] lg:self-center"
+              tabIndex={0}
+            >
+              <div className="pv-progress">
+                <div className="pv-progress-fill" style={{ width: `${rankPercent}%` }} />
+              </div>
+              <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 w-[min(21rem,88vw)] translate-y-1 rounded-xl border border-[rgba(15,23,42,0.12)] bg-white/96 p-3 shadow-[0_16px_34px_rgba(15,23,42,0.12)] opacity-0 transition duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                {renderRankHelp()}
+              </div>
+            </div>
+          </>
         ) : null}
       </div>
       <dl className="mt-6 grid gap-4 sm:grid-cols-2">
