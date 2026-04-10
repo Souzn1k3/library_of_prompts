@@ -5,6 +5,8 @@ import { useEffect, type MutableRefObject } from "react";
 import { clearLegacyAccessToken, subscribeAuthStateChange } from "@/lib/auth";
 import type { UserProfile } from "@/lib/types";
 
+const AUTH_STATE_COOKIE =
+  process.env.NEXT_PUBLIC_AUTH_STATE_COOKIE_NAME ?? "pv_auth_state";
 const ACCESS_TOKEN_COOKIE =
   process.env.NEXT_PUBLIC_ACCESS_TOKEN_COOKIE_NAME ?? "pv_access_token";
 const REFRESH_TOKEN_COOKIE =
@@ -21,7 +23,11 @@ export function hasAuthCookieInBrowser() {
   const pairs = document.cookie.split(";").map((item) => item.trim());
   return pairs.some((pair) => {
     const [name] = pair.split("=");
-    return name === ACCESS_TOKEN_COOKIE || name === REFRESH_TOKEN_COOKIE;
+    return (
+      name === AUTH_STATE_COOKIE ||
+      name === ACCESS_TOKEN_COOKIE ||
+      name === REFRESH_TOKEN_COOKIE
+    );
   });
 }
 

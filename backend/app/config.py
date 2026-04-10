@@ -67,6 +67,7 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = 30
     access_token_cookie_name: str = "pv_access_token"
     refresh_token_cookie_name: str = "pv_refresh_token"
+    auth_state_cookie_name: str = "pv_auth_state"
     auth_cookie_domain: str | None = None
     auth_cookie_secure: bool = False
     auth_cookie_samesite: str = "lax"

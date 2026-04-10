@@ -3,6 +3,10 @@ from __future__ import annotations
 import pytest
 
 
+def _set_cookie_headers(response) -> list[str]:
+    return response.headers.get_list("set-cookie")
+
+
 @pytest.mark.asyncio
 async def test_health_ok(async_client):
     r = await async_client.get("/health")
@@ -21,6 +25,8 @@ async def test_register_login_me_logout(async_client, unique_email: str):
         },
     )
     assert reg.status_code == 201
+    reg_set_cookies = _set_cookie_headers(reg)
+    assert any("pv_auth_state=1" in header for header in reg_set_cookies)
     body = reg.json()
     assert "access_token" in body
     token = body["access_token"]
@@ -37,6 +43,8 @@ async def test_register_login_me_logout(async_client, unique_email: str):
         json={"email": unique_email, "password": "password123"},
     )
     assert login.status_code == 200
+    login_set_cookies = _set_cookie_headers(login)
+    assert any("pv_auth_state=1" in header for header in login_set_cookies)
     assert "access_token" in login.json()
 
     out = await async_client.post(
@@ -44,6 +52,8 @@ async def test_register_login_me_logout(async_client, unique_email: str):
         headers={"Authorization": f"Bearer {login.json()['access_token']}"},
     )
     assert out.status_code == 204
+    logout_set_cookies = _set_cookie_headers(out)
+    assert any("pv_auth_state=" in header and "Max-Age=0" in header for header in logout_set_cookies)
 
 
 @pytest.mark.asyncio

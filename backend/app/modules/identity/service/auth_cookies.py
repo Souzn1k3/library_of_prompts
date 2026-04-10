@@ -4,6 +4,8 @@ from fastapi import Response
 
 from app.config import Settings
 
+AUTH_STATE_COOKIE_VALUE = "1"
+
 
 def _cookie_secure(settings: Settings) -> bool:
     return bool(settings.auth_cookie_secure)
@@ -45,6 +47,16 @@ def set_auth_cookies(
         domain=settings.auth_cookie_domain,
         path="/",
     )
+    response.set_cookie(
+        key=settings.auth_state_cookie_name,
+        value=AUTH_STATE_COOKIE_VALUE,
+        httponly=False,
+        secure=secure,
+        samesite=samesite,
+        max_age=int(timedelta(days=settings.refresh_token_expire_days).total_seconds()),
+        domain=settings.auth_cookie_domain,
+        path="/",
+    )
 
 
 def clear_auth_cookies(response: Response, *, settings: Settings) -> None:
@@ -66,4 +78,11 @@ def clear_auth_cookies(response: Response, *, settings: Settings) -> None:
         httponly=True,
         samesite=samesite,
     )
-
+    response.delete_cookie(
+        key=settings.auth_state_cookie_name,
+        domain=settings.auth_cookie_domain,
+        path="/",
+        secure=secure,
+        httponly=False,
+        samesite=samesite,
+    )
