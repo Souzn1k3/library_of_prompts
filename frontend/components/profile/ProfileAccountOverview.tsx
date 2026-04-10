@@ -63,7 +63,7 @@ export function ProfileAccountOverview({
                   threshold: formatNumber(wallet.rank_next_threshold, locale),
                 })}
               </p>
-              <div className="pointer-events-none absolute right-0 top-full z-[9999] mt-2 w-[min(21rem,88vw)] translate-y-1 rounded-xl border border-[rgba(15,23,42,0.12)] bg-white p-3 shadow-[0_16px_34px_rgba(15,23,42,0.12)] opacity-0 transition duration-150 delay-0 group-hover:translate-y-0 group-hover:opacity-100 group-hover:delay-[500ms] lg:right-6 lg:top-[6.2rem] lg:mt-0">
+              <div className="pointer-events-none absolute right-0 top-full z-[9999] mt-2 w-[min(21rem,88vw)] translate-y-1 rounded-xl border border-[rgba(15,23,42,0.12)] bg-white p-3 shadow-[0_16px_34px_rgba(15,23,42,0.12)] opacity-0 transition duration-150 delay-0 group-hover:translate-y-0 group-hover:opacity-100 group-hover:delay-[500ms] lg:right-6 lg:top-[4.8rem] lg:mt-0">
                 {renderRankHelp()}
               </div>
             </div>
@@ -73,7 +73,7 @@ export function ProfileAccountOverview({
               <div className="pv-progress ml-auto w-3/4">
                 <div className="pv-progress-fill" style={{ width: `${rankPercent}%` }} />
               </div>
-              <div className="pointer-events-none absolute right-0 top-full z-[9999] mt-2 w-[min(21rem,88vw)] translate-y-1 rounded-xl border border-[rgba(15,23,42,0.12)] bg-white p-3 shadow-[0_16px_34px_rgba(15,23,42,0.12)] opacity-0 transition duration-150 delay-0 group-hover:translate-y-0 group-hover:opacity-100 group-hover:delay-[500ms] lg:right-6 lg:top-[6.2rem] lg:mt-0">
+              <div className="pointer-events-none absolute right-0 top-full z-[9999] mt-2 w-[min(21rem,88vw)] translate-y-1 rounded-xl border border-[rgba(15,23,42,0.12)] bg-white p-3 shadow-[0_16px_34px_rgba(15,23,42,0.12)] opacity-0 transition duration-150 delay-0 group-hover:translate-y-0 group-hover:opacity-100 group-hover:delay-[500ms] lg:right-6 lg:top-[4.8rem] lg:mt-0">
                 {renderRankHelp()}
               </div>
             </div>
