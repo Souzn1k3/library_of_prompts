@@ -20,6 +20,7 @@ export function DashboardMissionHero(props: DashboardMissionHeroProps) {
     <PageIntro
       eyebrow={t("dashboard.title")}
       title={t("dashboard.title")}
+      titleClassName="text-2xl font-bold tracking-[-0.04em] sm:text-2xl"
       description={t("dashboard.subtitle")}
       aside={(
         <div className="pv-card flex h-full min-h-[14rem] flex-col gap-5 p-5 sm:p-6">

@@ -112,7 +112,12 @@ export function DashboardView({
   if (items === null) {
     return (
       <div className="space-y-6">
-        <PageIntro eyebrow={sectionTitle} title={t("dashboard.title")} description={t("dashboard.subtitle")} />
+        <PageIntro
+          eyebrow={sectionTitle}
+          title={t("dashboard.title")}
+          titleClassName="text-2xl font-bold tracking-[-0.04em] sm:text-2xl"
+          description={t("dashboard.subtitle")}
+        />
         <p className="text-sm text-zinc-500">{t("dashboard.loading")}</p>
       </div>
     );

@@ -19,7 +19,12 @@ type DashboardStatusViewProps = {
 export function DashboardLoadingView({ t, sectionTitle }: DashboardStatusViewProps) {
   return (
     <div className="space-y-6">
-      <PageIntro eyebrow={sectionTitle} title={t("dashboard.title")} description={t("dashboard.subtitle")} />
+      <PageIntro
+        eyebrow={sectionTitle}
+        title={t("dashboard.title")}
+        titleClassName="text-2xl font-bold tracking-[-0.04em] sm:text-2xl"
+        description={t("dashboard.subtitle")}
+      />
       <p className="text-sm text-zinc-500">{t("dashboard.loading")}</p>
     </div>
   );
@@ -31,6 +36,7 @@ export function DashboardUnauthenticatedView({ t, sectionTitle }: DashboardStatu
       <PageIntro
         eyebrow={sectionTitle}
         title={t("dashboard.title")}
+        titleClassName="text-2xl font-bold tracking-[-0.04em] sm:text-2xl"
         description={t("dashboard.subtitle")}
         hint={(
           <>
@@ -74,7 +80,12 @@ type DashboardErrorViewProps = DashboardStatusViewProps & {
 export function DashboardErrorView({ t, sectionTitle, error, onReload }: DashboardErrorViewProps) {
   return (
     <div className="space-y-6">
-      <PageIntro eyebrow={sectionTitle} title={t("dashboard.title")} description={t("dashboard.subtitle")} />
+      <PageIntro
+        eyebrow={sectionTitle}
+        title={t("dashboard.title")}
+        titleClassName="text-2xl font-bold tracking-[-0.04em] sm:text-2xl"
+        description={t("dashboard.subtitle")}
+      />
 
       <div className="pv-alert pv-alert-warning space-y-3">
         <p>{error}</p>
