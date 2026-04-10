@@ -71,7 +71,7 @@ export function HeaderSearch({ mobile = false, onSearch }: HeaderSearchProps) {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder={t("header.searchPlaceholder")}
-          className="w-full min-w-0 border-0 bg-transparent px-0 py-2 text-[0.94rem] leading-[1.35] text-zinc-950 outline-none ring-0 placeholder:text-zinc-400 focus:ring-0"
+          className="w-full min-w-0 border-0 bg-transparent px-0 py-1 text-[0.94rem] leading-[1.35] text-zinc-950 outline-none ring-0 placeholder:text-zinc-400 focus:ring-0"
         />
       </label>
       <button

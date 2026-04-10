@@ -253,8 +253,7 @@ body {
 .pv-nav-pill,
 .pv-header-link,
 .pv-header-menu-link,
-.pv-header-mobile-link,
-.pv-header-search-button {
+.pv-header-mobile-link {
   min-height: 2.9rem;
   border-radius: 0.95rem;
   font-weight: 650;
@@ -294,8 +293,7 @@ body {
 .pv-nav-pill,
 .pv-header-link,
 .pv-header-menu-link,
-.pv-header-mobile-link,
-.pv-header-search-button {
+.pv-header-mobile-link {
   border: 1px solid var(--pv-border);
   background: rgba(255, 255, 255, 0.86);
   color: var(--pv-text);
@@ -307,8 +305,7 @@ body {
 .pv-nav-pill:hover,
 .pv-header-link:hover,
 .pv-header-menu-link:hover,
-.pv-header-mobile-link:hover,
-.pv-header-search-button:hover {
+.pv-header-mobile-link:hover {
   border-color: var(--pv-border-strong);
   background: #ffffff;
   color: var(--pv-brand-strong);
@@ -481,11 +478,29 @@ body {
 }
 
 .pv-header-search {
-  min-height: 2.9rem;
+  min-height: 2.55rem;
   border-radius: 1rem;
   border: 1px solid rgba(15, 23, 42, 0.08);
   background: rgba(248, 250, 252, 0.9);
+  padding: 0.22rem 0.28rem 0.22rem 0.7rem;
   box-shadow: none;
+}
+
+.pv-header-search-button {
+  min-height: 0;
+  height: 1.95rem;
+  width: 1.95rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #667085;
+  padding: 0;
+}
+
+.pv-header-search-button:hover {
+  border: 0;
+  background: rgba(15, 23, 42, 0.06);
+  color: #0f172a;
 }
 
 .pv-header-search-desktop {
@@ -824,7 +839,6 @@ html[data-theme="dark"] .pv-nav-pill,
 html[data-theme="dark"] .pv-header-link,
 html[data-theme="dark"] .pv-header-menu-link,
 html[data-theme="dark"] .pv-header-mobile-link,
-html[data-theme="dark"] .pv-header-search-button,
 html[data-theme="dark"] .pv-chip,
 html[data-theme="dark"] .pv-badge,
 html[data-theme="dark"] .pv-workspace-status {
@@ -841,6 +855,16 @@ html[data-theme="dark"] .pv-header-shell {
 
 html[data-theme="dark"] .pv-header-search {
   background: rgba(15, 23, 42, 0.82);
+}
+
+html[data-theme="dark"] .pv-header-search-button {
+  background: transparent;
+  color: #94a3b8;
+}
+
+html[data-theme="dark"] .pv-header-search-button:hover {
+  background: rgba(148, 163, 184, 0.16);
+  color: #e2e8f0;
 }
 
 html[data-theme="dark"] .pv-plans-compare-max-col {
