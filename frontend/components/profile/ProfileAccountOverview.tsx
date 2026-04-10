@@ -69,7 +69,7 @@ export function ProfileAccountOverview({
               </div>
             </div>
             <div
-              className="group relative cursor-help lg:col-start-2 lg:row-start-2 lg:justify-self-end lg:w-full lg:max-w-[360px] lg:self-center"
+              className="group relative cursor-help lg:col-start-2 lg:row-start-2 lg:-mt-2 lg:justify-self-end lg:w-full lg:max-w-[360px] lg:self-start"
               tabIndex={0}
             >
               <div className="pv-progress">
