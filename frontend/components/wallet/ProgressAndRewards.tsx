@@ -49,8 +49,7 @@ export function ProgressAndRewards({
 
   return (
     <section className="pv-panel h-full px-5 py-5">
-      <p className="pv-kicker">{progressAndRewardsTitle(language)}</p>
-      <div className="mt-4 space-y-4">
+      <div className="space-y-4">
         <div className="rounded-xl border border-[rgba(15,23,42,0.08)] bg-white/80 p-3">
           <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-zinc-500">
             {t("wallet.dailyLadder")}
@@ -134,14 +133,4 @@ export function ProgressAndRewards({
       </div>
     </section>
   );
-}
-
-function progressAndRewardsTitle(language: string): string {
-  if (language === "ru") {
-    return "Прогресс и награды";
-  }
-  if (language === "tt") {
-    return "Прогресс һәм бүләкләр";
-  }
-  return "Progress and rewards";
 }
