@@ -29,6 +29,7 @@ export type DashboardMissionHeroProps = {
 export type DashboardMissionHeroViewModel = {
   nextStepTitle: string;
   nextStepBody: string;
+  nextStepActionLabel: string;
   learningProgressPercent: number;
   learningSubline: string;
   learningBody: string;

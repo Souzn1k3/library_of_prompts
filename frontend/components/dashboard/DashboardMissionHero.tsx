@@ -23,18 +23,21 @@ export function DashboardMissionHero(props: DashboardMissionHeroProps) {
       titleClassName="text-2xl font-bold tracking-[-0.04em] sm:text-2xl"
       description={t("dashboard.subtitle")}
       aside={(
-        <div className="pv-card flex h-full min-h-[14rem] flex-col gap-5 p-5 sm:p-6">
-          <div className="space-y-3">
+        <div className="pv-card-muted flex h-full min-h-[11rem] flex-col gap-4 p-5">
+          <div className="space-y-2.5">
             <p className="pv-kicker">{t("dashboard.opsNextStepLabel")}</p>
-            <h2 className="text-[1.55rem] font-semibold tracking-[-0.05em] text-zinc-950 sm:text-[1.75rem]">
+            <h2 className="text-[1.2rem] font-semibold tracking-[-0.03em] text-zinc-950 sm:text-[1.35rem]">
               {viewModel.nextStepTitle}
             </h2>
             <p className="text-sm leading-relaxed text-zinc-600">{viewModel.nextStepBody}</p>
           </div>
 
           <div className="mt-auto border-t border-[var(--pv-border)] pt-4">
-            <Link href={props.primaryAction.href} className="pv-inline-link flex w-full justify-between">
-              {props.primaryAction.label}
+            <Link
+              href={props.primaryAction.href}
+              className="flex w-full items-center justify-between text-sm font-medium text-zinc-700 transition hover:text-[var(--pv-brand-strong)]"
+            >
+              {viewModel.nextStepActionLabel}
               <span aria-hidden="true">↗</span>
             </Link>
           </div>

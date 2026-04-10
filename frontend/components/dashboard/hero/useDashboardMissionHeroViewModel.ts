@@ -86,6 +86,7 @@ export function useDashboardMissionHeroViewModel(
           required: currentMission.mission.required_count,
         })
       : t("dashboard.opsNextStepFallbackBody");
+  const nextStepActionLabel = simplifyActionLabel(primaryAction.label);
 
   const promptsAction =
     rejectedSubmissionCount > 0
@@ -161,6 +162,7 @@ export function useDashboardMissionHeroViewModel(
   return {
     nextStepTitle,
     nextStepBody,
+    nextStepActionLabel,
     learningProgressPercent,
     learningSubline,
     learningBody,
@@ -173,6 +175,11 @@ export function useDashboardMissionHeroViewModel(
     walletBalanceLabel,
     walletBody,
   };
+}
+
+function simplifyActionLabel(label: string): string {
+  const simplified = label.replace(/^[^:]+:\s*/, "").trim();
+  return simplified || label;
 }
 
 function countCompletedLessons(course: LearningCourseDetail): number {
