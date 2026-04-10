@@ -1,7 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { PageIntro } from "@/components/navigation/PageIntro";
 import {
@@ -22,29 +20,20 @@ export function DashboardMissionHero(props: DashboardMissionHeroProps) {
       title={t("dashboard.title")}
       titleClassName="text-2xl font-bold tracking-[-0.04em] sm:text-2xl"
       description={t("dashboard.subtitle")}
-      aside={(
-        <div className="pv-card-muted flex h-full min-h-[11rem] flex-col gap-4 p-5">
-          <div className="space-y-2.5">
-            <p className="pv-kicker">{t("dashboard.opsNextStepLabel")}</p>
-            <h2 className="text-[1.2rem] font-semibold tracking-[-0.03em] text-zinc-950 sm:text-[1.35rem]">
-              {viewModel.nextStepTitle}
-            </h2>
-            <p className="text-sm leading-relaxed text-zinc-600">{viewModel.nextStepBody}</p>
-          </div>
-
-          <div className="mt-auto border-t border-[var(--pv-border)] pt-4">
-            <Link
-              href={props.primaryAction.href}
-              className="flex w-full items-center justify-between text-sm font-medium text-zinc-700 transition hover:text-[var(--pv-brand-strong)]"
-            >
-              {viewModel.nextStepActionLabel}
-              <span aria-hidden="true">↗</span>
-            </Link>
-          </div>
-        </div>
-      )}
     >
       <div className="pv-dashboard-split">
+        <DashboardOpsCard
+          eyebrow={t("dashboard.opsNextStepLabel")}
+          summary={(
+            <p className="text-[1.35rem] font-semibold tracking-[-0.04em] text-zinc-900">
+              {viewModel.nextStepTitle}
+            </p>
+          )}
+          body={viewModel.nextStepBody}
+          href={props.primaryAction.href}
+          actionLabel={viewModel.nextStepActionLabel}
+        />
+
         <DashboardOpsCard
           eyebrow={t("dashboard.opsLearningLabel")}
           summary={(
