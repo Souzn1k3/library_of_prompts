@@ -9,7 +9,7 @@ import {
   fetchPopularLessons,
   fetchPromptRecommendations,
 } from "@/lib/api";
-import { getTechniqueTranslationKey, getTranslation, type Language } from "@/lib/i18n";
+import { getTranslation } from "@/lib/i18n";
 import { absoluteUrl } from "@/lib/seo";
 import { getServerAccessToken } from "@/lib/server-auth";
 import { getServerLanguage } from "@/lib/server-i18n";
@@ -70,29 +70,21 @@ export default async function HomePage() {
         }}
       />
 
-      <section className="pv-hero pv-home-hero-compact px-5 py-5 sm:px-7 sm:py-6">
-        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)] xl:items-start">
-          <div className="pv-hero-copy space-y-4">
-            <div className="max-w-[36rem] space-y-2.5">
-              <p className="pv-kicker">
-                <T k="home.kicker" />
-              </p>
-              <h1 className="max-w-[16ch] text-4xl font-[760] leading-[0.95] tracking-[-0.05em] text-zinc-950 sm:text-5xl xl:text-[3.25rem]">
-                <T k="home.title" />
-              </h1>
-              <p className="pv-lead max-w-[30rem] text-sm leading-relaxed sm:text-[0.95rem]">
-                <T k="home.subtitle" />
-              </p>
-            </div>
-
-            <HomeHeroActions initialAuthenticated={Boolean(accessToken)} />
-          </div>
-
-          <HeroRecommendationsPanel
-            title={promptsTitle}
-            prompts={topRecommendedPrompts.slice(0, 3)}
-            language={language}
-          />
+      <section className="pv-hero pv-home-hero-compact px-5 py-4 sm:px-7 sm:py-5">
+        <div className="pv-hero-copy max-w-[46rem] space-y-3">
+          <p className="pv-kicker">
+            <T k="home.kicker" />
+          </p>
+          <h1 className="max-w-[19ch] text-3xl font-[760] leading-[0.96] tracking-[-0.05em] text-zinc-950 sm:text-4xl xl:text-[2.9rem]">
+            <T k="home.title" />
+          </h1>
+          <p className="pv-lead max-w-[40rem] text-sm leading-relaxed">
+            <T k="home.subtitle" />
+          </p>
+          <p className="text-xs text-zinc-500">
+            <T k="home.previewFooter" />
+          </p>
+          <HomeHeroActions initialAuthenticated={Boolean(accessToken)} />
         </div>
       </section>
 
@@ -156,79 +148,6 @@ export default async function HomePage() {
   );
 }
 
-function HeroRecommendationsPanel({
-  title,
-  prompts,
-  language,
-}: {
-  title: string;
-  prompts: PromptListItem[];
-  language: Language;
-}) {
-  return (
-    <div className="pv-hero-visual">
-      <div className="pv-card p-4 sm:p-5">
-        <p className="pv-kicker">
-          <T k="home.personalizedKicker" />
-        </p>
-        <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{title}</h2>
-        <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-          <T k="home.personalizedSubtitle" />
-        </p>
-
-        <div className="mt-4 space-y-2.5">
-          {prompts.length ? (
-            prompts.map((prompt, index) => (
-              <Link
-                key={`hero-reco-${prompt.id}`}
-                href={`/prompt/${encodeURIComponent(prompt.slug)}`}
-                className="group block rounded-[1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-3 py-3 transition hover:border-[var(--pv-border-strong)] hover:bg-white"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="pv-chip-brand text-[11px]">#{index + 1}</span>
-                  <span className="pv-chip text-[11px]">
-                    {getTranslation(language, getTechniqueTranslationKey(prompt.technique))}
-                  </span>
-                </div>
-                <p className="mt-2 line-clamp-1 text-sm font-semibold tracking-[-0.02em] text-zinc-950 transition group-hover:text-[var(--pv-brand-strong)]">
-                  {prompt.title}
-                </p>
-                <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-zinc-600">
-                  {prompt.summary || getTranslation(language, "prompt.noSummary")}
-                </p>
-                <div className="mt-2 flex flex-wrap gap-1.5 text-[11px] text-zinc-500">
-                  {prompt.recommendation_reason_key ? (
-                    <span className="pv-chip">
-                      <T k={prompt.recommendation_reason_key} />
-                    </span>
-                  ) : null}
-                  {prompt.quality_score ? (
-                    <span className="pv-chip">
-                      <T k="prompt.metricQuality" params={{ count: prompt.quality_score }} />
-                    </span>
-                  ) : null}
-                </div>
-              </Link>
-            ))
-          ) : (
-            <div className="rounded-[1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-3 py-3">
-              <p className="text-sm font-semibold text-zinc-950">{getTranslation(language, "home.previewEmptyTitle")}</p>
-              <p className="mt-1 text-xs leading-relaxed text-zinc-600">
-                {getTranslation(language, "home.previewEmptyBody")}
-              </p>
-            </div>
-          )}
-        </div>
-
-        <Link href="/catalog" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--pv-brand-strong)]">
-          {getTranslation(language, "home.seeAll")}
-          <span aria-hidden="true">↗</span>
-        </Link>
-      </div>
-    </div>
-  );
-}
-
 function ShelfSection({
   title,
   href,
@@ -252,9 +171,6 @@ function ShelfSection({
             <T k="catalog.prompts" />
           </p>
           <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{title}</h2>
-          <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-            <T k="home.personalizedSubtitle" />
-          </p>
         </div>
         <Link href={href} className="pv-inline-link">
           {hrefLabel}
