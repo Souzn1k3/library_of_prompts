@@ -37,30 +37,31 @@ export function ProfileAccountOverview({
   return (
     <section className="pv-panel px-6 py-6 sm:px-7">
       <p className="pv-kicker">{t("profile.accountTitle")}</p>
-      <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,380px)] lg:items-start">
+      <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,380px)] lg:items-start">
         <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">{user.display_name}</h2>
         {wallet ? (
-          <div className="rounded-[1.25rem] border border-[rgba(15,23,42,0.08)] bg-white/80 p-4">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-zinc-500">
-                {t("wallet.vaultRank")}
-              </p>
-              <p className="text-sm font-semibold text-zinc-700">
+          <div className="lg:justify-self-end lg:w-full lg:max-w-[360px]">
+            <div className="group relative cursor-help" tabIndex={0}>
+              <p className="text-right text-[1.05rem] font-semibold tracking-[-0.02em] text-zinc-800">
                 {t("wallet.rankLevelProgress", {
                   level: formatNumber(wallet.rank_level, locale),
                   points: formatNumber(wallet.rank_points, locale),
                   threshold: formatNumber(wallet.rank_next_threshold, locale),
                 })}
               </p>
+              <div className="mt-2 pv-progress">
+                <div className="pv-progress-fill" style={{ width: `${rankPercent}%` }} />
+              </div>
+
+              <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 w-[min(21rem,88vw)] translate-y-1 rounded-xl border border-[rgba(15,23,42,0.12)] bg-white/96 p-3 shadow-[0_16px_34px_rgba(15,23,42,0.12)] opacity-0 transition duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
+                <p className="text-xs font-semibold text-zinc-900">
+                  {t("wallet.ownedValueGenerated", {
+                    amount: formatNumber(wallet.owned_value_generated, locale),
+                  })}
+                </p>
+                <p className="mt-1 text-[0.72rem] leading-relaxed text-zinc-600">{t("wallet.rankExplainer")}</p>
+              </div>
             </div>
-            <div className="mt-3 pv-progress">
-              <div className="pv-progress-fill" style={{ width: `${rankPercent}%` }} />
-            </div>
-            <p className="mt-2 text-sm text-zinc-600">
-              {t("wallet.ownedValueGenerated", {
-                amount: formatNumber(wallet.owned_value_generated, locale),
-              })}
-            </p>
           </div>
         ) : null}
       </div>
