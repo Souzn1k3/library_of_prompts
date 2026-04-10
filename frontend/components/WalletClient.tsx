@@ -81,7 +81,6 @@ export function WalletClient() {
 
   const {
     bestItem,
-    readyToBuyCount,
     ladder,
     streakMilestones,
     nextMilestoneEntry,
@@ -128,8 +127,6 @@ export function WalletClient() {
               <WalletMiniMetricsDeck
                 earned={wallet.total_earned}
                 spent={wallet.total_spent}
-                readyToBuy={readyToBuyCount}
-                purchases={wallet.recent_purchases.length}
                 cashback={pendingCashbackTotal}
               />
             </div>

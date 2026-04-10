@@ -19,8 +19,6 @@ type BestNextPurchaseProps = {
 type WalletMiniMetricsDeckProps = {
   earned: number;
   spent: number;
-  readyToBuy: number;
-  purchases: number;
   cashback: number;
   className?: string;
 };
@@ -109,8 +107,6 @@ export function BestNextPurchase({
 export function WalletMiniMetricsDeck({
   earned,
   spent,
-  readyToBuy,
-  purchases,
   cashback,
   className,
 }: WalletMiniMetricsDeckProps) {
@@ -125,8 +121,6 @@ export function WalletMiniMetricsDeck({
         tone="positive"
       />
       <MiniMetric label={t("wallet.spent")} value={`${formatNumber(spent, locale)} ${TOKEN_SHORT_CODE}`} />
-      <MiniMetric label={t("store.readyToBuyCount")} value={formatNumber(readyToBuy, locale)} tone="positive" />
-      <MiniMetric label={t("wallet.purchaseHistory")} value={formatNumber(purchases, locale)} />
       <MiniMetric
         label={t("wallet.pendingCashback")}
         value={`${formatNumber(cashback, locale)} ${TOKEN_SHORT_CODE}`}
