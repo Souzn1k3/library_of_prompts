@@ -64,6 +64,9 @@ export function PageIntro({
     eyebrowText.length > 0 &&
     eyebrowText !== getNodeText(title) &&
     eyebrowText !== getNodeText(lastBreadcrumbLabel);
+  const resolvedTitleClassName = titleClassName
+    ? `max-w-4xl text-zinc-950 ${titleClassName}`
+    : "max-w-4xl text-2xl font-semibold tracking-[-0.05em] text-zinc-950 sm:text-3xl";
 
   return (
     <section className={`pv-hero px-5 py-4 sm:px-6 sm:py-5 ${className ?? ""}`}>
@@ -76,9 +79,7 @@ export function PageIntro({
           <div className="space-y-2">
             {shouldShowEyebrow ? <p className="pv-kicker">{eyebrow}</p> : null}
             <div className={`gap-3 ${titleAside ? "flex flex-col sm:flex-row sm:items-start sm:justify-between" : ""}`}>
-              <h1
-                className={`max-w-4xl text-2xl font-semibold tracking-[-0.05em] text-zinc-950 sm:text-3xl ${titleClassName ?? ""}`}
-              >
+              <h1 className={resolvedTitleClassName}>
                 {title}
               </h1>
               {titleAside ? <div className="shrink-0">{titleAside}</div> : null}
