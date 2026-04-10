@@ -3,6 +3,7 @@
 import { MissionCard } from "@/components/missions/MissionCard";
 import { type MissionCollectionView } from "@/components/missions/MissionsHero";
 import type { MissionSectionView } from "@/components/missions/useMissionsViewModel";
+import { type TranslationKey } from "@/lib/i18n";
 
 type Translate = (
   key: TranslationKey,
