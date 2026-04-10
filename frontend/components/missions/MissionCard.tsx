@@ -3,11 +3,9 @@
 import Link from "next/link";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
-import { LmnAmount } from "@/components/ui/LmnAmount";
 import { trackEvent } from "@/lib/analytics";
 import { MISSION_TYPE_TONE } from "@/lib/constants/economy-ui";
 import { APP_ROUTES, appRoute } from "@/lib/constants/routes";
-import { TOKEN_SHORT_CODE } from "@/lib/constants/tokens";
 import { getMissionStatusTranslationKey, type TranslationKey } from "@/lib/i18n";
 import {
   formatMissionDateTime,
@@ -88,14 +86,9 @@ export function MissionCard({ mission }: MissionCardProps) {
           </div>
 
           {mission.mission.reward.credits > 0 ? (
-            <LmnAmount
-              amount={`+${mission.mission.reward.credits}`}
-              symbol={TOKEN_SHORT_CODE}
-              state="earned"
-              strong
-              compact
-              className="shrink-0"
-            />
+            <span className="shrink-0 text-sm font-semibold text-emerald-700">
+              +{mission.mission.reward.credits} {t("missions.credits")}
+            </span>
           ) : null}
         </div>
 
