@@ -9,6 +9,7 @@ import type {
   OnboardingProfile,
   SellerMarketplaceSummary,
   UserProfile,
+  WalletRead,
 } from "@/lib/types";
 
 type ProfilePrimarySectionProps = {
@@ -16,6 +17,7 @@ type ProfilePrimarySectionProps = {
   summary: SellerMarketplaceSummary;
   billing: BillingStatus | null;
   onboardingProfile: OnboardingProfile | null;
+  wallet: WalletRead | null;
   ratingLabel: string;
   planUnlocks: string;
   locale: string;
@@ -26,6 +28,7 @@ export function ProfilePrimarySection({
   summary,
   billing,
   onboardingProfile,
+  wallet,
   ratingLabel,
   planUnlocks,
   locale,
@@ -39,6 +42,7 @@ export function ProfilePrimarySection({
         summary={summary}
         ratingLabel={ratingLabel}
         locale={locale}
+        wallet={wallet}
         t={t}
       />
 

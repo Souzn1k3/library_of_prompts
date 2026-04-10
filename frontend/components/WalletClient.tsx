@@ -138,10 +138,6 @@ export function WalletClient() {
             streakMilestones={streakMilestones}
             currentStreak={wallet.current_streak}
             nextMilestone={nextMilestoneEntry}
-            rankLevel={wallet.rank_level}
-            rankPoints={wallet.rank_points}
-            rankNextThreshold={wallet.rank_next_threshold}
-            ownedValueGenerated={wallet.owned_value_generated}
           />
         </div>
       </div>

@@ -28,6 +28,7 @@ export function ProfileClient() {
     overview,
     billing,
     onboardingProfile,
+    wallet,
     error,
     lastMarketplaceSyncAt,
     reload,
@@ -84,6 +85,7 @@ export function ProfileClient() {
         summary={summary}
         billing={billing}
         onboardingProfile={onboardingProfile}
+        wallet={wallet}
         ratingLabel={ratingLabel}
         planUnlocks={planUnlocks}
         locale={locale}

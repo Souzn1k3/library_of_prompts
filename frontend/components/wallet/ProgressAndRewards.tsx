@@ -1,8 +1,6 @@
 "use client";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
-import { formatNumber } from "@/lib/formatters";
-import { languageToIntlLocale } from "@/lib/i18n";
 
 type DailyLadderStep = {
   day: number;
@@ -22,10 +20,6 @@ type ProgressAndRewardsProps = {
   streakMilestones: ReadonlyArray<StreakMilestone>;
   currentStreak: number;
   nextMilestone: StreakMilestone | null;
-  rankLevel: number;
-  rankPoints: number;
-  rankNextThreshold: number;
-  ownedValueGenerated: number;
 };
 
 export function ProgressAndRewards({
@@ -33,18 +27,9 @@ export function ProgressAndRewards({
   streakMilestones,
   currentStreak,
   nextMilestone,
-  rankLevel,
-  rankPoints,
-  rankNextThreshold,
-  ownedValueGenerated,
 }: ProgressAndRewardsProps) {
-  const { t, language } = useI18n();
-  const locale = languageToIntlLocale(language);
+  const { t } = useI18n();
   const ladderSteps = ladder.slice(0, 7);
-  const rankPercent = Math.max(
-    4,
-    Math.min(100, Math.round((rankPoints / Math.max(1, rankNextThreshold)) * 100)),
-  );
 
   return (
     <section className="pv-panel h-full px-5 py-5">
@@ -102,27 +87,6 @@ export function ProgressAndRewards({
               {t("wallet.nextMilestone", { count: nextMilestone.streak, amount: nextMilestone.reward })}
             </p>
           ) : null}
-        </div>
-
-        <div className="rounded-xl border border-[rgba(15,23,42,0.08)] bg-white/80 p-3">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-zinc-500">
-              {t("wallet.vaultRank")}
-            </p>
-            <p className="text-xs font-medium text-zinc-600">
-              {t("wallet.rankLevelProgress", {
-                level: formatNumber(rankLevel, locale),
-                points: formatNumber(rankPoints, locale),
-                threshold: formatNumber(rankNextThreshold, locale),
-              })}
-            </p>
-          </div>
-          <div className="mt-2 pv-progress">
-            <div className="pv-progress-fill" style={{ width: `${rankPercent}%` }} />
-          </div>
-          <p className="mt-2 text-xs text-zinc-500">
-            {t("wallet.ownedValueGenerated", { amount: formatNumber(ownedValueGenerated, locale) })}
-          </p>
         </div>
       </div>
     </section>

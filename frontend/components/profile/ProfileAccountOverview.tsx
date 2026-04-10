@@ -5,8 +5,8 @@ import type { ReactNode } from "react";
 
 import { humanizeTrustIndicator, renderRating } from "@/components/profile/presentation";
 import { appRoute } from "@/lib/constants/routes";
-import { formatDate } from "@/lib/formatters";
-import type { SellerMarketplaceSummary, UserProfile } from "@/lib/types";
+import { formatDate, formatNumber } from "@/lib/formatters";
+import type { SellerMarketplaceSummary, UserProfile, WalletRead } from "@/lib/types";
 
 type ProfileTranslate = (key: string, params?: Record<string, string | number | null | undefined>) => string;
 
@@ -15,6 +15,7 @@ type ProfileAccountOverviewProps = {
   summary: SellerMarketplaceSummary;
   ratingLabel: string;
   locale: string;
+  wallet: WalletRead | null;
   t: ProfileTranslate;
 };
 
@@ -23,14 +24,46 @@ export function ProfileAccountOverview({
   summary,
   ratingLabel,
   locale,
+  wallet,
   t,
 }: ProfileAccountOverviewProps) {
+  const rankPercent = wallet
+    ? Math.max(
+        4,
+        Math.min(100, Math.round((wallet.rank_points / Math.max(1, wallet.rank_next_threshold)) * 100)),
+      )
+    : 0;
+
   return (
     <section className="pv-panel px-6 py-6 sm:px-7">
       <p className="pv-kicker">{t("profile.accountTitle")}</p>
-      <h2 className="mt-3 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
-        {user.display_name}
-      </h2>
+      <div className="mt-3 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,380px)] lg:items-start">
+        <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">{user.display_name}</h2>
+        {wallet ? (
+          <div className="rounded-[1.25rem] border border-[rgba(15,23,42,0.08)] bg-white/80 p-4">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+                {t("wallet.vaultRank")}
+              </p>
+              <p className="text-sm font-semibold text-zinc-700">
+                {t("wallet.rankLevelProgress", {
+                  level: formatNumber(wallet.rank_level, locale),
+                  points: formatNumber(wallet.rank_points, locale),
+                  threshold: formatNumber(wallet.rank_next_threshold, locale),
+                })}
+              </p>
+            </div>
+            <div className="mt-3 pv-progress">
+              <div className="pv-progress-fill" style={{ width: `${rankPercent}%` }} />
+            </div>
+            <p className="mt-2 text-sm text-zinc-600">
+              {t("wallet.ownedValueGenerated", {
+                amount: formatNumber(wallet.owned_value_generated, locale),
+              })}
+            </p>
+          </div>
+        ) : null}
+      </div>
       <dl className="mt-6 grid gap-4 sm:grid-cols-2">
         <MetricCard label={t("profile.emailLabel")}>
           <p className="mt-3 font-medium text-zinc-900">{user.email}</p>

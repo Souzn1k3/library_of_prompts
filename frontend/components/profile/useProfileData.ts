@@ -8,11 +8,13 @@ import {
   fetchBillingStatus,
   fetchMarketplaceOverview,
   fetchOnboardingProfile,
+  fetchWallet,
 } from "@/lib/client-api";
 import type {
   BillingStatus,
   MarketplaceOverview,
   OnboardingProfile,
+  WalletRead,
 } from "@/lib/types";
 
 type UseProfileDataArgs = {
@@ -25,6 +27,7 @@ type UseProfileDataResult = {
   overview: MarketplaceOverview | null;
   billing: BillingStatus | null;
   onboardingProfile: OnboardingProfile | null;
+  wallet: WalletRead | null;
   error: string | null;
   lastMarketplaceSyncAt: string | null;
   reload: () => void;
@@ -38,6 +41,7 @@ export function useProfileData({
   const [overview, setOverview] = useState<MarketplaceOverview | null>(null);
   const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [onboardingProfile, setOnboardingProfile] = useState<OnboardingProfile | null>(null);
+  const [wallet, setWallet] = useState<WalletRead | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastMarketplaceSyncAt, setLastMarketplaceSyncAt] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
@@ -51,6 +55,7 @@ export function useProfileData({
       setOverview(null);
       setBilling(null);
       setOnboardingProfile(null);
+      setWallet(null);
       setLastMarketplaceSyncAt(null);
       setError(null);
       return;
@@ -62,13 +67,14 @@ export function useProfileData({
       fetchMarketplaceOverview(),
       fetchBillingStatus(),
       fetchOnboardingProfile(),
+      fetchWallet(),
     ])
       .then((results) => {
         if (cancelled) {
           return;
         }
 
-        const [overviewResult, billingResult, onboardingResult] = results;
+        const [overviewResult, billingResult, onboardingResult, walletResult] = results;
 
         if (overviewResult.status === "fulfilled") {
           setOverview(overviewResult.value);
@@ -78,6 +84,11 @@ export function useProfileData({
         }
         if (onboardingResult.status === "fulfilled") {
           setOnboardingProfile(onboardingResult.value);
+        }
+        if (walletResult.status === "fulfilled") {
+          setWallet(walletResult.value);
+        } else {
+          setWallet(null);
         }
 
         if (
@@ -117,6 +128,7 @@ export function useProfileData({
     overview,
     billing,
     onboardingProfile,
+    wallet,
     error,
     lastMarketplaceSyncAt,
     reload,
