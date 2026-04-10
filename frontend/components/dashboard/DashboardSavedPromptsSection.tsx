@@ -29,7 +29,6 @@ export function DashboardSavedPromptsSection({
             {t("dashboard.savedPrompts")}
           </h2>
         </div>
-        <span className="pv-workspace-status">{items.length}</span>
       </div>
 
       {items.length === 0 ? (

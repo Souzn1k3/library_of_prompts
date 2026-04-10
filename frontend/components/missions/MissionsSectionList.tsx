@@ -67,7 +67,6 @@ export function MissionsSectionList({
           <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("missions.title")}</h2>
           <p className="mt-2 text-sm leading-relaxed text-zinc-600">{t("missions.subtitle")}</p>
         </div>
-        <span className="pv-chip-brand">{missionFeed.length}</span>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">

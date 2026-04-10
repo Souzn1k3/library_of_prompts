@@ -35,7 +35,6 @@ export function DashboardRecommendationsSection({
             {t("dashboard.recommendedForYou")}
           </h2>
         </div>
-        <span className="pv-workspace-status">{suggestions.length + (needsOnboarding ? 1 : 0)}</span>
       </div>
 
       <div className="mt-6 space-y-4">
