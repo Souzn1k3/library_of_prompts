@@ -50,8 +50,8 @@ export function MissionsHero({
 
   return (
     <PageIntro
-      eyebrow={t("nav.missions")}
       title={t("missions.title")}
+      titleClassName="font-extrabold tracking-[-0.035em]"
       description={t("missions.subtitle")}
       titleAside={titleAside}
     >

@@ -8,6 +8,7 @@ type PageIntroProps = {
   eyebrow?: ReactNode;
   title: ReactNode;
   titleAside?: ReactNode;
+  titleClassName?: string;
   description?: ReactNode;
   showDescription?: boolean;
   hint?: ReactNode;
@@ -47,6 +48,7 @@ export function PageIntro({
   eyebrow,
   title,
   titleAside,
+  titleClassName,
   description,
   showDescription = false,
   hint,
@@ -74,7 +76,9 @@ export function PageIntro({
           <div className="space-y-2">
             {shouldShowEyebrow ? <p className="pv-kicker">{eyebrow}</p> : null}
             <div className={`gap-3 ${titleAside ? "flex flex-col sm:flex-row sm:items-start sm:justify-between" : ""}`}>
-              <h1 className="max-w-4xl text-2xl font-semibold tracking-[-0.05em] text-zinc-950 sm:text-3xl">
+              <h1
+                className={`max-w-4xl text-2xl font-semibold tracking-[-0.05em] text-zinc-950 sm:text-3xl ${titleClassName ?? ""}`}
+              >
                 {title}
               </h1>
               {titleAside ? <div className="shrink-0">{titleAside}</div> : null}
