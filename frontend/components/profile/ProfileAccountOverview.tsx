@@ -42,15 +42,17 @@ export function ProfileAccountOverview({
         {wallet ? (
           <div className="lg:justify-self-end lg:w-full lg:max-w-[360px]">
             <div className="group relative cursor-help" tabIndex={0}>
-              <p className="text-right text-[1.05rem] font-semibold tracking-[-0.02em] text-zinc-800">
-                {t("wallet.rankLevelProgress", {
-                  level: formatNumber(wallet.rank_level, locale),
-                  points: formatNumber(wallet.rank_points, locale),
-                  threshold: formatNumber(wallet.rank_next_threshold, locale),
-                })}
-              </p>
-              <div className="mt-2 pv-progress">
-                <div className="pv-progress-fill" style={{ width: `${rankPercent}%` }} />
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+                <div className="pv-progress">
+                  <div className="pv-progress-fill" style={{ width: `${rankPercent}%` }} />
+                </div>
+                <p className="whitespace-nowrap text-right text-[1.05rem] font-semibold tracking-[-0.02em] text-zinc-800">
+                  {t("wallet.rankLevelProgress", {
+                    level: formatNumber(wallet.rank_level, locale),
+                    points: formatNumber(wallet.rank_points, locale),
+                    threshold: formatNumber(wallet.rank_next_threshold, locale),
+                  })}
+                </p>
               </div>
 
               <div className="pointer-events-none absolute right-0 top-full z-20 mt-2 w-[min(21rem,88vw)] translate-y-1 rounded-xl border border-[rgba(15,23,42,0.12)] bg-white/96 p-3 shadow-[0_16px_34px_rgba(15,23,42,0.12)] opacity-0 transition duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
