@@ -5,7 +5,6 @@ import { useI18n } from "@/components/i18n/LanguageProvider";
 import { EconomyActionBanner } from "@/components/ui/EconomyActionBanner";
 import { useLmnBalanceFeedback } from "@/components/ui/useLmnBalanceFeedback";
 import { BestNextPurchase } from "@/components/wallet/BestNextPurchase";
-import { KPIStrip } from "@/components/wallet/KPIStrip";
 import { ProgressAndRewards } from "@/components/wallet/ProgressAndRewards";
 import { WalletActivitySection } from "@/components/wallet/WalletActivitySection";
 import { WalletBenefitsSection } from "@/components/wallet/WalletBenefitsSection";
@@ -120,6 +119,11 @@ export function WalletClient() {
             bestItem={bestItem}
             balance={wallet.balance}
             estimatedDaysToAfford={estimatedDaysToAfford}
+            earned={wallet.total_earned}
+            spent={wallet.total_spent}
+            readyToBuy={readyToBuyCount}
+            purchases={wallet.recent_purchases.length}
+            cashback={pendingCashbackTotal}
           />
         </div>
         <div className="col-span-12 lg:col-span-5">
@@ -132,15 +136,6 @@ export function WalletClient() {
             rankPoints={wallet.rank_points}
             rankNextThreshold={wallet.rank_next_threshold}
             ownedValueGenerated={wallet.owned_value_generated}
-          />
-        </div>
-        <div className="col-span-12">
-          <KPIStrip
-            earned={wallet.total_earned}
-            spent={wallet.total_spent}
-            readyToBuy={readyToBuyCount}
-            purchases={wallet.recent_purchases.length}
-            cashback={pendingCashbackTotal}
           />
         </div>
       </div>

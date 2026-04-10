@@ -14,9 +14,23 @@ type BestNextPurchaseProps = {
   bestItem: StoreItem | null;
   balance: number;
   estimatedDaysToAfford: number | null;
+  earned: number;
+  spent: number;
+  readyToBuy: number;
+  purchases: number;
+  cashback: number;
 };
 
-export function BestNextPurchase({ bestItem, balance, estimatedDaysToAfford }: BestNextPurchaseProps) {
+export function BestNextPurchase({
+  bestItem,
+  balance,
+  estimatedDaysToAfford,
+  earned,
+  spent,
+  readyToBuy,
+  purchases,
+  cashback,
+}: BestNextPurchaseProps) {
   const { t, language } = useI18n();
   const locale = languageToIntlLocale(language);
 
@@ -81,15 +95,53 @@ export function BestNextPurchase({ bestItem, balance, estimatedDaysToAfford }: B
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-3">
+      <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <Link
           href={bestItem.is_affordable ? APP_ROUTES.store : APP_ROUTES.missions}
-          className="pv-button-primary"
+          className="pv-button-primary w-fit shrink-0"
         >
           {bestItem.is_affordable ? t("wallet.spendNowCta") : t("wallet.earnToUnlockCta")}
         </Link>
+        <div className="grid w-full gap-2 sm:grid-cols-2 lg:ml-4 lg:max-w-[520px] lg:flex-1 lg:grid-cols-3">
+          <MiniMetric
+            label={t("wallet.earned")}
+            value={`${formatNumber(earned, locale)} ${TOKEN_SHORT_CODE}`}
+            tone="positive"
+          />
+          <MiniMetric label={t("wallet.spent")} value={`${formatNumber(spent, locale)} ${TOKEN_SHORT_CODE}`} />
+          <MiniMetric label={t("store.readyToBuyCount")} value={formatNumber(readyToBuy, locale)} tone="positive" />
+          <MiniMetric label={t("wallet.purchaseHistory")} value={formatNumber(purchases, locale)} />
+          <MiniMetric
+            label={t("wallet.pendingCashback")}
+            value={`${formatNumber(cashback, locale)} ${TOKEN_SHORT_CODE}`}
+            tone="positive"
+          />
+        </div>
       </div>
     </section>
+  );
+}
+
+function MiniMetric({
+  label,
+  value,
+  tone = "neutral",
+}: {
+  label: string;
+  value: string;
+  tone?: "neutral" | "positive";
+}) {
+  return (
+    <div
+      className={`rounded-xl border px-3 py-2 ${
+        tone === "positive"
+          ? "border-emerald-200/80 bg-emerald-50/70"
+          : "border-[rgba(15,23,42,0.08)] bg-white/85"
+      }`}
+    >
+      <p className="text-[0.62rem] font-semibold uppercase tracking-[0.13em] text-zinc-500">{label}</p>
+      <p className="mt-1 text-sm font-bold tracking-[-0.02em] text-zinc-950">{value}</p>
+    </div>
   );
 }
 
