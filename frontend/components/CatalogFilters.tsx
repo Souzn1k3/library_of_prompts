@@ -98,10 +98,10 @@ export function CatalogFilters({ categories, discoveryFilters, initial }: Catalo
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d="m6 6 4-4 4 4" />
-              <path d="M10 2v20" />
-              <path d="m18 18-4 4-4-4" />
-              <path d="M14 2v20" />
+              <path d="M8 5v14" />
+              <path d="m5 8 3-3 3 3" />
+              <path d="M16 19V5" />
+              <path d="m13 16 3 3 3-3" />
             </svg>
           </summary>
           <div className="absolute right-0 top-[calc(100%+0.5rem)] z-40 w-60">
