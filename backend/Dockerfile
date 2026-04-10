@@ -9,7 +9,7 @@ COPY pyproject.toml /app/
 COPY app /app/app
 COPY alembic /app/alembic
 COPY alembic.ini /app/alembic.ini
-RUN pip install --no-cache-dir --prefix=/install .
+RUN pip install --no-cache-dir --prefix=/install --retries 20 --timeout 600 --prefer-binary --progress-bar off -i https://pypi.org/simple .
 
 FROM python:3.12-slim
 

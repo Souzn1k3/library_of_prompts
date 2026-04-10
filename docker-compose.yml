@@ -84,6 +84,8 @@ services:
       dockerfile: Dockerfile
       target: runner
       args:
+        API_URL: http://api:8000
+        NEXT_PUBLIC_API_URL: /api-proxy
         HTTP_PROXY: ${HTTP_PROXY:-}
         HTTPS_PROXY: ${HTTPS_PROXY:-}
         NO_PROXY: ${NO_PROXY:-}
