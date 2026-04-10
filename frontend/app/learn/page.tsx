@@ -38,6 +38,7 @@ export default async function LearnIndexPage() {
           ]}
           eyebrow={<T k="learn.title" />}
           title={<T k="learn.title" />}
+          titleClassName="text-2xl font-bold tracking-[-0.04em] sm:text-2xl"
           description={<T k="learn.releaseSubtitle" />}
           actions={
             <div className="flex flex-wrap items-center gap-3">

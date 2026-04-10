@@ -52,6 +52,7 @@ export function CatalogPageView({ language, data }: CatalogPageViewProps) {
         ]}
         eyebrow={<T k="catalog.title" />}
         title={<T k="catalog.title" />}
+        titleClassName="text-2xl font-bold tracking-[-0.04em] sm:text-2xl"
         description={<T k="catalog.subtitle" />}
       >
         {!error ? (
