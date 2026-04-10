@@ -44,7 +44,7 @@ export function CatalogFilters({ categories, discoveryFilters, initial }: Catalo
   }
 
   return (
-    <div className="pv-panel px-5 py-4 sm:px-6">
+    <div className="pt-1">
       <form onSubmit={onSearchSubmit} className="flex flex-wrap items-center gap-2 sm:gap-3">
         <label htmlFor="q" className="sr-only">
           {t("catalogFilters.search")}
@@ -82,7 +82,7 @@ export function CatalogFilters({ categories, discoveryFilters, initial }: Catalo
           </svg>
         </button>
 
-        <details className="relative">
+        <details className="relative z-40">
           <summary
             className="inline-flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full text-zinc-500 transition hover:text-[var(--pv-brand-strong)] [&::-webkit-details-marker]:hidden"
             aria-label={t("catalogFilters.sort")}
@@ -104,7 +104,7 @@ export function CatalogFilters({ categories, discoveryFilters, initial }: Catalo
               <path d="M14 2v20" />
             </svg>
           </summary>
-          <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-60">
+          <div className="absolute right-0 top-[calc(100%+0.5rem)] z-40 w-60">
             <div className="pv-floating-menu gap-1.5 p-2">
               {sortOptions.map((option) => {
                 const isActive = (filters.sort ?? "relevance") === option.value;
@@ -128,7 +128,7 @@ export function CatalogFilters({ categories, discoveryFilters, initial }: Catalo
           </div>
         </details>
 
-        <details className="relative">
+        <details className="relative z-40">
           <summary className="pv-button-secondary !min-h-0 !w-auto list-none px-3 py-2 text-sm [&::-webkit-details-marker]:hidden">
             <span>{t("catalogFilters.filters")}</span>
             {activeFiltersCount > 0 ? (
@@ -137,7 +137,7 @@ export function CatalogFilters({ categories, discoveryFilters, initial }: Catalo
               </span>
             ) : null}
           </summary>
-          <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-[min(92vw,760px)]">
+          <div className="absolute right-0 top-[calc(100%+0.5rem)] z-40 w-[min(92vw,760px)]">
             <div className="pv-floating-menu p-3 sm:p-4">
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <CatalogSelectField

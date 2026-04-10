@@ -14,6 +14,7 @@ type PageIntroProps = {
   actions?: ReactNode;
   aside?: ReactNode;
   children?: ReactNode;
+  className?: string;
 };
 
 function getNodeText(node: ReactNode): string {
@@ -51,6 +52,7 @@ export function PageIntro({
   actions,
   aside,
   children,
+  className,
 }: PageIntroProps) {
   const lastBreadcrumbLabel = breadcrumbs[breadcrumbs.length - 1]?.label;
   const eyebrowText = getNodeText(eyebrow);
@@ -60,7 +62,7 @@ export function PageIntro({
     eyebrowText !== getNodeText(lastBreadcrumbLabel);
 
   return (
-    <section className="pv-hero px-5 py-4 sm:px-6 sm:py-5">
+    <section className={`pv-hero px-5 py-4 sm:px-6 sm:py-5 ${className ?? ""}`}>
       {breadcrumbs.length > 0 ? <AppBreadcrumbs items={breadcrumbs} /> : null}
 
       <div

@@ -40,6 +40,7 @@ export function CatalogPageView({ language, data }: CatalogPageViewProps) {
       />
 
       <PageIntro
+        className="!overflow-visible"
         breadcrumbs={[
           { label: getTranslation(language, "brand.name"), href: "/" },
           { label: getTranslation(language, "nav.catalog") },
@@ -48,12 +49,25 @@ export function CatalogPageView({ language, data }: CatalogPageViewProps) {
         title={<T k="catalog.title" />}
         description={<T k="catalog.subtitle" />}
       >
-        <div className="inline-flex items-center gap-2 rounded-full border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-3 py-1.5">
-          <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
-            <T k="catalog.prompts" />
-          </span>
-          <span className="tabular-nums text-base font-semibold tracking-[-0.02em] text-zinc-950">{prompts.length}</span>
-        </div>
+        {!error ? (
+          <div className="mt-3">
+            <CatalogFilters
+              categories={categories}
+              discoveryFilters={discoveryFilters}
+              initial={{
+                q: query.q,
+                category_id: query.category_id,
+                technique: query.technique,
+                difficulty: query.difficulty,
+                output_type: query.output_type,
+                sort: query.sort || "relevance",
+                use_case: query.use_case,
+                model: query.model,
+                tag: query.tag,
+              }}
+            />
+          </div>
+        ) : null}
       </PageIntro>
 
       {error ? (
@@ -63,24 +77,6 @@ export function CatalogPageView({ language, data }: CatalogPageViewProps) {
           </p>
           <p className="mt-1 text-amber-800">{error}</p>
         </div>
-      ) : null}
-
-      {!error ? (
-        <CatalogFilters
-          categories={categories}
-          discoveryFilters={discoveryFilters}
-          initial={{
-            q: query.q,
-            category_id: query.category_id,
-            technique: query.technique,
-            difficulty: query.difficulty,
-            output_type: query.output_type,
-            sort: query.sort || "relevance",
-            use_case: query.use_case,
-            model: query.model,
-            tag: query.tag,
-          }}
-        />
       ) : null}
 
       <section className="pv-panel px-6 py-6 sm:px-7">
