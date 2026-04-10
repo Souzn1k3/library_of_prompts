@@ -129,10 +129,25 @@ export function CatalogFilters({ categories, discoveryFilters, initial }: Catalo
         </details>
 
         <details className="relative z-40">
-          <summary className="pv-button-secondary !min-h-0 !w-auto list-none px-3 py-2 text-sm [&::-webkit-details-marker]:hidden">
-            <span>{t("catalogFilters.filters")}</span>
+          <summary
+            className="relative inline-flex h-10 w-10 cursor-pointer list-none items-center justify-center text-zinc-500 transition hover:text-[var(--pv-brand-strong)] [&::-webkit-details-marker]:hidden"
+            aria-label={t("catalogFilters.filters")}
+            title={t("catalogFilters.filters")}
+          >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.9"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 5h18l-7 8v5l-4 2v-7L3 5z" />
+            </svg>
             {activeFiltersCount > 0 ? (
-              <span className="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-[var(--pv-brand-soft)] px-1.5 text-xs font-semibold text-[var(--pv-brand-strong)]">
+              <span className="absolute -right-0.5 -top-0.5 inline-flex min-w-4 items-center justify-center rounded-full bg-[var(--pv-brand-strong)] px-1 text-[10px] font-semibold leading-none text-white">
                 {activeFiltersCount}
               </span>
             ) : null}
