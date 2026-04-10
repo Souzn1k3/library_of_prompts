@@ -54,7 +54,7 @@ export function ProfileAccountOverview({
         {wallet ? (
           <>
             <div
-              className="group relative cursor-help lg:col-start-2 lg:row-start-1 lg:justify-self-end lg:w-full lg:max-w-[360px] lg:self-center"
+              className="group cursor-help lg:col-start-2 lg:row-start-1 lg:justify-self-end lg:w-full lg:max-w-[360px] lg:self-center"
             >
               <p className="text-right text-[1.05rem] font-semibold tracking-[-0.02em] text-zinc-800">
                 {t("wallet.rankLevelProgress", {
@@ -63,17 +63,17 @@ export function ProfileAccountOverview({
                   threshold: formatNumber(wallet.rank_next_threshold, locale),
                 })}
               </p>
-              <div className="pointer-events-none absolute right-0 top-full z-[9999] mt-2 w-[min(21rem,88vw)] translate-y-1 rounded-xl border border-[rgba(15,23,42,0.12)] bg-white p-3 shadow-[0_16px_34px_rgba(15,23,42,0.12)] opacity-0 transition duration-150 delay-0 group-hover:translate-y-0 group-hover:opacity-100 group-hover:delay-[500ms]">
+              <div className="pointer-events-none absolute right-0 top-full z-[9999] mt-2 w-[min(21rem,88vw)] translate-y-1 rounded-xl border border-[rgba(15,23,42,0.12)] bg-white p-3 shadow-[0_16px_34px_rgba(15,23,42,0.12)] opacity-0 transition duration-150 delay-0 group-hover:translate-y-0 group-hover:opacity-100 group-hover:delay-[500ms] lg:right-6 lg:top-[6.2rem] lg:mt-0">
                 {renderRankHelp()}
               </div>
             </div>
             <div
-              className="group relative cursor-help lg:col-start-2 lg:row-start-2 lg:-mt-2 lg:justify-self-end lg:w-full lg:max-w-[360px] lg:self-start"
+              className="group cursor-help lg:col-start-2 lg:row-start-2 lg:-mt-2 lg:justify-self-end lg:w-full lg:max-w-[360px] lg:self-start"
             >
               <div className="pv-progress ml-auto w-3/4">
                 <div className="pv-progress-fill" style={{ width: `${rankPercent}%` }} />
               </div>
-              <div className="pointer-events-none absolute right-0 top-full z-[9999] mt-2 w-[min(21rem,88vw)] translate-y-1 rounded-xl border border-[rgba(15,23,42,0.12)] bg-white p-3 shadow-[0_16px_34px_rgba(15,23,42,0.12)] opacity-0 transition duration-150 delay-0 group-hover:translate-y-0 group-hover:opacity-100 group-hover:delay-[500ms]">
+              <div className="pointer-events-none absolute right-0 top-full z-[9999] mt-2 w-[min(21rem,88vw)] translate-y-1 rounded-xl border border-[rgba(15,23,42,0.12)] bg-white p-3 shadow-[0_16px_34px_rgba(15,23,42,0.12)] opacity-0 transition duration-150 delay-0 group-hover:translate-y-0 group-hover:opacity-100 group-hover:delay-[500ms] lg:right-6 lg:top-[6.2rem] lg:mt-0">
                 {renderRankHelp()}
               </div>
             </div>
