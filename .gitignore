@@ -47,3 +47,4 @@ frontend/test-results/
 frontend/playwright-report/
 _tmp_next_from_container/
 _tmp_server_from_container.js
+website-deploy.tar.gz
