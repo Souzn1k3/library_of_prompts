@@ -481,7 +481,7 @@ body {
 }
 
 .pv-header-search {
-  min-height: 3rem;
+  min-height: 2.9rem;
   border-radius: 1rem;
   border: 1px solid rgba(15, 23, 42, 0.08);
   background: rgba(248, 250, 252, 0.9);

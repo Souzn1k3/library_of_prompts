@@ -28,7 +28,6 @@ export default async function LearnIndexPage() {
 
   try {
     const catalog = await fetchLearningCatalog(accessToken, language);
-    const pathStages = catalog.courses.slice(0, 3);
 
     return (
       <div className="pv-page">
@@ -56,30 +55,6 @@ export default async function LearnIndexPage() {
                 <span className="ml-1.5" aria-hidden="true">↗</span>
               </Link>
             </div>
-          }
-          aside={
-            pathStages.length > 0 ? (
-              <aside className="hidden xl:block">
-                <div className="rounded-[1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] px-3 py-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500">
-                    <T k="learn.pathStagesTitle" />
-                  </p>
-                  <div className="mt-2 space-y-2">
-                    {pathStages.map((course) => (
-                      <div
-                        key={`hero-stage-${course.slug}`}
-                        className="rounded-[0.8rem] border border-[var(--pv-border)] bg-white/90 px-2.5 py-2"
-                      >
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-500">
-                          {getTranslation(language, getDifficultyTranslationKey(course.difficulty))}
-                        </p>
-                        <p className="mt-0.5 line-clamp-1 text-xs font-semibold text-zinc-900">{course.title}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </aside>
-            ) : null
           }
         />
 
