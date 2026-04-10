@@ -61,6 +61,13 @@ body {
   gap: 1.25rem;
 }
 
+/* Keep page headings consistent across routes. */
+.pv-page :is(h1, h2, h3),
+.pv-page-sm :is(h1, h2, h3) {
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
 .pv-panel,
 .pv-hero,
 .pv-card,
