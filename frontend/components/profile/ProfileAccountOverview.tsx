@@ -45,7 +45,7 @@ export function ProfileAccountOverview({
   );
 
   return (
-    <section className="pv-panel px-6 py-6 sm:px-7">
+    <section className="pv-panel relative px-6 py-6 sm:px-7" style={{ overflow: "visible" }}>
       <div className="grid gap-x-3 gap-y-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,380px)] lg:items-start">
         <p className="pv-kicker lg:col-start-1 lg:row-start-1">{t("profile.accountTitle")}</p>
         <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950 lg:col-start-1 lg:row-start-2">
@@ -63,7 +63,7 @@ export function ProfileAccountOverview({
                   threshold: formatNumber(wallet.rank_next_threshold, locale),
                 })}
               </p>
-              <div className="pointer-events-none absolute bottom-full right-0 z-20 mb-2 w-[min(21rem,88vw)] translate-y-1 rounded-xl border border-[rgba(15,23,42,0.12)] bg-white/96 p-3 shadow-[0_16px_34px_rgba(15,23,42,0.12)] opacity-0 transition duration-150 delay-0 group-hover:translate-y-0 group-hover:opacity-100 group-hover:delay-[900ms]">
+              <div className="pointer-events-none absolute bottom-full right-0 z-[120] mb-2 w-[min(21rem,88vw)] translate-y-1 rounded-xl border border-[rgba(15,23,42,0.12)] bg-white/96 p-3 shadow-[0_16px_34px_rgba(15,23,42,0.12)] opacity-0 transition duration-150 delay-0 group-hover:translate-y-0 group-hover:opacity-100 group-hover:delay-[500ms]">
                 {renderRankHelp()}
               </div>
             </div>
@@ -73,7 +73,7 @@ export function ProfileAccountOverview({
               <div className="pv-progress ml-auto w-3/4">
                 <div className="pv-progress-fill" style={{ width: `${rankPercent}%` }} />
               </div>
-              <div className="pointer-events-none absolute bottom-full right-0 z-20 mb-2 w-[min(21rem,88vw)] translate-y-1 rounded-xl border border-[rgba(15,23,42,0.12)] bg-white/96 p-3 shadow-[0_16px_34px_rgba(15,23,42,0.12)] opacity-0 transition duration-150 delay-0 group-hover:translate-y-0 group-hover:opacity-100 group-hover:delay-[900ms]">
+              <div className="pointer-events-none absolute bottom-full right-0 z-[120] mb-2 w-[min(21rem,88vw)] translate-y-1 rounded-xl border border-[rgba(15,23,42,0.12)] bg-white/96 p-3 shadow-[0_16px_34px_rgba(15,23,42,0.12)] opacity-0 transition duration-150 delay-0 group-hover:translate-y-0 group-hover:opacity-100 group-hover:delay-[500ms]">
                 {renderRankHelp()}
               </div>
             </div>
