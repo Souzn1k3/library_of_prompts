@@ -49,7 +49,7 @@ export function CatalogFilters({ categories, discoveryFilters, initial }: Catalo
         <label htmlFor="q" className="sr-only">
           {t("catalogFilters.search")}
         </label>
-        <div className="min-w-[220px] flex-1">
+        <div className="relative min-w-[220px] flex-1">
           <input
             id="q"
             name="q"
@@ -57,40 +57,18 @@ export function CatalogFilters({ categories, discoveryFilters, initial }: Catalo
             onChange={(event) => setSearchQuery(event.target.value)}
             placeholder={t("catalogFilters.searchPlaceholder")}
             autoFocus={shouldFocusSearch}
-            className="pv-input h-10"
+            className="pv-input h-10 pr-11"
           />
-        </div>
-        <button
-          type="submit"
-          disabled={isPending}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--pv-border)] text-zinc-600 transition hover:border-[var(--pv-border-strong)] hover:text-[var(--pv-brand-strong)] disabled:opacity-60"
-          aria-label={isPending ? t("catalogFilters.updating") : t("catalogFilters.apply")}
-          title={isPending ? t("catalogFilters.updating") : t("catalogFilters.apply")}
-        >
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 20 20"
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <circle cx="9" cy="9" r="5.5" />
-            <path d="m13 13 4 4" />
-          </svg>
-        </button>
-
-        <details className="relative z-40">
-          <summary
-            className="inline-flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full text-zinc-500 transition hover:text-[var(--pv-brand-strong)] [&::-webkit-details-marker]:hidden"
-            aria-label={t("catalogFilters.sort")}
-            title={t("catalogFilters.sort")}
+          <button
+            type="submit"
+            disabled={isPending}
+            className="absolute right-3 top-1/2 inline-flex h-5 w-5 -translate-y-1/2 items-center justify-center text-zinc-600 transition hover:text-[var(--pv-brand-strong)] disabled:opacity-60"
+            aria-label={isPending ? t("catalogFilters.updating") : t("catalogFilters.apply")}
+            title={isPending ? t("catalogFilters.updating") : t("catalogFilters.apply")}
           >
             <svg
               aria-hidden="true"
-              viewBox="0 0 24 24"
+              viewBox="0 0 20 20"
               className="h-5 w-5"
               fill="none"
               stroke="currentColor"
@@ -98,133 +76,156 @@ export function CatalogFilters({ categories, discoveryFilters, initial }: Catalo
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d="M8 5v14" />
-              <path d="m5 8 3-3 3 3" />
-              <path d="M16 19V5" />
-              <path d="m13 16 3 3 3-3" />
+              <circle cx="9" cy="9" r="5.5" />
+              <path d="m13 13 4 4" />
             </svg>
-          </summary>
-          <div className="absolute right-0 top-[calc(100%+0.5rem)] z-40 w-60">
-            <div className="pv-floating-menu gap-1.5 p-2">
-              {sortOptions.map((option) => {
-                const isActive = (filters.sort ?? "relevance") === option.value;
-                return (
-                  <button
-                    key={`sort-${option.value}`}
-                    type="button"
-                    onClick={() => pushFilters({ ...filters, sort: option.value || "relevance" })}
-                    className={`flex w-full items-center justify-between rounded-[0.85rem] px-3 py-2 text-sm transition ${
-                      isActive
-                        ? "bg-[var(--pv-brand-soft)] text-[var(--pv-brand-strong)]"
-                        : "text-zinc-700 hover:bg-[var(--pv-surface-muted)]"
-                    }`}
-                  >
-                    <span>{option.label}</span>
-                    {isActive ? <span aria-hidden="true">✓</span> : null}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </details>
-
-        <details className="relative z-40">
-          <summary
-            className="relative inline-flex h-10 w-10 cursor-pointer list-none items-center justify-center text-zinc-500 transition hover:text-[var(--pv-brand-strong)] [&::-webkit-details-marker]:hidden"
-            aria-label={t("catalogFilters.filters")}
-            title={t("catalogFilters.filters")}
-          >
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.9"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          </button>
+        </div>
+        <div className="flex items-center gap-4">
+          <details className="relative z-40">
+            <summary
+              className="inline-flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full text-zinc-500 transition hover:text-[var(--pv-brand-strong)] [&::-webkit-details-marker]:hidden"
+              aria-label={t("catalogFilters.sort")}
+              title={t("catalogFilters.sort")}
             >
-              <path d="M3 5h18l-7 8v5l-4 2v-7L3 5z" />
-            </svg>
-            {activeFiltersCount > 0 ? (
-              <span className="absolute -right-0.5 -top-0.5 inline-flex min-w-4 items-center justify-center rounded-full bg-[var(--pv-brand-strong)] px-1 text-[10px] font-semibold leading-none text-white">
-                {activeFiltersCount}
-              </span>
-            ) : null}
-          </summary>
-          <div className="absolute right-0 top-[calc(100%+0.5rem)] z-40 w-[min(92vw,760px)]">
-            <div className="pv-floating-menu p-3 sm:p-4">
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <CatalogSelectField
-                  label={t("catalogFilters.category")}
-                  value={filters.category_id ?? ""}
-                  options={[
-                    { value: "", label: t("catalogFilters.allCategories") },
-                    ...categories.map((category) => ({ value: category.id, label: category.name })),
-                  ]}
-                  onChange={(value) => pushFilters({ ...filters, category_id: value || undefined })}
-                />
-                <CatalogSelectField
-                  label={t("catalogFilters.technique")}
-                  value={filters.technique ?? ""}
-                  options={[
-                    { value: "", label: t("catalogFilters.allTechniques") },
-                    { value: "zero_shot", label: t("catalogFilters.zeroShot") },
-                    { value: "few_shot", label: t("catalogFilters.fewShot") },
-                    { value: "chain_of_thought", label: t("catalogFilters.chainOfThought") },
-                    { value: "other", label: t("catalogFilters.other") },
-                  ]}
-                  onChange={(value) => pushFilters({ ...filters, technique: value || undefined })}
-                />
-                <CatalogSelectField
-                  label={t("catalogFilters.difficulty")}
-                  value={filters.difficulty ?? ""}
-                  options={[
-                    { value: "", label: t("catalogFilters.allLevels") },
-                    ...difficultyOptions,
-                  ]}
-                  onChange={(value) => pushFilters({ ...filters, difficulty: value || undefined })}
-                />
-                <CatalogSelectField
-                  label={t("catalogFilters.output")}
-                  value={filters.output_type ?? ""}
-                  options={[
-                    { value: "", label: t("catalogFilters.allOutputs") },
-                    ...outputOptions,
-                  ]}
-                  onChange={(value) => pushFilters({ ...filters, output_type: value || undefined })}
-                />
-              </div>
-
-              <div className="grid gap-3 md:grid-cols-3">
-                <CatalogMultiSelectField
-                  label={t("catalogFilters.useCase")}
-                  options={discoveryFilters.use_cases}
-                  selected={filters.use_case ?? []}
-                  onChange={(values) => pushFilters({ ...filters, use_case: sanitizeMultiSelected(values) })}
-                />
-                <CatalogMultiSelectField
-                  label={t("catalogFilters.model")}
-                  options={discoveryFilters.model_compatibility}
-                  selected={filters.model ?? []}
-                  onChange={(values) => pushFilters({ ...filters, model: sanitizeMultiSelected(values) })}
-                />
-                <CatalogMultiSelectField
-                  label={t("catalogFilters.tags")}
-                  options={discoveryFilters.tags}
-                  selected={filters.tag ?? []}
-                  onChange={(values) => pushFilters({ ...filters, tag: sanitizeMultiSelected(values) })}
-                />
-              </div>
-
-              <div className="flex justify-end">
-                <Link href={APP_ROUTES.catalog} className="text-sm font-medium text-zinc-500 transition hover:text-zinc-900">
-                  {t("catalogFilters.reset")}
-                </Link>
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M8 5v14" />
+                <path d="m5 8 3-3 3 3" />
+                <path d="M16 19V5" />
+                <path d="m13 16 3 3 3-3" />
+              </svg>
+            </summary>
+            <div className="absolute right-0 top-[calc(100%+0.5rem)] z-40 w-60">
+              <div className="pv-floating-menu gap-1.5 p-2">
+                {sortOptions.map((option) => {
+                  const isActive = (filters.sort ?? "relevance") === option.value;
+                  return (
+                    <button
+                      key={`sort-${option.value}`}
+                      type="button"
+                      onClick={() => pushFilters({ ...filters, sort: option.value || "relevance" })}
+                      className={`flex w-full items-center justify-between rounded-[0.85rem] px-3 py-2 text-sm transition ${
+                        isActive
+                          ? "bg-[var(--pv-brand-soft)] text-[var(--pv-brand-strong)]"
+                          : "text-zinc-700 hover:bg-[var(--pv-surface-muted)]"
+                      }`}
+                    >
+                      <span>{option.label}</span>
+                      {isActive ? <span aria-hidden="true">✓</span> : null}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          </div>
-        </details>
+          </details>
+
+          <details className="relative z-40">
+            <summary
+              className="relative inline-flex h-10 w-10 cursor-pointer list-none items-center justify-center text-zinc-500 transition hover:text-[var(--pv-brand-strong)] [&::-webkit-details-marker]:hidden"
+              aria-label={t("catalogFilters.filters")}
+              title={t("catalogFilters.filters")}
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.9"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M3 5h18l-7 8v5l-4 2v-7L3 5z" />
+              </svg>
+              {activeFiltersCount > 0 ? (
+                <span className="absolute -right-0.5 -top-0.5 inline-flex min-w-4 items-center justify-center rounded-full bg-[var(--pv-brand-strong)] px-1 text-[10px] font-semibold leading-none text-white">
+                  {activeFiltersCount}
+                </span>
+              ) : null}
+            </summary>
+            <div className="absolute right-0 top-[calc(100%+0.5rem)] z-40 w-[min(92vw,760px)]">
+              <div className="pv-floating-menu p-3 sm:p-4">
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <CatalogSelectField
+                    label={t("catalogFilters.category")}
+                    value={filters.category_id ?? ""}
+                    options={[
+                      { value: "", label: t("catalogFilters.allCategories") },
+                      ...categories.map((category) => ({ value: category.id, label: category.name })),
+                    ]}
+                    onChange={(value) => pushFilters({ ...filters, category_id: value || undefined })}
+                  />
+                  <CatalogSelectField
+                    label={t("catalogFilters.technique")}
+                    value={filters.technique ?? ""}
+                    options={[
+                      { value: "", label: t("catalogFilters.allTechniques") },
+                      { value: "zero_shot", label: t("catalogFilters.zeroShot") },
+                      { value: "few_shot", label: t("catalogFilters.fewShot") },
+                      { value: "chain_of_thought", label: t("catalogFilters.chainOfThought") },
+                      { value: "other", label: t("catalogFilters.other") },
+                    ]}
+                    onChange={(value) => pushFilters({ ...filters, technique: value || undefined })}
+                  />
+                  <CatalogSelectField
+                    label={t("catalogFilters.difficulty")}
+                    value={filters.difficulty ?? ""}
+                    options={[
+                      { value: "", label: t("catalogFilters.allLevels") },
+                      ...difficultyOptions,
+                    ]}
+                    onChange={(value) => pushFilters({ ...filters, difficulty: value || undefined })}
+                  />
+                  <CatalogSelectField
+                    label={t("catalogFilters.output")}
+                    value={filters.output_type ?? ""}
+                    options={[
+                      { value: "", label: t("catalogFilters.allOutputs") },
+                      ...outputOptions,
+                    ]}
+                    onChange={(value) => pushFilters({ ...filters, output_type: value || undefined })}
+                  />
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-3">
+                  <CatalogMultiSelectField
+                    label={t("catalogFilters.useCase")}
+                    options={discoveryFilters.use_cases}
+                    selected={filters.use_case ?? []}
+                    onChange={(values) => pushFilters({ ...filters, use_case: sanitizeMultiSelected(values) })}
+                  />
+                  <CatalogMultiSelectField
+                    label={t("catalogFilters.model")}
+                    options={discoveryFilters.model_compatibility}
+                    selected={filters.model ?? []}
+                    onChange={(values) => pushFilters({ ...filters, model: sanitizeMultiSelected(values) })}
+                  />
+                  <CatalogMultiSelectField
+                    label={t("catalogFilters.tags")}
+                    options={discoveryFilters.tags}
+                    selected={filters.tag ?? []}
+                    onChange={(values) => pushFilters({ ...filters, tag: sanitizeMultiSelected(values) })}
+                  />
+                </div>
+
+                <div className="flex justify-end">
+                  <Link href={APP_ROUTES.catalog} className="text-sm font-medium text-zinc-500 transition hover:text-zinc-900">
+                    {t("catalogFilters.reset")}
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </details>
+        </div>
 
         <Link href={APP_ROUTES.catalog} className="text-sm font-medium text-zinc-500 transition hover:text-zinc-900">
           {t("catalogFilters.reset")}
