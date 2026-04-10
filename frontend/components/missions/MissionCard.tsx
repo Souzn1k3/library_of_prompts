@@ -4,7 +4,6 @@ import Link from "next/link";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { trackEvent } from "@/lib/analytics";
-import { MISSION_TYPE_TONE } from "@/lib/constants/economy-ui";
 import { APP_ROUTES, appRoute } from "@/lib/constants/routes";
 import { getMissionStatusTranslationKey, type TranslationKey } from "@/lib/i18n";
 import {
@@ -21,7 +20,6 @@ export function MissionCard({ mission }: MissionCardProps) {
   const pct = Math.round(
     (mission.mission.progress_count / Math.max(1, mission.mission.required_count)) * 100,
   );
-  const tone = MISSION_TYPE_TONE[mission.mission.mission_type];
   const detailsHref = appRoute.missionBySlug(mission.mission.slug);
   const hasDedicatedNextStep = Boolean(
     mission.nextStep && mission.nextStep.href && mission.nextStep.href !== detailsHref,
@@ -64,18 +62,18 @@ export function MissionCard({ mission }: MissionCardProps) {
     <article className="pv-card pv-card-optimized p-5">
       <div className="relative flex h-full flex-col gap-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${tone.badge}`}>
+          <div className="space-y-1.5">
+            <div className="flex flex-wrap items-center gap-1.5 text-[11px] leading-none">
+              <span className="font-semibold uppercase tracking-[0.14em] text-zinc-500">
                 {t(`missions.type.${mission.mission.mission_type}` as TranslationKey)}
               </span>
               <span
-                className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                className={`font-semibold ${
                   mission.mission.status === "completed"
-                    ? "bg-emerald-100 text-emerald-900"
+                    ? "text-emerald-700"
                   : mission.mission.status === "in_progress"
-                      ? "bg-blue-100 text-blue-900"
-                      : "bg-zinc-100 text-zinc-700"
+                      ? "text-[var(--pv-brand-strong)]"
+                      : "text-zinc-500"
                 }`}
               >
                 {t(getMissionStatusTranslationKey(mission.mission.status))}
