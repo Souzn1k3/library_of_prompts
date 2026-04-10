@@ -65,7 +65,7 @@ export function BestNextPurchase({
           symbol={TOKEN_SHORT_CODE}
           strong
           state="spent"
-          className="pv-wallet-best-next-price"
+          className="pv-wallet-best-next-price pv-lmn-token-no-border"
         />
       </div>
 
