@@ -15,6 +15,7 @@ import {
   useAuthMountLifecycle,
   useAuthStateChangeSync,
 } from "@/components/auth/authProviderEffects";
+import { clearAuthSessionHint, markAuthSessionHint } from "@/lib/auth";
 import { ApiRequestError } from "@/lib/api";
 import { fetchMe, logoutRequest } from "@/lib/client-api";
 import type { UserProfile } from "@/lib/types";
@@ -51,6 +52,7 @@ export function AuthProvider({
     if (!mountedRef.current) {
       return;
     }
+    clearAuthSessionHint();
     setUser(null);
     setStatus("unauthenticated");
   }, []);
@@ -71,6 +73,7 @@ export function AuthProvider({
           if (!mountedRef.current) {
             return me;
           }
+          markAuthSessionHint();
           setUser(me);
           setStatus("authenticated");
           return me;

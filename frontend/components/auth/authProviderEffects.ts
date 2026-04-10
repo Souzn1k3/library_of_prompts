@@ -2,7 +2,7 @@
 
 import { useEffect, type MutableRefObject } from "react";
 
-import { clearLegacyAccessToken, subscribeAuthStateChange } from "@/lib/auth";
+import { clearLegacyAccessToken, hasAuthSessionHint, subscribeAuthStateChange } from "@/lib/auth";
 import type { UserProfile } from "@/lib/types";
 
 const AUTH_STATE_COOKIE =
@@ -21,7 +21,7 @@ export function hasAuthCookieInBrowser() {
     return false;
   }
   const pairs = document.cookie.split(";").map((item) => item.trim());
-  return pairs.some((pair) => {
+  const hasCookieSignal = pairs.some((pair) => {
     const [name] = pair.split("=");
     return (
       name === AUTH_STATE_COOKIE ||
@@ -29,6 +29,7 @@ export function hasAuthCookieInBrowser() {
       name === REFRESH_TOKEN_COOKIE
     );
   });
+  return hasCookieSignal || hasAuthSessionHint();
 }
 
 export function useAuthMountLifecycle(mountedRef: MutableRefObject<boolean>) {

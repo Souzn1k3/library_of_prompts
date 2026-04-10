@@ -1,5 +1,5 @@
 import { ApiRequestError, getApiBaseUrl } from "../api";
-import { emitAuthStateChange } from "../auth";
+import { clearAuthSessionHint, emitAuthStateChange, markAuthSessionHint } from "../auth";
 import { API_ENDPOINTS } from "../constants/api";
 import { getClientLanguage, getTranslation, type Language } from "../i18n";
 import { extractApiErrorMessage, parseJson } from "../http";
@@ -66,10 +66,12 @@ async function refreshSession(language: string): Promise<boolean> {
         cache: "no-store",
       });
       if (!res.ok) {
+        clearAuthSessionHint();
         emitAuthStateChange({ reason: "refresh" });
         return false;
       }
       await parseJson<unknown>(res);
+      markAuthSessionHint();
       return true;
     } catch {
       return false;
@@ -103,6 +105,7 @@ async function authFetchRaw(path: string, init?: RequestInit, canRetry = true): 
   }
 
   if (response.status === 401) {
+    clearAuthSessionHint();
     emitAuthStateChange({ reason: "expired" });
   }
 
