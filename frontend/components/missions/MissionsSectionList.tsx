@@ -51,7 +51,6 @@ export function MissionsSectionList({
           />
         </div>
         <div className="space-y-2">
-          <p className="pv-kicker">{t("nav.missions")}</p>
           <h2 className="text-2xl font-bold tracking-[-0.04em] text-zinc-950">
             {t("missions.filteredEmptyTitle")}
           </h2>
@@ -65,7 +64,6 @@ export function MissionsSectionList({
     <section className="pv-panel px-6 py-6 sm:px-7">
       <div className="pv-section-head">
         <div className="pv-section-copy">
-          <p className="pv-kicker">{t("nav.missions")}</p>
           <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{t("missions.title")}</h2>
           <p className="mt-2 text-sm leading-relaxed text-zinc-600">{t("missions.subtitle")}</p>
         </div>
