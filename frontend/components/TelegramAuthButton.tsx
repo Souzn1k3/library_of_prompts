@@ -47,7 +47,7 @@ export function TelegramAuthButton({
       ? "pv-button-primary border border-[#199bd7] bg-[#199bd7] text-white hover:bg-[#1587bb]"
       : "pv-button-secondary border border-[#199bd7]/30 bg-[#199bd7]/8 text-[#0c6f99] hover:bg-[#199bd7]/12";
   const buttonClassName = iconOnly
-    ? "inline-flex items-center justify-center p-0 transition-transform duration-150 hover:scale-105 focus-visible:outline-none"
+    ? "inline-flex h-11 w-11 items-center justify-center rounded-full p-0 transition-transform duration-150 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#229ED9]/35"
     : toneClassName;
 
   return (
@@ -61,12 +61,12 @@ export function TelegramAuthButton({
         <svg
           aria-hidden="true"
           viewBox="0 0 24 24"
-          className="h-10 w-10 drop-shadow-[0_8px_16px_rgba(15,23,42,0.10)]"
+          className="h-11 w-11 drop-shadow-[0_10px_18px_rgba(34,158,217,0.22)]"
         >
-          <circle cx="12" cy="12" r="11.25" fill="#ffffff" stroke="#d7e0ee" strokeWidth="0.5" />
+          <circle cx="12" cy="12" r="11.25" fill="#229ED9" />
           <path
             d="M17.395 7.58 15.425 16.87c-.148.66-.537.82-1.088.51l-3.012-2.218-1.453 1.399c-.162.16-.298.297-.61.297l.213-3.055 5.561-5.022c.242-.214-.052-.334-.373-.12l-6.873 4.327-2.96-.923c-.644-.203-.657-.644.135-.954l11.57-4.459c.538-.197 1.007.128.86.947Z"
-            fill="#18233c"
+            fill="#ffffff"
           />
         </svg>
       ) : (

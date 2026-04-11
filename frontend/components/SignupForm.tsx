@@ -122,7 +122,6 @@ export function SignupForm() {
           mode="login"
           nextPath="/dashboard"
           iconOnly
-          className="drop-shadow-[0_8px_16px_rgba(15,23,42,0.06)]"
         />
       </div>
 
