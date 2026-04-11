@@ -141,7 +141,7 @@ export const enCatalog = {
   "learn.theoryShort": "Theory",
   "learn.practiceAction": "Action",
   "learn.practiceFocusHint":
-    "Complete the task below with a concrete answer that follows the step requirements, without retelling theory.",
+    "Treat the task below like real work, not a formality. Markers alone are not enough: each block should carry usable detail.",
   "learn.backToTheory": "Back to theory",
   "learn.precheck": "Pre-check before submit",
   "learn.precheckWords": "Words: {current}/{min}",
@@ -149,6 +149,11 @@ export const enCatalog = {
   "learn.precheckMarkersMissing": "Missing markers: {markers}",
   "learn.precheckForbiddenOk": "No forbidden phrases detected.",
   "learn.precheckForbiddenHit": "Forbidden phrases found: {markers}",
+  "learn.precheckSpecificityOk": "The answer looks specific enough to evaluate.",
+  "learn.precheckSpecificityWeak":
+    "The draft still reads like filler or noise. Replace vague fragments with concrete actions, context, constraints, and output expectations.",
+  "learn.precheckSpecificityWeakMarkers":
+    "These blocks still need more usable detail: {markers}",
   "learn.feedbackScoreLabel": "Score {score}/100 (target {target})",
   "learn.feedbackScoreOnly": "Score {score}/100",
   "learn.feedbackStrengths": "What worked",
@@ -159,12 +164,13 @@ export const enCatalog = {
   "learn.remainingLessonsHint": "{count} lesson(s) left in this course.",
   "learn.formatChecklist": "Format checklist",
   "learn.answerFormatHint":
-    "Follow the requested format in the task (for example, use bullet points when asked).",
+    "Follow the requested format in the task. If markers are required, fill them with meaning: who acts, in what context, under what limits, and what output proves the task is done.",
   "learn.promptEnglishHint": "For best quality, writing prompts in English is usually more effective.",
   "learn.reflectionHint":
-    "Briefly note what worked, what you missed, and what you will change in your next prompt.",
+    "Keep reflection specific: name one miss, show how it hurt the result, and state the next change you will actually make.",
   "learn.readyPrompt": "Ready prompt example",
-  "learn.readyPromptHint": "Open the template, adapt it to your task, then paste your version into the answer box.",
+  "learn.readyPromptHint":
+    "Do not copy the template as-is. Use it as a scaffold, swap in your real situation, and make the answer ready for an actual run.",
   "learn.templateGuided":
     "[ROLE] ...\n[CONTEXT] ...\n[TASK] ...\n[CONSTRAINTS] ...\n[OUTPUT] ...\n[CHECK] ...",
   "learn.templateApplied":

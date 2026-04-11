@@ -132,7 +132,7 @@ export const ttCatalog = {
   "learn.theoryShort": "Теория",
   "learn.practiceAction": "Гамәл",
   "learn.practiceFocusHint":
-    "Түбәндәге биремне үтәгез: адым таләпләренә туры килгән конкрет җавап бирегез, теорияне кабатламагыз.",
+    "Түбәндәге биремне чын эш кебек үтәгез: маркерлар гына җитми, һәр блокта кулланып була торган конкретика булырга тиеш.",
   "learn.backToTheory": "Теориягә кайту",
   "learn.precheck": "Җибәрү алдыннан тикшерү",
   "learn.precheckWords": "Сүзләр: {current}/{min}",
@@ -140,6 +140,11 @@ export const ttCatalog = {
   "learn.precheckMarkersMissing": "Җитмәгән маркерлар: {markers}",
   "learn.precheckForbiddenOk": "Тыелган фразалар табылмады.",
   "learn.precheckForbiddenHit": "Тыелган фразалар табылды: {markers}",
+  "learn.precheckSpecificityOk": "Җавапны бәяләү өчен конкретика җитә кебек.",
+  "learn.precheckSpecificityWeak":
+    "Каралама әле артык формаль яки шау кебек күренә. Гомуми өзекләрне конкрет гамәл, контекст, чикләү һәм нәтиҗә белән алыштырыгыз.",
+  "learn.precheckSpecificityWeakMarkers":
+    "Бу блокларда эшкә яраклы конкретика әле җитми: {markers}",
   "learn.feedbackScoreLabel": "Бәя {score}/100 (чиге {target})",
   "learn.feedbackScoreOnly": "Бәя {score}/100",
   "learn.feedbackStrengths": "Нәрсә яхшы булды",
@@ -150,13 +155,14 @@ export const ttCatalog = {
   "learn.remainingLessonsHint": "Курста калган дәресләр: {count}.",
   "learn.formatChecklist": "Формат чек-листы",
   "learn.answerFormatHint":
-    "Биремдә соралган форматны саклагыз (мәсәлән, күрсәтелсә маркерлар кулланыгыз).",
+    "Биремдә соралган форматны саклагыз. Әгәр маркерлар кирәк булса, аларны мәгънә белән тутырыгыз: кем эшли, нинди контекстта, нинди чик белән һәм нәтиҗә нинди булырга тиеш.",
   "learn.promptEnglishHint":
     "Иң яхшы нәтиҗә өчен промптларны еш кына инглиз телендә язу отышлырак.",
   "learn.reflectionHint":
-    "Кыскача языгыз: нәрсә эшләде, нәрсә җитмәде һәм киләсе промптта нәрсәне үзгәртәчәксез.",
+    "Гомуми фикер түгел, ә төгәл күзәтү языгыз: нәрсә җитмәде, бу җавапка ничек тәэсир итте һәм киләсе промптта нинди үзгәреш кертәчәксез.",
   "learn.readyPrompt": "Әзер промпт үрнәге",
-  "learn.readyPromptHint": "Шаблонны ачыгыз, үз бурычыгызга яраклаштырыгыз һәм җавап кырына үз вариантыгызны куегыз.",
+  "learn.readyPromptHint":
+    "Шаблонны сүзгә-сүз күчермәгез. Аны каркас итеп алыгыз, үз хәлегезне куегыз һәм җавапны чын эшләтеп була торган хәлгә китерегез.",
   "learn.templateGuided":
     "[ROLE] ...\n[CONTEXT] ...\n[TASK] ...\n[CONSTRAINTS] ...\n[OUTPUT] ...\n[CHECK] ...",
   "learn.templateApplied":

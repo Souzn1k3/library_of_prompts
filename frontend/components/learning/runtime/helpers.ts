@@ -59,6 +59,8 @@ export type TextDraftDiagnostics = {
   missingMarkers: string[];
   bonusHits: string[];
   forbiddenHits: string[];
+  lowSignalMarkers: string[];
+  looksLowSignal: boolean;
 };
 
 function countWords(value: string): number {
@@ -66,6 +68,45 @@ function countWords(value: string): number {
     .trim()
     .split(/\s+/)
     .filter(Boolean).length;
+}
+
+function tokenize(value: string): string[] {
+  return value.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
+}
+
+function alphaCharCount(value: string): number {
+  return [...value].filter((char) => /\p{L}/u.test(char)).length;
+}
+
+function tokenSignalStats(value: string): {
+  alphaRatio: number;
+  longAlphaRatio: number;
+  digitRatio: number;
+} {
+  const tokens = tokenize(value);
+  if (tokens.length === 0) {
+    return {
+      alphaRatio: 0,
+      longAlphaRatio: 0,
+      digitRatio: 0,
+    };
+  }
+
+  const alphaTokens = tokens.filter((token) => [...token].some((char) => /\p{L}/u.test(char)));
+  const longAlphaTokens = alphaTokens.filter((token) => alphaCharCount(token) >= 3);
+  const digitTokens = tokens.filter((token) => /^\d+$/u.test(token));
+
+  return {
+    alphaRatio: alphaTokens.length / tokens.length,
+    longAlphaRatio: longAlphaTokens.length / tokens.length,
+    digitRatio: digitTokens.length / tokens.length,
+  };
+}
+
+function extractMarkerPayload(text: string, marker: string): string {
+  const escapedMarker = marker.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = new RegExp(`${escapedMarker}\\s*[:\\-]?\\s*(.*?)(?=\\s*\\[[A-Z_]+\\]|$)`, "is").exec(text);
+  return match?.[1]?.trim() ?? "";
 }
 
 export function evaluateTextDraft(step: LearningLessonStep, value: string): TextDraftDiagnostics {
@@ -83,6 +124,21 @@ export function evaluateTextDraft(step: LearningLessonStep, value: string): Text
   const forbiddenHits = forbiddenPhrases.filter(
     (phrase) => phrase.trim().length > 0 && normalized.includes(phrase.toLowerCase()),
   );
+  const lowSignalMarkers = requiredMarkers.filter((marker) => {
+    if (marker.trim().length === 0 || !normalized.includes(marker.toLowerCase())) {
+      return false;
+    }
+    const payload = extractMarkerPayload(value, marker);
+    if (countWords(payload) < 3) {
+      return false;
+    }
+    const stats = tokenSignalStats(payload);
+    return stats.alphaRatio < 0.55 || stats.longAlphaRatio < 0.35 || stats.digitRatio > 0.35;
+  });
+  const overallStats = tokenSignalStats(value);
+  const looksLowSignal =
+    countWords(value) >= Math.max(minWords, 10) &&
+    (overallStats.alphaRatio < 0.72 || overallStats.longAlphaRatio < 0.45 || overallStats.digitRatio > 0.2);
 
   return {
     wordCount: countWords(value),
@@ -90,6 +146,8 @@ export function evaluateTextDraft(step: LearningLessonStep, value: string): Text
     missingMarkers,
     bonusHits,
     forbiddenHits,
+    lowSignalMarkers,
+    looksLowSignal,
   };
 }
 

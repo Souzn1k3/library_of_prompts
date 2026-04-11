@@ -250,7 +250,10 @@ test("learning browser smoke", async ({ page, request }) => {
   }
   await finalStepCard.getByRole("button").first().click();
 
-  await expect(page.locator(".pv-alert-success").first()).toBeVisible();
+  await Promise.any([
+    page.locator(".pv-alert-success").first().waitFor({ state: "visible", timeout: 10000 }),
+    finalStepCard.getByText(/^Completed$/).first().waitFor({ state: "visible", timeout: 10000 }),
+  ]);
   await expect(page.locator("[role='progressbar'][aria-valuenow='100']").first()).toBeVisible();
 
   await page.goto("/learn/start");

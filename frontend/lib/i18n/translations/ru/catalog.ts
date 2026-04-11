@@ -142,7 +142,7 @@ export const ruCatalog = {
   "learn.theoryShort": "Теория",
   "learn.practiceAction": "Действие",
   "learn.practiceFocusHint":
-    "Выполните задание ниже: дайте конкретный ответ по требованиям шага, без пересказа теории.",
+    "Выполните задание ниже так, будто этот ответ реально пойдет в работу: одних маркеров мало, в каждом блоке должна быть понятная конкретика.",
   "learn.backToTheory": "Назад к теории",
   "learn.precheck": "Проверка перед отправкой",
   "learn.precheckWords": "Слова: {current}/{min}",
@@ -150,6 +150,11 @@ export const ruCatalog = {
   "learn.precheckMarkersMissing": "Не хватает маркеров: {markers}",
   "learn.precheckForbiddenOk": "Запрещённые фразы не обнаружены.",
   "learn.precheckForbiddenHit": "Найдены запрещённые фразы: {markers}",
+  "learn.precheckSpecificityOk": "Ответ выглядит достаточно конкретным для проверки.",
+  "learn.precheckSpecificityWeak":
+    "Текст пока выглядит слишком формальным или шумным. Замените общие слова и фрагменты на реальные действия, условия и формат результата.",
+  "learn.precheckSpecificityWeakMarkers":
+    "В этих блоках пока мало рабочей конкретики: {markers}",
   "learn.feedbackScoreLabel": "Оценка {score}/100 (порог {target})",
   "learn.feedbackScoreOnly": "Оценка {score}/100",
   "learn.feedbackStrengths": "Что получилось",
@@ -160,14 +165,14 @@ export const ruCatalog = {
   "learn.remainingLessonsHint": "До конца курса осталось уроков: {count}.",
   "learn.formatChecklist": "Чеклист формата",
   "learn.answerFormatHint":
-    "Соблюдайте формат из задания (например, используйте маркеры, если это указано).",
+    "Соблюдайте формат из задания. Если нужны маркеры, заполняйте их смыслом: кто действует, в каком контексте, с какими ограничениями и каким должен быть результат.",
   "learn.promptEnglishHint":
     "Для лучшего качества обычно эффективнее писать промпты на английском языке.",
   "learn.reflectionHint":
-    "Коротко зафиксируйте: что сработало, что упустили и что измените в следующем промпте.",
+    "Коротко зафиксируйте не общие мысли, а конкретный промах, его эффект на ответ и следующую правку, которую вы реально внесете.",
   "learn.readyPrompt": "Пример промпта",
   "learn.readyPromptHint":
-    "Откройте шаблон, адаптируйте под свою задачу и вставьте свой вариант в поле ответа.",
+    "Не копируйте шаблон дословно. Возьмите его как каркас, подставьте свою ситуацию и сделайте ответ пригодным для реального запуска.",
   "learn.templateGuided":
     "[ROLE] ...\n[CONTEXT] ...\n[TASK] ...\n[CONSTRAINTS] ...\n[OUTPUT] ...\n[CHECK] ...",
   "learn.templateApplied":

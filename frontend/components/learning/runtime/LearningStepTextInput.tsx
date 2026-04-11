@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
+import { suggestedTemplate } from "@/components/learning/runtime/helpers";
 import type { StepState } from "@/components/learning/runtime/types";
 
 type LearningStepTextInputProps = {
@@ -20,6 +21,7 @@ export function LearningStepTextInput({
 }: LearningStepTextInputProps) {
   const { t } = useI18n();
   const showPromptEnglishHint = step.kind !== "reflection";
+  const template = suggestedTemplate(step, t);
 
   return (
     <div className="mt-4 space-y-3">
@@ -35,10 +37,17 @@ export function LearningStepTextInput({
           <p className="mt-1">{t("learn.reflectionHint")}</p>
         </div>
       ) : null}
+      {template ? (
+        <div className="rounded-[1rem] border border-[var(--pv-border)] bg-zinc-50/90 px-3 py-3 text-xs text-zinc-700">
+          <p className="pv-hint-badge">{t("learn.readyPrompt")}</p>
+          <p className="mt-1 text-zinc-600">{t("learn.readyPromptHint")}</p>
+          <pre className="mt-3 whitespace-pre-wrap font-mono text-[12px] leading-6 text-zinc-800">{template}</pre>
+        </div>
+      ) : null}
       <textarea
         value={textAnswer}
         onChange={(event) => onTextChange(event.target.value)}
-        placeholder=""
+        placeholder={template ?? ""}
         disabled={!canSubmit || isSubmitting}
         className="min-h-[180px] w-full resize-none rounded-[1rem] border border-[var(--pv-border)] bg-white/90 px-3 py-3 text-sm text-zinc-900 outline-none transition focus:border-zinc-400"
       />

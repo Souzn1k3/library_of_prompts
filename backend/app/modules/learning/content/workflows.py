@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.modules.learning.content.common import tr
+from app.modules.learning.content.common import strengthen_practice_steps, tr
 
 _BASE_TEXT_VALIDATOR = {
     "type": "text",
@@ -880,3 +880,27 @@ WORKFLOWS_COURSE = {
         },
     ],
 }
+
+strengthen_practice_steps(
+    WORKFLOWS_COURSE,
+    guided_suffix=tr(
+        "Treat it like a handoff, not a school exercise: another person should be able to take your workflow, act on it, and recognize success without chasing you for missing context.",
+        "Относитесь к этому как к handoff, а не как к школьному упражнению: другой человек должен взять ваш workflow, пойти по нему и увидеть, что считается хорошим результатом, без расспросов о контексте.",
+        "Моны мәктәп күнегүе түгел, ә handoff дип кабул итегез: башка кеше сезнең workflowны алып, аның буенча эшләп һәм уңыш нәрсә икәнен өстәмә контекст сорамыйча күрә алырга тиеш.",
+    ),
+    applied_suffix=tr(
+        "Design it for a live task with owners, trade-offs, and next actions. The result should feel useful in a real week of work or study, not only strong enough to pass the lesson.",
+        "Проектируйте это под живую задачу с владельцами, компромиссами и следующими действиями. Результат должен ощущаться полезным в реальной неделе учебы или работы, а не только достаточным для прохождения шага.",
+        "Моны owner, компромисслар һәм киләсе адымнары булган тере бурыч өчен проектлагыз. Нәтиҗә чын уку яки эш атнасында файдалы булып тоелсын, дәрестән үтү өчен генә җитәрлек булмасын.",
+    ),
+    reflection_suffix=tr(
+        "Reflect on where the workflow breaks in reality: name the weak decision, the cost of that weakness, and the rule you will carry into the next step.",
+        "Подумайте, где workflow ломается в реальности: назовите слабое решение, цену этой слабости и правило, которое унесете в следующий шаг.",
+        "Workflowның чын тормышта кайда өзелгәнен языгыз: зәгыйфь карарны, аның бәясен һәм киләсе адымга алып барачак кагыйдәне атагыз.",
+    ),
+    reflection_template=tr(
+        "The workflow broke at [...], which cost [...]. In the next attempt I will enforce [...].",
+        "Workflow дал сбой на [...], из-за этого мы потеряли [...]. В следующей попытке я введу правило [...].",
+        "Workflow [...] урынында өзелде, шуңа без [...] югалттык. Киләсе омтылышта мин [...] кагыйдәсен кертәм.",
+    ),
+)

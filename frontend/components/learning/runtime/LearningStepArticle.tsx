@@ -229,6 +229,18 @@ export function LearningStepArticle({
                   })}
                 />
               ) : null}
+              <ChecklistRow
+                ok={!textDiagnostics.looksLowSignal && textDiagnostics.lowSignalMarkers.length === 0}
+                label={
+                  textDiagnostics.lowSignalMarkers.length > 0
+                    ? t("learn.precheckSpecificityWeakMarkers", {
+                        markers: textDiagnostics.lowSignalMarkers.join(", "),
+                      })
+                    : textDiagnostics.looksLowSignal
+                      ? t("learn.precheckSpecificityWeak")
+                      : t("learn.precheckSpecificityOk")
+                }
+              />
             </ul>
           </section>
         ) : null}

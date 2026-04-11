@@ -10,6 +10,7 @@ from app.modules.learning.model.learning import LearningStepFeedbackRead
 from app.modules.learning.service.step_eval_helpers import (
     extract_marker_payload,
     normalize_text,
+    token_signal_stats,
     tokenize,
     word_count,
 )
@@ -37,9 +38,21 @@ class LearningStepTextEvaluationMixin:
         bonus_hits = [marker for marker in bonus_markers if marker.lower() in normalized]
         forbidden_hits = [marker for marker in forbidden if marker.lower() in normalized]
         marker_payload_words: dict[str, int] = {}
+        low_signal_markers: list[str] = []
         for marker in required_markers:
             payload = extract_marker_payload(text, marker)
             marker_payload_words[marker] = word_count(payload)
+            payload_stats = token_signal_stats(payload)
+            if (
+                marker not in missing_markers
+                and marker_payload_words[marker] >= 3
+                and (
+                    float(payload_stats["alpha_ratio"]) < 0.55
+                    or float(payload_stats["long_alpha_ratio"]) < 0.35
+                    or float(payload_stats["digit_ratio"]) > 0.35
+                )
+            ):
+                low_signal_markers.append(marker)
         empty_markers = [
             marker
             for marker, count in marker_payload_words.items()
@@ -50,6 +63,15 @@ class LearningStepTextEvaluationMixin:
         unique_ratio = (len(set(tokens)) / len(tokens)) if tokens else 0.0
         token_counter = Counter(tokens)
         most_common_share = token_counter.most_common(1)[0][1] / len(tokens) if tokens else 0.0
+        signal_stats = token_signal_stats(text)
+        overall_low_signal = (
+            wc >= max(min_words, 10)
+            and (
+                float(signal_stats["alpha_ratio"]) < 0.72
+                or float(signal_stats["long_alpha_ratio"]) < 0.45
+                or float(signal_stats["digit_ratio"]) > 0.2
+            )
+        )
         cue_hits = sum(
             1
             for cue in [
@@ -109,6 +131,10 @@ class LearningStepTextEvaluationMixin:
         penalty = min(25, len(forbidden_hits) * 10)
         if empty_markers:
             penalty += min(18, len(empty_markers) * 6)
+        if low_signal_markers:
+            penalty += min(24, len(low_signal_markers) * 8)
+        if overall_low_signal:
+            penalty += 18
         if most_common_share > 0.2:
             penalty += 8
         if wc > 0 and wc < (min_words + 6) and len(required_markers) >= 4 and len(empty_markers) >= 2:
@@ -127,9 +153,11 @@ class LearningStepTextEvaluationMixin:
             score >= pass_score
             and not missing_markers
             and not empty_markers
+            and not low_signal_markers
             and wc >= min_words
             and not forbidden_hits
             and not copied_template
+            and not overall_low_signal
         )
 
         strengths: list[str] = []
@@ -181,6 +209,25 @@ class LearningStepTextEvaluationMixin:
                     "tt": "Кайбер маркерлар бар, ләкин конкрет мәгълүмат юк: ",
                 }[language]
                 + ", ".join(empty_markers)
+            )
+
+        if low_signal_markers:
+            improvements.append(
+                {
+                    "en": "Some markers contain mostly noise instead of usable detail: ",
+                    "ru": "Некоторые маркеры заполнены шумом, а не рабочей конкретикой: ",
+                    "tt": "Кайбер маркерларда эшкә яраклы конкретика урынына шау күбрәк: ",
+                }[language]
+                + ", ".join(low_signal_markers)
+            )
+
+        if overall_low_signal:
+            improvements.append(
+                {
+                    "en": "The answer has enough length, but not enough meaningful language. Replace fragments, digits, and filler with concrete actions, context, and output expectations.",
+                    "ru": "По длине ответ проходит, но по смысловой плотности еще слабый. Замените фрагменты, цифры и шум на конкретные действия, контекст и ожидаемый результат.",
+                    "tt": "Озынлык җитә, ләкин мәгънә тыгызлыгы әле зәгыйфь. Кисәкләрне, саннарны һәм шауны конкрет гамәл, контекст һәм көтелгән нәтиҗә белән алыштырыгыз.",
+                }[language]
             )
 
         if bonus_hits:
@@ -244,9 +291,9 @@ class LearningStepTextEvaluationMixin:
             revisit=revisit,
             hint=(
                 {
-                    "en": "Keep one idea per marker and avoid vague wording.",
-                    "ru": "Заполняйте каждый маркер конкретным действием, ограничением и форматом результата.",
-                    "tt": "Һәр маркерда бер ачык фикер калдырыгыз һәм томан сүзләрдән сакланыгыз.",
+                    "en": "Keep one concrete idea per marker: who acts, in what situation, with what limit, and what output proves the task is done.",
+                    "ru": "В каждом маркере оставляйте одну рабочую мысль: кто действует, в какой ситуации, с каким ограничением и по какому результату видно, что задача выполнена.",
+                    "tt": "Һәр маркерда бер эшлекле фикер калдырыгыз: кем эшли, нинди хәлдә, нинди чик белән һәм кайсы нәтиҗә буенча бурычның үтәлгәне күренә.",
                 }[language]
             ),
         )

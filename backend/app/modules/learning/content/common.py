@@ -85,6 +85,62 @@ def tr(en: str, ru: str, tt: str) -> LocalizedText:
     return {"en": en, "ru": ru, "tt": tt}
 
 
+def merge_localized_text(*values: Mapping[str, str]) -> LocalizedText:
+    merged: LocalizedText = {language: "" for language in SUPPORTED_LEARNING_LANGUAGES}
+    for language in SUPPORTED_LEARNING_LANGUAGES:
+        parts: list[str] = []
+        for value in values:
+            candidate = str(value.get(language) or value.get("en") or "").strip()
+            if candidate:
+                parts.append(candidate)
+        merged[language] = " ".join(parts).strip()
+    return merged
+
+
+def build_marker_template(markers: Iterable[str]) -> LocalizedText:
+    scaffold = "\n".join(f"{marker.strip()} ..." for marker in markers if str(marker).strip())
+    return {"en": scaffold, "ru": scaffold, "tt": scaffold}
+
+
+def strengthen_practice_steps(
+    course: dict[str, Any],
+    *,
+    guided_suffix: LocalizedText,
+    applied_suffix: LocalizedText,
+    reflection_suffix: LocalizedText,
+    reflection_template: LocalizedText,
+) -> None:
+    suffix_by_kind = {
+        "guided_practice": guided_suffix,
+        "applied_exercise": applied_suffix,
+        "reflection": reflection_suffix,
+    }
+
+    for module in course.get("modules", []):
+        for lesson in module.get("lessons", []):
+            for step in lesson.get("steps", []):
+                kind = str(step.get("kind") or "")
+                suffix = suffix_by_kind.get(kind)
+                task = step.get("task")
+                if suffix and isinstance(task, Mapping):
+                    step["task"] = merge_localized_text(task, suffix)
+
+                submission = step.get("submission")
+                required_markers = []
+                if isinstance(submission, Mapping):
+                    required_markers = [
+                        str(marker).strip()
+                        for marker in submission.get("required_markers", [])
+                        if str(marker).strip()
+                    ]
+
+                if kind in {"guided_practice", "applied_exercise"} and not step.get("placeholder") and required_markers:
+                    step["placeholder"] = build_marker_template(required_markers)
+
+                if kind == "reflection" and not step.get("placeholder"):
+                    step["placeholder"] = reflection_template
+
+
 def localize_learning_text(value: str, language: SupportedLearningLanguage) -> str:
     text = value
     for source, target in _LOCALIZED_TERM_REPLACEMENTS.get(language, ()):

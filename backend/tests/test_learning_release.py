@@ -18,6 +18,15 @@ UNIVERSAL_TEXT = """
 workflow success risk owner cadence metric threshold changed because Stage 1 Stage 2 Stage 3.
 """.strip()
 
+LOW_SIGNAL_TEXT = """
+[ROLE] 14a 344 3 7 2423 1
+[CONTEXT] 242 42a343 25554 7 555 22 4
+[TASK] 326346363a46346 54 54 54 5445 4 54 54
+[CONSTRAINTS] 2363 2572 a5757 427 88 11 22
+[OUTPUT] 74754 a754 64564 54 4545 44 54 54 5445 4 54 54 a4 4 4 54 545
+[CHECK] 63246 324623 4 63 246 2332 636 4a 64 4 4
+""".strip()
+
 
 def _auth_headers(token: str, language: str | None = None) -> dict[str, str]:
     headers: dict[str, str] = {"Authorization": f"Bearer {token}"}
@@ -256,6 +265,35 @@ async def test_learning_step_rejects_verbatim_template_copy(async_client, unique
     assert payload["passed"] is False
     assert payload["feedback"]["improvements"]
     assert payload["score"] < payload["feedback"]["pass_score"]
+
+
+@pytest.mark.asyncio
+async def test_learning_step_rejects_low_signal_marker_filler(async_client, unique_email: str):
+    token = await _register(async_client, unique_email)
+
+    lesson_response = await async_client.get(
+        f"/api/v1/learning/courses/{COURSE_FOUNDATIONS}/lessons/pe-foundations",
+        headers=_auth_headers(token),
+    )
+    assert lesson_response.status_code == 200
+    theory_step = lesson_response.json()["steps"][0]
+    theory_submit = await async_client.post(
+        f"/api/v1/learning/courses/{COURSE_FOUNDATIONS}/lessons/pe-foundations/steps/{theory_step['slug']}/submit",
+        headers=_auth_headers(token),
+        json={"answer": _answer_for_step(theory_step)},
+    )
+    assert theory_submit.status_code == 200
+
+    submit = await async_client.post(
+        f"/api/v1/learning/courses/{COURSE_FOUNDATIONS}/lessons/pe-foundations/steps/pe-foundations-guided/submit",
+        headers=_auth_headers(token),
+        json={"answer": {"text": LOW_SIGNAL_TEXT}},
+    )
+    assert submit.status_code == 200
+    payload = submit.json()
+
+    assert payload["passed"] is False
+    assert any("конкрет" in item.lower() or "смыслов" in item.lower() or "шум" in item.lower() for item in payload["feedback"]["improvements"])
 
 
 @pytest.mark.asyncio

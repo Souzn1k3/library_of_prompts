@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.modules.learning.content.common import tr
+from app.modules.learning.content.common import strengthen_practice_steps, tr
 
 _BASE_TEXT_VALIDATOR = {
     "type": "text",
@@ -1030,3 +1030,27 @@ PROMPT_BASICS_COURSE = {
         },
     ],
 }
+
+strengthen_practice_steps(
+    PROMPT_BASICS_COURSE,
+    guided_suffix=tr(
+        "Ground it in one believable situation, name who will use the result, and make every marker concrete enough that another learner could run it without follow-up questions.",
+        "Опирайтесь на одну правдоподобную ситуацию, назовите, кто будет использовать результат, и заполните каждый маркер так конкретно, чтобы другой ученик смог запустить это без уточняющих вопросов.",
+        "Бер ышанычлы хәлгә таяныгыз, нәтиҗәне кем кулланачагын әйтегез һәм һәр маркерны шулкадәр төгәл тутырыгыз ки, башка укучы аны өстәмә сораусыз ук эшләтә алсын.",
+    ),
+    applied_suffix=tr(
+        "Build something worth keeping after the lesson: the result should feel ready to run today, refine tomorrow, and reuse later instead of starting from zero again.",
+        "Собирайте не учебную формальность, а заготовку, которую захочется оставить после урока: ее должно быть реально запустить сегодня, доработать завтра и потом переиспользовать, а не писать с нуля.",
+        "Дәрестән соң саклап калырлык әйбер төзегез: нәтиҗәне бүген үк эшләтеп була торган, иртәгә яхшыртып һәм соңрак яңадан куллана торган булсын, яңадан нульдән башлыйсы килмәсен.",
+    ),
+    reflection_suffix=tr(
+        "Skip generic self-talk. Point to one exact miss, show how it weakened the answer, and name the next concrete change you will make.",
+        "Избегайте общих слов о себе. Укажите один точный промах, покажите, как он ослабил ответ, и назовите следующую конкретную правку.",
+        "Гомуми сүзләр белән чикләнмәгез. Бер төгәл хатага күрсәтегез, аның җавапны ничек какшатканын аңлатыгыз һәм киләсе конкрет төзәтмәне атагыз.",
+    ),
+    reflection_template=tr(
+        "I missed [...], so the answer became [...]. In the next prompt I will add/change [...].",
+        "Я упустил [...], из-за этого ответ стал [...]. В следующем промпте я добавлю/изменю [...].",
+        "Мин [...] өлешен төшереп калдырдым, шуңа җавап [...] булып чыкты. Киләсе промптта мин [...] өстим/үзгәртәм.",
+    ),
+)

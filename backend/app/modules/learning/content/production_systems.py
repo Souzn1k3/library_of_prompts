@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.modules.learning.content.common import tr
+from app.modules.learning.content.common import strengthen_practice_steps, tr
 
 _BASE_TEXT_VALIDATOR = {
     "type": "text",
@@ -710,3 +710,27 @@ PRODUCTION_SYSTEMS_COURSE = {
         },
     ],
 }
+
+strengthen_practice_steps(
+    PRODUCTION_SYSTEMS_COURSE,
+    guided_suffix=tr(
+        "Think like a system designer. Each marker should reduce ambiguity, separate responsibility, and help another teammate review or run the system without reading your mind.",
+        "Думайте как системный дизайнер. Каждый маркер должен уменьшать двусмысленность, разделять ответственность и помогать другому участнику команды ревьюить или запускать систему без чтения ваших мыслей.",
+        "Система дизайнеры кебек уйлагыз. Һәр маркер билгесезлекне киметергә, җаваплылыкны аерырга һәм башка команда әгъзасына системаны сезнең уйны укымыйча ревьюларга яки эшләтергә ярдәм итәргә тиеш.",
+    ),
+    applied_suffix=tr(
+        "Make it ship-ready. The spec or harness should survive handoff, monitoring, and failure handling so it feels like an operating asset rather than a clever prompt.",
+        "Сделайте это годным к внедрению. Спецификация или harness должны выдерживать handoff, мониторинг и работу со сбоями, чтобы это ощущалось как рабочий актив, а не как просто остроумный промпт.",
+        "Моны кертүгә әзер итегез. Спецификация яки harness handoffны, мониторингны һәм сбойлар белән эшне күтәрә алсын, нәтиҗә тапкыр промпт түгел, ә эшли торган актив кебек тоелсын.",
+    ),
+    reflection_suffix=tr(
+        "Be specific about operational risk: identify one hidden assumption, explain how it could fail in the real world, and state the interface or rule that should replace it.",
+        "Говорите об операционном риске конкретно: найдите одно скрытое допущение, объясните, как оно может сломаться в реальности, и назовите интерфейс или правило, которое должно его заменить.",
+        "Операцион риск турында төгәл языгыз: бер яшерен фаразны табыгыз, аның чын тормышта ничек ватылырга мөмкинлеген аңлатыгыз һәм аны алыштырасы интерфейсны яки кагыйдәне атагыз.",
+    ),
+    reflection_template=tr(
+        "A hidden assumption in my workflow is [...]. It could fail when [...]. I should replace it with [...].",
+        "Скрытое допущение в моем workflow - [...]. Оно может сломаться, когда [...]. Его нужно заменить на [...].",
+        "Минем workflowдагы яшерен фараз - [...]. Ул [...] булганда ватылырга мөмкин. Аны [...] белән алыштырырга кирәк.",
+    ),
+)
