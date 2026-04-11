@@ -174,12 +174,12 @@ curl -fsS http://127.0.0.1:8000/health >/dev/null
 
 log "Waiting for WEB health..."
 for _ in {1..40}; do
-  if curl -fsSI http://127.0.0.1:3000 >/dev/null 2>&1; then
+  if curl -fsS http://127.0.0.1:3000/health >/dev/null 2>&1; then
     break
   fi
   sleep 2
 done
-curl -fsSI http://127.0.0.1:3000 >/dev/null
+curl -fsS http://127.0.0.1:3000/health >/dev/null
 
 if [[ "$ENABLE_FIREWALL" == "true" && -x "$(command -v ufw)" ]]; then
   log "Applying UFW rules..."
