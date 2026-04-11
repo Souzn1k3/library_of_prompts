@@ -46,18 +46,21 @@ export function TelegramAuthButton({
     variant === "primary"
       ? "pv-button-primary border border-[#199bd7] bg-[#199bd7] text-white hover:bg-[#1587bb]"
       : "pv-button-secondary border border-[#199bd7]/30 bg-[#199bd7]/8 text-[#0c6f99] hover:bg-[#199bd7]/12";
+  const buttonClassName = iconOnly
+    ? "inline-flex items-center justify-center p-0 text-white transition-transform duration-150 hover:scale-110 hover:opacity-90 focus-visible:outline-none"
+    : toneClassName;
 
   return (
     <a
       href={href}
       aria-label={ariaLabel ?? label ?? "Telegram"}
       title={ariaLabel ?? label ?? "Telegram"}
-      className={`${toneClassName} ${className ?? ""}`.trim()}
+      className={`${buttonClassName} ${className ?? ""}`.trim()}
     >
       <svg
         aria-hidden="true"
         viewBox="0 0 24 24"
-        className={iconOnly ? "h-10 w-10" : "h-5 w-5 shrink-0"}
+        className={iconOnly ? "h-16 w-16" : "h-5 w-5 shrink-0"}
         fill="currentColor"
       >
         <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0Zm5.895 7.58-1.97 9.291c-.148.66-.537.82-1.088.51l-3.012-2.218-1.453 1.399c-.162.16-.298.297-.61.297l.213-3.055 5.561-5.022c.242-.214-.052-.334-.373-.12l-6.873 4.327-2.96-.923c-.644-.203-.657-.644.135-.954l11.57-4.459c.538-.197 1.007.128.86.947Z" />
