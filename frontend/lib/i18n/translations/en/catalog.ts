@@ -57,7 +57,7 @@ export const enCatalog = {
   "learn.lessonLoadFailed": "We couldn't load this lesson.",
   "learn.metadataFallbackTitle": "Lesson",
   "learn.releaseSubtitle":
-    "Structured courses with short theory, immediate practice, and feedback you can apply right away.",
+    "Structured courses with full theory, immediate practice, and feedback you can apply right away.",
   "learn.releaseHintTitle": "Start from your current point",
   "learn.releaseHint":
     "Start from your current point, continue where you stopped, and complete real prompt tasks with validation.",
@@ -181,9 +181,9 @@ export const enCatalog = {
   "learn.courseCompleted": "Course completed. Badge awarded.",
   "learn.outcomeAndMethod": "Outcome and method",
   "learn.outcomeAndMethodBody":
-    "Every lesson follows the same learning loop: short theory, mandatory practice, scored check, actionable feedback, and reinforcement.",
+    "Every lesson follows the same learning loop: full theory with examples, mandatory practice, a scored check, actionable feedback, and reinforcement.",
   "learn.learningLoopTitle": "Learning loop",
-  "learn.learningLoopTheory": "Short theory with only the essential concept.",
+  "learn.learningLoopTheory": "Full theory with explanation and examples you can revisit before practice.",
   "learn.learningLoopPractice": "Mandatory action on a concrete task.",
   "learn.learningLoopCheck": "Non-formal check with pass threshold.",
   "learn.learningLoopFeedback": "Feedback that explains why and how to improve.",
