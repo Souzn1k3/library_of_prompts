@@ -163,7 +163,12 @@ async function answerChoiceStep(stepCard: Locator, step: LearningStep): Promise<
       const radio = stepCard.locator(
         `input[type='radio'][name='choice-${step.slug}-${question.id}'][value='${correctChoiceId(question.id)}']`,
       );
-      await radio.check();
+      await radio.scrollIntoViewIfNeeded();
+      await radio.check({ force: true });
+      if (!(await radio.isChecked())) {
+        await radio.locator("xpath=ancestor::label[1]").click();
+      }
+      await expect(radio).toBeChecked();
       if (index < step.quiz_questions.length - 1) {
         await expect(submitButton).toBeDisabled();
       }
@@ -175,9 +180,13 @@ async function answerChoiceStep(stepCard: Locator, step: LearningStep): Promise<
 
   const preferred = step.choices.find((item) => item.id === "b");
   const fallbackChoiceId = preferred?.id ?? step.choices[0]?.id ?? "";
-  await stepCard
-    .locator(`input[type='radio'][name='choice-${step.slug}-default'][value='${fallbackChoiceId}']`)
-    .check();
+  const radio = stepCard.locator(`input[type='radio'][name='choice-${step.slug}-default'][value='${fallbackChoiceId}']`);
+  await radio.scrollIntoViewIfNeeded();
+  await radio.check({ force: true });
+  if (!(await radio.isChecked())) {
+    await radio.locator("xpath=ancestor::label[1]").click();
+  }
+  await expect(radio).toBeChecked();
   await expect(submitButton).toBeEnabled();
 }
 

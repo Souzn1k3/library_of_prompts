@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping
 from typing import Any
 
 SupportedLearningLanguage = str
@@ -117,6 +117,35 @@ def build_choice_question(
     }
 
 
+_QUIZ_REASON_PREFIXES: dict[SupportedLearningLanguage, tuple[str, ...]] = {
+    "en": ("Correct:",),
+    "ru": ("Верно:",),
+    "tt": ("Дөрес:",),
+}
+
+
+def _localized_value(value: LocalizedText, language: SupportedLearningLanguage) -> str:
+    return str(value.get(language) or value.get("en") or "").strip()
+
+
+def _clean_reason(value: LocalizedText, language: SupportedLearningLanguage) -> str:
+    text = _localized_value(value, language)
+    for prefix in _QUIZ_REASON_PREFIXES.get(language, ()):
+        if text.startswith(prefix):
+            text = text[len(prefix):].strip()
+            break
+    text = text.rstrip(".!? ").strip()
+    if text:
+        text = text[0].lower() + text[1:]
+    return text
+
+
+def _map_localized_text(
+    callback: Callable[[SupportedLearningLanguage], str],
+) -> LocalizedText:
+    return {language: callback(language).strip() for language in SUPPORTED_LEARNING_LANGUAGES}
+
+
 def build_five_question_quiz(
     *,
     question: LocalizedText,
@@ -133,10 +162,125 @@ def build_five_question_quiz(
         {"id": "b", "text": b, "explanation": exp_b},
         {"id": "c", "text": c, "explanation": exp_c},
     ]
-    explanation_choices = [
-        {"id": "a", "text": exp_a},
-        {"id": "b", "text": exp_b},
-        {"id": "c", "text": exp_c},
+    why_best_choices = [
+        {
+            "id": "a",
+            "text": tr(
+                "Because a loose request lets the model invent the missing details on its own.",
+                "Потому что расплывчатый запрос якобы помогает модели самой додумать недостающие детали.",
+                "Чөнки томан сорау модельгә җитмәгән детальләрне үзе уйлап табарга ярдәм итә имеш.",
+            ),
+        },
+        {
+            "id": "b",
+            "text": _map_localized_text(
+                lambda language: (
+                    f"It wins because {_clean_reason(exp_b, language)}."
+                    if language == "en"
+                    else f"Он выигрывает, потому что {_clean_reason(exp_b, language)}."
+                    if language == "ru"
+                    else f"Ул җиңә, чөнки {_clean_reason(exp_b, language)}."
+                )
+            ),
+        },
+        {
+            "id": "c",
+            "text": tr(
+                "Because the best option is simply the one that sounds longer and more confident.",
+                "Потому что лучший вариант якобы всегда тот, который просто длиннее и звучит увереннее.",
+                "Чөнки иң яхшысы имеш һәрвакыт озынрак һәм ышанычлырак яңгыраганы.",
+            ),
+        },
+    ]
+    repair_a_choices = [
+        {
+            "id": "a",
+            "text": _map_localized_text(
+                lambda language: (
+                    f"Rewrite A around the working structure from the strong option: {_localized_value(b, language)}"
+                    if language == "en"
+                    else f"Пересобрать A вокруг рабочей опоры из сильного варианта: {_localized_value(b, language)}"
+                    if language == "ru"
+                    else f"A вариантын көчле варианттагы эш таянычы нигезендә яңадан җыярга: {_localized_value(b, language)}"
+                )
+            ),
+        },
+        {
+            "id": "b",
+            "text": tr(
+                "Keep A just as vague, but make it look more serious and longer.",
+                "Оставить A таким же расплывчатым, но сделать формулировку длиннее и солиднее.",
+                "A ны шул ук томан хәлдә калдырып, бары тик озынрак һәм җитдирәк яңгыратырга.",
+            ),
+        },
+        {
+            "id": "c",
+            "text": tr(
+                "Leave A as-is and hope the next message can fix everything later.",
+                "Оставить A как есть и надеяться, что все удастся исправить уже следующим сообщением.",
+                "A ны үзгәртмичә калдырып, барысын да киләсе хәбәрдә төзәтеп булыр дип өметләнергә.",
+            ),
+        },
+    ]
+    risk_c_choices = [
+        {
+            "id": "a",
+            "text": tr(
+                "There is almost no risk left: option C is already specific enough to run.",
+                "Серьезного риска почти нет: вариант C уже достаточно конкретный для работы.",
+                "Җитди риск калмаган диярлек: C варианты эшләтерлек дәрәҗәдә инде җитәрлек төгәл.",
+            ),
+        },
+        {
+            "id": "b",
+            "text": tr(
+                "The main issue is only that option C sounds less clever than the others.",
+                "Главная проблема якобы только в том, что вариант C звучит менее умно, чем остальные.",
+                "Төп проблема имеш бары тик C вариантының башкаларга караганда акыллырак яңгырамавында гына.",
+            ),
+        },
+        {
+            "id": "c",
+            "text": _map_localized_text(
+                lambda language: (
+                    f"Option C still stays weak because {_clean_reason(exp_c, language)}."
+                    if language == "en"
+                    else f"Вариант C все еще слабый, потому что {_clean_reason(exp_c, language)}."
+                    if language == "ru"
+                    else f"C варианты әле дә көчсез, чөнки {_clean_reason(exp_c, language)}."
+                )
+            ),
+        },
+    ]
+    transfer_choices = [
+        {
+            "id": "a",
+            "text": tr(
+                "Start from the broadest wording and add structure only after the first weak answer.",
+                "Начать с максимально общей формулировки и добавлять структуру только после первого слабого ответа.",
+                "Иң гомуми формулировкадан башлап, структураны бары тик беренче зәгыйфь җаваптан соң гына өстәргә.",
+            ),
+        },
+        {
+            "id": "b",
+            "text": _map_localized_text(
+                lambda language: (
+                    f"Carry the same principle into the next task: {_localized_value(b, language)}"
+                    if language == "en"
+                    else f"Перенести тот же принцип в следующую задачу: {_localized_value(b, language)}"
+                    if language == "ru"
+                    else f"Шул ук принципны киләсе бурычка күчерергә: {_localized_value(b, language)}"
+                )
+            ),
+        },
+        {
+            "id": "c",
+            "text": tr(
+                "Choose the answer that sounds smartest, even when success is hard to verify.",
+                "Выбирать ответ, который звучит умнее, даже если результат потом трудно проверить.",
+                "Нәтиҗәне тикшерү авыр булса да, иң акыллырак яңгыраган җавапны сайларга.",
+            ),
+        },
     ]
 
     questions = [
@@ -149,66 +293,41 @@ def build_five_question_quiz(
         build_choice_question(
             question_id="why_best",
             question=tr(
-                "Which explanation best captures why the strongest option wins?",
-                "Какое объяснение точнее всего показывает, почему сильный вариант выигрывает?",
-                "Көчле вариант ни өчен җиңүен кайсы аңлатма иң төгәл күрсәтә?",
+                "Why does the strong option beat the other two?",
+                "Почему сильный вариант реально выигрывает у двух остальных?",
+                "Ни өчен көчле вариант калган икесеннән чынлап та өстен чыга?",
             ),
-            choices=explanation_choices,
+            choices=why_best_choices,
             correct_choices=["b"],
         ),
         build_choice_question(
             question_id="trap_a",
             question=tr(
-                "What is the main weakness in option A?",
-                "В чем главная слабость варианта A?",
-                "A вариантының төп зәгыйфьлеге нәрсәдә?",
+                "What is the best first fix for option A?",
+                "Какая первая правка лучше всего лечит вариант A?",
+                "A варианты өчен иң дөрес беренче төзәтмә кайсы?",
             ),
-            choices=explanation_choices,
+            choices=repair_a_choices,
             correct_choices=["a"],
         ),
         build_choice_question(
             question_id="trap_c",
             question=tr(
-                "What is the main weakness in option C?",
-                "В чем главная слабость варианта C?",
-                "C вариантының төп зәгыйфьлеге нәрсәдә?",
+                "What risk stays alive in option C?",
+                "Какой риск все еще живет внутри варианта C?",
+                "C варианты эчендә нинди риск әле дә саклана?",
             ),
-            choices=explanation_choices,
+            choices=risk_c_choices,
             correct_choices=["c"],
         ),
         build_choice_question(
             question_id="transfer",
             question=tr(
-                "Which habit should you carry into your own next attempt?",
-                "Какую привычку стоит перенести в свой следующий подход?",
-                "Киләсе үз омтылышыгызга кайсы гадәтне алып барырга кирәк?",
+                "Which next move shows that you understood the lesson, not just guessed the answer?",
+                "Какой следующий ход показывает, что вы поняли урок, а не просто угадали ответ?",
+                "Кайсы киләсе адым сезнең дәресне аңлаганыгызны, ә җавапны гына чамаламауыгызны күрсәтә?",
             ),
-            choices=[
-                {
-                    "id": "a",
-                    "text": tr(
-                        "Trust the broadest wording and clarify later.",
-                        "Доверять самому широкому формулированию и разбираться потом.",
-                        "Иң киң формулировкага ышанып, ачыклауны соңракка калдырырга.",
-                    ),
-                },
-                {
-                    "id": "b",
-                    "text": tr(
-                        "Prefer the option with the clearest control over task, constraints, evidence, or evaluation.",
-                        "Выбирать вариант с самым ясным контролем над задачей, ограничениями, evidence или оценкой.",
-                        "Бурыч, чикләү, evidence яки бәяләү өстеннән иң ачык контроль биргән вариантны сайларга.",
-                    ),
-                },
-                {
-                    "id": "c",
-                    "text": tr(
-                        "Choose the answer that sounds smartest even if it is hard to verify.",
-                        "Выбирать ответ, который звучит умнее, даже если его трудно проверить.",
-                        "Тикшерүе кыен булса да, иң акыллырак яңгыраган җавапны сайларга.",
-                    ),
-                },
-            ],
+            choices=transfer_choices,
             correct_choices=["b"],
         ),
     ]

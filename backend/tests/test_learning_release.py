@@ -413,6 +413,27 @@ async def test_learning_quizzes_expose_five_questions_per_step(async_client):
 
 
 @pytest.mark.asyncio
+async def test_learning_quiz_follow_up_questions_use_distinct_prompts_and_choices(async_client):
+    for course in (PROMPT_BASICS_COURSE, WORKFLOWS_COURSE, PRODUCTION_SYSTEMS_COURSE):
+        for module in course["modules"]:
+            for lesson in module["lessons"]:
+                for step in lesson["steps"]:
+                    if step["kind"] != "quiz":
+                        continue
+
+                    questions = step["submission"]["questions"]
+                    for language in ("en", "ru", "tt"):
+                        question_texts = [str(question["question"][language]) for question in questions]
+                        assert len(set(question_texts)) == len(question_texts)
+
+                        follow_up_choice_sets = [
+                            tuple(str(choice["text"][language]) for choice in question["choices"])
+                            for question in questions[1:]
+                        ]
+                        assert len(set(follow_up_choice_sets)) == len(follow_up_choice_sets)
+
+
+@pytest.mark.asyncio
 async def test_learning_course_and_lesson_include_context_metadata(async_client):
     course_response = await async_client.get(
         f"/api/v1/learning/courses/{COURSE_FOUNDATIONS}",
