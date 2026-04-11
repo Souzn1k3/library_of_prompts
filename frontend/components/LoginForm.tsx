@@ -105,7 +105,7 @@ export function LoginForm() {
           mode="login"
           nextPath="/dashboard"
           iconOnly
-          className="text-white"
+          className=""
         />
       </div>
 

@@ -47,7 +47,7 @@ export function TelegramAuthButton({
       ? "pv-button-primary border border-[#199bd7] bg-[#199bd7] text-white hover:bg-[#1587bb]"
       : "pv-button-secondary border border-[#199bd7]/30 bg-[#199bd7]/8 text-[#0c6f99] hover:bg-[#199bd7]/12";
   const buttonClassName = iconOnly
-    ? "inline-flex items-center justify-center p-0 text-white transition-transform duration-150 hover:scale-110 hover:opacity-90 focus-visible:outline-none"
+    ? "inline-flex items-center justify-center p-0 text-[#229ED9] transition-transform duration-150 hover:scale-110 hover:text-[#1b8fc5] focus-visible:outline-none"
     : toneClassName;
 
   return (

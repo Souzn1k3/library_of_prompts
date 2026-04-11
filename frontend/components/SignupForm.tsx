@@ -122,7 +122,7 @@ export function SignupForm() {
           mode="login"
           nextPath="/dashboard"
           iconOnly
-          className="text-white"
+          className=""
         />
       </div>
 
