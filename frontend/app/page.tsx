@@ -14,8 +14,7 @@ import { DEFAULT_LANGUAGE } from "@/lib/i18n";
 import { absoluteUrl } from "@/lib/seo";
 import type { PromptListItem } from "@/lib/types";
 
-export const dynamic = "force-static";
-export const revalidate = 180;
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
   const language = DEFAULT_LANGUAGE;
