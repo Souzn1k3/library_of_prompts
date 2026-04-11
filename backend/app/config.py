@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     duplicate_db_detection_enabled: bool = True
     duplicate_db_probe_hosts: str = "host.docker.internal,gateway.docker.internal,localhost,127.0.0.1"
     duplicate_db_probe_ports: str = "5432,55432"
-    cors_origins: str = "http://localhost:3000,http://127.0.0.1:3000"
+    cors_origins: str = "https://prompts-vault.ru,https://www.prompts-vault.ru,http://194.247.183.244"
     cache_enabled: bool = True
     cache_default_ttl_seconds: int = 120
     redis_url: str | None = None
@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     telegram_reward_signing_secret: str | None = None
     telegram_reward_max_tokens: int = 100
     telegram_reward_max_age_hours: int = 48
-    site_url: str = "http://localhost:3000"
+    site_url: str = "https://prompts-vault.ru"
     scenario_free_demo_run_cap: int = 3
     scenario_guest_ip_daily_prompt_cap: int = 12
     scenario_guest_fingerprint_daily_prompt_cap: int = 8
@@ -83,9 +83,9 @@ class Settings(BaseSettings):
 
     # Billing
     billing_mock_mode: bool = False
-    billing_checkout_success_url: str = "http://localhost:3000/dashboard?billing=success"
-    billing_checkout_cancel_url: str = "http://localhost:3000/plans?billing=cancel"
-    billing_portal_return_url: str = "http://localhost:3000/dashboard"
+    billing_checkout_success_url: str = "https://prompts-vault.ru/dashboard?billing=success"
+    billing_checkout_cancel_url: str = "https://prompts-vault.ru/plans?billing=cancel"
+    billing_portal_return_url: str = "https://prompts-vault.ru/dashboard"
 
     stripe_secret_key: str | None = None
     stripe_webhook_secret: str | None = None
