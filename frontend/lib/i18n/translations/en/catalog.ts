@@ -133,6 +133,7 @@ export const enCatalog = {
   "learn.minWords": "Minimum words",
   "learn.answerType": "Answer type",
   "learn.singleChoice": "Single choice",
+  "learn.quizQuestions": "Questions",
   "learn.requiredMarkers": "Required markers",
   "learn.avoidPhrases": "Avoid phrases",
   "learn.successCriteria": "Success criteria",

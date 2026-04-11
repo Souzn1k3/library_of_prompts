@@ -12,6 +12,7 @@ import {
   buildSubmissionAnswer,
   extractErrorMessage,
   recomputeStepUnlocks,
+  type StepChoiceAnswers,
 } from "@/components/learning/runtime/helpers";
 import type { LearningTranslation, StepState } from "@/components/learning/runtime/types";
 
@@ -41,7 +42,7 @@ export function useLearningLessonRuntime({
   const [lessonProgressPercent, setLessonProgressPercent] = useState<number>(lesson.progress_percent);
   const [courseProgressPercent, setCourseProgressPercent] = useState<number>(lesson.course_progress_percent);
   const [textAnswers, setTextAnswers] = useState<Record<string, string>>(buildInitialTextAnswers(lesson.steps));
-  const [choiceAnswers, setChoiceAnswers] = useState<Record<string, string>>(buildInitialChoiceAnswers(lesson.steps));
+  const [choiceAnswers, setChoiceAnswers] = useState<StepChoiceAnswers>(buildInitialChoiceAnswers(lesson.steps));
   const [submittingStepSlug, setSubmittingStepSlug] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -91,8 +92,14 @@ export function useLearningLessonRuntime({
     setTextAnswers((prev) => ({ ...prev, [stepSlug]: value }));
   }, []);
 
-  const setChoiceAnswer = useCallback((stepSlug: string, choiceId: string) => {
-    setChoiceAnswers((prev) => ({ ...prev, [stepSlug]: choiceId }));
+  const setChoiceAnswer = useCallback((stepSlug: string, questionId: string, choiceId: string) => {
+    setChoiceAnswers((prev) => ({
+      ...prev,
+      [stepSlug]: {
+        ...(prev[stepSlug] ?? {}),
+        [questionId]: choiceId,
+      },
+    }));
   }, []);
 
   const handleSubmit = useCallback(

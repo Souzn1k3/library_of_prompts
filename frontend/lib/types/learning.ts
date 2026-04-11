@@ -158,6 +158,12 @@ export type LearningStepChoice = {
   explanation?: string | null;
 };
 
+export type LearningQuizQuestion = {
+  id: string;
+  question: string;
+  choices: LearningStepChoice[];
+};
+
 export type LearningStepFeedback = {
   verdict: string;
   score: number;
@@ -178,6 +184,7 @@ export type LearningLessonStep = {
   placeholder?: string | null;
   question?: string | null;
   choices: LearningStepChoice[];
+  quiz_questions: LearningQuizQuestion[];
   pass_score: number;
   min_words?: number | null;
   required_markers: string[];
@@ -190,6 +197,7 @@ export type LearningLessonStep = {
   last_score?: number | null;
   last_answer_text?: string | null;
   last_choice_id?: string | null;
+  last_choice_map: Record<string, string>;
   feedback?: LearningStepFeedback | null;
 };
 

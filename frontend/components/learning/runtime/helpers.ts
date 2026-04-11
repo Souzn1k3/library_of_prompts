@@ -1,8 +1,30 @@
 "use client";
 
-import type { LearningLessonStep } from "@/lib/types";
+import type { LearningLessonStep, LearningQuizQuestion } from "@/lib/types";
 
 import type { LearningTranslation, StepState } from "@/components/learning/runtime/types";
+
+export type StepChoiceAnswers = Record<string, Record<string, string>>;
+
+const DEFAULT_QUIZ_QUESTION_ID = "default";
+
+export function getQuizQuestions(
+  step: Pick<LearningLessonStep, "question" | "choices" | "quiz_questions">,
+): LearningQuizQuestion[] {
+  if (Array.isArray(step.quiz_questions) && step.quiz_questions.length > 0) {
+    return step.quiz_questions;
+  }
+  if (step.question && Array.isArray(step.choices) && step.choices.length > 0) {
+    return [
+      {
+        id: DEFAULT_QUIZ_QUESTION_ID,
+        question: step.question,
+        choices: step.choices,
+      },
+    ];
+  }
+  return [];
+}
 
 export function buildInitialTextAnswers(steps: LearningLessonStep[]): Record<string, string> {
   return Object.fromEntries(
@@ -10,10 +32,28 @@ export function buildInitialTextAnswers(steps: LearningLessonStep[]): Record<str
   );
 }
 
-export function buildInitialChoiceAnswers(steps: LearningLessonStep[]): Record<string, string> {
-  return Object.fromEntries(
-    steps.map((step) => [step.slug, step.last_choice_id && typeof step.last_choice_id === "string" ? step.last_choice_id : ""]),
-  );
+export function buildInitialChoiceAnswers(steps: LearningLessonStep[]): StepChoiceAnswers {
+  const initialAnswers: StepChoiceAnswers = {};
+
+  steps.forEach((step) => {
+    const stepAnswers: Record<string, string> = {};
+
+    if (step.last_choice_id && typeof step.last_choice_id === "string") {
+      stepAnswers[DEFAULT_QUIZ_QUESTION_ID] = step.last_choice_id;
+    }
+
+    if (step.last_choice_map && typeof step.last_choice_map === "object") {
+      Object.entries(step.last_choice_map).forEach(([questionId, choiceId]) => {
+        if (typeof choiceId === "string" && choiceId.trim().length > 0) {
+          stepAnswers[questionId] = choiceId;
+        }
+      });
+    }
+
+    initialAnswers[step.slug] = stepAnswers;
+  });
+
+  return initialAnswers;
 }
 
 export function extractErrorMessage(error: unknown, fallback: string): string {
@@ -41,11 +81,22 @@ export function suggestedTemplate(step: LearningLessonStep, t: LearningTranslati
 
 export function buildSubmissionAnswer(
   step: StepState,
-  choiceAnswers: Record<string, string>,
+  choiceAnswers: StepChoiceAnswers,
   textAnswers: Record<string, string>,
-): { choice_id: string } | { text: string } | null {
+): { choice_id: string } | { choice_ids: Record<string, string> } | { text: string } | null {
   if (step.submission_type === "choice") {
-    return { choice_id: choiceAnswers[step.slug] ?? "" };
+    const quizQuestions = getQuizQuestions(step);
+    const stepAnswers = choiceAnswers[step.slug] ?? {};
+    if (quizQuestions.length > 1) {
+      return {
+        choice_ids: Object.fromEntries(
+          quizQuestions.map((question) => [question.id, stepAnswers[question.id] ?? ""]),
+        ),
+      };
+    }
+    return {
+      choice_id: stepAnswers[quizQuestions[0]?.id ?? DEFAULT_QUIZ_QUESTION_ID] ?? "",
+    };
   }
   if (step.submission_type === "text") {
     return { text: textAnswers[step.slug] ?? "" };
@@ -159,6 +210,8 @@ export function recomputeStepUnlocks(steps: StepState[]): StepState[] {
       required_markers: step.required_markers ?? [],
       bonus_markers: step.bonus_markers ?? [],
       forbidden_phrases: step.forbidden_phrases ?? [],
+      quiz_questions: step.quiz_questions ?? [],
+      last_choice_map: step.last_choice_map ?? {},
     };
     const unlocked = canUnlockNextStep || normalizedStep.completed;
     if (!normalizedStep.completed) {

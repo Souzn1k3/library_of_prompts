@@ -134,6 +134,7 @@ export const ruCatalog = {
   "learn.minWords": "Минимум слов",
   "learn.answerType": "Тип ответа",
   "learn.singleChoice": "Один вариант",
+  "learn.quizQuestions": "Вопросов",
   "learn.requiredMarkers": "Обязательные маркеры",
   "learn.avoidPhrases": "Избегать фраз",
   "learn.successCriteria": "Критерии прохождения",

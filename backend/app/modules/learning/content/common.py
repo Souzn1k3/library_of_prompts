@@ -102,6 +102,127 @@ def build_marker_template(markers: Iterable[str]) -> LocalizedText:
     return {"en": scaffold, "ru": scaffold, "tt": scaffold}
 
 
+def build_choice_question(
+    *,
+    question_id: str,
+    question: LocalizedText,
+    choices: list[dict[str, Any]],
+    correct_choices: list[str],
+) -> dict[str, Any]:
+    return {
+        "id": question_id,
+        "question": question,
+        "choices": choices,
+        "correct_choices": correct_choices,
+    }
+
+
+def build_five_question_quiz(
+    *,
+    question: LocalizedText,
+    a: LocalizedText,
+    b: LocalizedText,
+    c: LocalizedText,
+    exp_a: LocalizedText,
+    exp_b: LocalizedText,
+    exp_c: LocalizedText,
+    pass_score: int = 80,
+) -> dict[str, Any]:
+    base_choices = [
+        {"id": "a", "text": a, "explanation": exp_a},
+        {"id": "b", "text": b, "explanation": exp_b},
+        {"id": "c", "text": c, "explanation": exp_c},
+    ]
+    explanation_choices = [
+        {"id": "a", "text": exp_a},
+        {"id": "b", "text": exp_b},
+        {"id": "c", "text": exp_c},
+    ]
+
+    questions = [
+        build_choice_question(
+            question_id="core",
+            question=question,
+            choices=base_choices,
+            correct_choices=["b"],
+        ),
+        build_choice_question(
+            question_id="why_best",
+            question=tr(
+                "Which explanation best captures why the strongest option wins?",
+                "Какое объяснение точнее всего показывает, почему сильный вариант выигрывает?",
+                "Көчле вариант ни өчен җиңүен кайсы аңлатма иң төгәл күрсәтә?",
+            ),
+            choices=explanation_choices,
+            correct_choices=["b"],
+        ),
+        build_choice_question(
+            question_id="trap_a",
+            question=tr(
+                "What is the main weakness in option A?",
+                "В чем главная слабость варианта A?",
+                "A вариантының төп зәгыйфьлеге нәрсәдә?",
+            ),
+            choices=explanation_choices,
+            correct_choices=["a"],
+        ),
+        build_choice_question(
+            question_id="trap_c",
+            question=tr(
+                "What is the main weakness in option C?",
+                "В чем главная слабость варианта C?",
+                "C вариантының төп зәгыйфьлеге нәрсәдә?",
+            ),
+            choices=explanation_choices,
+            correct_choices=["c"],
+        ),
+        build_choice_question(
+            question_id="transfer",
+            question=tr(
+                "Which habit should you carry into your own next attempt?",
+                "Какую привычку стоит перенести в свой следующий подход?",
+                "Киләсе үз омтылышыгызга кайсы гадәтне алып барырга кирәк?",
+            ),
+            choices=[
+                {
+                    "id": "a",
+                    "text": tr(
+                        "Trust the broadest wording and clarify later.",
+                        "Доверять самому широкому формулированию и разбираться потом.",
+                        "Иң киң формулировкага ышанып, ачыклауны соңракка калдырырга.",
+                    ),
+                },
+                {
+                    "id": "b",
+                    "text": tr(
+                        "Prefer the option with the clearest control over task, constraints, evidence, or evaluation.",
+                        "Выбирать вариант с самым ясным контролем над задачей, ограничениями, evidence или оценкой.",
+                        "Бурыч, чикләү, evidence яки бәяләү өстеннән иң ачык контроль биргән вариантны сайларга.",
+                    ),
+                },
+                {
+                    "id": "c",
+                    "text": tr(
+                        "Choose the answer that sounds smartest even if it is hard to verify.",
+                        "Выбирать ответ, который звучит умнее, даже если его трудно проверить.",
+                        "Тикшерүе кыен булса да, иң акыллырак яңгыраган җавапны сайларга.",
+                    ),
+                },
+            ],
+            correct_choices=["b"],
+        ),
+    ]
+
+    return {
+        "type": "choice",
+        "pass_score": pass_score,
+        "question": question,
+        "choices": base_choices,
+        "correct_choices": ["b"],
+        "questions": questions,
+    }
+
+
 def strengthen_practice_steps(
     course: dict[str, Any],
     *,

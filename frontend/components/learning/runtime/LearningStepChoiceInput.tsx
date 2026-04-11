@@ -1,48 +1,63 @@
 "use client";
 
+import { getQuizQuestions } from "@/components/learning/runtime/helpers";
 import type { StepState } from "@/components/learning/runtime/types";
 
 type LearningStepChoiceInputProps = {
   step: StepState;
-  selectedChoiceId: string;
+  selectedChoiceAnswers: Record<string, string>;
   canSubmit: boolean;
   isSubmitting: boolean;
-  onSelectChoice: (choiceId: string) => void;
+  onSelectChoice: (questionId: string, choiceId: string) => void;
 };
 
 export function LearningStepChoiceInput({
   step,
-  selectedChoiceId,
+  selectedChoiceAnswers,
   canSubmit,
   isSubmitting,
   onSelectChoice,
 }: LearningStepChoiceInputProps) {
+  const quizQuestions = getQuizQuestions(step);
+
   return (
-    <fieldset className="mt-4 grid gap-2">
-      {step.question ? <legend className="text-sm font-medium text-zinc-900">{step.question}</legend> : null}
-      {step.choices.map((choice) => (
-        <label
-          key={choice.id}
-          className={`flex cursor-pointer items-start gap-2 rounded-[0.9rem] border px-3 py-2 text-sm transition ${
-            selectedChoiceId === choice.id
-              ? "border-[var(--pv-brand)] bg-[var(--pv-brand-soft)] text-zinc-900"
-              : "border-[var(--pv-border)] bg-white/80 text-zinc-700"
-          }`}
-        >
-          <input
-            type="radio"
-            name={`choice-${step.slug}`}
-            className="mt-[0.2rem]"
-            checked={selectedChoiceId === choice.id}
-            onChange={() => onSelectChoice(choice.id)}
-            disabled={!canSubmit || isSubmitting}
-          />
-          <span>
-            <span>{choice.text}</span>
-            {choice.explanation ? <span className="mt-1 block text-xs text-zinc-500">{choice.explanation}</span> : null}
-          </span>
-        </label>
-      ))}
-    </fieldset>
+    <div className="mt-4 grid gap-4">
+      {quizQuestions.map((question, index) => {
+        const selectedChoiceId = selectedChoiceAnswers[question.id] ?? "";
+        return (
+          <fieldset key={`${step.slug}-${question.id}`} className="grid gap-2">
+            <legend className="text-sm font-medium text-zinc-900">
+              {quizQuestions.length > 1 ? `${index + 1}. ${question.question}` : question.question}
+            </legend>
+            {question.choices.map((choice) => (
+              <label
+                key={`${question.id}-${choice.id}`}
+                className={`flex cursor-pointer items-start gap-2 rounded-[0.9rem] border px-3 py-2 text-sm transition ${
+                  selectedChoiceId === choice.id
+                    ? "border-[var(--pv-brand)] bg-[var(--pv-brand-soft)] text-zinc-900"
+                    : "border-[var(--pv-border)] bg-white/80 text-zinc-700"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name={`choice-${step.slug}-${question.id}`}
+                  value={choice.id}
+                  className="mt-[0.2rem]"
+                  checked={selectedChoiceId === choice.id}
+                  onChange={() => onSelectChoice(question.id, choice.id)}
+                  disabled={!canSubmit || isSubmitting}
+                />
+                <span>
+                  <span>{choice.text}</span>
+                  {choice.explanation ? (
+                    <span className="mt-1 block text-xs text-zinc-500">{choice.explanation}</span>
+                  ) : null}
+                </span>
+              </label>
+            ))}
+          </fieldset>
+        );
+      })}
+    </div>
   );
 }

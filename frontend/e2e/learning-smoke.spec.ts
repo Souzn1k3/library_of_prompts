@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Locator, type Page } from "@playwright/test";
 
 const API_BASE = process.env.PLAYWRIGHT_API_BASE_URL ?? "http://127.0.0.1:8000";
 const COURSE_FOUNDATIONS = "prompt-engineering-foundations";
@@ -20,6 +20,7 @@ type LearningStep = {
   slug: string;
   submission_type: "none" | "text" | "choice";
   choices: Array<{ id: string }>;
+  quiz_questions?: Array<{ id: string; question: string; choices: Array<{ id: string }> }>;
   task?: string | null;
   title: string;
 };
@@ -97,10 +98,87 @@ function answerForStep(step: LearningStep): Record<string, unknown> | null {
     return null;
   }
   if (step.submission_type === "choice") {
+    if (step.quiz_questions && step.quiz_questions.length > 0) {
+      const choiceIds = Object.fromEntries(
+        step.quiz_questions.map((question) => {
+          if (question.id === "trap_a") {
+            return [question.id, "a"];
+          }
+          if (question.id === "trap_c") {
+            return [question.id, "c"];
+          }
+          return [question.id, "b"];
+        }),
+      );
+      return { choice_ids: choiceIds };
+    }
     const preferred = step.choices.find((item) => item.id === "b");
     return { choice_id: preferred?.id ?? step.choices[0]?.id ?? "" };
   }
   return { text: BASE_TEXT };
+}
+
+function correctChoiceId(questionId: string): string {
+  if (questionId === "trap_a") {
+    return "a";
+  }
+  if (questionId === "trap_c") {
+    return "c";
+  }
+  return "b";
+}
+
+function stepCardLocator(page: Page, stepTitle: string): Locator {
+  return page.locator("main article").filter({ has: page.getByRole("heading", { level: 3, name: stepTitle }) }).last();
+}
+
+async function fillTextStep(stepCard: Locator, value: string): Promise<void> {
+  const textarea = stepCard.locator("textarea");
+  await expect(textarea).toBeVisible();
+  await textarea.click();
+  await textarea.fill(value);
+
+  if ((await textarea.inputValue()) !== value) {
+    await textarea.evaluate((element, nextValue) => {
+      const textareaElement = element as HTMLTextAreaElement;
+      textareaElement.focus();
+      textareaElement.value = nextValue;
+      textareaElement.dispatchEvent(new Event("input", { bubbles: true }));
+      textareaElement.dispatchEvent(new Event("change", { bubbles: true }));
+    }, value);
+  }
+
+  await expect(textarea).toHaveValue(value);
+}
+
+async function answerChoiceStep(stepCard: Locator, step: LearningStep): Promise<void> {
+  const submitButton = stepCard.getByRole("button", { name: /Check step|Retry step/i }).first();
+
+  if (step.quiz_questions && step.quiz_questions.length > 1) {
+    await expect(stepCard.locator("fieldset")).toHaveCount(step.quiz_questions.length);
+    await expect(submitButton).toBeDisabled();
+
+    for (let index = 0; index < step.quiz_questions.length; index += 1) {
+      const question = step.quiz_questions[index];
+      const radio = stepCard.locator(
+        `input[type='radio'][name='choice-${step.slug}-${question.id}'][value='${correctChoiceId(question.id)}']`,
+      );
+      await radio.check();
+      if (index < step.quiz_questions.length - 1) {
+        await expect(submitButton).toBeDisabled();
+      }
+    }
+
+    await expect(submitButton).toBeEnabled();
+    return;
+  }
+
+  const preferred = step.choices.find((item) => item.id === "b");
+  const fallbackChoiceId = preferred?.id ?? step.choices[0]?.id ?? "";
+  await stepCard
+    .locator(`input[type='radio'][name='choice-${step.slug}-default'][value='${fallbackChoiceId}']`)
+    .check();
+  await expect(submitButton).toBeEnabled();
 }
 
 async function apiGet<T>(request: APIRequestContext, token: string, path: string): Promise<T> {
@@ -229,26 +307,49 @@ test("learning browser smoke", async ({ page, request }) => {
     token,
     `/api/v1/learning/courses/${COURSE_FOUNDATIONS}/lessons/${lessonSlug}`,
   );
+  const quizStep = lesson.steps.find((step) => step.submission_type === "choice");
+  expect(quizStep).toBeTruthy();
+  const quizStepIndex = lesson.steps.findIndex((step) => step.slug === quizStep?.slug);
+  expect(quizStepIndex).toBeGreaterThan(0);
+
+  for (const step of lesson.steps.slice(0, quizStepIndex)) {
+    await submitStep(request, token, COURSE_FOUNDATIONS, lessonSlug, step);
+  }
+
+  await page.goto(`/learn/course/${COURSE_FOUNDATIONS}/lesson/${lessonSlug}/step/${quizStep!.slug}`);
+  await page.waitForURL(new RegExp(`/learn/course/${COURSE_FOUNDATIONS}/lesson/${lessonSlug}/step/${quizStep!.slug}$`));
+
+  const quizStepCard = stepCardLocator(page, quizStep!.title);
+  await expect(quizStepCard).toBeVisible();
+  await expect(quizStepCard.getByText(/^Questions$/).first()).toBeVisible();
+  await expect(quizStepCard.getByText(String(quizStep!.quiz_questions?.length ?? 0)).first()).toBeVisible();
+  await answerChoiceStep(quizStepCard, quizStep!);
+  await quizStepCard.getByRole("button", { name: /Check step|Retry step/i }).first().click();
+  await Promise.any([
+    page.locator(".pv-alert-success").first().waitFor({ state: "visible", timeout: 10000 }),
+    quizStepCard.getByText(/^Completed$/).first().waitFor({ state: "visible", timeout: 10000 }),
+  ]);
+
   const finalStep = lesson.steps[lesson.steps.length - 1];
   expect(finalStep).toBeTruthy();
 
   if (lesson.steps.length > 1) {
-    for (const step of lesson.steps.slice(0, lesson.steps.length - 1)) {
+    for (const step of lesson.steps.slice(quizStepIndex + 1, lesson.steps.length - 1)) {
       await submitStep(request, token, COURSE_FOUNDATIONS, lessonSlug, step);
     }
   }
 
-  await page.reload();
+  await page.goto(`/learn/course/${COURSE_FOUNDATIONS}/lesson/${lessonSlug}/step/${finalStep.slug}`);
+  await page.waitForURL(new RegExp(`/learn/course/${COURSE_FOUNDATIONS}/lesson/${lessonSlug}/step/${finalStep.slug}$`));
 
-  const finalStepHeading = page.getByRole("heading", { name: finalStep.title });
-  await expect(finalStepHeading.first()).toBeVisible();
-  const finalStepCard = finalStepHeading.first().locator("xpath=ancestor::article[1]");
+  const finalStepCard = stepCardLocator(page, finalStep.title);
+  await expect(finalStepCard).toBeVisible();
   if (finalStep.submission_type === "text") {
-    await finalStepCard.locator("textarea").fill(BASE_TEXT);
+    await fillTextStep(finalStepCard, BASE_TEXT);
   } else if (finalStep.submission_type === "choice") {
-    await finalStepCard.locator("input[type='radio']").first().check();
+    await answerChoiceStep(finalStepCard, finalStep);
   }
-  await finalStepCard.getByRole("button").first().click();
+  await finalStepCard.getByRole("button", { name: /Check step|Retry step/i }).first().click();
 
   await Promise.any([
     page.locator(".pv-alert-success").first().waitFor({ state: "visible", timeout: 10000 }),

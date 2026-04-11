@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.modules.learning.content.common import strengthen_practice_steps, tr
+from app.modules.learning.content.common import build_five_question_quiz, strengthen_practice_steps, tr
 
 _BASE_TEXT_VALIDATOR = {
     "type": "text",
@@ -35,17 +35,15 @@ def _quiz(
     exp_b: dict[str, str],
     exp_c: dict[str, str],
 ) -> dict:
-    return {
-        "type": "choice",
-        "pass_score": 100,
-        "question": question,
-        "choices": [
-            {"id": "a", "text": a, "explanation": exp_a},
-            {"id": "b", "text": b, "explanation": exp_b},
-            {"id": "c", "text": c, "explanation": exp_c},
-        ],
-        "correct_choices": ["b"],
-    }
+    return build_five_question_quiz(
+        question=question,
+        a=a,
+        b=b,
+        c=c,
+        exp_a=exp_a,
+        exp_b=exp_b,
+        exp_c=exp_c,
+    )
 
 
 def _reflection_submission(min_words: int = 16) -> dict:

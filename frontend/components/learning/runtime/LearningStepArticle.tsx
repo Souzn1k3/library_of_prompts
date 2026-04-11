@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 import { useI18n } from "@/components/i18n/LanguageProvider";
-import { evaluateTextDraft } from "@/components/learning/runtime/helpers";
+import { evaluateTextDraft, getQuizQuestions } from "@/components/learning/runtime/helpers";
 import { LearningStepChoiceInput } from "@/components/learning/runtime/LearningStepChoiceInput";
 import { LearningStepFeedbackPanel } from "@/components/learning/runtime/LearningStepFeedbackPanel";
 import { LearningStepTextInput } from "@/components/learning/runtime/LearningStepTextInput";
@@ -20,10 +20,10 @@ type LearningStepArticleProps = {
   isFullscreen: boolean;
   canSubmit: boolean;
   isSubmitting: boolean;
-  selectedChoiceId: string;
+  selectedChoiceAnswers: Record<string, string>;
   textAnswer: string;
   stepHref: (stepSlug: string) => string;
-  onChoiceChange: (choiceId: string) => void;
+  onChoiceChange: (questionId: string, choiceId: string) => void;
   onTextChange: (value: string) => void;
   onSubmitStep: () => void;
 };
@@ -74,7 +74,7 @@ export function LearningStepArticle({
   isFullscreen,
   canSubmit,
   isSubmitting,
-  selectedChoiceId,
+  selectedChoiceAnswers,
   textAnswer,
   stepHref,
   onChoiceChange,
@@ -89,12 +89,16 @@ export function LearningStepArticle({
   const textDiagnostics =
     activeStep.submission_type === "text" ? evaluateTextDraft(activeStep, textAnswer) : null;
   const isMarkedLearned = activeStep.submission_type === "none" && activeStep.completed;
+  const quizQuestions = activeStep.submission_type === "choice" ? getQuizQuestions(activeStep) : [];
+  const hasAnsweredAllQuizQuestions =
+    activeStep.submission_type !== "choice" ||
+    quizQuestions.every((question) => (selectedChoiceAnswers[question.id] ?? "").trim().length > 0);
   const submitDisabled =
     isSubmitting ||
     !canSubmit ||
     !activeStep.unlocked ||
     isMarkedLearned ||
-    (activeStep.submission_type === "choice" && selectedChoiceId.trim().length === 0) ||
+    (activeStep.submission_type === "choice" && !hasAnsweredAllQuizQuestions) ||
     (activeStep.submission_type === "text" && textAnswer.trim().length === 0);
 
   const submitLabel = isSubmitting
@@ -171,6 +175,9 @@ export function LearningStepArticle({
             {activeStep.submission_type === "choice" ? (
               <CriteriaItem label={t("learn.answerType")} value={t("learn.singleChoice")} />
             ) : null}
+            {activeStep.submission_type === "choice" && quizQuestions.length > 1 ? (
+              <CriteriaItem label={t("learn.quizQuestions")} value={String(quizQuestions.length)} />
+            ) : null}
             {activeStep.required_markers.length > 0 ? (
               <CriteriaItem label={t("learn.requiredMarkers")} value={activeStep.required_markers.join(", ")} />
             ) : null}
@@ -183,7 +190,7 @@ export function LearningStepArticle({
         {activeStep.submission_type === "choice" ? (
           <LearningStepChoiceInput
             step={activeStep}
-            selectedChoiceId={selectedChoiceId}
+            selectedChoiceAnswers={selectedChoiceAnswers}
             canSubmit={canSubmit}
             isSubmitting={isSubmitting}
             onSelectChoice={onChoiceChange}

@@ -148,6 +148,12 @@ class LearningStepChoiceRead(BaseModel):
     explanation: str | None = None
 
 
+class LearningQuizQuestionRead(BaseModel):
+    id: str
+    question: str
+    choices: list[LearningStepChoiceRead] = Field(default_factory=list)
+
+
 class LearningStepFeedbackRead(BaseModel):
     verdict: str
     score: int
@@ -168,6 +174,7 @@ class LearningLessonStepRead(BaseModel):
     placeholder: str | None = None
     question: str | None = None
     choices: list[LearningStepChoiceRead] = Field(default_factory=list)
+    quiz_questions: list[LearningQuizQuestionRead] = Field(default_factory=list)
     pass_score: int = 0
     min_words: int | None = None
     required_markers: list[str] = Field(default_factory=list)
@@ -180,6 +187,7 @@ class LearningLessonStepRead(BaseModel):
     last_score: int | None = None
     last_answer_text: str | None = None
     last_choice_id: str | None = None
+    last_choice_map: dict[str, str] = Field(default_factory=dict)
     feedback: LearningStepFeedbackRead | None = None
 
 

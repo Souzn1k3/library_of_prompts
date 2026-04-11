@@ -7,6 +7,7 @@ from app.modules.learning.model.learning import (
     LearningLessonOutlineRead,
     LearningLessonStatus,
     LearningLessonStepRead,
+    LearningQuizQuestionRead,
     LearningStepChoiceRead,
     LearningStepFeedbackRead,
 )
@@ -34,13 +35,21 @@ class LearningLessonProjectionMixin:
                 feedback = LearningStepFeedbackRead.model_validate(row.feedback_json)
             last_answer_text = None
             last_choice_id = None
+            last_choice_map: dict[str, str] = {}
             if row is not None and isinstance(row.answer_json, dict):
                 raw_text = row.answer_json.get("text")
                 raw_choice = row.answer_json.get("choice_id")
+                raw_choice_map = row.answer_json.get("choice_ids")
                 if isinstance(raw_text, str):
                     last_answer_text = raw_text
                 if isinstance(raw_choice, str):
                     last_choice_id = raw_choice
+                if isinstance(raw_choice_map, dict):
+                    last_choice_map = {
+                        str(question_id): str(choice_id)
+                        for question_id, choice_id in raw_choice_map.items()
+                        if isinstance(choice_id, str)
+                    }
             completed = bool(row.passed) if row is not None else False
             unlocked = can_unlock_next_step or completed
 
@@ -62,6 +71,23 @@ class LearningLessonProjectionMixin:
                         )
                         for choice in submission.get("choices", [])
                     ],
+                    quiz_questions=[
+                        LearningQuizQuestionRead(
+                            id=str(question["id"]),
+                            question=pick_text(question["question"], language),
+                            choices=[
+                                LearningStepChoiceRead(
+                                    id=choice["id"],
+                                    text=pick_text(choice["text"], language),
+                                    explanation=pick_text(choice["explanation"], language)
+                                    if choice.get("explanation")
+                                    else None,
+                                )
+                                for choice in question.get("choices", [])
+                            ],
+                        )
+                        for question in submission.get("questions", [])
+                    ],
                     pass_score=pass_score,
                     min_words=int(submission["min_words"]) if submission.get("min_words") is not None else None,
                     required_markers=[str(marker) for marker in submission.get("required_markers", [])],
@@ -77,6 +103,7 @@ class LearningLessonProjectionMixin:
                     last_score=int(row.last_score) if row is not None else None,
                     last_answer_text=last_answer_text,
                     last_choice_id=last_choice_id,
+                    last_choice_map=last_choice_map,
                     feedback=feedback,
                 )
             )

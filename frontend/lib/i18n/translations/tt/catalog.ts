@@ -124,6 +124,7 @@ export const ttCatalog = {
   "learn.minWords": "Минималь сүз",
   "learn.answerType": "Җавап тибы",
   "learn.singleChoice": "Бер вариант",
+  "learn.quizQuestions": "Сораулар",
   "learn.requiredMarkers": "Мәҗбүри маркерлар",
   "learn.avoidPhrases": "Фразалардан сакланыгыз",
   "learn.successCriteria": "Үтү критерийлары",

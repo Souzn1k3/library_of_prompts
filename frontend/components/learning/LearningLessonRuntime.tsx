@@ -148,11 +148,11 @@ export function LearningLessonRuntime({
             theoryStepSlug={theoryStepSlug}
             canSubmit={canSubmit}
             isSubmitting={isSubmitting}
-            selectedChoiceId={choiceAnswers[activeStep.slug] ?? ""}
+            selectedChoiceAnswers={choiceAnswers[activeStep.slug] ?? {}}
             textAnswer={textAnswers[activeStep.slug] ?? ""}
             stepHref={stepHref}
             isFullscreen={false}
-            onChoiceChange={(choiceId) => setChoiceAnswer(activeStep.slug, choiceId)}
+            onChoiceChange={(questionId, choiceId) => setChoiceAnswer(activeStep.slug, questionId, choiceId)}
             onTextChange={(value) => setTextAnswer(activeStep.slug, value)}
             onSubmitStep={() => void handleSubmit(activeStep)}
           />
@@ -183,11 +183,11 @@ export function LearningLessonRuntime({
               theoryStepSlug={theoryStepSlug}
               canSubmit={canSubmit}
               isSubmitting={isSubmitting}
-              selectedChoiceId={choiceAnswers[activeStep.slug] ?? ""}
+              selectedChoiceAnswers={choiceAnswers[activeStep.slug] ?? {}}
               textAnswer={textAnswers[activeStep.slug] ?? ""}
               stepHref={stepHref}
               isFullscreen
-              onChoiceChange={(choiceId) => setChoiceAnswer(activeStep.slug, choiceId)}
+              onChoiceChange={(questionId, choiceId) => setChoiceAnswer(activeStep.slug, questionId, choiceId)}
               onTextChange={(value) => setTextAnswer(activeStep.slug, value)}
               onSubmitStep={() => void handleSubmit(activeStep)}
             />

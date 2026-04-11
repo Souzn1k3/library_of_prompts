@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import pytest
 
+from app.modules.learning.content.production_systems import PRODUCTION_SYSTEMS_COURSE
+from app.modules.learning.content.prompt_basics import PROMPT_BASICS_COURSE
+from app.modules.learning.content.workflows import WORKFLOWS_COURSE
+
 
 COURSE_FOUNDATIONS = "prompt-engineering-foundations"
 COURSE_WORKFLOWS = "prompt-workflows-study-and-work"
@@ -51,15 +55,32 @@ async def _register(async_client, unique_email: str, display_name: str | None = 
     return response.json()["access_token"]
 
 
+def _choice_answer_for_step(step: dict) -> dict:
+    quiz_questions = step.get("quiz_questions") or []
+    if quiz_questions:
+        choice_ids: dict[str, str] = {}
+        for question in quiz_questions:
+            question_id = question.get("id")
+            if question_id == "trap_a":
+                choice_ids[str(question_id)] = "a"
+            elif question_id == "trap_c":
+                choice_ids[str(question_id)] = "c"
+            else:
+                choice_ids[str(question_id)] = "b"
+        return {"choice_ids": choice_ids}
+
+    choices = step.get("choices", [])
+    b = next((choice for choice in choices if choice.get("id") == "b"), None)
+    choice_id = b["id"] if b else (choices[0]["id"] if choices else "")
+    return {"choice_id": choice_id}
+
+
 def _answer_for_step(step: dict) -> dict | None:
     submission_type = step.get("submission_type")
     if submission_type == "none":
         return None
     if submission_type == "choice":
-        choices = step.get("choices", [])
-        b = next((choice for choice in choices if choice.get("id") == "b"), None)
-        choice_id = b["id"] if b else (choices[0]["id"] if choices else "")
-        return {"choice_id": choice_id}
+        return _choice_answer_for_step(step)
     return {"text": UNIVERSAL_TEXT}
 
 
@@ -378,6 +399,17 @@ async def test_learning_catalog_exposes_three_level_path(async_client):
     assert production["difficulty"] == "advanced"
     assert production["result_headline"]
     assert production["deliverable_preview"]
+
+
+@pytest.mark.asyncio
+async def test_learning_quizzes_expose_five_questions_per_step(async_client):
+    for course in (PROMPT_BASICS_COURSE, WORKFLOWS_COURSE, PRODUCTION_SYSTEMS_COURSE):
+        for module in course["modules"]:
+            for lesson in module["lessons"]:
+                for step in lesson["steps"]:
+                    if step["kind"] != "quiz":
+                        continue
+                    assert len(step["submission"]["questions"]) == 5
 
 
 @pytest.mark.asyncio
