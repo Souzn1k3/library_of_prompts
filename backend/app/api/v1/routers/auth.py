@@ -153,26 +153,41 @@ async def telegram_start(
     session: AsyncSession = Depends(get_db),
 ) -> Response:
     telegram_mode = "link" if mode == "link" else "login"
-    if telegram_mode == "link" and viewer is None:
-        raise AppError(
-            code="not_authenticated",
-            message="Please log in before linking Telegram.",
-            status_code=401,
-            message_key="errors.invalid_or_expired_token",
-        )
-
     svc = _telegram_auth_service(session)
-    state, state_token = svc.create_state_token(
-        mode=telegram_mode,
-        next_path=next_path,
-        link_user_id=viewer.id if telegram_mode == "link" and viewer else None,
-    )
-    redirect = RedirectResponse(
-        url=svc.build_authorization_url(state=state, state_token=state_token),
-        status_code=status.HTTP_307_TEMPORARY_REDIRECT,
-    )
-    _set_telegram_auth_state_cookie(redirect, token=state_token)
-    return redirect
+    fallback_path = "/profile" if telegram_mode == "link" else (next_path or "/login")
+    try:
+        if telegram_mode == "link" and viewer is None:
+            raise AppError(
+                code="not_authenticated",
+                message="Please log in before linking Telegram.",
+                status_code=401,
+                message_key="errors.invalid_or_expired_token",
+            )
+
+        state, state_token = svc.create_state_token(
+            mode=telegram_mode,
+            next_path=next_path,
+            link_user_id=viewer.id if telegram_mode == "link" and viewer else None,
+        )
+        redirect = RedirectResponse(
+            url=svc.build_authorization_url(state=state, state_token=state_token),
+            status_code=status.HTTP_307_TEMPORARY_REDIRECT,
+        )
+        _set_telegram_auth_state_cookie(redirect, token=state_token)
+        return redirect
+    except AppError as exc:
+        redirect = RedirectResponse(
+            url=_site_redirect_url(
+                svc.callback_failure_path(
+                    mode=telegram_mode,
+                    next_path=fallback_path,
+                    reason=_telegram_error_reason(exc.code),
+                )
+            ),
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+        _clear_telegram_auth_state_cookie(redirect)
+        return redirect
 
 
 @router.get("/telegram/callback")

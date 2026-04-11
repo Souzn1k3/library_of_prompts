@@ -61,6 +61,20 @@ async def test_telegram_start_redirects_to_provider(async_client):
 
 
 @pytest.mark.asyncio
+async def test_telegram_start_redirects_back_when_not_configured(async_client, monkeypatch):
+    settings = get_settings()
+    original_client_id = settings.telegram_login_client_id
+    try:
+        settings.telegram_login_client_id = None
+        response = await async_client.get("/api/v1/auth/telegram/start", params={"next": "/login"})
+    finally:
+        settings.telegram_login_client_id = original_client_id
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "http://127.0.0.1:3000/login?telegram_error=not_configured"
+
+
+@pytest.mark.asyncio
 async def test_telegram_callback_creates_user_and_sets_auth_cookies(async_client, monkeypatch):
     async def fake_exchange(self, *, code: str, code_verifier: str) -> dict[str, str]:
         assert code == "code-1"

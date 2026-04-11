@@ -116,14 +116,13 @@ export function SignupForm() {
         {pending ? t("signup.submitPending") : t("signup.submitIdle")}
       </button>
 
-      <div className="space-y-3 rounded-[1.1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] p-4">
-        <p className="text-sm font-medium text-zinc-900">{t("signup.telegramTitle")}</p>
-        <p className="text-sm text-zinc-600">{t("signup.telegramBody")}</p>
+      <div className="flex justify-center">
         <TelegramAuthButton
-          label={t("signup.telegramAction")}
+          ariaLabel={t("signup.telegramAction")}
           mode="login"
           nextPath="/dashboard"
-          className="w-full justify-center"
+          iconOnly
+          className="flex h-12 w-12 items-center justify-center rounded-full border border-[#199bd7]/35 bg-[#199bd7]/10 text-[#199bd7] hover:bg-[#199bd7]/18"
         />
       </div>
 

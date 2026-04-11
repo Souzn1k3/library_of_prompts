@@ -5,18 +5,22 @@ import { useMemo } from "react";
 import { getApiBaseUrl } from "@/lib/api/transport";
 
 type TelegramAuthButtonProps = {
-  label: string;
+  label?: string;
+  ariaLabel?: string;
   mode?: "login" | "link";
   nextPath?: string;
   variant?: "primary" | "secondary";
+  iconOnly?: boolean;
   className?: string;
 };
 
 export function TelegramAuthButton({
   label,
+  ariaLabel,
   mode = "login",
   nextPath,
   variant = "secondary",
+  iconOnly = false,
   className,
 }: TelegramAuthButtonProps) {
   const href = useMemo(() => {
@@ -44,8 +48,21 @@ export function TelegramAuthButton({
       : "pv-button-secondary border border-[#199bd7]/30 bg-[#199bd7]/8 text-[#0c6f99] hover:bg-[#199bd7]/12";
 
   return (
-    <a href={href} className={`${toneClassName} ${className ?? ""}`.trim()}>
-      {label}
+    <a
+      href={href}
+      aria-label={ariaLabel ?? label ?? "Telegram"}
+      title={ariaLabel ?? label ?? "Telegram"}
+      className={`${toneClassName} ${className ?? ""}`.trim()}
+    >
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        className={iconOnly ? "h-6 w-6" : "h-5 w-5 shrink-0"}
+        fill="currentColor"
+      >
+        <path d="M19.777 4.43c.305-.126.636.145.56.458l-2.694 11.58a.43.43 0 0 1-.643.267l-3.513-2.116-1.79 1.725a.43.43 0 0 1-.729-.298v-2.52l7.578-6.846a.215.215 0 0 0-.274-.328L8.91 12.254 5.45 11.15a.43.43 0 0 1-.028-.812l14.355-5.908Z" />
+      </svg>
+      {iconOnly ? <span className="sr-only">{ariaLabel ?? label ?? "Telegram"}</span> : label}
     </a>
   );
 }

@@ -99,14 +99,13 @@ export function LoginForm() {
         {pending ? t("login.submitPending") : t("login.submitIdle")}
       </button>
 
-      <div className="space-y-3 rounded-[1.1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] p-4">
-        <p className="text-sm font-medium text-zinc-900">{t("login.telegramTitle")}</p>
-        <p className="text-sm text-zinc-600">{t("login.telegramBody")}</p>
+      <div className="flex justify-center">
         <TelegramAuthButton
-          label={t("login.telegramAction")}
+          ariaLabel={t("login.telegramAction")}
           mode="login"
           nextPath="/dashboard"
-          className="w-full justify-center"
+          iconOnly
+          className="flex h-12 w-12 items-center justify-center rounded-full border border-[#199bd7]/35 bg-[#199bd7]/10 text-[#199bd7] hover:bg-[#199bd7]/18"
         />
       </div>
 
