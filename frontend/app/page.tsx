@@ -2,14 +2,12 @@ import type { ReactNode } from "react";
 
 import Link from "next/link";
 
-import { HomeHeroActions } from "@/components/HomeHeroActions";
-import { T } from "@/components/i18n/T";
+import { HomeHeroSection } from "./HomeHeroSection";
+import { loadHomePageData } from "./home-page-data";
+
 import { PromptCard } from "@/components/PromptCard";
+import { T } from "@/components/i18n/T";
 import { JsonLd } from "@/components/seo/JsonLd";
-import {
-  fetchDiscoverySections,
-  fetchPopularLessons,
-} from "@/lib/api";
 import { DEFAULT_LANGUAGE } from "@/lib/i18n";
 import { absoluteUrl } from "@/lib/seo";
 import type { PromptListItem } from "@/lib/types";
@@ -20,23 +18,25 @@ export const revalidate = 180;
 export default async function HomePage() {
   const language = DEFAULT_LANGUAGE;
 
-  const [sections, popularLessons] = await Promise.all([
-    fetchDiscoverySections({ limit: 4, language }).catch(() => ({
-      for_you: [],
-      trending: [],
-      best_for_beginners: [],
-      most_saved: [],
-    })),
-    fetchPopularLessons({ limit: 4, language }).catch(() => []),
-  ]);
+  const data = await loadHomePageData({
+    accessToken: null,
+    language,
+  }).catch(() => ({
+    entryPrompts: [],
+    recommendedPrompts: [],
+    retentionPrompts: [],
+    heroPromptBody: null,
+    quickUseCases: [],
+  }));
 
-  const featuredPrompts = sections.for_you?.length ? sections.for_you : sections.trending;
-  const topRecommendedPrompts = featuredPrompts.slice(0, 6);
+  const featuredPrompts = data.recommendedPrompts.length
+    ? data.recommendedPrompts
+    : data.entryPrompts.slice(0, 6);
 
   return (
-    <div className="pv-page">
+    <div className="pv-page space-y-6">
       <JsonLd
-        id="ld-home-growth-surfaces"
+        id="ld-home-workbench"
         data={{
           "@context": "https://schema.org",
           "@type": "WebPage",
@@ -44,7 +44,7 @@ export default async function HomePage() {
           url: absoluteUrl("/"),
           mainEntity: {
             "@type": "ItemList",
-            itemListElement: topRecommendedPrompts.map((prompt, index) => ({
+            itemListElement: featuredPrompts.map((prompt, index) => ({
               "@type": "ListItem",
               position: index + 1,
               name: prompt.title,
@@ -54,85 +54,207 @@ export default async function HomePage() {
         }}
       />
 
-      <section className="pv-hero pv-home-hero-compact px-5 py-4 sm:px-7 sm:py-5">
-        <div className="pv-hero-copy max-w-[46rem] space-y-3">
-          <p className="pv-kicker">
-            <T k="home.kicker" />
-          </p>
-          <h1 className="max-w-[19ch] text-3xl font-[760] leading-[0.96] tracking-[-0.05em] text-zinc-950 sm:text-4xl xl:text-[2.9rem]">
-            <T k="home.title" />
-          </h1>
-          <p className="pv-lead max-w-[40rem] text-sm leading-relaxed">
-            <T k="home.subtitle" />
-          </p>
-          <p className="text-xs text-zinc-500">
-            <T k="home.previewFooter" />
-          </p>
-          <HomeHeroActions initialAuthenticated={false} />
+      <HomeHeroSection
+        entryPrompts={data.entryPrompts}
+        heroPromptBody={data.heroPromptBody}
+        quickUseCases={data.quickUseCases}
+      />
+
+      <section className="pv-panel px-6 py-6 sm:px-7">
+        <SectionIntro
+          kicker={<T k="home.proofKicker" />}
+          title={<T k="home.proofTitle" />}
+          description={<T k="home.proofSubtitle" />}
+        />
+        <div className="mt-5 grid gap-3 lg:grid-cols-3">
+          <InsightCard title={<T k="home.structuredLibraryTitle" />} body={<T k="home.structuredLibraryBody" />} />
+          <InsightCard title={<T k="home.builtToLearnTitle" />} body={<T k="home.builtToLearnBody" />} />
+          <InsightCard title={<T k="home.seriousToolTitle" />} body={<T k="home.seriousToolBody" />} />
         </div>
       </section>
 
-      <ShelfSection
-        title={<T k="home.trendingPrompts" />}
-        href="/catalog"
-        hrefLabel={<T k="home.seeAll" />}
-        prompts={topRecommendedPrompts}
-        idPrefix="home-featured"
-      />
+      <section className="pv-panel px-6 py-6 sm:px-7">
+        <SectionIntro
+          kicker={<T k="home.flowKicker" />}
+          title={<T k="home.flowTitle" />}
+          description={<T k="home.flowSubtitle" />}
+        />
+        <div className="mt-5 grid gap-3 lg:grid-cols-3">
+          <ActionStepCard
+            index={1}
+            title={<T k="home.flowStepOneTitle" />}
+            body={<T k="home.flowStepOneBody" />}
+            href="/catalog"
+            action={<T k="home.flowStepOneAction" />}
+          />
+          <ActionStepCard
+            index={2}
+            title={<T k="home.flowStepTwoTitle" />}
+            body={<T k="home.flowStepTwoBody" />}
+            href="#home-workbench"
+            action={<T k="home.flowStepTwoAction" />}
+          />
+          <ActionStepCard
+            index={3}
+            title={<T k="home.flowStepThreeTitleGuest" />}
+            body={<T k="home.flowStepThreeBodyGuest" />}
+            href="/signup"
+            action={<T k="home.flowStepThreeActionGuest" />}
+          />
+        </div>
+      </section>
 
-      {popularLessons.length ? (
+      {data.quickUseCases.length ? (
         <section className="pv-panel px-6 py-6 sm:px-7">
-          <div className="pv-section-head">
-            <div className="pv-section-copy">
-              <p className="pv-kicker">
-                <T k="learn.title" />
-              </p>
-              <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">
-                <T k="home.popularLessons" />
-              </h2>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                <T k="learn.subtitle" />
-              </p>
-            </div>
-            <Link href="/learn" className="pv-inline-link">
-              <T k="home.viewAllLessons" />
-              <span aria-hidden="true">↗</span>
-            </Link>
-          </div>
-
-          <div className="mt-6 space-y-3">
-            {popularLessons.map((lesson) => (
+          <SectionIntro
+            kicker={<T k="home.quickPathsKicker" />}
+            title={<T k="home.quickPathsTitle" />}
+            description={<T k="home.quickPathsSubtitle" />}
+          />
+          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {data.quickUseCases.slice(0, 4).map((useCase) => (
               <Link
-                key={`home-lesson-${lesson.id}`}
-                href={`/learn/${encodeURIComponent(lesson.slug)}`}
-                className="pv-card block px-5 py-4 sm:px-6"
+                key={`quick-path-${useCase}`}
+                href={`/catalog?q=${encodeURIComponent(useCase)}`}
+                className="pv-card block p-4"
               >
-                <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-center">
-                  <div className="min-w-0">
-                    <p className="text-base font-semibold tracking-[-0.03em] text-zinc-950">{lesson.title}</p>
-                    <p className="mt-2 text-sm text-zinc-600">
-                      {lesson.completion_count} <T k="learn.completions" />
-                    </p>
-                  </div>
-                  <span className="pv-chip-brand w-fit">
-                    <T k={lesson.locked ? "learn.locked" : "learn.open"} />
-                  </span>
-
-                  <span className="inline-flex items-center gap-2 text-sm font-semibold text-[var(--pv-brand-strong)] md:justify-self-end">
-                    <T k="learn.openLesson" />
-                    <span aria-hidden="true">↗</span>
-                  </span>
-                </div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+                  <T k="home.quickPathsCardLabel" />
+                </p>
+                <h3 className="mt-3 text-lg font-semibold tracking-[-0.03em] text-zinc-950">{useCase}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-zinc-600">
+                  <T k="home.quickPathsCardBody" params={{ useCase }} />
+                </p>
+                <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--pv-brand-strong)]">
+                  <T k="home.quickPathsCardAction" />
+                  <span aria-hidden="true">↗</span>
+                </span>
               </Link>
             ))}
           </div>
         </section>
       ) : null}
+
+      <section className="pv-panel px-6 py-6 sm:px-7">
+        <SectionIntro
+          kicker={<T k="home.pathKicker" />}
+          title={<T k="home.pathTitle" />}
+          description={<T k="home.pathSubtitle" />}
+        />
+        <div className="mt-5 grid gap-3 lg:grid-cols-3">
+          <PathCard
+            title={<T k="home.pathBeginnerTitle" />}
+            body={<T k="home.pathBeginnerBody" />}
+            href="/learn"
+            action={<T k="home.pathBeginnerAction" />}
+          />
+          <PathCard
+            title={<T k="home.pathPractitionerTitle" />}
+            body={<T k="home.pathPractitionerBody" />}
+            href="/catalog"
+            action={<T k="home.pathPractitionerAction" />}
+          />
+          <PathCard
+            title={<T k="home.pathLibraryTitleGuest" />}
+            body={<T k="home.pathLibraryBodyGuest" />}
+            href="/signup"
+            action={<T k="home.pathLibraryActionGuest" />}
+          />
+        </div>
+      </section>
+
+      <PromptShelf
+        title={<T k="home.trendingPrompts" />}
+        href="/catalog"
+        hrefLabel={<T k="home.seeAll" />}
+        prompts={featuredPrompts}
+        idPrefix="home-workflows"
+      />
     </div>
   );
 }
 
-function ShelfSection({
+function SectionIntro({
+  kicker,
+  title,
+  description,
+}: {
+  kicker: ReactNode;
+  title: ReactNode;
+  description: ReactNode;
+}) {
+  return (
+    <div className="pv-section-head">
+      <div className="pv-section-copy max-w-[46rem]">
+        <p className="pv-kicker">{kicker}</p>
+        <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em] text-zinc-950">{title}</h2>
+        <p className="mt-2 text-sm leading-relaxed text-zinc-600">{description}</p>
+      </div>
+    </div>
+  );
+}
+
+function InsightCard({ title, body }: { title: ReactNode; body: ReactNode }) {
+  return (
+    <article className="pv-card p-5">
+      <h3 className="text-lg font-semibold tracking-[-0.03em] text-zinc-950">{title}</h3>
+      <p className="mt-3 text-sm leading-relaxed text-zinc-600">{body}</p>
+    </article>
+  );
+}
+
+function ActionStepCard({
+  index,
+  title,
+  body,
+  href,
+  action,
+}: {
+  index: number;
+  title: ReactNode;
+  body: ReactNode;
+  href: string;
+  action: ReactNode;
+}) {
+  return (
+    <article className="pv-card p-5">
+      <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--pv-border)] bg-[var(--pv-brand-soft)] text-sm font-semibold text-[var(--pv-brand-strong)]">
+        {index}
+      </span>
+      <h3 className="mt-4 text-lg font-semibold tracking-[-0.03em] text-zinc-950">{title}</h3>
+      <p className="mt-2 text-sm leading-relaxed text-zinc-600">{body}</p>
+      <Link href={href} className="pv-inline-link mt-4 inline-flex">
+        {action}
+        <span aria-hidden="true">↗</span>
+      </Link>
+    </article>
+  );
+}
+
+function PathCard({
+  title,
+  body,
+  href,
+  action,
+}: {
+  title: ReactNode;
+  body: ReactNode;
+  href: string;
+  action: ReactNode;
+}) {
+  return (
+    <Link href={href} className="pv-card block p-5">
+      <h3 className="text-lg font-semibold tracking-[-0.03em] text-zinc-950">{title}</h3>
+      <p className="mt-3 text-sm leading-relaxed text-zinc-600">{body}</p>
+      <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--pv-brand-strong)]">
+        {action}
+        <span aria-hidden="true">↗</span>
+      </span>
+    </Link>
+  );
+}
+
+function PromptShelf({
   title,
   href,
   hrefLabel,
