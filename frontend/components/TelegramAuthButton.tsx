@@ -20,12 +20,22 @@ export function TelegramAuthButton({
   className,
 }: TelegramAuthButtonProps) {
   const href = useMemo(() => {
-    const url = new URL("/api/v1/auth/telegram/start", getApiBaseUrl());
+    const apiBase = getApiBaseUrl().replace(/\/$/, "");
+    const base =
+      apiBase.startsWith("http://") || apiBase.startsWith("https://")
+        ? apiBase
+        : apiBase.startsWith("/")
+          ? apiBase
+          : `/${apiBase}`;
+    const url = new URL(`${base}/api/v1/auth/telegram/start`, "http://local.codex");
     url.searchParams.set("mode", mode);
     if (nextPath) {
       url.searchParams.set("next", nextPath);
     }
-    return url.toString();
+    if (base.startsWith("http://") || base.startsWith("https://")) {
+      return url.toString();
+    }
+    return `${url.pathname}${url.search}`;
   }, [mode, nextPath]);
 
   const toneClassName =
