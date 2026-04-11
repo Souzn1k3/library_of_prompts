@@ -57,7 +57,7 @@ export function TelegramAuthButton({
       <svg
         aria-hidden="true"
         viewBox="0 0 24 24"
-        className={iconOnly ? "h-6 w-6" : "h-5 w-5 shrink-0"}
+        className={iconOnly ? "h-8 w-8" : "h-5 w-5 shrink-0"}
         fill="currentColor"
       >
         <path d="M19.777 4.43c.305-.126.636.145.56.458l-2.694 11.58a.43.43 0 0 1-.643.267l-3.513-2.116-1.79 1.725a.43.43 0 0 1-.729-.298v-2.52l7.578-6.846a.215.215 0 0 0-.274-.328L8.91 12.254 5.45 11.15a.43.43 0 0 1-.028-.812l14.355-5.908Z" />

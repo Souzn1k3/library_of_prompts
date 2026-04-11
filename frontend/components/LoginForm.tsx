@@ -105,7 +105,7 @@ export function LoginForm() {
           mode="login"
           nextPath="/dashboard"
           iconOnly
-          className="flex h-12 w-12 items-center justify-center rounded-full border border-[#199bd7]/35 bg-[#199bd7]/10 text-[#199bd7] hover:bg-[#199bd7]/18"
+          className="flex h-14 w-14 items-center justify-center rounded-[1.15rem] border border-[#199bd7]/35 bg-[#199bd7]/10 text-[#199bd7] hover:bg-[#199bd7]/18"
         />
       </div>
 
