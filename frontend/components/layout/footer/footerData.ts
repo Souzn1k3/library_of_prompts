@@ -20,8 +20,8 @@ export function getFooterSections(status: string, t: Translate): FooterSection[]
       title: t("footer.product"),
       links: [
         { href: "/catalog", label: t("nav.catalog") },
-        { href: "/dashboard", label: t("nav.dashboard") },
-        { href: "/submit", label: t("nav.submit") },
+        { href: "/learn", label: t("nav.learn") },
+        { href: "/missions", label: t("nav.missions") },
         { href: "/pricing", label: t("nav.plans") },
       ],
     },

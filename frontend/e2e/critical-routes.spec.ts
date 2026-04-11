@@ -30,14 +30,12 @@ test("home renders the new product hero", async ({ page }, testInfo) => {
   await preparePage(page);
   await page.goto("/");
 
-  const buildDraftButtons = page.getByRole("button", { name: /build draft/i });
-
-  await expect(page.getByRole("heading", { level: 1 })).toContainText(/working ai draft|reusable ai workflow/i);
-  await expect(buildDraftButtons.first()).toBeVisible();
-  await expect(buildDraftButtons).toHaveCount(2);
-  await expect(page.getByText(/ready workflows|workflow library/i).first()).toBeVisible();
-  await expect(page.getByRole("link", { name: /open workflow/i }).first()).toBeVisible();
-  await expect(page.getByRole("link", { name: /open library/i }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(/proven ai prompt/i);
+  await expect(page.getByRole("link", { name: /get starter pack/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /explore prompts/i })).toBeVisible();
+  await expect(page.getByText(/trending prompts|recommended for you/i).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: /open prompt/i }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: /^see all$/i }).first()).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
   await page.screenshot({ path: testInfo.outputPath("home-desktop.png"), fullPage: true });
@@ -47,10 +45,9 @@ test("dashboard guest state keeps a clear next action", async ({ page }, testInf
   await preparePage(page);
   await page.goto("/dashboard");
 
-  await expect(page.getByRole("heading", { level: 1 })).toContainText(/workspace/i);
+  await expect(page.getByRole("heading", { level: 1 })).toContainText(/dashboard/i);
   await expect(page.locator("#main-content").getByRole("link", { name: /^log in$/i }).first()).toBeVisible();
   await expect(page.locator("#main-content").getByRole("link", { name: /^sign up$/i }).first()).toBeVisible();
-  await expect(page.locator("#main-content").getByRole("link", { name: /open catalog|open library/i }).first()).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
   await page.screenshot({ path: testInfo.outputPath("dashboard-guest.png"), fullPage: true });
@@ -94,10 +91,8 @@ test("mobile home stays readable", async ({ page }, testInfo) => {
   await preparePage(page);
   await page.goto("/");
 
-  const buildDraftButtons = page.getByRole("button", { name: /build draft/i });
-
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  await expect(buildDraftButtons.first()).toBeVisible();
+  await expect(page.getByRole("link", { name: /get starter pack/i })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
   await page.screenshot({ path: testInfo.outputPath("home-mobile.png"), fullPage: true });

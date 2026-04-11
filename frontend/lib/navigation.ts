@@ -1,6 +1,6 @@
 import type { TranslationKey } from "@/lib/i18n";
 
-export type HeaderNavItemId = "catalog" | "dashboard" | "submit" | "pricing";
+export type HeaderNavItemId = "catalog" | "learn" | "missions" | "pricing";
 
 export type HeaderNavItem = {
   id: HeaderNavItemId;
@@ -8,7 +8,7 @@ export type HeaderNavItem = {
   labelKey: TranslationKey;
 };
 
-export type AccountMenuItemId = "dashboard" | "submit" | "profile";
+export type AccountMenuItemId = "dashboard" | "profile" | "wallet" | "store";
 
 export type AccountMenuItem = {
   id: AccountMenuItemId;
@@ -23,15 +23,15 @@ const HEADER_NAV_ITEMS: Record<HeaderNavItemId, HeaderNavItem> = {
     href: "/catalog",
     labelKey: "nav.catalog",
   },
-  dashboard: {
-    id: "dashboard",
-    href: "/dashboard",
-    labelKey: "nav.dashboard",
+  learn: {
+    id: "learn",
+    href: "/learn",
+    labelKey: "nav.learn",
   },
-  submit: {
-    id: "submit",
-    href: "/submit",
-    labelKey: "nav.submit",
+  missions: {
+    id: "missions",
+    href: "/missions",
+    labelKey: "nav.missions",
   },
   pricing: {
     id: "pricing",
@@ -40,7 +40,7 @@ const HEADER_NAV_ITEMS: Record<HeaderNavItemId, HeaderNavItem> = {
   },
 };
 
-const HEADER_ORDER: HeaderNavItemId[] = ["catalog", "dashboard", "submit", "pricing"];
+const HEADER_ORDER: HeaderNavItemId[] = ["catalog", "learn", "missions", "pricing"];
 
 const ACCOUNT_MENU_ITEMS: AccountMenuItem[] = [
   {
@@ -50,16 +50,22 @@ const ACCOUNT_MENU_ITEMS: AccountMenuItem[] = [
     isActive: (pathname) => pathname === "/dashboard",
   },
   {
-    id: "submit",
-    href: "/submit",
-    labelKey: "nav.submit",
-    isActive: (pathname) => pathname === "/submit",
-  },
-  {
     id: "profile",
     href: "/profile",
     labelKey: "nav.profile",
     isActive: (pathname) => pathname === "/profile",
+  },
+  {
+    id: "wallet",
+    href: "/wallet",
+    labelKey: "nav.wallet",
+    isActive: (pathname) => pathname === "/wallet",
+  },
+  {
+    id: "store",
+    href: "/store",
+    labelKey: "nav.store",
+    isActive: (pathname) => pathname === "/store",
   },
 ];
 
@@ -76,12 +82,12 @@ export function isHeaderNavigationItemActive(pathname: string, itemId: HeaderNav
     return matchesPath(pathname, ["/catalog", "/prompt", "/category", "/contributors"]);
   }
 
-  if (itemId === "dashboard") {
-    return matchesPath(pathname, ["/dashboard"]);
+  if (itemId === "learn") {
+    return matchesPath(pathname, ["/learn"]);
   }
 
-  if (itemId === "submit") {
-    return matchesPath(pathname, ["/submit"]);
+  if (itemId === "missions") {
+    return matchesPath(pathname, ["/missions"]);
   }
 
   if (itemId === "pricing") {
