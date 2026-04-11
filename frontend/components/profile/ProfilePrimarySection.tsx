@@ -4,6 +4,7 @@ import { useI18n } from "@/components/i18n/LanguageProvider";
 import { ProfileAccountOverview } from "@/components/profile/ProfileAccountOverview";
 import { ProfileActionsPanel } from "@/components/profile/ProfileActionsPanel";
 import { ProfileMembershipPanel } from "@/components/profile/ProfileMembershipPanel";
+import { ProfileTelegramCard } from "@/components/profile/ProfileTelegramCard";
 import type {
   BillingStatus,
   OnboardingProfile,
@@ -54,6 +55,7 @@ export function ProfilePrimarySection({
           planUnlocks={planUnlocks}
           locale={locale}
         />
+        <ProfileTelegramCard user={user} />
         <ProfileActionsPanel onboardingProfile={onboardingProfile} />
       </div>
     </div>

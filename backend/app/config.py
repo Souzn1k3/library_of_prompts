@@ -42,9 +42,13 @@ class Settings(BaseSettings):
     economy_kpi_job_interval_minutes: int = 60
     economy_kpi_job_lookback_days: int = 35
     telegram_bot_api_key: str | None = None
+    telegram_login_client_id: str | None = None
+    telegram_login_client_secret: str | None = None
+    telegram_login_redirect_uri: str | None = None
     telegram_reward_signing_secret: str | None = None
     telegram_reward_max_tokens: int = 100
     telegram_reward_max_age_hours: int = 48
+    site_url: str = "http://localhost:3000"
     scenario_free_demo_run_cap: int = 3
     scenario_guest_ip_daily_prompt_cap: int = 12
     scenario_guest_fingerprint_daily_prompt_cap: int = 8

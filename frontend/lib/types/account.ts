@@ -4,6 +4,11 @@ export type UserProfile = {
   id: string;
   email: string;
   display_name: string;
+  telegram_user_id?: number | null;
+  telegram_username?: string | null;
+  telegram_first_name?: string | null;
+  telegram_last_name?: string | null;
+  telegram_language?: string | null;
   role: string;
   plan_tier: string;
   mission_credits?: number;

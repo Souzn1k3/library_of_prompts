@@ -11,6 +11,11 @@ class UserRead(BaseModel):
     id: uuid.UUID
     email: str
     display_name: str
+    telegram_user_id: int | None = None
+    telegram_username: str | None = None
+    telegram_first_name: str | None = None
+    telegram_last_name: str | None = None
+    telegram_language: str | None = None
     role: UserRole
     plan_tier: PlanTier
     mission_credits: int = 0

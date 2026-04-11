@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
+import { TelegramAuthButton } from "@/components/TelegramAuthButton";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { ApiRequestError } from "@/lib/api";
@@ -11,10 +13,25 @@ import { fetchOnboardingProfile, loginRequest } from "@/lib/client-api";
 
 export function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { refreshAuth } = useAuth();
   const { t } = useI18n();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const telegramErrorCode = searchParams.get("telegram_error");
+  const telegramErrorKey =
+    telegramErrorCode === "cancelled"
+      ? "login.telegramCancelled"
+      : telegramErrorCode === "conflict"
+        ? "login.telegramConflict"
+        : telegramErrorCode === "expired"
+          ? "login.telegramExpired"
+          : telegramErrorCode === "not_configured"
+            ? "login.telegramUnavailable"
+            : telegramErrorCode
+              ? "login.telegramFailed"
+              : null;
+  const visibleError = error ?? (telegramErrorKey ? t(telegramErrorKey) : null);
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -41,9 +58,9 @@ export function LoginForm() {
 
   return (
     <form className="space-y-5" onSubmit={onSubmit}>
-      {error ? (
+      {visibleError ? (
         <div className="pv-alert pv-alert-error text-sm">
-          {error}
+          {visibleError}
         </div>
       ) : null}
       <div className="pv-field">
@@ -82,6 +99,17 @@ export function LoginForm() {
       >
         {pending ? t("login.submitPending") : t("login.submitIdle")}
       </button>
+
+      <div className="space-y-3 rounded-[1.1rem] border border-[var(--pv-border)] bg-[var(--pv-surface-muted)] p-4">
+        <p className="text-sm font-medium text-zinc-900">{t("login.telegramTitle")}</p>
+        <p className="text-sm text-zinc-600">{t("login.telegramBody")}</p>
+        <TelegramAuthButton
+          label={t("login.telegramAction")}
+          mode="login"
+          nextPath="/dashboard"
+          className="w-full justify-center"
+        />
+      </div>
 
       <div className="border-t border-[var(--pv-border)] pt-4">
         <p className="text-center text-sm text-zinc-600">

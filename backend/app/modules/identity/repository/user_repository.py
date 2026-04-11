@@ -22,6 +22,11 @@ def _is_display_name_conflict(exc: IntegrityError) -> bool:
     )
 
 
+def _is_telegram_user_id_conflict(exc: IntegrityError) -> bool:
+    text = _integrity_error_text(exc)
+    return "telegram_user_id" in text and "unique" in text
+
+
 class UserRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
@@ -36,6 +41,10 @@ class UserRepository:
 
     async def get_by_email(self, email: str) -> User | None:
         result = await self._session.execute(select(User).where(User.email == email.lower()))
+        return result.scalar_one_or_none()
+
+    async def get_by_telegram_user_id(self, telegram_user_id: int) -> User | None:
+        result = await self._session.execute(select(User).where(User.telegram_user_id == telegram_user_id))
         return result.scalar_one_or_none()
 
     async def get_by_display_name(self, display_name: str) -> User | None:
@@ -56,6 +65,11 @@ class UserRepository:
                     "Display name already registered",
                     message_key="errors.display_name_already_registered",
                 ) from e
+            if _is_telegram_user_id_conflict(e):
+                raise ConflictError(
+                    "Telegram account is already linked",
+                    message_key="errors.telegram_already_linked",
+                ) from e
             raise ConflictError(
                 "Email already registered",
                 message_key="errors.email_already_registered",
@@ -71,6 +85,11 @@ class UserRepository:
                 raise ConflictError(
                     "Display name already registered",
                     message_key="errors.display_name_already_registered",
+                ) from e
+            if _is_telegram_user_id_conflict(e):
+                raise ConflictError(
+                    "Telegram account is already linked",
+                    message_key="errors.telegram_already_linked",
                 ) from e
             raise
         return user
