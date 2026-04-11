@@ -47,7 +47,7 @@ export function TelegramAuthButton({
       ? "pv-button-primary border border-[#199bd7] bg-[#199bd7] text-white hover:bg-[#1587bb]"
       : "pv-button-secondary border border-[#199bd7]/30 bg-[#199bd7]/8 text-[#0c6f99] hover:bg-[#199bd7]/12";
   const buttonClassName = iconOnly
-    ? "inline-flex items-center justify-center p-0 text-[#229ED9] transition-transform duration-150 hover:scale-110 hover:text-[#1b8fc5] focus-visible:outline-none"
+    ? "inline-flex items-center justify-center p-0 transition-transform duration-150 hover:scale-105 focus-visible:outline-none"
     : toneClassName;
 
   return (
@@ -57,14 +57,28 @@ export function TelegramAuthButton({
       title={ariaLabel ?? label ?? "Telegram"}
       className={`${buttonClassName} ${className ?? ""}`.trim()}
     >
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 24 24"
-        className={iconOnly ? "h-11 w-11" : "h-5 w-5 shrink-0"}
-        fill="currentColor"
-      >
-        <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0Zm5.895 7.58-1.97 9.291c-.148.66-.537.82-1.088.51l-3.012-2.218-1.453 1.399c-.162.16-.298.297-.61.297l.213-3.055 5.561-5.022c.242-.214-.052-.334-.373-.12l-6.873 4.327-2.96-.923c-.644-.203-.657-.644.135-.954l11.57-4.459c.538-.197 1.007.128.86.947Z" />
-      </svg>
+      {iconOnly ? (
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          className="h-10 w-10 drop-shadow-[0_8px_16px_rgba(15,23,42,0.10)]"
+        >
+          <circle cx="12" cy="12" r="11.25" fill="#ffffff" stroke="#d7e0ee" strokeWidth="0.5" />
+          <path
+            d="M17.395 7.58 15.425 16.87c-.148.66-.537.82-1.088.51l-3.012-2.218-1.453 1.399c-.162.16-.298.297-.61.297l.213-3.055 5.561-5.022c.242-.214-.052-.334-.373-.12l-6.873 4.327-2.96-.923c-.644-.203-.657-.644.135-.954l11.57-4.459c.538-.197 1.007.128.86.947Z"
+            fill="#18233c"
+          />
+        </svg>
+      ) : (
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          className="h-5 w-5 shrink-0"
+          fill="currentColor"
+        >
+          <path d="M19.777 4.43c.305-.126.636.145.56.458l-2.694 11.58a.43.43 0 0 1-.643.267l-3.513-2.116-1.79 1.725a.43.43 0 0 1-.729-.298v-2.52l7.578-6.846a.215.215 0 0 0-.274-.328L8.91 12.254 5.45 11.15a.43.43 0 0 1-.028-.812l14.355-5.908Z" />
+        </svg>
+      )}
       {iconOnly ? <span className="sr-only">{ariaLabel ?? label ?? "Telegram"}</span> : label}
     </a>
   );
