@@ -22,7 +22,7 @@ function formatDate(value: string | null | undefined, locale: string): string {
 
 function formatBadgeLabel(language: Language, badgeCode: string | null | undefined): string {
   if (!badgeCode) {
-    return "badge";
+    return getTranslation(language, "missions.badge");
   }
   return getTranslation(language, badgeCode);
 }

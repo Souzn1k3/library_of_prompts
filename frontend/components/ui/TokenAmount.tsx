@@ -1,5 +1,5 @@
 import { getTokenDisplayLabel, TOKEN_SHORT_CODE } from "@/lib/constants/tokens";
-import { TokenIcon, type TokenTone } from "@/components/ui/TokenIcon";
+import type { TokenTone } from "@/components/ui/TokenIcon";
 
 type AmountInput = number | string;
 
@@ -40,10 +40,8 @@ export function TokenAmount({
   amount,
   className,
   strong = false,
-  iconSize = 20,
   state,
   compact = false,
-  showIcon,
 }: {
   value?: AmountInput;
   amount?: AmountInput;
@@ -56,29 +54,19 @@ export function TokenAmount({
 }) {
   const resolvedValue = value ?? amount ?? 0;
   const resolvedState = state ?? inferState(resolvedValue, strong);
-  const resolvedIconSize = strong ? Math.max(iconSize, 24) : iconSize;
-  const resolvedShowIcon = showIcon ?? !compact;
   const tokenLabel = compact ? TOKEN_SHORT_CODE : getTokenDisplayLabel(resolvedValue);
 
   return (
     <span
-      className={`${strong ? "pv-lmn-token pv-lmn-token-strong" : "pv-lmn-token"} ${className ?? ""}`.trim()}
+      className={`${strong ? "pv-lmn-token pv-lmn-token-no-border pv-lmn-token-plain pv-lmn-token-strong" : "pv-lmn-token pv-lmn-token-no-border pv-lmn-token-plain"} ${className ?? ""}`.trim()}
       data-state={resolvedState}
       data-strong={strong ? "true" : "false"}
       data-compact={compact ? "true" : "false"}
     >
-      {resolvedShowIcon ? (
-        <span className="pv-lmn-token-mark">
-          <TokenIcon size={resolvedIconSize} label={tokenLabel} tone={resolvedState} />
-        </span>
-      ) : null}
-      <span className="pv-lmn-token-copy">
-        <span className="pv-lmn-token-meta">
-          <span className="pv-lmn-token-value">{resolvedValue}</span>
-          <span className="pv-lmn-token-code">{tokenLabel}</span>
-        </span>
+      <span className="pv-lmn-token-meta">
+        <span className="pv-lmn-token-value">{resolvedValue}</span>
+        <span className="pv-lmn-token-code">{tokenLabel}</span>
       </span>
-      <span className="pv-lmn-token-glow" aria-hidden="true" />
     </span>
   );
 }

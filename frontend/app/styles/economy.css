@@ -160,6 +160,31 @@
   box-shadow: none;
 }
 
+.pv-lmn-token.pv-lmn-token-plain {
+  isolation: auto;
+  overflow: visible;
+  gap: 0.35rem;
+}
+
+.pv-lmn-token.pv-lmn-token-plain .pv-lmn-token-meta {
+  gap: 0.35rem;
+}
+
+.pv-lmn-token.pv-lmn-token-plain .pv-lmn-token-code {
+  font-size: 0.94rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.pv-lmn-token.pv-lmn-token-plain[data-compact="true"] {
+  padding-left: 0;
+}
+
+.pv-lmn-token.pv-lmn-token-plain[data-strong="true"] .pv-lmn-token-code {
+  font-size: 1.18rem;
+}
+
 .pv-lmn-token[data-compact="true"] {
   padding-left: 0.7rem;
 }

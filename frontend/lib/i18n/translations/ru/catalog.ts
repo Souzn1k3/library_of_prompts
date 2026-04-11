@@ -94,7 +94,7 @@ export const ruCatalog = {
   "learn.courseRewards": "Награды курса",
   "learn.lessonReward": "Награда за урок",
   "learn.courseReward": "Награда за курс",
-  "learn.badge": "Бейдж",
+  "learn.badge": "Достижение",
   "learn.completed": "Завершено",
   "learn.inProgress": "В процессе",
   "learn.modulesShort": "Модули",
@@ -182,7 +182,7 @@ export const ruCatalog = {
   "learn.submitStepFallbackError": "Не удалось отправить этот шаг. Попробуйте ещё раз.",
   "learn.minutesCompact": "{count} мин",
   "learn.lessonCompleted": "Урок завершен. Награды и прогресс заданий обновлены.",
-  "learn.courseCompleted": "Курс завершен. Бейдж получен.",
+  "learn.courseCompleted": "Курс завершен. Достижение получено.",
   "learn.outcomeAndMethod": "Результат и метод",
   "learn.outcomeAndMethodBody":
     "Каждый урок проходит по одному циклу: короткая теория, обязательная практика, проверка по порогу, обратная связь и закрепление.",
