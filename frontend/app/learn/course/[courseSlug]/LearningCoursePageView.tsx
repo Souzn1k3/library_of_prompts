@@ -1,5 +1,4 @@
 import Link from "next/link";
-import type { ReactNode } from "react";
 
 import { T } from "@/components/i18n/T";
 import { PageIntro } from "@/components/navigation/PageIntro";
@@ -18,29 +17,6 @@ type LearningCoursePageViewProps = {
   language: Language;
   data: LearningCoursePageData;
 };
-
-function DetailList({
-  title,
-  items,
-}: {
-  title: ReactNode;
-  items: string[];
-}) {
-  if (!items.length) {
-    return null;
-  }
-
-  return (
-    <section className="pv-card p-5">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">{title}</p>
-      <ul className="mt-3 grid gap-2 text-sm leading-relaxed text-zinc-700">
-        {items.map((item) => (
-          <li key={`${title}-${item}`}>• {item}</li>
-        ))}
-      </ul>
-    </section>
-  );
-}
 
 function lessonStateLabel(language: Language, lesson: LearningLessonOutline): string {
   if (lesson.status === "completed") {
@@ -207,30 +183,6 @@ export function LearningCoursePageView({ language, data }: LearningCoursePageVie
           ))}
         </div>
       </section>
-
-      {course.prerequisites.length > 0 || course.deliverables.length > 0 || course.career_outcomes.length > 0 || course.product_action ? (
-        <section className="grid gap-4 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-          <div className="grid gap-4">
-            <DetailList title={<T k="learn.prerequisitesTitle" />} items={course.prerequisites} />
-            <DetailList title={<T k="learn.deliverablesTitle" />} items={course.deliverables} />
-            <DetailList title={<T k="learn.careerOutcomesTitle" />} items={course.career_outcomes} />
-          </div>
-
-          {course.product_action ? (
-            <section className="pv-card h-fit p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-zinc-500">
-                <T k="learn.useInProduct" />
-              </p>
-              {course.product_action.body ? (
-                <p className="mt-3 text-sm leading-relaxed text-zinc-700">{course.product_action.body}</p>
-              ) : null}
-              <Link href={course.product_action.href} className="pv-button-primary mt-4 !w-auto">
-                {course.product_action.label}
-              </Link>
-            </section>
-          ) : null}
-        </section>
-      ) : null}
 
       {course.weak_areas.length > 0 ? (
         <section className="pv-panel px-6 py-6 sm:px-7">
