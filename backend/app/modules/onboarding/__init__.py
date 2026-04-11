@@ -1,1 +1,0 @@
-# Onboarding and activation domain.

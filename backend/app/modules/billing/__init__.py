@@ -1,1 +1,0 @@
-# Billing bounded context.
