@@ -190,6 +190,8 @@ import logging
 
 from dotenv import load_dotenv
 
+load_dotenv()
+
 from routes import router
 from database import (
     init_db,
@@ -199,6 +201,8 @@ from database import (
     get_user_language
 )
 from languages import get_text
+
+TOKEN=("BOT_TOKEN")
 
 
 # ==============================================================================
