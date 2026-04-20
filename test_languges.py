@@ -1,0 +1,274 @@
+
+
+TRANSLATIONS = {
+    'ru': {
+        'welcome': "👋 **Привет, {name}!**\n\nЭто **Копилка Промптов** - профессиональный каталог промптов и техник:\nот zero-shot до chain-of-thought,\nорганизованный для обучения и реальных задач.",
+        'main_menu': "🏠 **Главное меню** 🏠",
+        'catalog_ai': "🤖 **Каталог Искусственного Интеллекта**\n\nВыберите модель для начала работы:",
+        'ai_activated': "**Активирован**\n\nТеперь я слушаю вас. Напишите любой запрос, и нейросеть ответит.\n💰 *Стоимость сообщения: 1 коин* 💰",
+        'session_ended': "🛑 **Сессия завершена** 🛑\n\nВы вернулись в главное меню.",
+        'thinking': "🤔 *Нейросеть думает...*...",
+        'profile': "👤 **Профиль пользователя**\n\nID: `{user_id}`\nСтатус: {premium_badge}\n\n📊 **Ваши достижения**:\n🪙 Баланс: **{coins}** койнов\n{streak_emoji} Ударный режим: **{streak}** дн.\n📅 В боте: **{days}** дн.\n\nВыполняйте миссии и общайтесь с ИИ, чтобы зарабатывать!",
+        'search_prompt': "🔍 **Поиск AI моделей** 🔍\n\nВведите название модели для поиска:\n\nПримеры:\n• `mistral` → Mistral AI\n• `qwen` → Qwen AI\n• `gemini` → Gemini Pro\n\nПросто напишите слово в чат:\n\n❌ Чтобы отменить поиск, нажмите /cancel",
+        'search_no_results': "❌ **Ничего не найдено по запросу ❌\"{query}\"**\n\nПопробуйте другой запрос:\n• mistral\n• qwen\n• gemini\n• gpt\n• claude",
+        'search_results': "✅ **Найдено моделей: {count}**\n\n{results}\n\nВыберите модель из списка ниже 👇",
+        'model_detail': "**{model_name}**\n\n{description}\n\n**ID модели:** `{model_id}`\n\nГотовы запустить эту модель?",
+        'notifications': "🔔 **Настройки уведомлений** 🔔\n\nОбщий статус: **{status}**\n\nПараметры:\n{daily} Ежедневные напоминания\n{news} Новости сервиса\n{missions} Миссии и задания\n\nУправляйте нажатием на кнопки:",
+        'tariffs': "💎 **Подписки** 💎\n\nВаш уровень: {current}\n\nfree: 0 руб/мес\nstarter: 200 руб/мес\npro: 500 руб/мес\nMAX: 600 руб/мес",
+        'missions_stub': "🎯 **Миссии** 🎯\n\nЕжедневные задания появятся здесь.",
+        'games_stub': "🎮 **Игры** 🎮\n\nМини-игры для заработка койнов в разработке.",
+        'search_stub': "🔍 **Поиск** 🔍\n\nФункционал в разработке...",
+        'cancel': "❌ **Поиск отменён** ❌\n\nВы вернулись в главное меню.",
+        'language_menu': "🌐 **Выберите язык / Select Language / Тел сайлау** 🌐",
+        'language_changed': "✅ **Язык изменён на {lang}** ✅",
+
+        'back': "🔙 Назад 🔙",
+        'update': "🔄 Обновить 🔄",
+        'complete_session': "🔙 Завершить сессию 🔙",
+        'launch_model': "Запустить модель",
+        'back_to_search': "🔙 Назад к поиску 🔙",
+        'back_to_menu': "🏠 В главное меню 🏠",
+        'notifications_settings': "🔔 Уведомления 🔔",
+        'language_settings': "🌐 Язык 🌐",
+        'catalog_ai_btn': "🤖 Каталог ИИ 🤖",
+        'search_btn': "🔍 Поиск 🔍",
+        'tariffs_btn': "💎 Тарифы 💎",
+        'missions_btn': "🎯 Миссии 🎯",
+        'games_btn': "🎮 Игры 🎮",
+        'profile_btn': "👤 Профиль",
+        'mistral_btn': "Mistral AI",
+        'qwen_btn': "Qwen AI",
+        'nemotron_btn': "NVIDIA Nemotron",
+        'gpt_oss_btn': "ChatGPT",
+        'daily_reminder': "🔔 **Напоминание из AI Hub!**\n\nНе забудь зайти сегодня, чтобы не прервать ударный режим! 🔥\nВыполняй миссии и зарабатывай койны.",
+
+        # ==========================================================================
+        # НОВОЕ: МИССИИ / СТРИК / ЭКОНОМИКА
+        # ==========================================================================
+        'missions_menu_title': "🎯 **Миссии** 🎯",
+        'daily_missions_title': "**Ежедневные миссии:**",
+        'permanent_missions_title': "**Постоянные миссии:**",
+        'no_missions': "Нет миссий",
+        'streak_menu_title': "🔥 **Ударный режим**",
+        'streak_description': "Нажимай кнопку каждый день, чтобы продлевать ударный режим.\nЕсли пропустишь день, заморозка сохранит серию.",
+        'economy_line': "🪙 Токены: **{coins}**\n🔥 Стрик: **{streak}**\n🧊 Заморозки: **{freeze_count}**",
+        'claim_streak_btn': "🔥 Продлить ударный режим",
+        'buy_freeze_btn': "🧊 Купить заморозку (30)",
+        'streak_btn': "🔥 Стрик",
+        'missions_btn_new': "🎯 Миссии 🎯",
+        'back_to_profile': "👤 Назад в профиль",
+        'streak_claimed': "🔥 **Ударный режим продлён!**\n\nТекущий стрик: **{streak}**\nНаграда: **+{reward}** токенов\n🧊 Заморозок осталось: **{freeze_count}**",
+        'freeze_used': "\n\n🧊 Заморозка была использована автоматически.",
+        'freeze_bought_alert': "🧊 Заморозка куплена!",
+        'mission_done_alert': "✅ Прогресс обновлён",
+        'menu_profile_extra': "\n\n🧊 Заморозки: **{freeze_count}**",
+        "prompt_review_start": "📝 Пришлите ваш промпт текстом или отправьте голосовое сообщение — я переведу его в текст.",
+        "prompt_review_sent": "✅ Ваш промпт отправлен на редакцию.",
+        "prompt_review_empty": "❌ Пожалуйста, отправьте текстовый промпт.",
+        "prompt_review_voice_processing": "🎙 Распознаю голосовое сообщение...",
+        "prompt_review_voice_failed": "❌ Не удалось распознать голосовое. Попробуйте ещё раз или отправьте текст.",
+        "prompt_review_voice_too_long": "❌ Голосовое сообщение слишком длинное. Максимум — 3 минуты.",
+
+        # названия миссий
+        'daily_open_profile': "Открыть профиль",
+        'daily_claim_streak': "Продлить ударный режим",
+        'daily_send_1_ai': "Отправить 1 сообщение ИИ",
+        'daily_send_3_ai': "Отправить 3 сообщения ИИ",
+        'daily_use_search': "Использовать поиск моделей",
+        'perm_ai_10': "Написать 10 сообщений ИИ",
+        'perm_ai_25': "Написать 25 сообщений ИИ",
+        'perm_streak_3': "Продержать ударный режим 3 дня",
+        'perm_streak_7': "Продержать ударный режим 7 дней",
+        'perm_buy_freeze_1': "Купить первую заморозку",
+        'daily_all_completed_bonus': "Выполнить все ежедневные миссии",
+    },
+
+    'en': {
+        'welcome': "👋 **Hello, {name}!**\n\nThis is **Prompt Vault** - a professional catalog of prompts and techniques:\nfrom zero-shot to chain-of-thought,\norganized for learning and real tasks.",
+        'main_menu': "🏠 **Main Menu** 🏠",
+        'catalog_ai': "🤖 **AI Catalog**\n\nSelect a model to start:",
+        'ai_activated': "**Activated**\n\nI'm listening. Write any request and the AI will respond.\n💰 *Message cost: 1 coin* 💰",
+        'session_ended': "🛑 **Session Ended** 🛑\n\nYou're back to main menu.",
+        'thinking': "🤔 *AI is thinking...*...",
+        'profile': "👤 **User Profile**\n\nID: `{user_id}`\nStatus: {premium_badge}\n\n📊 **Your Achievements**:\n🪙 Balance: **{coins}** coins\n{streak_emoji} Streak: **{streak}** days\n📅 In bot: **{days}** days\n\nComplete missions and chat with AI to earn!",
+        'search_prompt': "🔍 **AI Models Search** 🔍\n\nEnter model name to search:\n\nExamples:\n• `mistral` → Mistral AI\n• `qwen` → Qwen AI\n• `gemini` → Gemini Pro\n\nJust type a word:\n\n❌ To cancel search, press /cancel",
+        'search_no_results': "❌ **No results for ❌\"{query}\"**\n\nTry another query:\n• mistral\n• qwen\n• gemini\n• gpt\n• claude",
+        'search_results': "✅ **Found: {count} models**\n\n{results}\n\nSelect a model from the list 👇",
+        'model_detail': "**{model_name}**\n\n{description}\n\n**Model ID:** `{model_id}`\n\nReady to launch this model?",
+        'notifications': "🔔 **Notification Settings** 🔔\n\nGeneral status: **{status}**\n\nParameters:\n{daily} Daily reminders\n{news} Service news\n{missions} Missions and tasks\n\nManage by pressing buttons:",
+        'tariffs': "💎 **Subscriptions** 💎\n\nYour level: {current}\n\nfree: $0/month\nstarter: $3/month\npro: $7/month\nMAX: $10/month",
+        'missions_stub': "🎯 **Missions** 🎯\n\nDaily tasks coming soon.",
+        'games_stub': "🎮 **Games** 🎮\n\nMini-games for earning coins in development.",
+        'search_stub': "🔍 **Search** 🔍\n\nFeature in development...",
+        'cancel': "❌ **Search Cancelled** ❌\n\nYou're back to main menu.",
+        'language_menu': "🌐 **Select Language / Выберите язык / Тел сайлау** 🌐",
+        'language_changed': "✅ **Language changed to {lang}** ✅",
+
+        'back': "🔙 Back 🔙",
+        'update': "🔄 Refresh 🔄",
+        'complete_session': "🔙 End Session 🔙",
+        'launch_model': "Launch Model",
+        'back_to_search': "🔙 Back to Search 🔙",
+        'back_to_menu': "🏠 To Main Menu 🏠",
+        'notifications_settings': "🔔 Notifications 🔔",
+        'language_settings': "🌐 Language 🌐",
+        'catalog_ai_btn': "🤖 AI Catalog 🤖",
+        'search_btn': "🔍 Search 🔍",
+        'tariffs_btn': "💎 Subscriptions 💎",
+        'missions_btn': "🎯 Missions 🎯",
+        'games_btn': "🎮 Games 🎮",
+        'profile_btn': "👤 Profile",
+        'mistral_btn': "Mistral AI",
+        'qwen_btn': "Qwen AI",
+        'nemotron_btn': "NVIDIA Nemotron",
+        'gpt_oss_btn': "ChatGPT",
+        'daily_reminder': "🔔 **Reminder from AI Hub!**\n\nDon't forget to check in today to keep your streak! 🔥\nComplete missions and earn coins.",
+
+        # ==========================================================================
+        # NEW: MISSIONS / STREAK / ECONOMY
+        # ==========================================================================
+        'missions_menu_title': "🎯 **Missions**",
+        'daily_missions_title': "**Daily missions:**",
+        'permanent_missions_title': "**Permanent missions:**",
+        'no_missions': "No missions",
+        'streak_menu_title': "🔥 **Streak**",
+        'streak_description': "Press the button every day to extend your streak.\nIf you miss a day, a freeze will save it.",
+        'economy_line': "🪙 Tokens: **{coins}**\n🔥 Streak: **{streak}**\n🧊 Freezes: **{freeze_count}**",
+        'claim_streak_btn': "🔥 Extend streak",
+        'buy_freeze_btn': "🧊 Buy freeze (30)",
+        'streak_btn': "🔥 Streak",
+        'missions_btn_new': "🎯 Missions",
+        'back_to_profile': "👤 Back to profile",
+        'streak_claimed': "🔥 **Streak extended!**\n\nCurrent streak: **{streak}**\nReward: **+{reward}** tokens\n🧊 Freezes left: **{freeze_count}**",
+        'freeze_used': "\n\n🧊 A freeze was used automatically.",
+        'freeze_bought_alert': "🧊 Freeze purchased!",
+        'mission_done_alert': "✅ Progress updated",
+        'menu_profile_extra': "\n\n🧊 Freezes: **{freeze_count}**",
+        "prompt_review_start": "📝 Send your prompt as text or voice message — I will convert it to text.",
+        "prompt_review_sent": "✅ Your prompt has been sent for review.",
+        "prompt_review_empty": "❌ Please send a text prompt.",
+        "prompt_review_voice_processing": "🎙 Processing your voice message...",
+        "prompt_review_voice_failed": "❌ Failed to recognize voice. Try again or send text.",
+        "prompt_review_voice_too_long": "❌ Voice message is too long. Maximum — 3 minutes.",
+
+        # mission names
+        'daily_open_profile': "Open profile",
+        'daily_claim_streak': "Extend streak",
+        'daily_send_1_ai': "Send 1 AI message",
+        'daily_send_3_ai': "Send 3 AI messages",
+        'daily_use_search': "Use model search",
+        'perm_ai_10': "Send 10 AI messages",
+        'perm_ai_25': "Send 25 AI messages",
+        'perm_streak_3': "Keep streak for 3 days",
+        'perm_streak_7': "Keep streak for 7 days",
+        'perm_buy_freeze_1': "Buy your first freeze",
+        'daily_all_completed_bonus': "Complete all daily missions",
+    },
+
+    'tt': {
+        'welcome': "👋 **Исәнмесез, {name}!**\n\nБу **Prompt Vault** - профессиональ промптлар һәм техникалар каталогы:\nzero-shot тан chain-of-thought ка кадәр,\nукыту һәм реаль биремнәр өчен оештырылган.",
+        'main_menu': "🏠 **Төп меню** 🏠",
+        'catalog_ai': "🤖 **Ясалма Интеллект Каталогы**\n\nЭш башлау өчен модель сайлагыз:",
+        'ai_activated': "**Активлаштырылган**\n\nМин сезне тыңлыйм. Теләсә нинди сорау языгыз, һәм нейрочелтәр җавап бирер.\n💰 *Хәбәр бәясе: 1 коин* 💰",
+        'session_ended': "🛑 **Сессия тәмам** 🛑\n\nСез төп менюга кайттыгыз.",
+        'thinking': "🤔 *Нейрочелтәр уйлый...*...",
+        'profile': "👤 **Кулланучы профиле**\n\nID: `{user_id}`\nСтатус: {premium_badge}\n\n📊 **Сезнең казанышларыгыз**:\n🪙 Баланс: **{coins}** коин\n{streak_emoji} Удар режимы: **{streak}** көн\n📅 Ботта: **{days}** көн\n\nМиссияләрне үтәгез һәм ИИ белән аралашыгыз!",
+        'search_prompt': "🔍 **AI модельләр эзләү** 🔍\n\nЭзләү өчен модель исемен кертегез:\n\nҮрнәкләр:\n• `mistral` → Mistral AI\n• `qwen` → Qwen AI\n• `gemini` → Gemini Pro\n\nСүзне чатка языгыз:\n\n❌ Эзләүне бетерү өчен /cancel басыгыз",
+        'search_no_results': "❌ **\"{query}\" буенча нәтиҗәләр юк** ❌\n\nБашка сорау кертеп карагыз:\n• mistral\n• qwen\n• gemini\n• gpt\n• claude",
+        'search_results': "✅ **Табылды: {count} модель**\n\n{results}\n\nИсемлектән модель сайлагыз 👇",
+        'model_detail': "**{model_name}**\n\n{description}\n\n**Модель ID:** `{model_id}`\n\nБу модельне эшләтергә әзерме?",
+        'notifications': "🔔 **Белдерү көйләмәләре** 🔔\n\nГомуми статус: **{status}**\n\nПараметрлар:\n{daily} Көндәлек искәртмәләр\n{news} Сервис яңалыклары\n{missions} Миссияләр һәм биремнәр\n\nТөймәләрне басып идарә итегез:",
+        'tariffs': "💎 **Подпискалар** 💎\n\nСезнең дәрәҗә: {current}\n\nfree: 0 сум/ай\nstarter: 200 сум/ай\npro: 500 сум/ай\nMAX: 600 сум/ай",
+        'missions_stub': "🎯 **Миссияләр** 🎯\n\nКөндәлек биремнәр тиздән булачак.",
+        'games_stub': "🎮 **Уеннар** 🎮\n\nКоин эшләү өчен мини-уеннар эшләнү өстендә.",
+        'search_stub': "🔍 **Эзләү** 🔍\n\nФункционал эшләнү өстендә...",
+        'cancel': "❌ **Эзләү туктатылды** ❌\n\nСез төп менюга кайттыгыз.",
+        'language_menu': "🌐 **Тел сайлау / Выберите язык / Select Language** 🌐",
+        'language_changed': "✅ **Тел үзгәртелде: {lang}** ✅",
+
+        'back': "🔙 Артка 🔙",
+        'update': "🔄 Яңарту 🔄",
+        'complete_session': "🔙 Сессияне тәмамлау 🔙",
+        'launch_model': "Модельне эшләтергә",
+        'back_to_search': "🔙 Эзләүгә кайту 🔙",
+        'back_to_menu': "🏠 Төп менюга 🏠",
+        'notifications_settings': "🔔 Белдерүләр 🔔",
+        'language_settings': "🌐 Тел 🌐",
+        'catalog_ai_btn': "🤖 ИИ Каталогы 🤖",
+        'search_btn': "🔍 Эзләү 🔍",
+        'tariffs_btn': "💎 Тарифлар 💎",
+        'missions_btn': "🎯 Миссияләр 🎯",
+        'games_btn': "🎮 Уеннар 🎮",
+        'profile_btn': "👤 Профиль",
+        'mistral_btn': "Mistral AI",
+        'qwen_btn': "Qwen AI",
+        'nemotron_btn': "NVIDIA Nemotron",
+        'gpt_oss_btn': "ChatGPT",
+        'daily_reminder': "🔔 **AI Hub искәртмәсе!**\n\nБүген керергә онытмагыз, удар режимын өзмәс өчен! 🔥\nМиссияләрне үтәгез һәм коиннар эшләгез.",
+
+        # ==========================================================================
+        # ЯҢА: МИССИЯЛӘР / СТРИК / ЭКОНОМИКА
+        # ==========================================================================
+        'missions_menu_title': "🎯 **Миссияләр**",
+        'daily_missions_title': "**Көндәлек миссияләр:**",
+        'permanent_missions_title': "**Даими миссияләр:**",
+        'no_missions': "Миссияләр юк",
+        'streak_menu_title': "🔥 **Удар режимы**",
+        'streak_description': "Удар режимын дәвам итү өчен көн саен төймәгә басыгыз.\nӘгәр бер көнне калдырсагыз, туңдыру серияне саклап калачак.",
+        'economy_line': "🪙 Токеннар: **{coins}**\n🔥 Стрик: **{streak}**\n🧊 Туңдырулар: **{freeze_count}**",
+        'claim_streak_btn': "🔥 Удар режимын дәвам итү",
+        'buy_freeze_btn': "🧊 Туңдыру алу (30)",
+        'streak_btn': "🔥 Стрик",
+        'missions_btn_new': "🎯 Миссияләр",
+        'back_to_profile': "👤 Профильгә кайту",
+        'streak_claimed': "🔥 **Удар режимы дәвам ителде!**\n\nХәзерге стрик: **{streak}**\nБүләк: **+{reward}** токен\n🧊 Калган туңдырулар: **{freeze_count}**",
+        'freeze_used': "\n\n🧊 Туңдыру автоматик рәвештә кулланылды.",
+        'freeze_bought_alert': "🧊 Туңдыру сатып алынды!",
+        'mission_done_alert': "✅ Прогресс яңартылды",
+        'menu_profile_extra': "\n\n🧊 Туңдырулар: **{freeze_count}**",
+        "prompt_review_start": "📝 Промптыгызны текст белән яки тавыш хәбәр итеп җибәрегез — мин аны текстка әйләндерәм.",
+        "prompt_review_sent": "✅ Сезнең промпт редакциягә җибәрелде.",
+        "prompt_review_empty": "❌ Зинһар, текстлы промпт җибәрегез.",
+        "prompt_review_voice_processing": "🎙 Тавыш хәбәрен таныйм...",
+        "prompt_review_voice_failed": "❌ Тавышны тану мөмкин булмады. Кабатлап карагыз яки текст җибәрегез.",
+        "prompt_review_voice_too_long": "❌ Тавыш хәбәр бик озын. Максимум — 3 минут.",
+
+        # миссия исемнәре
+        'daily_open_profile': "Профильне ачу",
+        'daily_claim_streak': "Удар режимын дәвам итү",
+        'daily_send_1_ai': "ИИга 1 хәбәр җибәрү",
+        'daily_send_3_ai': "ИИга 3 хәбәр җибәрү",
+        'daily_use_search': "Модельләр эзләүне куллану",
+        'perm_ai_10': "ИИга 10 хәбәр җибәрү",
+        'perm_ai_25': "ИИга 25 хәбәр җибәрү",
+        'perm_streak_3': "Удар режимын 3 көн саклау",
+        'perm_streak_7': "Удар режимын 7 көн саклау",
+        'perm_buy_freeze_1': "Беренче туңдыруны сатып алу",
+        'daily_all_completed_bonus': "Барлык көндәлек миссияләрне үтәү",
+    }
+}
+
+
+# Языковые названия для отображения
+LANGUAGES = {
+    'ru': ' Русский',
+    'en': ' English',
+    'tt': ' Татарча'
+}
+
+
+def get_text(lang: str, key: str, **kwargs) -> str:
+    """Получает текст на нужном языке с подстановкой переменных"""
+    try:
+        text = TRANSLATIONS.get(lang, TRANSLATIONS['ru'])[key]
+        if kwargs:
+            text = text.format(**kwargs)
+        return text
+    except KeyError:
+        try:
+            text = TRANSLATIONS['ru'][key]
+            if kwargs:
+                text = text.format(**kwargs)
+            return text
+        except Exception:
+            return key
