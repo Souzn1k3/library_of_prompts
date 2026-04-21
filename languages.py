@@ -45,7 +45,7 @@ TRANSLATIONS = {
         # ==========================================================================
         # НОВОЕ: МИССИИ / СТРИК / ЭКОНОМИКА
         # ==========================================================================
-        'missions_menu_title': "🎯 **Миссии** 🎯",
+        'missions_menu_title': "🎯 **Миссии**",
         'daily_missions_title': "**Ежедневные миссии:**",
         'permanent_missions_title': "**Постоянные миссии:**",
         'no_missions': "Нет миссий",
@@ -55,7 +55,7 @@ TRANSLATIONS = {
         'claim_streak_btn': "🔥 Продлить ударный режим",
         'buy_freeze_btn': "🧊 Купить заморозку (30)",
         'streak_btn': "🔥 Стрик",
-        'missions_btn_new': "🎯 Миссии 🎯",
+        'missions_btn_new': "🎯 Миссии",
         'back_to_profile': "👤 Назад в профиль",
         'streak_claimed': "🔥 **Ударный режим продлён!**\n\nТекущий стрик: **{streak}**\nНаграда: **+{reward}** токенов\n🧊 Заморозок осталось: **{freeze_count}**",
         'freeze_used': "\n\n🧊 Заморозка была использована автоматически.",
@@ -257,10 +257,10 @@ LANGUAGES = {
 }
 
 
-def get_text(lang: str, key: str, **kwargs) -> str:
+def get_text(locale: str, key: str, **kwargs) -> str:
     """Получает текст на нужном языке с подстановкой переменных"""
     try:
-        text = TRANSLATIONS.get(lang, TRANSLATIONS['ru'])[key]
+        text = TRANSLATIONS.get(locale, TRANSLATIONS['ru'])[key]
         if kwargs:
             text = text.format(**kwargs)
         return text

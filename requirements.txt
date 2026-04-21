@@ -1,5 +1,7 @@
+
 aiogram>=3.0.0
 asyncpg
 python-dotenv
 mistralai>=0.1.0
 aiohttp
+vosk

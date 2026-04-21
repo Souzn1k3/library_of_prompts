@@ -2,5 +2,9 @@
 __pycache__/
 *.pyc
 .env
+.env.bak*
 .idea/
 models/
+temp_voice_*
+*.bak_*
+*.last_uploaded_check
