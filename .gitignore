@@ -1,1 +1,10 @@
-Nothing should be ignored based on the provided file changes, as they only include source code files (.py files) without any build artifacts, dependencies, or temporary files.
+.venv/
+__pycache__/
+*.pyc
+.env
+.env.bak*
+.idea/
+models/
+temp_voice_*
+*.bak_*
+*.last_uploaded_check
