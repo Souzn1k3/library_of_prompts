@@ -1112,7 +1112,7 @@ LOCAL_TEXTS = {
         "claim_streak_btn": "🔥 Продлить ударный режим",
         "buy_freeze_btn": "🧊 Купить заморозку (30)",
         "streak_btn": "🔥 Стрик",
-        "missions_btn_new": "🎯 Миссии",
+        "missions_btn_new": "🎯 Миссии 🎯",
         "streak_claimed": (
             "🔥 **Ударный режим продлён!**\n\n"
             "Текущий стрик: **{streak}**\n"
@@ -1173,7 +1173,7 @@ LOCAL_TEXTS = {
         "claim_streak_btn": "🔥 Extend streak",
         "buy_freeze_btn": "🧊 Buy freeze (30)",
         "streak_btn": "🔥 Streak",
-        "missions_btn_new": "🎯 Missions",
+        "missions_btn_new": "🎯 Missions 🎯",
         "streak_claimed": (
             "🔥 **Streak extended!**\n\n"
             "Current streak: **{streak}**\n"
@@ -1234,7 +1234,7 @@ LOCAL_TEXTS = {
         "claim_streak_btn": "🔥 Удар режимын дәвам итү",
         "buy_freeze_btn": "🧊 Заморозка алу (30)",
         "streak_btn": "🔥 Стрик",
-        "missions_btn_new": "🎯 Миссияләр",
+        "missions_btn_new": "🎯 Миссияләр 🎯",
         "streak_claimed": (
             "🔥 **Удар режимы дәвам ителде!**\n\n"
             "Хәзерге стрик: **{streak}**\n"
