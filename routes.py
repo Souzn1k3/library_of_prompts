@@ -831,16 +831,43 @@
 import asyncio
 import aiohttp
 
+from datetime import datetime, timezone
 from html import escape
+import json
+import re
+import secrets
+import subprocess
+import wave
 
 from aiogram import Router, F
-from aiogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from aiogram.types import (
+    CallbackQuery,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    LabeledPrice,
+    Message,
+    PreCheckoutQuery,
+)
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
+from bot_plans import (
+    PAID_PLAN_ORDER,
+    SUBSCRIPTION_PERIOD_SECONDS,
+    build_subscription_payload,
+    format_expiry,
+    get_plan_badge,
+    get_plan_config,
+    get_plan_title,
+    has_same_or_higher_plan,
+    normalize_plan_tier,
+    parse_subscription_payload,
+)
 from database import (
     add_or_update_user,
+    count_ai_messages_today,
+    get_user_plan,
     get_user_profile_stats,
     get_user_notification_settings,
     update_notification_setting,
@@ -867,12 +894,59 @@ from database import (
     get_user_rank_by_streak,
     get_top_best_users,
     get_user_rank_best,
+    grant_game_reward,
+    update_user_plan,
     update_user_coins,
 )
 
 from languages import get_text, LANGUAGES
+from website_api import (
+    activate_stars_subscription as website_activate_stars_subscription,
+    get_moderation_prompt as website_get_moderation_prompt,
+    get_moderation_queue as website_get_moderation_queue,
+    get_subscription_status as website_get_subscription_status,
+    moderate_prompt as website_moderate_prompt,
+    upsert_user as website_upsert_user,
+)
 import os
 import aiofiles
+
+
+def _parse_admin_telegram_ids() -> tuple[int, ...]:
+    values: list[int] = []
+    primary = (os.getenv("ADMIN_TELEGRAM_ID", "1755580726") or "").strip()
+    if primary:
+        try:
+            values.append(int(primary))
+        except ValueError:
+            pass
+
+    raw = (os.getenv("ADMIN_TELEGRAM_IDS", "") or "").strip()
+    if raw:
+        for token in raw.split(","):
+            candidate = token.strip()
+            if not candidate:
+                continue
+            try:
+                values.append(int(candidate))
+            except ValueError:
+                continue
+
+    deduped: list[int] = []
+    seen: set[int] = set()
+    for value in values:
+        if value <= 0 or value in seen:
+            continue
+        seen.add(value)
+        deduped.append(value)
+
+    if not deduped:
+        deduped.append(1755580726)
+    return tuple(deduped)
+
+
+ADMIN_TELEGRAM_IDS = _parse_admin_telegram_ids()
+ADMIN_TELEGRAM_ID = ADMIN_TELEGRAM_IDS[0]
 
 
 router = Router()
@@ -886,6 +960,12 @@ MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
 
 QWEN_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 QWEN_API_URL = "https://openrouter.ai/api/v1/chat/completions"
+
+VOSK_MODEL_PATH = os.getenv(
+    "VOSK_MODEL_PATH",
+    os.path.join(os.path.dirname(__file__), "models", "vosk-model-small-ru-0.22"),
+)
+_vosk_model = None
 
 
 # ==============================================================================
@@ -902,13 +982,14 @@ class SearchState(StatesGroup):
 
 class GamesState(StatesGroup):
     in_ai_quiz = State()
-
-class GamesState(StatesGroup):
-    in_ai_quiz = State()
     in_prompt_puzzle = State()
 
 class PromptReviewState(StatesGroup):
     waiting_for_prompt = State()
+
+
+class ModerationCommentState(StatesGroup):
+    waiting_for_comment = State()
 
 
 # ==============================================================================
@@ -1207,6 +1288,535 @@ def lt(lang: str, key: str, **kwargs) -> str:
     return text
 
 
+SUBSCRIPTION_TEXTS = {
+    "ru": {
+        "title": "💎 **Подписка**",
+        "current_plan": "Ваш тариф",
+        "renews_until": "Активна до",
+        "shared_sync": "Подписка действует и на сайте, и в Telegram-боте. После оплаты доступ и все преимущества синхронизируются автоматически.",
+        "price": "Цена",
+        "choose": "Выберите тариф для оформления подписки через Telegram Stars:",
+        "ai_daily_limit": "AI-диалоги в день",
+        "freeze_limit": "Лимит заморозок",
+        "game_bonus": "Бонус в играх",
+        "premium_prompts": "Premium-промпты",
+        "restricted_categories": "Restricted-категории",
+        "yes": "Да",
+        "no": "Нет",
+        "unlimited": "без лимита",
+        "included": "уже входит",
+        "active": "текущий",
+        "pay": "Оплатить {stars} ⭐️",
+        "checkout_ready": "Ссылка на оплату готова. После успешного платежа подписка автоматически синхронизируется с сайтом.",
+        "payment_success": "✅ Подписка активирована: {badge} **{plan}**",
+        "payment_success_expires": "✅ Подписка активирована: {badge} **{plan}**\nАктивна до: **{expires}**",
+        "payment_failed_sync": "⚠️ Оплата прошла, но сайт не подтвердил синхронизацию. Я уже отправил уведомление админу.",
+        "same_or_higher": "У вас уже этот тариф или выше.",
+        "limit_reached": "⛔ Дневной лимит AI-диалогов исчерпан: **{used}/{limit}**.",
+        "limit_hint": "Перейдите на более высокий тариф в разделе «Тарифы», чтобы увеличить лимит.",
+        "limit_status": "Лимит сегодня: **{used}/{limit}**",
+        "limit_status_unlimited": "Лимит сегодня: **без ограничений**",
+        "game_bonus_line": "🎁 Бонус подписки: **+{bonus}** токенов ({pct}%)",
+        "profile_plan": "\n\n💎 План: {badge} **{plan}**",
+        "profile_expires": "\n⏳ Активна до: **{expires}**",
+        "profile_ai_limit": "\n🤖 AI в день: **{limit}**",
+        "profile_game_bonus": "\n🎮 Бонус игр: **+{bonus}%**",
+        "streak_limit": "\n📦 Лимит заморозок по плану: **{limit}**",
+        "noop_included": "Этот уровень уже входит в ваш доступ.",
+    },
+    "en": {
+        "title": "💎 **Shared Subscription**",
+        "current_plan": "Current plan",
+        "renews_until": "Active until",
+        "shared_sync": "The same subscription works on both the website and the Telegram bot.",
+        "price": "Price",
+        "choose": "Choose a plan to purchase with Telegram Stars:",
+        "ai_daily_limit": "AI chats per day",
+        "freeze_limit": "Freeze limit",
+        "game_bonus": "Game bonus",
+        "premium_prompts": "Premium prompts",
+        "restricted_categories": "Restricted categories",
+        "yes": "Yes",
+        "no": "No",
+        "unlimited": "unlimited",
+        "included": "already included",
+        "active": "current",
+        "pay": "Pay {stars} ⭐️",
+        "checkout_ready": "Your payment link is ready. After a successful payment, the subscription will sync with the website automatically.",
+        "payment_success": "✅ Subscription activated: {badge} **{plan}**",
+        "payment_success_expires": "✅ Subscription activated: {badge} **{plan}**\nActive until: **{expires}**",
+        "payment_failed_sync": "⚠️ Payment succeeded, but the website did not confirm the sync yet. I have already notified the admin.",
+        "same_or_higher": "You already have this plan or a higher one.",
+        "limit_reached": "⛔ Your daily AI limit is used up: **{used}/{limit}**.",
+        "limit_hint": "Open the Plans section to upgrade and increase the limit.",
+        "limit_status": "Today: **{used}/{limit}**",
+        "limit_status_unlimited": "Today: **unlimited**",
+        "game_bonus_line": "🎁 Subscription bonus: **+{bonus}** tokens ({pct}%)",
+        "profile_plan": "\n\n💎 Plan: {badge} **{plan}**",
+        "profile_expires": "\n⏳ Active until: **{expires}**",
+        "profile_ai_limit": "\n🤖 AI per day: **{limit}**",
+        "profile_game_bonus": "\n🎮 Game bonus: **+{bonus}%**",
+        "streak_limit": "\n📦 Freeze limit by plan: **{limit}**",
+        "noop_included": "This level is already included in your access.",
+    },
+    "tt": {
+        "title": "💎 **Уртак язылу**",
+        "current_plan": "Хәзерге план",
+        "renews_until": "Актив вакыты",
+        "shared_sync": "Бер үк язылу сайтта да, Telegram-ботта да эшли.",
+        "price": "Бәя",
+        "choose": "Telegram Stars аша сатып алу өчен план сайлагыз:",
+        "ai_daily_limit": "Көненә AI-диалоглар",
+        "freeze_limit": "Туңдыру лимиты",
+        "game_bonus": "Уен бонусы",
+        "premium_prompts": "Premium-промптлар",
+        "restricted_categories": "Restricted-категорияләр",
+        "yes": "Әйе",
+        "no": "Юк",
+        "unlimited": "чиксез",
+        "included": "инде кергән",
+        "active": "хәзерге",
+        "pay": "{stars} ⭐️ түләү",
+        "checkout_ready": "Түләү сылтамасы әзер. Уңышлы түләүдән соң язылу сайт белән автоматик синхронлашачак.",
+        "payment_success": "✅ Язылу активлаштырылды: {badge} **{plan}**",
+        "payment_success_expires": "✅ Язылу активлаштырылды: {badge} **{plan}**\nАктив вакыты: **{expires}**",
+        "payment_failed_sync": "⚠️ Түләү узды, ләкин сайт синхронлаштыруны әле расламады. Админга хәбәр җибәрелде.",
+        "same_or_higher": "Сездә инде бу план яки аннан югарысы бар.",
+        "limit_reached": "⛔ Көндәлек AI лимиты бетте: **{used}/{limit}**.",
+        "limit_hint": "Лимитны арттыру өчен «Тарифлар» бүлегендә планны яңартыгыз.",
+        "limit_status": "Бүген: **{used}/{limit}**",
+        "limit_status_unlimited": "Бүген: **чиксез**",
+        "game_bonus_line": "🎁 Язылу бонусы: **+{bonus}** токен ({pct}%)",
+        "profile_plan": "\n\n💎 План: {badge} **{plan}**",
+        "profile_expires": "\n⏳ Актив вакыты: **{expires}**",
+        "profile_ai_limit": "\n🤖 Көненә AI: **{limit}**",
+        "profile_game_bonus": "\n🎮 Уен бонусы: **+{bonus}%**",
+        "streak_limit": "\n📦 План буенча туңдыру лимиты: **{limit}**",
+        "noop_included": "Бу дәрәҗә инде сезнең мөмкинлекләргә керә.",
+    },
+}
+
+
+def st(lang: str, key: str, **kwargs) -> str:
+    data = SUBSCRIPTION_TEXTS.get(lang, SUBSCRIPTION_TEXTS["ru"])
+    text = data.get(key, SUBSCRIPTION_TEXTS["ru"].get(key, key))
+    if kwargs:
+        return text.format(**kwargs)
+    return text
+
+
+def _bool_text(lang: str, value: bool) -> str:
+    return st(lang, "yes" if value else "no")
+
+
+def _limit_text(lang: str, value: int) -> str:
+    return st(lang, "unlimited") if int(value) == 0 else str(value)
+
+
+def _stars_text(stars: int) -> str:
+    return f"{int(stars)} ⭐️"
+
+
+def _plan_price_text(tier: str) -> str:
+    plan = get_plan_config(tier)
+    stars = int(plan["stars_price_month"])
+    return "Free" if stars == 0 else f"{_stars_text(stars)} / 30d"
+
+
+def _plan_feature_lines(lang: str, tier: str) -> list[str]:
+    plan = get_plan_config(tier)
+    return [
+        f"{st(lang, 'price')}: **{_plan_price_text(tier)}**",
+        f"{st(lang, 'ai_daily_limit')}: **{_limit_text(lang, int(plan['ai_daily_limit']))}**",
+        f"{st(lang, 'freeze_limit')}: **{_limit_text(lang, int(plan['max_freezes']))}**",
+        f"{st(lang, 'game_bonus')}: **+{int(plan['coin_bonus_percent'])}%**",
+        f"{st(lang, 'premium_prompts')}: **{_bool_text(lang, bool(plan['premium_prompts']))}**",
+        f"{st(lang, 'restricted_categories')}: **{_bool_text(lang, bool(plan['restricted_categories']))}**",
+    ]
+
+
+def build_tariffs_text(lang: str, current_plan: dict) -> str:
+    current_tier = normalize_plan_tier(current_plan.get("plan_tier"))
+    current_title = get_plan_title(current_tier, lang)
+    current_badge = get_plan_badge(current_tier)
+    lines = [
+        st(lang, "title"),
+        "",
+        f"{st(lang, 'current_plan')}: {current_badge} **{current_title}**",
+    ]
+
+    current_expiry = format_expiry(current_plan.get("plan_expires_at"), lang)
+    if current_expiry:
+        lines.append(f"{st(lang, 'renews_until')}: **{current_expiry}**")
+
+    lines.extend(["", st(lang, "shared_sync"), "", st(lang, "choose")])
+
+    for tier in ("free", *PAID_PLAN_ORDER):
+        lines.append("")
+        lines.append(f"{get_plan_badge(tier)} **{get_plan_title(tier, lang)}**")
+        lines.extend(f"• {line}" for line in _plan_feature_lines(lang, tier))
+
+    return "\n".join(lines)
+
+
+def get_tariffs_menu_inline(lang: str, current_tier: str) -> InlineKeyboardMarkup:
+    rows = []
+    for tier in PAID_PLAN_ORDER:
+        label = f"{get_plan_badge(tier)} {get_plan_title(tier, lang)} · {_stars_text(get_plan_config(tier)['stars_price_month'])}"
+        callback = f"tariff_buy:{tier}"
+        if has_same_or_higher_plan(current_tier, tier):
+            label = f"{get_plan_badge(tier)} {get_plan_title(tier, lang)} · {st(lang, 'included')}"
+            callback = "tariff_noop"
+        rows.append([InlineKeyboardButton(text=label, callback_data=callback)])
+    rows.append([InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_main_menu")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def get_tariff_checkout_inline(lang: str, pay_url: str, stars: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text=st(lang, "pay", stars=stars), url=pay_url)],
+            [InlineKeyboardButton(text=get_text(lang, "back"), callback_data="menu_tariffs")],
+        ]
+    )
+
+
+async def apply_subscription_snapshot(user_id: int, snapshot: dict | None) -> dict:
+    if not snapshot:
+        return await get_user_plan(user_id)
+    return await update_user_plan(
+        user_id,
+        plan_tier=snapshot.get("plan_tier", "free"),
+        plan_expires_at=snapshot.get("current_period_end"),
+        benefits=snapshot.get("benefits") or {},
+    )
+
+
+async def sync_subscription_cache(
+    user_id: int,
+    *,
+    username: str | None = None,
+    first_name: str | None = None,
+    last_name: str | None = None,
+    language: str = "ru",
+) -> dict:
+    await website_upsert_user(
+        telegram_user_id=user_id,
+        username=username,
+        first_name=first_name,
+        last_name=last_name,
+        language=language,
+    )
+    snapshot = await website_get_subscription_status(user_id)
+    return await apply_subscription_snapshot(user_id, snapshot if isinstance(snapshot, dict) else None)
+
+
+def build_profile_plan_block(lang: str, plan: dict) -> str:
+    tier = normalize_plan_tier(plan.get("plan_tier"))
+    block = st(lang, "profile_plan", badge=get_plan_badge(tier), plan=get_plan_title(tier, lang))
+    expires = format_expiry(plan.get("plan_expires_at"), lang)
+    if expires:
+        block += st(lang, "profile_expires", expires=expires)
+    block += st(lang, "profile_ai_limit", limit=_limit_text(lang, int(plan.get("plan_ai_limit", 0))))
+    block += st(lang, "profile_game_bonus", bonus=int(plan.get("plan_coin_bonus_pct", 0)))
+    return block
+
+
+def build_ai_limit_status(lang: str, used: int, limit: int) -> str:
+    if int(limit) == 0:
+        return st(lang, "limit_status_unlimited")
+    return st(lang, "limit_status", used=used, limit=limit)
+
+
+def build_ai_activation_text(lang: str, model_title: str, plan: dict, used_today: int) -> str:
+    return f"{model_title} {get_text(lang, 'ai_activated')}\n\n{build_ai_limit_status(lang, used_today, int(plan.get('plan_ai_limit', 0)))}"
+
+
+async def start_ai_session(
+    callback: CallbackQuery,
+    state: FSMContext,
+    *,
+    model_key: str,
+    model_title: str,
+) -> None:
+    user_id = callback.from_user.id
+    user_lang = await get_user_language(user_id)
+    plan = await sync_subscription_cache(user_id, language=user_lang)
+    used_today = await count_ai_messages_today(user_id)
+
+    await state.set_state(AIChatState.waiting_for_message)
+    await state.update_data(current_model=model_key)
+    await callback.message.edit_text(
+        build_ai_activation_text(user_lang, model_title, plan, used_today),
+        reply_markup=get_exit_ai_inline(user_lang),
+        parse_mode="Markdown",
+    )
+    await callback.answer()
+
+
+# ==============================================================================
+# 4. ПАНЕЛЬ МОДЕРАЦИИ
+# ==============================================================================
+
+MODERATION_PANEL_TEXTS = {
+    "ru": {
+        "queue_title": "🛠 Модерация промптов",
+        "queue_empty": "Сейчас нет промптов, ожидающих модерацию.",
+        "queue_hint": "Выберите промпт из списка ниже.",
+        "open_prompt": "Открыть промпт",
+        "open_queue": "Открыть очередь",
+        "approve": "✅ Одобрить",
+        "approve_comment": "💬 Одобрить с комментарием",
+        "reject": "❌ Отклонить",
+        "reject_comment": "📝 Отклонить с комментарием",
+        "comment_prompt_approve": "💬 Отправьте комментарий для одобрения одним сообщением.",
+        "comment_prompt_reject": "📝 Отправьте причину отклонения одним сообщением.",
+        "comment_saved": "✅ Решение сохранено.",
+        "no_access": "⛔ У вас нет доступа к модерации.",
+        "load_failed": "❌ Не удалось загрузить данные модерации.",
+        "decision_failed": "❌ Не удалось применить решение. Возможно, промпт уже обработан.",
+        "reason_more_detail": "Нужно больше деталей и конкретики.",
+        "reason_structure": "Нужно улучшить структуру и формат ответа.",
+        "reason_duplicate": "Похоже на дубликат или слишком близкую версию существующего промпта.",
+        "reason_policy": "Нужно привести промпт в соответствие с правилами площадки.",
+        "back_queue": "⬅️ К очереди",
+        "back_prompt": "⬅️ К карточке",
+        "prev_page": "⬅️ Назад",
+        "next_page": "Вперед ➡️",
+        "card_header": "📌 Карточка промпта",
+        "card_author": "Автор",
+        "card_slug": "Slug",
+        "card_status": "Статус",
+        "card_summary": "Кратко",
+        "card_category": "Категория",
+        "card_technique": "Техника",
+        "card_tags": "Теги",
+        "card_use_cases": "Use cases",
+        "card_models": "Модели",
+        "card_body": "Промпт",
+        "status_done": "Готово: {state}",
+    },
+    "en": {
+        "queue_title": "🛠 Prompt moderation",
+        "queue_empty": "There are no prompts waiting for moderation right now.",
+        "queue_hint": "Choose a prompt from the list below.",
+        "open_prompt": "Open prompt",
+        "open_queue": "Open queue",
+        "approve": "✅ Approve",
+        "approve_comment": "💬 Approve with comment",
+        "reject": "❌ Reject",
+        "reject_comment": "📝 Reject with comment",
+        "comment_prompt_approve": "💬 Send one comment message for approval.",
+        "comment_prompt_reject": "📝 Send one rejection reason message.",
+        "comment_saved": "✅ Decision saved.",
+        "no_access": "⛔ You do not have moderation access.",
+        "load_failed": "❌ Failed to load moderation data.",
+        "decision_failed": "❌ Failed to apply the decision. The prompt may already be processed.",
+        "reason_more_detail": "Please add more detail and specificity.",
+        "reason_structure": "Please improve the structure and output format.",
+        "reason_duplicate": "This looks like a duplicate or too close to an existing prompt.",
+        "reason_policy": "Please align the prompt with marketplace rules.",
+        "back_queue": "⬅️ Back to queue",
+        "back_prompt": "⬅️ Back to prompt",
+        "prev_page": "⬅️ Prev",
+        "next_page": "Next ➡️",
+        "card_header": "📌 Prompt card",
+        "card_author": "Author",
+        "card_slug": "Slug",
+        "card_status": "Status",
+        "card_summary": "Summary",
+        "card_category": "Category",
+        "card_technique": "Technique",
+        "card_tags": "Tags",
+        "card_use_cases": "Use cases",
+        "card_models": "Models",
+        "card_body": "Prompt",
+        "status_done": "Done: {state}",
+    },
+    "tt": {
+        "queue_title": "🛠 Промпт модерациясе",
+        "queue_empty": "Хәзер модерация көткән промптлар юк.",
+        "queue_hint": "Түбәндәге исемлектән промпт сайлагыз.",
+        "open_prompt": "Промптны ачу",
+        "open_queue": "Чиратны ачу",
+        "approve": "✅ Раслау",
+        "approve_comment": "💬 Комментарий белән раслау",
+        "reject": "❌ Кире кагу",
+        "reject_comment": "📝 Комментарий белән кире кагу",
+        "comment_prompt_approve": "💬 Раслау өчен комментарийны бер хәбәр белән җибәрегез.",
+        "comment_prompt_reject": "📝 Кире кагу сәбәбен бер хәбәр белән җибәрегез.",
+        "comment_saved": "✅ Карар сакланды.",
+        "no_access": "⛔ Сездә модерациягә керү мөмкинлеге юк.",
+        "load_failed": "❌ Модерация мәгълүматларын йөкләп булмады.",
+        "decision_failed": "❌ Карарны кулланып булмады. Бәлки промпт инде эшкәртелгәндер.",
+        "reason_more_detail": "Күбрәк деталь һәм төгәллек кирәк.",
+        "reason_structure": "Структураны һәм җавап форматын яхшыртырга кирәк.",
+        "reason_duplicate": "Бу дубликатка яки булган промптка артык якын версиягә охшаган.",
+        "reason_policy": "Промптны мәйданчык кагыйдәләренә туры китерергә кирәк.",
+        "back_queue": "⬅️ Чиратка",
+        "back_prompt": "⬅️ Карточкага",
+        "prev_page": "⬅️ Артка",
+        "next_page": "Алга ➡️",
+        "card_header": "📌 Промпт карточкасы",
+        "card_author": "Автор",
+        "card_slug": "Slug",
+        "card_status": "Статус",
+        "card_summary": "Кыскача",
+        "card_category": "Категория",
+        "card_technique": "Техника",
+        "card_tags": "Теглар",
+        "card_use_cases": "Use cases",
+        "card_models": "Модельләр",
+        "card_body": "Промпт",
+        "status_done": "Әзер: {state}",
+    },
+}
+
+MODERATION_REASON_PRESETS = {
+    "detail": "reason_more_detail",
+    "structure": "reason_structure",
+    "duplicate": "reason_duplicate",
+    "policy": "reason_policy",
+}
+MODERATION_PAGE_SIZE = 8
+
+
+def is_admin_user(user_id: int) -> bool:
+    return user_id in ADMIN_TELEGRAM_IDS
+
+
+def mt(lang: str, key: str, **kwargs) -> str:
+    data = MODERATION_PANEL_TEXTS.get(lang, MODERATION_PANEL_TEXTS["ru"])
+    text = data.get(key, MODERATION_PANEL_TEXTS["ru"].get(key, key))
+    return text.format(**kwargs) if kwargs else text
+
+
+def moderation_reason_text(reason_code: str, lang: str) -> str:
+    key = MODERATION_REASON_PRESETS.get(reason_code, "reason_more_detail")
+    return mt(lang, key)
+
+
+def trim_message_text(value: str | None, limit: int = 2800) -> str:
+    text = (value or "").strip()
+    if not text:
+        return "—"
+    if len(text) <= limit:
+        return text
+    return f"{text[:limit].rstrip()}…"
+
+
+async def notify_admins(bot, text: str, reply_markup: InlineKeyboardMarkup | None = None) -> None:
+    for admin_id in ADMIN_TELEGRAM_IDS:
+        try:
+            await bot.send_message(chat_id=admin_id, text=text, reply_markup=reply_markup)
+        except Exception:
+            continue
+
+
+def build_moderation_queue_text(lang: str, items: list[dict], *, offset: int) -> str:
+    if not items:
+        return f"{mt(lang, 'queue_title')}\n\n{mt(lang, 'queue_empty')}"
+
+    lines = [mt(lang, "queue_title"), "", mt(lang, "queue_hint"), ""]
+    for idx, item in enumerate(items, start=offset + 1):
+        author = item.get("author_display_name") or "—"
+        lines.append(f"{idx}. {item.get('title', 'Untitled')}")
+        lines.append(f"   {author} · {item.get('slug', '—')}")
+    return "\n".join(lines)
+
+
+def get_moderation_queue_inline(items: list[dict], *, offset: int) -> InlineKeyboardMarkup:
+    rows = [
+        [InlineKeyboardButton(text=item.get("title", "Untitled")[:60], callback_data=f"mod:open:{item['id']}")]
+        for item in items
+    ]
+    nav: list[InlineKeyboardButton] = []
+    if offset > 0:
+        nav.append(InlineKeyboardButton(text="⬅️ Назад", callback_data=f"mod:queue:{max(offset - MODERATION_PAGE_SIZE, 0)}"))
+    if len(items) == MODERATION_PAGE_SIZE:
+        nav.append(InlineKeyboardButton(text="Вперед ➡️", callback_data=f"mod:queue:{offset + MODERATION_PAGE_SIZE}"))
+    if nav:
+        rows.append(nav)
+    rows.append([InlineKeyboardButton(text="⬅️ В меню", callback_data="back_main_menu")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+
+def build_moderation_card_text(lang: str, prompt: dict) -> str:
+    author = prompt.get("author_display_name") or "—"
+    username = prompt.get("author_username") or "—"
+    summary = trim_message_text(prompt.get("summary"), limit=500)
+    body = trim_message_text(prompt.get("body"), limit=2200)
+    tags = ", ".join(prompt.get("tags") or []) or "—"
+    use_cases = ", ".join(prompt.get("use_cases") or []) or "—"
+    models = ", ".join(prompt.get("model_compatibility") or []) or "—"
+    lines = [
+        mt(lang, "card_header"),
+        "",
+        f"{mt(lang, 'card_author')}: {author}",
+        f"Username: {username}",
+        f"{mt(lang, 'card_slug')}: {prompt.get('slug', '—')}",
+        f"{mt(lang, 'card_status')}: {prompt.get('moderation_state', 'pending')} / {prompt.get('status', 'draft')}",
+        f"{mt(lang, 'card_summary')}: {summary}",
+        f"{mt(lang, 'card_category')}: {prompt.get('category_name') or '—'}",
+        f"{mt(lang, 'card_technique')}: {prompt.get('technique') or '—'}",
+        f"{mt(lang, 'card_tags')}: {tags}",
+        f"{mt(lang, 'card_use_cases')}: {use_cases}",
+        f"{mt(lang, 'card_models')}: {models}",
+        "",
+        f"{mt(lang, 'card_body')}:",
+        body,
+    ]
+    notes = (prompt.get("moderation_notes") or "").strip()
+    if notes:
+        lines.extend(["", f"Комментарий: {notes}"])
+    return "\n".join(lines)
+
+
+def get_moderation_card_inline(prompt_id: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(text="✅ Одобрить", callback_data=f"mod:approve:{prompt_id}"),
+                InlineKeyboardButton(text="💬 Одобрить + коммент", callback_data=f"mod:approvec:{prompt_id}"),
+            ],
+            [
+                InlineKeyboardButton(text="❌ Отклонить", callback_data=f"mod:reject:{prompt_id}"),
+                InlineKeyboardButton(text="📝 Отклонить + коммент", callback_data=f"mod:rejectc:{prompt_id}"),
+            ],
+            [InlineKeyboardButton(text="⬅️ К очереди", callback_data="mod:queue:0")],
+        ]
+    )
+
+
+def get_reject_reason_inline(prompt_id: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Мало деталей", callback_data=f"mod:reason:{prompt_id}:detail")],
+            [InlineKeyboardButton(text="Нужна структура", callback_data=f"mod:reason:{prompt_id}:structure")],
+            [InlineKeyboardButton(text="Дубликат", callback_data=f"mod:reason:{prompt_id}:duplicate")],
+            [InlineKeyboardButton(text="Нарушает правила", callback_data=f"mod:reason:{prompt_id}:policy")],
+            [InlineKeyboardButton(text="📝 Свой комментарий", callback_data=f"mod:rejectc:{prompt_id}")],
+            [InlineKeyboardButton(text="⬅️ К карточке", callback_data=f"mod:open:{prompt_id}")],
+        ]
+    )
+
+
+def get_moderation_done_inline(prompt_id: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Открыть карточку", callback_data=f"mod:open:{prompt_id}")],
+            [InlineKeyboardButton(text="⬅️ К очереди", callback_data="mod:queue:0")],
+        ]
+    )
+
+
+async def load_moderation_queue(admin_telegram_user_id: int, *, offset: int = 0) -> list[dict]:
+    return await website_get_moderation_queue(
+        acting_telegram_user_id=admin_telegram_user_id,
+        skip=offset,
+        limit=MODERATION_PAGE_SIZE,
+    )
+
 # ==============================================================================
 # 5. КЛАВИАТУРЫ
 # ==============================================================================
@@ -1295,11 +1905,15 @@ def get_model_detail_inline(model_id: str, lang: str = 'ru'):
 
 
 def get_language_inline(lang: str = 'ru'):
-    """Клавиатура выбора языка"""
+    """Клавиатура выбора языка с отметкой выбранного языка"""
+    ru_text = "✅ Русский" if lang == "ru" else " Русский"
+    en_text = "✅ English" if lang == "en" else " English"
+    tt_text = "✅ Татарча" if lang == "tt" else " Татарча"
+
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=" Русский", callback_data="lang_ru")],
-        [InlineKeyboardButton(text=" English", callback_data="lang_en")],
-        [InlineKeyboardButton(text=" Татарча", callback_data="lang_tt")],
+        [InlineKeyboardButton(text=ru_text, callback_data="lang_ru")],
+        [InlineKeyboardButton(text=en_text, callback_data="lang_en")],
+        [InlineKeyboardButton(text=tt_text, callback_data="lang_tt")],
         [InlineKeyboardButton(text=get_text(lang, 'back'), callback_data="menu_profile")],
     ])
 
@@ -1565,31 +2179,111 @@ async def call_openrouter_model(api_url: str, api_key: str, model: str, user_tex
 
     raise last_error if last_error else Exception("Неизвестная ошибка OpenRouter")
 
-async def transcribe_voice_to_text(file_path: str) -> str:
-    """
-    Отправляет аудио в OpenAI Whisper и возвращает текст
-    """
 
-    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+def _get_vosk_model():
+    """Ленивая загрузка локальной STT-модели, чтобы бот стартовал даже без Vosk."""
+    global _vosk_model
+    if _vosk_model is not None:
+        return _vosk_model
 
-    url = "https://api.openai.com/v1/audio/transcriptions"
+    if not os.path.isdir(VOSK_MODEL_PATH):
+        raise RuntimeError(f"Vosk model not found: {VOSK_MODEL_PATH}")
 
-    headers = {
-        "Authorization": f"Bearer {OPENAI_API_KEY}"
-    }
+    try:
+        from vosk import KaldiRecognizer, Model
+    except ImportError as exc:
+        raise RuntimeError("Python package 'vosk' is not installed") from exc
 
+    _vosk_model = (Model(VOSK_MODEL_PATH), KaldiRecognizer)
+    return _vosk_model
+
+
+async def _transcribe_voice_with_vosk(file_path: str) -> str:
+    wav_path = os.path.splitext(file_path)[0] + ".wav"
+    model, recognizer_cls = _get_vosk_model()
+
+    try:
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-y",
+                "-i", file_path,
+                "-ar", "16000",
+                "-ac", "1",
+                "-f", "wav",
+                wav_path,
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=True,
+        )
+
+        with wave.open(wav_path, "rb") as wf:
+            if wf.getnchannels() != 1 or wf.getframerate() != 16000:
+                raise RuntimeError("Vosk requires mono WAV 16kHz")
+
+            recognizer = recognizer_cls(model, wf.getframerate())
+            recognizer.SetWords(True)
+            final_text_parts = []
+
+            while True:
+                data = wf.readframes(4000)
+                if not data:
+                    break
+
+                if recognizer.AcceptWaveform(data):
+                    result = json.loads(recognizer.Result())
+                    if result.get("text"):
+                        final_text_parts.append(result["text"])
+
+            final_result = json.loads(recognizer.FinalResult())
+            if final_result.get("text"):
+                final_text_parts.append(final_result["text"])
+
+        return " ".join(final_text_parts).strip()
+    finally:
+        if os.path.exists(wav_path):
+            os.remove(wav_path)
+
+
+async def _transcribe_voice_with_openai(file_path: str) -> str:
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    if not openai_api_key:
+        raise RuntimeError("OPENAI_API_KEY is not configured")
+
+    headers = {"Authorization": f"Bearer {openai_api_key}"}
     data = aiohttp.FormData()
     data.add_field("model", "gpt-4o-mini-transcribe")
-    data.add_field("file", open(file_path, "rb"))
 
-    async with aiohttp.ClientSession() as session:
-        async with session.post(url, headers=headers, data=data) as resp:
-            if resp.status == 200:
-                result = await resp.json()
-                return result.get("text", "")
-            else:
+    with open(file_path, "rb") as audio_file:
+        data.add_field("file", audio_file)
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                "https://api.openai.com/v1/audio/transcriptions",
+                headers=headers,
+                data=data,
+            ) as resp:
+                if resp.status == 200:
+                    result = await resp.json()
+                    return result.get("text", "")
+
                 error = await resp.text()
-                raise Exception(f"STT API error: {error}")
+                raise RuntimeError(f"STT API error: {error}")
+
+
+async def transcribe_voice_to_text(file_path: str) -> str:
+    """
+    Распознает голос локально через Vosk, а при недоступности Vosk падает обратно на OpenAI STT.
+    """
+    try:
+        return await _transcribe_voice_with_vosk(file_path)
+    except Exception as vosk_error:
+        try:
+            return await _transcribe_voice_with_openai(file_path)
+        except Exception as openai_error:
+            raise RuntimeError(
+                f"Vosk STT failed: {vosk_error}; OpenAI STT failed: {openai_error}"
+            ) from openai_error
 # ==============================================================================
 # 7. ХЕНДЛЕРЫ НАВИГАЦИИ
 # ==============================================================================
@@ -1607,11 +2301,18 @@ async def cmd_start(message: Message):
         last_name=message.from_user.last_name or ""
     )
 
+    user_lang = await get_user_language(user_id)
+    await sync_subscription_cache(
+        user_id,
+        username=message.from_user.username,
+        first_name=message.from_user.first_name,
+        last_name=message.from_user.last_name,
+        language=user_lang,
+    )
+
     # создаём миссии при первом/очередном входе
     await ensure_daily_missions(user_id)
     await ensure_permanent_missions(user_id)
-
-    user_lang = await get_user_language(user_id)
 
     await message.answer(
         get_text(user_lang, 'welcome', name=escape(full_name)),
@@ -1642,6 +2343,7 @@ async def show_catalog_ai(callback: CallbackQuery):
     """Показывает доступные модели ИИ"""
     user_id = callback.from_user.id
     user_lang = await get_user_language(user_id)
+    await sync_subscription_cache(user_id, language=user_lang)
 
     await callback.message.edit_text(
         get_text(user_lang, 'catalog_ai'),
@@ -1654,6 +2356,7 @@ async def show_catalog_ai(callback: CallbackQuery):
 async def start_ai_quiz(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
     user_lang = await get_user_language(user_id)
+    await sync_subscription_cache(user_id, language=user_lang)
 
     await state.set_state(GamesState.in_ai_quiz)
     await state.update_data(ai_quiz_index=0)
@@ -1680,13 +2383,20 @@ async def process_ai_quiz_answer(callback: CallbackQuery, state: FSMContext):
     current_index = state_data.get("ai_quiz_index", 0)
 
     if user_answer == question["correct"]:
-        await update_user_coins(user_id, question["reward"])
+        reward_info = await grant_game_reward(user_id, question["reward"])
         text = lt(
             user_lang,
             "quiz_correct",
-            reward=question["reward"],
+            reward=reward_info["total_reward"],
             explanation=question["explanation"][user_lang]
         )
+        if reward_info["bonus_reward"] > 0:
+            text += "\n\n" + st(
+                user_lang,
+                "game_bonus_line",
+                bonus=reward_info["bonus_reward"],
+                pct=reward_info["bonus_pct"],
+            )
     else:
         text = lt(
             user_lang,
@@ -1719,6 +2429,7 @@ async def next_ai_quiz_question(callback: CallbackQuery, state: FSMContext):
 async def start_prompt_puzzle(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
     user_lang = await get_user_language(user_id)
+    await sync_subscription_cache(user_id, language=user_lang)
 
     await state.set_state(GamesState.in_prompt_puzzle)
     await state.update_data(puzzle_index=0, puzzle_selected_order=[])
@@ -1776,13 +2487,20 @@ async def process_prompt_puzzle_check(callback: CallbackQuery, state: FSMContext
     is_correct = selected_order == puzzle["correct_order"]
 
     if is_correct:
-        await update_user_coins(user_id, puzzle["reward"])
+        reward_info = await grant_game_reward(user_id, puzzle["reward"])
         text = lt(
             user_lang,
             "prompt_puzzle_correct",
-            reward=puzzle["reward"],
+            reward=reward_info["total_reward"],
             explanation=puzzle["explanation"][user_lang]
         )
+        if reward_info["bonus_reward"] > 0:
+            text += "\n\n" + st(
+                user_lang,
+                "game_bonus_line",
+                bonus=reward_info["bonus_reward"],
+                pct=reward_info["bonus_pct"],
+            )
 
         buttons = []
         if puzzle_index + 1 < len(PROMPT_PUZZLES):
@@ -1903,9 +2621,7 @@ async def toggle_missions_notif(callback: CallbackQuery):
 @router.message(Command("broadcast"))
 async def broadcast_command(message: Message):
     """Команда для рассылки сообщений всем пользователям (ТОЛЬКО ДЛЯ АДМИНА)"""
-    ADMIN_ID = 1755580726  # ⚠️ замени на свой Telegram ID
-
-    if message.from_user.id != ADMIN_ID:
+    if not is_admin_user(message.from_user.id):
         return
 
     if not message.reply_to_message:
@@ -2026,13 +2742,13 @@ async def launch_model_from_search(callback: CallbackQuery, state: FSMContext):
 
     if model:
         if model_id in ["mistral", "qwen", "nemotron", "gptoss"]:
-            await state.set_state(AIChatState.waiting_for_message)
-            await state.update_data(current_model=model_id)
-            await callback.message.edit_text(
-                f"{model['name']} {get_text(user_lang, 'ai_activated')}",
-                reply_markup=get_exit_ai_inline(user_lang),
-                parse_mode="Markdown"
+            await start_ai_session(
+                callback,
+                state,
+                model_key=model_id,
+                model_title=model["name"],
             )
+            return
         else:
             if user_lang == "en":
                 soon_text = (
@@ -2083,62 +2799,22 @@ async def launch_model_from_search(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "ai_model_mistral")
 async def start_mistral_chat(callback: CallbackQuery, state: FSMContext):
     """Активирует режим диалога с Mistral"""
-    user_id = callback.from_user.id
-    user_lang = await get_user_language(user_id)
-
-    await state.set_state(AIChatState.waiting_for_message)
-    await state.update_data(current_model="mistral")
-    await callback.message.edit_text(
-        f"🌪️ Mistral AI {get_text(user_lang, 'ai_activated')}",
-        reply_markup=get_exit_ai_inline(user_lang),
-        parse_mode="Markdown"
-    )
-    await callback.answer()
+    await start_ai_session(callback, state, model_key="mistral", model_title="🌪️ Mistral AI")
 
 
 @router.callback_query(F.data == "ai_model_qwen")
 async def start_qwen_chat(callback: CallbackQuery, state: FSMContext):
     """Активирует режим диалога с Qwen"""
-    user_id = callback.from_user.id
-    user_lang = await get_user_language(user_id)
-
-    await state.set_state(AIChatState.waiting_for_message)
-    await state.update_data(current_model="qwen")
-    await callback.message.edit_text(
-        f"🤖 Qwen AI {get_text(user_lang, 'ai_activated')}",
-        reply_markup=get_exit_ai_inline(user_lang),
-        parse_mode="Markdown"
-    )
-    await callback.answer()
+    await start_ai_session(callback, state, model_key="qwen", model_title="🤖 Qwen AI")
 
 @router.callback_query(F.data == "ai_model_nemotron")
 async def start_nemotron_chat(callback: CallbackQuery, state: FSMContext):
     """Активирует режим диалога с Nemotron"""
-    user_id = callback.from_user.id
-    user_lang = await get_user_language(user_id)
-
-    await state.set_state(AIChatState.waiting_for_message)
-    await state.update_data(current_model="nemotron")
-    await callback.message.edit_text(
-        f"🟢 NVIDIA Nemotron {get_text(user_lang, 'ai_activated')}",
-        reply_markup=get_exit_ai_inline(user_lang),
-        parse_mode="Markdown"
-    )
-    await callback.answer()
+    await start_ai_session(callback, state, model_key="nemotron", model_title="🟢 NVIDIA Nemotron")
 
 @router.callback_query(F.data == "ai_model_gptoss")
 async def start_gptoss_chat(callback: CallbackQuery, state: FSMContext):
-    user_id = callback.from_user.id
-    user_lang = await get_user_language(user_id)
-
-    await state.set_state(AIChatState.waiting_for_message)
-    await state.update_data(current_model="gptoss")
-    await callback.message.edit_text(
-        f" OpenAI gpt-oss {get_text(user_lang, 'ai_activated')}",
-        reply_markup=get_exit_ai_inline(user_lang),
-        parse_mode="Markdown"
-    )
-    await callback.answer()
+    await start_ai_session(callback, state, model_key="gptoss", model_title="🧠 OpenAI gpt-oss")
 
 @router.callback_query(F.data == "exit_ai_chat")
 async def exit_ai_chat(callback: CallbackQuery, state: FSMContext):
@@ -2159,12 +2835,28 @@ async def exit_ai_chat(callback: CallbackQuery, state: FSMContext):
 # 12. ОБРАБОТКА СООБЩЕНИЙ ДЛЯ ИИ (FSM)
 # ==============================================================================
 
+def clean_markdown(text: str) -> str:
+    """Убирает Markdown-символы из AI-ответа перед отправкой в обычном text mode."""
+    return re.sub(r'([#_*~`])', '', text)
+
+
 @router.message(AIChatState.waiting_for_message)
 async def handle_ai_message(message: Message, state: FSMContext):
     """Обрабатывает текст пользователя и отправляет в AI"""
     user_text = message.text or ""
     user_id = message.from_user.id
     user_lang = await get_user_language(user_id)
+    plan = await get_user_plan(user_id)
+    limit = int(plan.get("plan_ai_limit", 20))
+    used_today = await count_ai_messages_today(user_id)
+
+    if limit > 0 and used_today >= limit:
+        await message.answer(
+            f"{st(user_lang, 'limit_reached', used=used_today, limit=limit)}\n{st(user_lang, 'limit_hint')}",
+            reply_markup=get_main_menu_inline(user_lang),
+            parse_mode="Markdown",
+        )
+        return
 
     state_data = await state.get_data()
     current_model = state_data.get("current_model", "mistral")
@@ -2268,6 +2960,9 @@ async def handle_ai_message(message: Message, state: FSMContext):
                 else:
                     bot_response = f"(Демо-режим gpt-oss) Вы написали: '{user_text}'\nДобавьте OPENROUTER_API_KEY в .env"
 
+        if bot_response:
+            bot_response = clean_markdown(bot_response)
+
         await thinking_msg.delete()
 
         if current_model == "mistral":
@@ -2331,6 +3026,13 @@ async def show_profile(callback: CallbackQuery):
     """Показывает статистику пользователя"""
     user_id = callback.from_user.id
     user_lang = await get_user_language(user_id)
+    plan = await sync_subscription_cache(
+        user_id,
+        username=callback.from_user.username,
+        first_name=callback.from_user.first_name,
+        last_name=callback.from_user.last_name,
+        language=user_lang,
+    )
 
     await ensure_daily_missions(user_id)
     await ensure_permanent_missions(user_id)
@@ -2340,7 +3042,7 @@ async def show_profile(callback: CallbackQuery):
     economy = await get_user_economy(user_id)
 
     streak_emoji = "🔥" if stats['streak'] > 0 else "💤"
-    premium_badge = "💎 Premium" if stats['is_premium'] else "🆓 Free"
+    premium_badge = f"{get_plan_badge(plan.get('plan_tier'))} {get_plan_title(plan.get('plan_tier'), user_lang)}"
 
     text = get_text(
         user_lang, 'profile',
@@ -2353,6 +3055,7 @@ async def show_profile(callback: CallbackQuery):
     )
 
     text += lt(user_lang, "menu_profile_extra", freeze_count=economy['freeze_count'])
+    text += build_profile_plan_block(user_lang, plan)
 
     await callback.message.edit_text(
         text,
@@ -2397,6 +3100,7 @@ async def show_streak_menu(callback: CallbackQuery):
     """Меню ударного режима"""
     user_id = callback.from_user.id
     user_lang = await get_user_language(user_id)
+    plan = await sync_subscription_cache(user_id, language=user_lang)
     economy = await get_user_economy(user_id)
 
     text = (
@@ -2404,6 +3108,7 @@ async def show_streak_menu(callback: CallbackQuery):
         f"{lt(user_lang, 'economy_line', coins=economy['coins'], streak=economy['streak'], freeze_count=economy['freeze_count'])}\n\n"
         f"{lt(user_lang, 'streak_desc')}"
     )
+    text += st(user_lang, "streak_limit", limit=_limit_text(user_lang, int(plan.get("plan_max_freezes", 2))))
 
     await callback.message.edit_text(
         text,
@@ -2451,8 +3156,9 @@ async def buy_freeze_handler(callback: CallbackQuery):
     """Покупка заморозки"""
     user_id = callback.from_user.id
     user_lang = await get_user_language(user_id)
+    plan = await sync_subscription_cache(user_id, language=user_lang)
 
-    result = await buy_freeze(user_id, price=30, max_freezes=2)
+    result = await buy_freeze(user_id, price=30, max_freezes=int(plan.get("plan_max_freezes", 2)))
 
     if not result["ok"]:
         await callback.answer(result["message"], show_alert=True)
@@ -2546,34 +3252,34 @@ async def show_leaderboard_best(callback: CallbackQuery):
 # 16. НАСТРОЙКИ ЯЗЫКА
 # ==============================================================================
 
+async def render_language_menu(callback: CallbackQuery, lang: str):
+    """Перерисовывает меню выбора языка с текущей отметкой."""
+    await callback.message.edit_text(
+        get_text(lang, 'language_menu'),
+        reply_markup=get_language_inline(lang),
+        parse_mode="Markdown"
+    )
+
+
 @router.callback_query(F.data == "menu_language")
 async def show_language_menu(callback: CallbackQuery):
     """Показывает меню выбора языка"""
     user_id = callback.from_user.id
     user_lang = await get_user_language(user_id)
 
-    await callback.message.edit_text(
-        get_text(user_lang, 'language_menu'),
-        reply_markup=get_language_inline(user_lang),
-        parse_mode="Markdown"
-    )
+    await render_language_menu(callback, user_lang)
     await callback.answer()
 
 
 @router.callback_query(F.data.startswith("lang_"))
 async def change_language(callback: CallbackQuery):
-    """Изменяет язык пользователя"""
+    """Изменяет язык и сразу обновляет текущее меню выбора языка."""
     user_id = callback.from_user.id
     new_lang = callback.data.replace("lang_", "")
 
     if new_lang in ['ru', 'en', 'tt']:
         await set_user_language(user_id, new_lang)
-
-        await callback.message.edit_text(
-            get_text(new_lang, 'language_changed', lang=LANGUAGES[new_lang]),
-            reply_markup=get_main_menu_inline(new_lang),
-            parse_mode="Markdown"
-        )
+        await render_language_menu(callback, new_lang)
 
     await callback.answer()
 
@@ -2586,19 +3292,143 @@ async def change_language(callback: CallbackQuery):
 async def show_tariffs_stub(callback: CallbackQuery):
     user_id = callback.from_user.id
     user_lang = await get_user_language(user_id)
+    plan = await sync_subscription_cache(
+        user_id,
+        username=callback.from_user.username,
+        first_name=callback.from_user.first_name,
+        last_name=callback.from_user.last_name,
+        language=user_lang,
+    )
 
     await callback.message.edit_text(
-        get_text(user_lang, 'tariffs', current='free'),
-        reply_markup=get_main_menu_inline(user_lang),
+        build_tariffs_text(user_lang, plan),
+        reply_markup=get_tariffs_menu_inline(user_lang, normalize_plan_tier(plan.get("plan_tier"))),
         parse_mode="Markdown"
     )
     await callback.answer()
+
+
+@router.callback_query(F.data == "tariff_noop")
+async def tariff_noop(callback: CallbackQuery):
+    user_lang = await get_user_language(callback.from_user.id)
+    await callback.answer(st(user_lang, "noop_included"), show_alert=True)
+
+
+@router.callback_query(F.data.startswith("tariff_buy:"))
+async def tariff_buy(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    user_lang = await get_user_language(user_id)
+    tier = normalize_plan_tier(callback.data.split(":", 1)[1])
+    current_plan = await sync_subscription_cache(
+        user_id,
+        username=callback.from_user.username,
+        first_name=callback.from_user.first_name,
+        last_name=callback.from_user.last_name,
+        language=user_lang,
+    )
+
+    if has_same_or_higher_plan(current_plan.get("plan_tier"), tier):
+        await callback.answer(st(user_lang, "same_or_higher"), show_alert=True)
+        return
+
+    plan = get_plan_config(tier)
+    stars_price = int(plan["stars_price_month"])
+    invoice_payload = build_subscription_payload(user_id, tier, secrets.token_hex(6))
+    invoice_link = await callback.bot.create_invoice_link(
+        title=f"{get_plan_badge(tier)} {get_plan_title(tier, user_lang)}",
+        description="Shared subscription for Prompt Vault website and Telegram bot",
+        payload=invoice_payload,
+        currency="XTR",
+        prices=[LabeledPrice(label=get_plan_title(tier, user_lang), amount=stars_price)],
+        subscription_period=SUBSCRIPTION_PERIOD_SECONDS,
+    )
+
+    text = (
+        f"{get_plan_badge(tier)} **{get_plan_title(tier, user_lang)}**\n\n"
+        f"{st(user_lang, 'checkout_ready')}\n\n"
+        + "\n".join(f"• {line}" for line in _plan_feature_lines(user_lang, tier))
+    )
+    await callback.message.edit_text(
+        text,
+        reply_markup=get_tariff_checkout_inline(user_lang, invoice_link, stars_price),
+        parse_mode="Markdown",
+    )
+    await callback.answer()
+
+
+@router.pre_checkout_query()
+async def process_pre_checkout_query(query: PreCheckoutQuery):
+    payload = parse_subscription_payload(query.invoice_payload)
+    is_valid = bool(payload and payload["user_id"] == query.from_user.id)
+    if not is_valid:
+        await query.answer(ok=False, error_message="Invalid subscription payload.")
+        return
+    await query.answer(ok=True)
+
+
+@router.message(F.successful_payment)
+async def handle_successful_payment(message: Message):
+    payment = message.successful_payment
+    if payment is None:
+        return
+
+    user_id = message.from_user.id
+    user_lang = await get_user_language(user_id)
+    payload = parse_subscription_payload(payment.invoice_payload)
+    if not payload or payload["user_id"] != user_id:
+        return
+
+    period_end = None
+    if payment.subscription_expiration_date:
+        period_end = datetime.fromtimestamp(payment.subscription_expiration_date, tz=timezone.utc).isoformat()
+
+    occurred_at = datetime.now(timezone.utc).isoformat()
+    snapshot = await website_activate_stars_subscription(
+        telegram_user_id=user_id,
+        tier=payload["tier"],
+        provider_subscription_id=payload["provider_subscription_id"],
+        invoice_payload=payment.invoice_payload,
+        telegram_payment_charge_id=payment.telegram_payment_charge_id,
+        provider_payment_charge_id=payment.provider_payment_charge_id,
+        currency=payment.currency,
+        total_amount=payment.total_amount,
+        current_period_end=period_end,
+        occurred_at=occurred_at,
+        is_recurring=bool(payment.is_recurring),
+        is_first_recurring=bool(payment.is_first_recurring),
+    )
+
+    if snapshot:
+        plan = await apply_subscription_snapshot(user_id, snapshot)
+        tier = normalize_plan_tier(plan.get("plan_tier"))
+        expires = format_expiry(plan.get("plan_expires_at"), user_lang)
+        success_text = (
+            st(user_lang, "payment_success_expires", badge=get_plan_badge(tier), plan=get_plan_title(tier, user_lang), expires=expires)
+            if expires
+            else st(user_lang, "payment_success", badge=get_plan_badge(tier), plan=get_plan_title(tier, user_lang))
+        )
+        await message.answer(success_text, parse_mode="Markdown", reply_markup=get_main_menu_inline(user_lang))
+        return
+
+    await notify_admins(
+        message.bot,
+        (
+            "⚠️ Не удалось синхронизировать подписку после оплаты.\n"
+            f"User ID: {user_id}\n"
+            f"Tier: {payload['tier']}\n"
+            f"Invoice payload: {payment.invoice_payload}\n"
+            f"Telegram charge: {payment.telegram_payment_charge_id}\n"
+            f"Provider charge: {payment.provider_payment_charge_id}"
+        ),
+    )
+    await message.answer(st(user_lang, "payment_failed_sync"), reply_markup=get_main_menu_inline(user_lang))
 
 
 @router.callback_query(F.data == "menu_games")
 async def show_games_menu(callback: CallbackQuery, state: FSMContext):
     user_id = callback.from_user.id
     user_lang = await get_user_language(user_id)
+    await sync_subscription_cache(user_id, language=user_lang)
 
     await state.clear()
 
@@ -2656,7 +3486,18 @@ async def ai_leaderboard(message: Message):
 async def sub_info(message: Message):
     user_id = message.from_user.id
     user_lang = await get_user_language(user_id)
-    await message.answer(get_text(user_lang, 'tariffs', current='free'), parse_mode="Markdown")
+    plan = await sync_subscription_cache(
+        user_id,
+        username=message.from_user.username,
+        first_name=message.from_user.first_name,
+        last_name=message.from_user.last_name,
+        language=user_lang,
+    )
+    await message.answer(
+        build_tariffs_text(user_lang, plan),
+        parse_mode="Markdown",
+        reply_markup=get_tariffs_menu_inline(user_lang, normalize_plan_tier(plan.get("plan_tier"))),
+    )
 
 
 @router.message(F.text.lower() == "привет")
@@ -2670,6 +3511,13 @@ async def cmd_hello(message: Message):
         username=message.from_user.username or "",
         first_name=message.from_user.first_name or "",
         last_name=message.from_user.last_name or ""
+    )
+    await sync_subscription_cache(
+        user_id,
+        username=message.from_user.username,
+        first_name=message.from_user.first_name,
+        last_name=message.from_user.last_name,
+        language=user_lang,
     )
 
     await ensure_daily_missions(user_id)
@@ -2698,33 +3546,243 @@ async def about(message: Message):
         "Команда (КП): Гимадеев Дамир(@Souzn1k3)."
         "и студент КФУ(ИТИС).\n Лебедев Глеб(@tfmot).\n\n ПО ВСЕМ ВОПРОСАМ (@Souzn1k3)!"
     )
+
+
+@router.message(Command("moderation"))
+async def moderation_panel(message: Message, state: FSMContext):
+    user_id = message.from_user.id
+    user_lang = await get_user_language(user_id)
+    if not is_admin_user(user_id):
+        await message.answer(mt(user_lang, "no_access"))
+        return
+
+    await state.clear()
+    items = await load_moderation_queue(user_id, offset=0)
+    await message.answer(
+        build_moderation_queue_text(user_lang, items, offset=0),
+        reply_markup=get_moderation_queue_inline(items, offset=0),
+    )
+
+
+@router.callback_query(F.data.startswith("mod:queue"))
+async def moderation_queue_callback(callback: CallbackQuery, state: FSMContext):
+    user_id = callback.from_user.id
+    user_lang = await get_user_language(user_id)
+    if not is_admin_user(user_id):
+        await callback.answer(mt(user_lang, "no_access"), show_alert=True)
+        return
+
+    await state.clear()
+    parts = (callback.data or "").split(":")
+    offset = 0
+    if len(parts) >= 3:
+        try:
+            offset = max(int(parts[2]), 0)
+        except ValueError:
+            offset = 0
+
+    items = await load_moderation_queue(user_id, offset=offset)
+    await callback.message.edit_text(
+        build_moderation_queue_text(user_lang, items, offset=offset),
+        reply_markup=get_moderation_queue_inline(items, offset=offset),
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("mod:open:"))
+async def moderation_open_prompt(callback: CallbackQuery, state: FSMContext):
+    user_id = callback.from_user.id
+    user_lang = await get_user_language(user_id)
+    if not is_admin_user(user_id):
+        await callback.answer(mt(user_lang, "no_access"), show_alert=True)
+        return
+
+    await state.clear()
+    prompt_id = (callback.data or "").split(":", 2)[2]
+    prompt = await website_get_moderation_prompt(
+        prompt_id,
+        acting_telegram_user_id=user_id,
+    )
+    if not prompt:
+        await callback.answer(mt(user_lang, "load_failed"), show_alert=True)
+        return
+
+    reply_markup = (
+        get_moderation_card_inline(prompt_id)
+        if prompt.get("moderation_state") == "pending"
+        else get_moderation_done_inline(prompt_id)
+    )
+    await callback.message.edit_text(
+        build_moderation_card_text(user_lang, prompt),
+        reply_markup=reply_markup,
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("mod:approve:"))
+async def moderation_approve(callback: CallbackQuery, state: FSMContext):
+    user_id = callback.from_user.id
+    user_lang = await get_user_language(user_id)
+    if not is_admin_user(user_id):
+        await callback.answer(mt(user_lang, "no_access"), show_alert=True)
+        return
+
+    await state.clear()
+    prompt_id = (callback.data or "").split(":", 2)[2]
+    decision = await website_moderate_prompt(
+        prompt_id,
+        acting_telegram_user_id=user_id,
+        action="approve",
+    )
+    if not decision:
+        await callback.answer(mt(user_lang, "decision_failed"), show_alert=True)
+        return
+
+    prompt = await website_get_moderation_prompt(prompt_id, acting_telegram_user_id=user_id)
+    if prompt:
+        await callback.message.edit_text(
+            build_moderation_card_text(user_lang, prompt),
+            reply_markup=get_moderation_done_inline(prompt_id),
+        )
+    await callback.answer(mt(user_lang, "comment_saved"))
+
+
+@router.callback_query(F.data.startswith("mod:approvec:"))
+async def moderation_approve_comment(callback: CallbackQuery, state: FSMContext):
+    user_id = callback.from_user.id
+    user_lang = await get_user_language(user_id)
+    if not is_admin_user(user_id):
+        await callback.answer(mt(user_lang, "no_access"), show_alert=True)
+        return
+
+    prompt_id = (callback.data or "").split(":", 2)[2]
+    await state.set_state(ModerationCommentState.waiting_for_comment)
+    await state.update_data(moderation_prompt_id=prompt_id, moderation_action="approve")
+    await callback.message.answer(mt(user_lang, "comment_prompt_approve"))
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("mod:reject:"))
+async def moderation_reject_menu(callback: CallbackQuery, state: FSMContext):
+    user_id = callback.from_user.id
+    user_lang = await get_user_language(user_id)
+    if not is_admin_user(user_id):
+        await callback.answer(mt(user_lang, "no_access"), show_alert=True)
+        return
+
+    await state.clear()
+    prompt_id = (callback.data or "").split(":", 2)[2]
+    prompt = await website_get_moderation_prompt(prompt_id, acting_telegram_user_id=user_id)
+    if not prompt:
+        await callback.answer(mt(user_lang, "load_failed"), show_alert=True)
+        return
+
+    await callback.message.edit_text(
+        build_moderation_card_text(user_lang, prompt),
+        reply_markup=get_reject_reason_inline(prompt_id),
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("mod:reason:"))
+async def moderation_reject_reason(callback: CallbackQuery, state: FSMContext):
+    user_id = callback.from_user.id
+    user_lang = await get_user_language(user_id)
+    if not is_admin_user(user_id):
+        await callback.answer(mt(user_lang, "no_access"), show_alert=True)
+        return
+
+    await state.clear()
+    _, _, prompt_id, reason_code = (callback.data or "").split(":", 3)
+    decision = await website_moderate_prompt(
+        prompt_id,
+        acting_telegram_user_id=user_id,
+        action="reject",
+        reason=moderation_reason_text(reason_code, user_lang),
+    )
+    if not decision:
+        await callback.answer(mt(user_lang, "decision_failed"), show_alert=True)
+        return
+
+    prompt = await website_get_moderation_prompt(prompt_id, acting_telegram_user_id=user_id)
+    if prompt:
+        await callback.message.edit_text(
+            build_moderation_card_text(user_lang, prompt),
+            reply_markup=get_moderation_done_inline(prompt_id),
+        )
+    await callback.answer(mt(user_lang, "comment_saved"))
+
+
+@router.callback_query(F.data.startswith("mod:rejectc:"))
+async def moderation_reject_comment(callback: CallbackQuery, state: FSMContext):
+    user_id = callback.from_user.id
+    user_lang = await get_user_language(user_id)
+    if not is_admin_user(user_id):
+        await callback.answer(mt(user_lang, "no_access"), show_alert=True)
+        return
+
+    prompt_id = (callback.data or "").split(":", 2)[2]
+    await state.set_state(ModerationCommentState.waiting_for_comment)
+    await state.update_data(moderation_prompt_id=prompt_id, moderation_action="reject")
+    await callback.message.answer(mt(user_lang, "comment_prompt_reject"))
+    await callback.answer()
+
+
+@router.message(ModerationCommentState.waiting_for_comment, F.text)
+async def moderation_comment_input(message: Message, state: FSMContext):
+    user_id = message.from_user.id
+    user_lang = await get_user_language(user_id)
+    if not is_admin_user(user_id):
+        await state.clear()
+        await message.answer(mt(user_lang, "no_access"))
+        return
+
+    comment = (message.text or "").strip()
+    if not comment:
+        await message.answer(mt(user_lang, "decision_failed"))
+        return
+
+    data = await state.get_data()
+    prompt_id = data.get("moderation_prompt_id")
+    action = data.get("moderation_action")
+    if not prompt_id or action not in {"approve", "reject"}:
+        await state.clear()
+        await message.answer(mt(user_lang, "decision_failed"))
+        return
+
+    decision = await website_moderate_prompt(
+        str(prompt_id),
+        acting_telegram_user_id=user_id,
+        action=action,
+        reason=comment,
+    )
+    if not decision:
+        await message.answer(mt(user_lang, "decision_failed"))
+        return
+
+    await state.clear()
+    prompt = await website_get_moderation_prompt(str(prompt_id), acting_telegram_user_id=user_id)
+    if not prompt:
+        await message.answer(mt(user_lang, "comment_saved"))
+        return
+
+    await message.answer(
+        build_moderation_card_text(user_lang, prompt),
+        reply_markup=get_moderation_done_inline(str(prompt_id)),
+    )
+
+
 @router.message(Command("prompt"))
 async def prompt_review_start(message: Message, state: FSMContext):
     user_id = message.from_user.id
     user_lang = await get_user_language(user_id)
 
     await state.set_state(PromptReviewState.waiting_for_prompt)
-
-    await message.answer(
-        lt(user_lang, "prompt_review_start")
-    )
-
-@router.message(Command("prompt"))
-async def prompt_review_start(message: Message, state: FSMContext):
-    user_id = message.from_user.id
-    user_lang = await get_user_language(user_id)
-
-    await state.set_state(PromptReviewState.waiting_for_prompt)
-
-    await message.answer(
-        get_text(user_lang, "prompt_review_start")
-    )
+    await message.answer(get_text(user_lang, "prompt_review_start"))
 
 
 @router.message(PromptReviewState.waiting_for_prompt, F.text)
 async def process_prompt_review_text(message: Message, state: FSMContext):
-    ADMIN_ID = 1755580726  # твой Telegram ID
-
     user_id = message.from_user.id
     user_lang = await get_user_language(user_id)
 
@@ -2747,83 +3805,53 @@ async def process_prompt_review_text(message: Message, state: FSMContext):
     )
 
     try:
-        await message.bot.send_message(
-            chat_id=ADMIN_ID,
-            text=admin_text
-        )
-
+        await notify_admins(message.bot, admin_text)
         await message.answer(get_text(user_lang, "prompt_review_sent"))
         await state.clear()
-
     except Exception as e:
         await message.answer(f"❌ Не удалось отправить промпт на редакцию: {e}")
 
-    @router.message(PromptReviewState.waiting_for_prompt, F.voice)
-    async def process_prompt_review_voice(message: Message, state: FSMContext):
-        ADMIN_ID = 1755580726
 
-        user_id = message.from_user.id
-        user_lang = await get_user_language(user_id)
+@router.message(PromptReviewState.waiting_for_prompt, F.voice)
+async def process_prompt_review_voice(message: Message, state: FSMContext):
+    user_id = message.from_user.id
+    user_lang = await get_user_language(user_id)
+    file_path = f"temp_voice_{user_id}.ogg"
 
-        # 1. Ограничение длины
-        if message.voice.duration > 180:
-            await message.answer(get_text(user_lang, "prompt_review_voice_too_long"))
+    if message.voice.duration > 180:
+        await message.answer(get_text(user_lang, "prompt_review_voice_too_long"))
+        return
+
+    await message.answer(get_text(user_lang, "prompt_review_voice_processing"))
+
+    try:
+        file = await message.bot.get_file(message.voice.file_id)
+        await message.bot.download_file(file.file_path, destination=file_path)
+        text = await transcribe_voice_to_text(file_path)
+
+        if not text.strip():
+            await message.answer(get_text(user_lang, "prompt_review_voice_failed"))
             return
 
-        await message.answer(
-            get_text(user_lang, "prompt_review_voice_processing")
+        username = f"@{message.from_user.username}" if message.from_user.username else "без username"
+        full_name = f"{message.from_user.first_name or ''} {message.from_user.last_name or ''}".strip()
+        admin_text = (
+            "📩 Новый промпт на редакцию\n\n"
+            f"👤 Пользователь: {full_name}\n"
+            f"🆔 ID: {user_id}\n"
+            f"🔗 Username: {username}\n"
+            f"🎙 Источник: голос\n\n"
+            f"📝 Распознанный текст:\n{text}"
         )
 
-        try:
-            # 2. Получаем файл
-            file = await message.bot.get_file(message.voice.file_id)
-
-            file_path = f"temp_voice_{user_id}.ogg"
-
-            # 3. Скачиваем
-            await message.bot.download_file(file.file_path, destination=file_path)
-
-            # 4. Распознаем
-            text = await transcribe_voice_to_text(file_path)
-
-            if not text.strip():
-                await message.answer(get_text(user_lang, "prompt_review_voice_failed"))
-                return
-
-            # 5. Формируем сообщение админу
-            username = f"@{message.from_user.username}" if message.from_user.username else "без username"
-            full_name = f"{message.from_user.first_name or ''} {message.from_user.last_name or ''}".strip()
-
-            admin_text = (
-                "📩 Новый промпт на редакцию\n\n"
-                f"👤 Пользователь: {full_name}\n"
-                f"🆔 ID: {user_id}\n"
-                f"🔗 Username: {username}\n"
-                f"🎙 Источник: голос\n\n"
-                f"📝 Распознанный текст:\n{text}"
-            )
-
-            # 6. Отправляем админу
-            await message.bot.send_message(
-                chat_id=ADMIN_ID,
-                text=admin_text
-            )
-
-            # 7. Ответ пользователю
-            await message.answer(
-                f"{get_text(user_lang, 'prompt_review_sent')}\n\n📝 {text}"
-            )
-
-            # 8. Удаляем файл
-            if os.path.exists(file_path):
-                os.remove(file_path)
-
-            await state.clear()
-
-        except Exception as e:
-            await message.answer(
-                f"{get_text(user_lang, 'prompt_review_voice_failed')}\n\n{e}"
-            )
+        await notify_admins(message.bot, admin_text)
+        await message.answer(f"{get_text(user_lang, 'prompt_review_sent')}\n\n📝 {text}")
+        await state.clear()
+    except Exception as e:
+        await message.answer(f"{get_text(user_lang, 'prompt_review_voice_failed')}\n\n{e}")
+    finally:
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
     # Пока просто заглушка под speech-to-text
     # Здесь следующим шагом мы добавим:
@@ -5289,6 +6317,3 @@ async def process_prompt_review_text(message: Message, state: FSMContext):
 # Астрология и Эзотерика: Генерация гороскопов, толкование карт Таро (как развлекательный контент).
 # Спорт: Анализ матчей, тактические схемы, тренировочные программы для профессионалов.
 # Благотворительность и НКО: Написание грантовых заявок, стратегии фандрайзинга, отчетность.
-
-
-

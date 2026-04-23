@@ -257,10 +257,10 @@ LANGUAGES = {
 }
 
 
-def get_text(lang: str, key: str, **kwargs) -> str:
+def get_text(locale: str, key: str, **kwargs) -> str:
     """Получает текст на нужном языке с подстановкой переменных"""
     try:
-        text = TRANSLATIONS.get(lang, TRANSLATIONS['ru'])[key]
+        text = TRANSLATIONS.get(locale, TRANSLATIONS['ru'])[key]
         if kwargs:
             text = text.format(**kwargs)
         return text

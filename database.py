@@ -389,10 +389,18 @@ import os
 import random
 
 from dotenv import load_dotenv
-from typing import List, Dict
-from datetime import date, timedelta
+from typing import Any, Dict, List, Optional
+from datetime import date, datetime, timedelta, timezone
 
 load_dotenv()
+
+from bot_plans import get_plan_config, is_paid_tier, normalize_plan_tier, parse_datetime
+from website_api import (
+    delete_saved_prompt as website_delete_saved_prompt,
+    get_prompts as website_get_prompts,
+    get_saved_prompts as website_get_saved_prompts,
+    save_prompt as website_save_prompt,
+)
 
 # ==============================================================================
 # 1. КОНФИГУРАЦИЯ ПОДКЛЮЧЕНИЯ
@@ -466,6 +474,13 @@ async def init_db():
                 await add_column_if_not_exists(conn, "users", "last_streak_claim_date", "DATE")
                 await add_column_if_not_exists(conn, "users", "joined_at", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
                 await add_column_if_not_exists(conn, "users", "last_active", "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+                await add_column_if_not_exists(conn, "users", "plan_tier", "VARCHAR(32) DEFAULT 'free'")
+                await add_column_if_not_exists(conn, "users", "plan_expires_at", "TIMESTAMP")
+                await add_column_if_not_exists(conn, "users", "plan_coin_bonus_pct", "INT DEFAULT 0")
+                await add_column_if_not_exists(conn, "users", "plan_max_freezes", "INT DEFAULT 2")
+                await add_column_if_not_exists(conn, "users", "plan_ai_limit", "INT DEFAULT 20")
+                await add_column_if_not_exists(conn, "users", "plan_premium_prompts", "BOOLEAN DEFAULT FALSE")
+                await add_column_if_not_exists(conn, "users", "plan_restricted_cats", "BOOLEAN DEFAULT FALSE")
                 print("✅ Все колонки users проверены")
 
             # ------------------------------------------------------------------
@@ -524,8 +539,15 @@ async def init_db():
                     id SERIAL PRIMARY KEY,
                     user_id BIGINT NOT NULL,
                     prompt_id INTEGER,
+                    website_prompt_id TEXT,
                     saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
+            """)
+            await add_column_if_not_exists(conn, "user_saved_prompts", "website_prompt_id", "TEXT")
+            await conn.execute("""
+                CREATE UNIQUE INDEX IF NOT EXISTS uq_user_saved_prompts_user_website_prompt_id
+                ON user_saved_prompts (user_id, website_prompt_id)
+                WHERE website_prompt_id IS NOT NULL
             """)
             print("✅ Таблица user_saved_prompts готова")
 
@@ -571,6 +593,13 @@ async def create_users_table(conn):
             coins INT DEFAULT 0,
             streak INT DEFAULT 0,
             freeze_count INT DEFAULT 0,
+            plan_tier VARCHAR(32) DEFAULT 'free',
+            plan_expires_at TIMESTAMP,
+            plan_coin_bonus_pct INT DEFAULT 0,
+            plan_max_freezes INT DEFAULT 2,
+            plan_ai_limit INT DEFAULT 20,
+            plan_premium_prompts BOOLEAN DEFAULT FALSE,
+            plan_restricted_cats BOOLEAN DEFAULT FALSE,
             last_activity_date DATE DEFAULT CURRENT_DATE,
             last_streak_claim_date DATE,
             joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -604,7 +633,8 @@ async def add_or_update_user(
     username: str,
     first_name: str,
     last_name: str,
-    is_premium: bool = False
+    is_premium: bool = False,
+    plan_tier: Optional[str] = None,
 ):
     """
     Добавляет нового пользователя или обновляет данные существующего.
@@ -612,21 +642,53 @@ async def add_or_update_user(
     """
     async with db_pool.acquire() as conn:
         today = date.today()
+        existing = await conn.fetchrow(
+            """
+            SELECT plan_tier
+            FROM users
+            WHERE user_id = $1
+            """,
+            user_id,
+        )
+        effective_tier = normalize_plan_tier(plan_tier or (existing["plan_tier"] if existing else None))
+        plan = get_plan_config(effective_tier)
+        effective_is_premium = bool(is_premium or is_paid_tier(effective_tier) or plan["premium_prompts"])
 
         await conn.execute("""
             INSERT INTO users (
                 user_id, username, first_name, last_name, is_premium,
+                plan_tier, plan_coin_bonus_pct, plan_max_freezes, plan_ai_limit,
+                plan_premium_prompts, plan_restricted_cats,
                 last_active, last_activity_date
             )
-            VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, $6)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CURRENT_TIMESTAMP, $12)
             ON CONFLICT (user_id) DO UPDATE SET
                 username = $2,
                 first_name = $3,
                 last_name = $4,
                 is_premium = $5,
+                plan_tier = $6,
+                plan_coin_bonus_pct = $7,
+                plan_max_freezes = $8,
+                plan_ai_limit = $9,
+                plan_premium_prompts = $10,
+                plan_restricted_cats = $11,
                 last_active = CURRENT_TIMESTAMP,
-                last_activity_date = $6
-        """, user_id, username, first_name, last_name, is_premium, today)
+                last_activity_date = $12
+        """,
+            user_id,
+            username,
+            first_name,
+            last_name,
+            effective_is_premium,
+            effective_tier,
+            int(plan["coin_bonus_percent"]),
+            int(plan["max_freezes"]),
+            int(plan["ai_daily_limit"]),
+            bool(plan["premium_prompts"]),
+            bool(plan["restricted_categories"]),
+            today,
+        )
 
         await conn.execute("""
             INSERT INTO notifications (user_id)
@@ -639,7 +701,7 @@ async def get_user_profile_stats(user_id: int) -> dict:
     """Получает статистику профиля пользователя."""
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow("""
-            SELECT coins, streak, is_premium, joined_at
+            SELECT coins, streak, is_premium, joined_at, plan_tier, plan_expires_at
             FROM users
             WHERE user_id = $1
         """, user_id)
@@ -649,7 +711,9 @@ async def get_user_profile_stats(user_id: int) -> dict:
                 "coins": 0,
                 "streak": 0,
                 "is_premium": False,
-                "days_in_bot": 0
+                "days_in_bot": 0,
+                "plan_tier": "free",
+                "plan_expires_at": None,
             }
 
         joined_at = row["joined_at"]
@@ -661,8 +725,145 @@ async def get_user_profile_stats(user_id: int) -> dict:
             "coins": row["coins"] or 0,
             "streak": row["streak"] or 0,
             "is_premium": row["is_premium"] or False,
-            "days_in_bot": days_in_bot
+            "days_in_bot": days_in_bot,
+            "plan_tier": normalize_plan_tier(row["plan_tier"]),
+            "plan_expires_at": row["plan_expires_at"],
         }
+
+
+async def update_user_plan(
+    user_id: int,
+    *,
+    plan_tier: str,
+    plan_expires_at: Any = None,
+    benefits: Optional[Dict[str, Any]] = None,
+) -> dict:
+    tier = normalize_plan_tier(plan_tier)
+    plan = get_plan_config(tier)
+    merged = {
+        "coin_bonus_percent": int(plan["coin_bonus_percent"]),
+        "max_freezes": int(plan["max_freezes"]),
+        "ai_daily_limit": int(plan["ai_daily_limit"]),
+        "premium_prompts": bool(plan["premium_prompts"]),
+        "restricted_categories": bool(plan["restricted_categories"]),
+    }
+    if benefits:
+        merged.update(
+            {
+                "coin_bonus_percent": int(benefits.get("coin_bonus_percent", merged["coin_bonus_percent"])),
+                "max_freezes": int(benefits.get("max_freezes", merged["max_freezes"])),
+                "ai_daily_limit": int(benefits.get("ai_daily_limit", merged["ai_daily_limit"])),
+                "premium_prompts": bool(benefits.get("premium_prompts", merged["premium_prompts"])),
+                "restricted_categories": bool(
+                    benefits.get("restricted_categories", merged["restricted_categories"])
+                ),
+            }
+        )
+
+    expires_at = parse_datetime(plan_expires_at)
+    is_premium = bool(is_paid_tier(tier) or merged["premium_prompts"])
+
+    async with db_pool.acquire() as conn:
+        await conn.execute(
+            """
+            INSERT INTO users (
+                user_id,
+                is_premium,
+                plan_tier,
+                plan_expires_at,
+                plan_coin_bonus_pct,
+                plan_max_freezes,
+                plan_ai_limit,
+                plan_premium_prompts,
+                plan_restricted_cats
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            ON CONFLICT (user_id) DO UPDATE SET
+                is_premium = $2,
+                plan_tier = $3,
+                plan_expires_at = $4,
+                plan_coin_bonus_pct = $5,
+                plan_max_freezes = $6,
+                plan_ai_limit = $7,
+                plan_premium_prompts = $8,
+                plan_restricted_cats = $9
+            """,
+            user_id,
+            is_premium,
+            tier,
+            expires_at,
+            merged["coin_bonus_percent"],
+            merged["max_freezes"],
+            merged["ai_daily_limit"],
+            merged["premium_prompts"],
+            merged["restricted_categories"],
+        )
+        await conn.execute(
+            """
+            INSERT INTO notifications (user_id)
+            VALUES ($1)
+            ON CONFLICT (user_id) DO NOTHING
+            """,
+            user_id,
+        )
+
+    return await get_user_plan(user_id)
+
+
+async def get_user_plan(user_id: int) -> dict:
+    async with db_pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            SELECT
+                plan_tier,
+                plan_expires_at,
+                plan_coin_bonus_pct,
+                plan_max_freezes,
+                plan_ai_limit,
+                plan_premium_prompts,
+                plan_restricted_cats,
+                is_premium
+            FROM users
+            WHERE user_id = $1
+            """,
+            user_id,
+        )
+
+    if not row:
+        plan = get_plan_config("free")
+        return {
+            "plan_tier": "free",
+            "plan_expires_at": None,
+            "plan_coin_bonus_pct": int(plan["coin_bonus_percent"]),
+            "plan_max_freezes": int(plan["max_freezes"]),
+            "plan_ai_limit": int(plan["ai_daily_limit"]),
+            "plan_premium_prompts": bool(plan["premium_prompts"]),
+            "plan_restricted_cats": bool(plan["restricted_categories"]),
+            "is_premium": False,
+        }
+
+    tier = normalize_plan_tier(row["plan_tier"])
+    plan = get_plan_config(tier)
+    return {
+        "plan_tier": tier,
+        "plan_expires_at": row["plan_expires_at"],
+        "plan_coin_bonus_pct": row["plan_coin_bonus_pct"]
+        if row["plan_coin_bonus_pct"] is not None
+        else int(plan["coin_bonus_percent"]),
+        "plan_max_freezes": row["plan_max_freezes"]
+        if row["plan_max_freezes"] is not None
+        else int(plan["max_freezes"]),
+        "plan_ai_limit": row["plan_ai_limit"]
+        if row["plan_ai_limit"] is not None
+        else int(plan["ai_daily_limit"]),
+        "plan_premium_prompts": row["plan_premium_prompts"]
+        if row["plan_premium_prompts"] is not None
+        else bool(plan["premium_prompts"]),
+        "plan_restricted_cats": row["plan_restricted_cats"]
+        if row["plan_restricted_cats"] is not None
+        else bool(plan["restricted_categories"]),
+        "is_premium": bool(row["is_premium"]),
+    }
 
 
 async def update_user_coins(user_id: int, amount: int):
@@ -675,6 +876,20 @@ async def update_user_coins(user_id: int, amount: int):
         """, amount, user_id)
 
 
+async def grant_game_reward(user_id: int, base_reward: int) -> dict:
+    plan = await get_user_plan(user_id)
+    bonus_pct = int(plan["plan_coin_bonus_pct"])
+    bonus = (base_reward * bonus_pct) // 100
+    total_reward = base_reward + bonus
+    await update_user_coins(user_id, total_reward)
+    return {
+        "base_reward": base_reward,
+        "bonus_reward": bonus,
+        "total_reward": total_reward,
+        "bonus_pct": bonus_pct,
+    }
+
+
 async def save_ai_message(user_id: int, model: str, user_msg: str, bot_msg: str):
     """Сохраняет историю диалога с ИИ."""
     async with db_pool.acquire() as conn:
@@ -682,6 +897,22 @@ async def save_ai_message(user_id: int, model: str, user_msg: str, bot_msg: str)
             INSERT INTO ai_chat_history (user_id, model_name, user_message, bot_response)
             VALUES ($1, $2, $3, $4)
         """, user_id, model, user_msg, bot_msg)
+
+
+async def count_ai_messages_today(user_id: int) -> int:
+    async with db_pool.acquire() as conn:
+        return int(
+            await conn.fetchval(
+                """
+                SELECT COUNT(*)
+                FROM ai_chat_history
+                WHERE user_id = $1
+                  AND created_at >= date_trunc('day', CURRENT_TIMESTAMP)
+                """,
+                user_id,
+            )
+            or 0
+        )
 
 # ==============================================================================
 # 5. УВЕДОМЛЕНИЯ
@@ -805,18 +1036,86 @@ async def get_user_premium_status(user_id: int) -> bool:
             return False
 
 
-async def get_prompts_by_subcategory(subcategory: str, language: str) -> List[Dict]:
-    """Получает промпты по подкатегории и языку."""
+async def get_prompts_by_subcategory(
+    subcategory: str,
+    language: str,
+    telegram_user_id: int | None = None,
+) -> List[Dict]:
+    """Получает промпты из API сайта для конкретной подкатегории и языка."""
+    prompts = await website_get_prompts(
+        subcategory_key=subcategory,
+        language=language,
+        telegram_user_id=telegram_user_id,
+    )
+    result: List[Dict] = []
+    for prompt in prompts:
+        result.append({
+            "id": prompt.get("id"),
+            "slug": prompt.get("slug"),
+            "title": prompt.get("title", ""),
+            "content": prompt.get("body", ""),
+            "is_premium": bool(prompt.get("is_premium", False)),
+            "body_locked": bool(prompt.get("body_locked", False)),
+        })
+    return result
+
+
+async def get_saved_prompts(user_id: int) -> List[Dict]:
+    """Возвращает сохранённые промпты пользователя в формате, понятном боту."""
+    prompts = await website_get_saved_prompts(user_id)
+    result: List[Dict] = []
+    for prompt in prompts:
+        prompt_id = prompt.get("prompt_id") or prompt.get("id")
+        result.append({
+            "id": prompt_id,
+            "prompt_id": prompt_id,
+            "slug": prompt.get("slug"),
+            "title": prompt.get("title", ""),
+            "content": prompt.get("body", ""),
+            "body_locked": bool(prompt.get("body_locked", False)),
+            "saved_at": prompt.get("saved_at"),
+        })
+    return result
+
+
+async def save_prompt_for_user(user_id: int, website_prompt_id: str) -> bool:
+    """Сохраняет промпт пользователя через сайт и кэширует UUID локально."""
+    if not website_prompt_id:
+        return False
+
+    saved = await website_save_prompt(user_id, website_prompt_id)
+    if not saved:
+        return False
+
     async with db_pool.acquire() as conn:
-        try:
-            rows = await conn.fetch("""
-                SELECT title, content, is_premium
-                FROM prompts
-                WHERE subcategory = $1 AND language = $2
-            """, subcategory, language)
-            return [dict(row) for row in rows]
-        except Exception:
-            return []
+        await conn.execute(
+            """
+            INSERT INTO user_saved_prompts (user_id, website_prompt_id)
+            VALUES ($1, $2)
+            ON CONFLICT DO NOTHING
+            """,
+            user_id,
+            website_prompt_id,
+        )
+    return True
+
+
+async def remove_saved_prompt_for_user(user_id: int, website_prompt_id: str) -> bool:
+    """Удаляет сохранённый промпт пользователя через сайт и локальный кэш."""
+    if not website_prompt_id:
+        return False
+
+    deleted = await website_delete_saved_prompt(user_id, website_prompt_id)
+    if not deleted:
+        return False
+
+    async with db_pool.acquire() as conn:
+        await conn.execute(
+            "DELETE FROM user_saved_prompts WHERE user_id = $1 AND website_prompt_id = $2",
+            user_id,
+            website_prompt_id,
+        )
+    return True
 
 # ==============================================================================
 # 7. ЭКОНОМИКА / МИССИИ / СТРИК
@@ -996,7 +1295,7 @@ async def get_user_economy(user_id: int) -> dict:
     """Возвращает экономику пользователя."""
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow("""
-            SELECT coins, streak, freeze_count, last_streak_claim_date
+            SELECT coins, streak, freeze_count, last_streak_claim_date, plan_max_freezes
             FROM users
             WHERE user_id = $1
         """, user_id)
@@ -1006,7 +1305,8 @@ async def get_user_economy(user_id: int) -> dict:
                 "coins": 0,
                 "streak": 0,
                 "freeze_count": 0,
-                "last_streak_claim_date": None
+                "last_streak_claim_date": None,
+                "plan_max_freezes": 2,
             }
 
         return dict(row)
@@ -1091,7 +1391,7 @@ async def buy_freeze(user_id: int, price: int = 30, max_freezes: int = 2) -> dic
         coins = row["coins"] or 0
         freeze_count = row["freeze_count"] or 0
 
-        if freeze_count >= max_freezes:
+        if max_freezes > 0 and freeze_count >= max_freezes:
             return {"ok": False, "message": "У вас уже максимум заморозок"}
 
         if coins < price:
