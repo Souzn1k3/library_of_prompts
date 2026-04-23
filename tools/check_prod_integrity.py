@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import py_compile
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -120,9 +121,12 @@ def check_required_files() -> None:
 
 
 def check_compiles() -> None:
-    for relative_path in REQUIRED_FILES:
-        if relative_path.endswith(".py"):
-            py_compile.compile(str(ROOT / relative_path), doraise=True)
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_root = Path(tmp_dir)
+        for relative_path in REQUIRED_FILES:
+            if relative_path.endswith(".py"):
+                target = tmp_root / (relative_path.replace("/", "_") + "c")
+                py_compile.compile(str(ROOT / relative_path), cfile=str(target), doraise=True)
 
 
 def check_symbols() -> None:

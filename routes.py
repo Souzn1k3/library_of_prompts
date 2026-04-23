@@ -999,6 +999,7 @@ class ModerationCommentState(StatesGroup):
 AI_MODELS_DB = [
     {"id": "mistral", "name": "Mistral AI 🇫🇷", "description": "Быстрая и эффективная модель от Mistral"},
     {"id": "qwen", "name": "Qwen AI 🇨🇳", "description": "Умная модель от Alibaba с глубоким пониманием контекста"},
+    {"id": "zai", "name": "Z AI 🇨🇳", "description": "Легкая модель GLM от Z.ai через OpenRouter для быстрых диалогов и повседневных задач"},
     {"id": "nemotron", "name": "NVIDIA Nemotron 3 Super 🇺🇸", "description": "Гибридная модель от NVIDIA для сложных задач, программирования и анализа"},
     {"id": "gemini", "name": "Gemini Pro 🇺🇸", "description": "Мультимодальная модель от Google"},
     {"id": "gptoss", "name": "OpenAI gpt-oss-120b 🇺🇸", "description": "Сильная open-weight модель для логики, кода и сложных рассуждений"},
@@ -1856,6 +1857,7 @@ def get_catalog_ai_inline(lang: str = 'ru'):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=get_text(lang, 'mistral_btn'), callback_data="ai_model_mistral")],
         [InlineKeyboardButton(text=get_text(lang, 'qwen_btn'), callback_data="ai_model_qwen")],
+        [InlineKeyboardButton(text=get_text(lang, 'z_ai_btn'), callback_data="ai_model_zai")],
         [InlineKeyboardButton(text=get_text(lang, 'nemotron_btn'), callback_data="ai_model_nemotron")],
         [InlineKeyboardButton(text=get_text(lang, 'gpt_oss_btn'), callback_data="ai_model_gptoss")],
         [InlineKeyboardButton(text=get_text(lang, 'back'), callback_data="back_main_menu")]
@@ -2741,7 +2743,7 @@ async def launch_model_from_search(callback: CallbackQuery, state: FSMContext):
     model = next((m for m in AI_MODELS_DB if m["id"] == model_id), None)
 
     if model:
-        if model_id in ["mistral", "qwen", "nemotron", "gptoss"]:
+        if model_id in ["mistral", "qwen", "zai", "nemotron", "gptoss"]:
             await start_ai_session(
                 callback,
                 state,
@@ -2806,6 +2808,11 @@ async def start_mistral_chat(callback: CallbackQuery, state: FSMContext):
 async def start_qwen_chat(callback: CallbackQuery, state: FSMContext):
     """Активирует режим диалога с Qwen"""
     await start_ai_session(callback, state, model_key="qwen", model_title="🤖 Qwen AI")
+
+@router.callback_query(F.data == "ai_model_zai")
+async def start_zai_chat(callback: CallbackQuery, state: FSMContext):
+    """Активирует режим диалога с Z AI"""
+    await start_ai_session(callback, state, model_key="zai", model_title="🤖 Z AI")
 
 @router.callback_query(F.data == "ai_model_nemotron")
 async def start_nemotron_chat(callback: CallbackQuery, state: FSMContext):
@@ -2919,6 +2926,25 @@ async def handle_ai_message(message: Message, state: FSMContext):
                 else:
                     bot_response = f"(Демо-режим Qwen) Вы написали: '{user_text}'\nДобавьте OPENROUTER_API_KEY в .env"
 
+        elif current_model == "zai":
+            model_name = "z-ai/glm-4.5-air:free"
+
+            if QWEN_API_KEY:
+                bot_response = await call_openrouter_model(
+                    api_url=QWEN_API_URL,
+                    api_key=QWEN_API_KEY,
+                    model="z-ai/glm-4.5-air:free",
+                    user_text=user_text
+                )
+            else:
+                await asyncio.sleep(1)
+                if user_lang == "en":
+                    bot_response = f"(Z AI demo mode) You wrote: '{user_text}'\nAdd OPENROUTER_API_KEY to .env"
+                elif user_lang == "tt":
+                    bot_response = f"(Z AI демо режимы) Сез яздыгыз: '{user_text}'\nOPENROUTER_API_KEY ны .env ка өстәгез"
+                else:
+                    bot_response = f"(Демо-режим Z AI) Вы написали: '{user_text}'\nДобавьте OPENROUTER_API_KEY в .env"
+
 
         elif current_model == "nemotron":
             model_name = "nvidia/nemotron-3-super-120b-a12b:free"
@@ -2969,6 +2995,8 @@ async def handle_ai_message(message: Message, state: FSMContext):
             model_emoji = "🌪️"
         elif current_model == "qwen":
             model_emoji = "🤖"
+        elif current_model == "zai":
+            model_emoji = "🤖"
         elif current_model == "nemotron":
             model_emoji = "🟢"
         elif current_model == "gptoss":
@@ -2976,7 +3004,15 @@ async def handle_ai_message(message: Message, state: FSMContext):
         else:
             model_emoji = "🤖"
 
-        full_text = f"{model_emoji} {current_model.capitalize()}:\n\n{bot_response}"
+        display_name = {
+            "mistral": "Mistral",
+            "qwen": "Qwen",
+            "zai": "Z AI",
+            "nemotron": "Nemotron",
+            "gptoss": "gpt-oss",
+        }.get(current_model, current_model.capitalize())
+
+        full_text = f"{model_emoji} {display_name}:\n\n{bot_response}"
 
         await safe_send_long_message(
             message,
