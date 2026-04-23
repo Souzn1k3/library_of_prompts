@@ -36,10 +36,10 @@ TRANSLATIONS = {
         'missions_btn': "🎯 Миссии 🎯",
         'games_btn': "🎮 Игры 🎮",
         'profile_btn': "👤 Профиль",
-        'mistral_btn': "Mistral AI",
-        'qwen_btn': "Qwen AI",
-        'nemotron_btn': "NVIDIA Nemotron",
-        'gpt_oss_btn': "ChatGPT",
+        'mistral_btn': "Mistral AI 🇫🇷",
+        'qwen_btn': "Qwen AI 🇨🇳",
+        'nemotron_btn': "NVIDIA Nemotron 🇺🇸",
+        'gpt_oss_btn': "ChatGPT 🇺🇸",
         'daily_reminder': "🔔 **Напоминание из AI Hub!**\n\nНе забудь зайти сегодня, чтобы не прервать ударный режим! 🔥\nВыполняй миссии и зарабатывай койны.",
 
         # ==========================================================================
@@ -118,10 +118,10 @@ TRANSLATIONS = {
         'missions_btn': "🎯 Missions 🎯",
         'games_btn': "🎮 Games 🎮",
         'profile_btn': "👤 Profile",
-        'mistral_btn': "Mistral AI",
-        'qwen_btn': "Qwen AI",
-        'nemotron_btn': "NVIDIA Nemotron",
-        'gpt_oss_btn': "ChatGPT",
+        'mistral_btn': "Mistral AI 🇫🇷",
+        'qwen_btn': "Qwen AI 🇨🇳",
+        'nemotron_btn': "NVIDIA Nemotron 🇺🇸",
+        'gpt_oss_btn': "ChatGPT 🇺🇸",
         'daily_reminder': "🔔 **Reminder from AI Hub!**\n\nDon't forget to check in today to keep your streak! 🔥\nComplete missions and earn coins.",
 
         # ==========================================================================
@@ -200,10 +200,10 @@ TRANSLATIONS = {
         'missions_btn': "🎯 Миссияләр 🎯",
         'games_btn': "🎮 Уеннар 🎮",
         'profile_btn': "👤 Профиль",
-        'mistral_btn': "Mistral AI",
-        'qwen_btn': "Qwen AI",
-        'nemotron_btn': "NVIDIA Nemotron",
-        'gpt_oss_btn': "ChatGPT",
+        'mistral_btn': "Mistral AI 🇫🇷",
+        'qwen_btn': "Qwen AI 🇨🇳",
+        'nemotron_btn': "NVIDIA Nemotron 🇺🇸",
+        'gpt_oss_btn': "ChatGPT 🇺🇸",
         'daily_reminder': "🔔 **AI Hub искәртмәсе!**\n\nБүген керергә онытмагыз, удар режимын өзмәс өчен! 🔥\nМиссияләрне үтәгез һәм коиннар эшләгез.",
 
         # ==========================================================================

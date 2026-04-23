@@ -997,13 +997,13 @@ class ModerationCommentState(StatesGroup):
 # ==============================================================================
 
 AI_MODELS_DB = [
-    {"id": "mistral", "name": "Mistral AI", "description": "Быстрая и эффективная модель от Mistral"},
-    {"id": "qwen", "name": "Qwen AI", "description": "Умная модель от Alibaba с глубоким пониманием контекста"},
-    {"id": "nemotron", "name": "NVIDIA Nemotron 3 Super", "description": "Гибридная модель от NVIDIA для сложных задач, программирования и анализа"},
-    {"id": "gemini", "name": "Gemini Pro", "description": "Мультимодальная модель от Google"},
-    {"id": "gptoss", "name": "OpenAI gpt-oss-120b", "description": "Сильная open-weight модель для логики, кода и сложных рассуждений"},
-    {"id": "claude", "name": "Claude 3", "description": "Безопасная и мощная модель от Anthropic"},
-    {"id": "llama", "name": "Llama 3", "description": "Открытая модель от Meta"},
+    {"id": "mistral", "name": "Mistral AI 🇫🇷", "description": "Быстрая и эффективная модель от Mistral"},
+    {"id": "qwen", "name": "Qwen AI 🇨🇳", "description": "Умная модель от Alibaba с глубоким пониманием контекста"},
+    {"id": "nemotron", "name": "NVIDIA Nemotron 3 Super 🇺🇸", "description": "Гибридная модель от NVIDIA для сложных задач, программирования и анализа"},
+    {"id": "gemini", "name": "Gemini Pro 🇺🇸", "description": "Мультимодальная модель от Google"},
+    {"id": "gptoss", "name": "OpenAI gpt-oss-120b 🇺🇸", "description": "Сильная open-weight модель для логики, кода и сложных рассуждений"},
+    {"id": "claude", "name": "Claude 3 🇺🇸", "description": "Безопасная и мощная модель от Anthropic"},
+    {"id": "llama", "name": "Llama 3 🇺🇸", "description": "Открытая модель от Meta"},
 ]
 
 AI_QUIZ_QUESTIONS = [
