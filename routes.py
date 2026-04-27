@@ -988,6 +988,10 @@ class PromptReviewState(StatesGroup):
     waiting_for_prompt = State()
 
 
+class ReportState(StatesGroup):
+    waiting_for_report = State()
+
+
 class ModerationCommentState(StatesGroup):
     waiting_for_comment = State()
 
@@ -1006,6 +1010,83 @@ AI_MODELS_DB = [
     {"id": "claude", "name": "Claude 3 🇺🇸", "description": "Безопасная и мощная модель от Anthropic"},
     {"id": "llama", "name": "Llama 3 🇺🇸", "description": "Открытая модель от Meta"},
 ]
+
+
+AI_MODEL_SOURCE_URLS = {
+    "mistral": "https://mistral.ai/",
+    "qwen": "https://qwenlm.github.io/",
+    "zai": "https://z.ai/",
+    "nemotron": "https://www.nvidia.com/en-us/ai/",
+    "gptoss": "https://openai.com/open-models/",
+    "gemini": "https://gemini.google.com/",
+    "claude": "https://www.anthropic.com/claude",
+    "llama": "https://ai.meta.com/llama/",
+}
+
+
+PROMPT_ANALYSIS_SYSTEM_PROMPT = """Ты выступаешь в роли эксперта по prompt engineering и анализу запросов к нейросетям.
+
+Твоя задача: при получении любого промпта проводить его глубокий и структурированный анализ.
+
+Для каждого полученного промпта выполняй следующие шаги:
+
+1. Краткое описание цели промпта
+- Что пытается достичь пользователь
+- Какой ожидаемый результат
+
+2. Структурный разбор
+- Наличие роли (role assignment)
+- Четкость инструкций
+- Наличие контекста
+- Ограничения и условия
+- Формат ожидаемого ответа
+
+3. Сильные стороны промпта
+- Что сделано хорошо
+- Какие элементы усиливают результат
+
+4. Слабые стороны и риски
+- Неоднозначности
+- Недостаток контекста
+- Возможные ошибки интерпретации
+
+5. Рекомендации по улучшению
+- Конкретные правки
+- Какие элементы добавить или изменить
+
+6. Улучшенная версия промпта
+- Перепиши исходный промпт, сделав его более эффективным
+
+7. Итоговая оценка
+- Оцени по шкале от 1 до 10
+- Кратко обоснуй оценку
+
+8. Источник нейросети
+- Укажи ссылку на официальный сайт нейросети: {source_url}
+
+Формат ответа должен быть строго структурированным, с четкими заголовками для каждого раздела."""
+
+
+def get_model_source_url(model_key: str) -> str:
+    return AI_MODEL_SOURCE_URLS.get(model_key, "https://openrouter.ai/")
+
+
+def build_prompt_analysis_messages(model_key: str, user_text: str) -> list[dict[str, str]]:
+    source_url = get_model_source_url(model_key)
+    return [
+        {
+            "role": "system",
+            "content": PROMPT_ANALYSIS_SYSTEM_PROMPT.format(source_url=source_url),
+        },
+        {"role": "user", "content": user_text},
+    ]
+
+
+def ensure_model_source_link(model_key: str, response_text: str) -> str:
+    source_url = get_model_source_url(model_key)
+    if source_url in response_text:
+        return response_text
+    return f"{response_text.rstrip()}\n\n8. Источник нейросети\nОфициальный сайт: {source_url}"
 
 AI_QUIZ_QUESTIONS = [
     {
@@ -1529,8 +1610,20 @@ def build_ai_limit_status(lang: str, used: int, limit: int) -> str:
     return st(lang, "limit_status", used=used, limit=limit)
 
 
+def prompt_analysis_hint(lang: str) -> str:
+    if lang == "en":
+        return "Send a prompt, and the model will analyze its goal, structure, strengths, risks, improvements, rewritten version, score, and official source."
+    if lang == "tt":
+        return "Промпт җибәрегез, модель максатны, структураны, көчле һәм зәгыйфь якларны, яхшыртуларны, яңартылган версияне, бәяне һәм рәсми чыганакны күрсәтәчәк."
+    return "Пришлите промпт, и модель разберёт цель, структуру, сильные стороны, риски, улучшения, новую версию, оценку и официальный источник."
+
+
 def build_ai_activation_text(lang: str, model_title: str, plan: dict, used_today: int) -> str:
-    return f"{model_title} {get_text(lang, 'ai_activated')}\n\n{build_ai_limit_status(lang, used_today, int(plan.get('plan_ai_limit', 0)))}"
+    return (
+        f"{model_title} {get_text(lang, 'ai_activated')}\n\n"
+        f"{prompt_analysis_hint(lang)}\n\n"
+        f"{build_ai_limit_status(lang, used_today, int(plan.get('plan_ai_limit', 0)))}"
+    )
 
 
 async def start_ai_session(
@@ -2141,7 +2234,7 @@ async def safe_send_long_message(message: Message, text: str, reply_markup=None)
             await message.answer(chunk)
 
 
-async def call_openrouter_model(api_url: str, api_key: str, model: str, user_text: str) -> str:
+async def call_openrouter_model(api_url: str, api_key: str, model: str, user_text: str, model_key: str) -> str:
     timeout = aiohttp.ClientTimeout(total=180, connect=20, sock_connect=20, sock_read=180)
 
     headers = {
@@ -2153,7 +2246,8 @@ async def call_openrouter_model(api_url: str, api_key: str, model: str, user_tex
 
     payload = {
         "model": model,
-        "messages": [{"role": "user", "content": user_text}]
+        "messages": build_prompt_analysis_messages(model_key, user_text),
+        "temperature": 0.3,
     }
 
     last_error = None
@@ -2887,7 +2981,8 @@ async def handle_ai_message(message: Message, state: FSMContext):
                     }
                     payload = {
                         "model": "mistral-small",
-                        "messages": [{"role": "user", "content": user_text}]
+                        "messages": build_prompt_analysis_messages("mistral", user_text),
+                        "temperature": 0.3,
                     }
 
                     async with session.post(MISTRAL_API_URL, json=payload, headers=headers) as resp:
@@ -2915,7 +3010,8 @@ async def handle_ai_message(message: Message, state: FSMContext):
                     api_url=QWEN_API_URL,
                     api_key=QWEN_API_KEY,
                     model="qwen/qwen-2.5-7b-instruct",
-                    user_text=user_text
+                    user_text=user_text,
+                    model_key="qwen",
                 )
             else:
                 await asyncio.sleep(1)
@@ -2934,7 +3030,8 @@ async def handle_ai_message(message: Message, state: FSMContext):
                     api_url=QWEN_API_URL,
                     api_key=QWEN_API_KEY,
                     model="z-ai/glm-4.5-air:free",
-                    user_text=user_text
+                    user_text=user_text,
+                    model_key="zai",
                 )
             else:
                 await asyncio.sleep(1)
@@ -2954,7 +3051,8 @@ async def handle_ai_message(message: Message, state: FSMContext):
                     api_url=QWEN_API_URL,
                     api_key=QWEN_API_KEY,
                     model="nvidia/nemotron-3-super-120b-a12b:free",
-                    user_text=user_text
+                    user_text=user_text,
+                    model_key="nemotron",
                 )
             else:
                 await asyncio.sleep(1)
@@ -2975,7 +3073,8 @@ async def handle_ai_message(message: Message, state: FSMContext):
                     api_url=QWEN_API_URL,
                     api_key=QWEN_API_KEY,
                     model="openai/gpt-oss-120b:free",
-                    user_text=user_text
+                    user_text=user_text,
+                    model_key="gptoss",
                 )
             else:
                 await asyncio.sleep(1)
@@ -2988,6 +3087,7 @@ async def handle_ai_message(message: Message, state: FSMContext):
 
         if bot_response:
             bot_response = clean_markdown(bot_response)
+            bot_response = ensure_model_source_link(current_model, bot_response)
 
         await thinking_msg.delete()
 
@@ -3500,7 +3600,7 @@ async def cancel_search(message: Message, state: FSMContext):
 
 @router.message(Command("news"))
 async def news(message: Message):
-    await message.answer("📰 Новости сервиса")
+    await message.answer("📰 Новости сервиса: https://t.me/kopilka_promptov")
 
 
 @router.message(Command("stickers"))
@@ -3509,8 +3609,9 @@ async def stickers(message: Message):
 
 
 @router.message(Command("report"))
-async def report(message: Message):
-    await message.answer("📝 Сообщите об ошибке:")
+async def report(message: Message, state: FSMContext):
+    await state.set_state(ReportState.waiting_for_report)
+    await message.answer("Опишите вашу проблему")
 
 
 @router.message(Command("ai"))
@@ -3533,36 +3634,6 @@ async def sub_info(message: Message):
         build_tariffs_text(user_lang, plan),
         parse_mode="Markdown",
         reply_markup=get_tariffs_menu_inline(user_lang, normalize_plan_tier(plan.get("plan_tier"))),
-    )
-
-
-@router.message(F.text.lower() == "привет")
-async def cmd_hello(message: Message):
-    user_id = message.from_user.id
-    full_name = message.from_user.full_name
-    user_lang = await get_user_language(user_id)
-
-    await add_or_update_user(
-        user_id=user_id,
-        username=message.from_user.username or "",
-        first_name=message.from_user.first_name or "",
-        last_name=message.from_user.last_name or ""
-    )
-    await sync_subscription_cache(
-        user_id,
-        username=message.from_user.username,
-        first_name=message.from_user.first_name,
-        last_name=message.from_user.last_name,
-        language=user_lang,
-    )
-
-    await ensure_daily_missions(user_id)
-    await ensure_permanent_missions(user_id)
-
-    await message.answer(
-        get_text(user_lang, 'welcome', name=escape(full_name)),
-        parse_mode="Markdown",
-        reply_markup=get_main_menu_inline(user_lang)
     )
 
 
@@ -3894,6 +3965,72 @@ async def process_prompt_review_voice(message: Message, state: FSMContext):
     # 1. скачивание voice
     # 2. распознавание в текст
     # 3. отправку тебе как обычного промпта
+
+
+@router.message(ReportState.waiting_for_report, F.text)
+async def process_report_text(message: Message, state: FSMContext):
+    user_id = message.from_user.id
+    user_lang = await get_user_language(user_id)
+    report_text = (message.text or "").strip()
+
+    if not report_text:
+        await message.answer("Пожалуйста, опишите проблему текстом.")
+        return
+
+    username = f"@{message.from_user.username}" if message.from_user.username else "без username"
+    full_name = message.from_user.full_name or "без имени"
+
+    admin_text = (
+        "🚨 Новый отчёт об ошибке\n\n"
+        f"👤 Полное имя: {full_name}\n"
+        f"🔗 Username: {username}\n"
+        f"🆔 Telegram ID: {user_id}\n\n"
+        f"🐞 Описание проблемы:\n{trim_message_text(report_text, limit=3000)}"
+    )
+
+    await notify_admins(message.bot, admin_text)
+    await state.clear()
+    await message.answer(
+        "Спасибо за обратную связь!",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text=get_text(user_lang, 'back_to_menu'), callback_data="back_main_menu")]
+        ])
+    )
+
+
+@router.message(ReportState.waiting_for_report)
+async def process_report_non_text(message: Message):
+    await message.answer("Пожалуйста, опишите проблему текстом.")
+
+
+@router.message(F.text.lower() == "привет")
+async def cmd_hello(message: Message):
+    user_id = message.from_user.id
+    full_name = message.from_user.full_name
+    user_lang = await get_user_language(user_id)
+
+    await add_or_update_user(
+        user_id=user_id,
+        username=message.from_user.username or "",
+        first_name=message.from_user.first_name or "",
+        last_name=message.from_user.last_name or ""
+    )
+    await sync_subscription_cache(
+        user_id,
+        username=message.from_user.username,
+        first_name=message.from_user.first_name,
+        last_name=message.from_user.last_name,
+        language=user_lang,
+    )
+
+    await ensure_daily_missions(user_id)
+    await ensure_permanent_missions(user_id)
+
+    await message.answer(
+        get_text(user_lang, 'welcome', name=escape(full_name)),
+        parse_mode="Markdown",
+        reply_markup=get_main_menu_inline(user_lang)
+    )
 #
 # # ==============================================================================
 # # 1. КОНФИГУРАЦИЯ И СОСТОЯНИЯ
