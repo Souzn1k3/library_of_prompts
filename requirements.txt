@@ -5,3 +5,5 @@ python-dotenv
 mistralai>=0.1.0
 aiohttp
 vosk
+python-docx
+pypdf

@@ -837,6 +837,7 @@ import json
 import re
 import secrets
 import subprocess
+import tempfile
 import wave
 
 from aiogram import Router, F
@@ -1612,10 +1613,10 @@ def build_ai_limit_status(lang: str, used: int, limit: int) -> str:
 
 def prompt_analysis_hint(lang: str) -> str:
     if lang == "en":
-        return "Send a prompt, and the model will analyze its goal, structure, strengths, risks, improvements, rewritten version, score, and official source."
+        return "Send a prompt as text or as a TXT, DOCX, PDF, voice, or audio file. The model will analyze its goal, structure, strengths, risks, improvements, rewritten version, score, and official source."
     if lang == "tt":
-        return "Промпт җибәрегез, модель максатны, структураны, көчле һәм зәгыйфь якларны, яхшыртуларны, яңартылган версияне, бәяне һәм рәсми чыганакны күрсәтәчәк."
-    return "Пришлите промпт, и модель разберёт цель, структуру, сильные стороны, риски, улучшения, новую версию, оценку и официальный источник."
+        return "Промптны текст, TXT, DOCX, PDF, тавыш яки аудио файл итеп җибәрегез. Модель максатны, структураны, көчле һәм зәгыйфь якларны, яхшыртуларны, яңартылган версияне, бәяне һәм рәсми чыганакны күрсәтәчәк."
+    return "Пришлите промпт текстом или файлом TXT, DOCX, PDF, голосом или аудио. Модель разберёт цель, структуру, сильные стороны, риски, улучшения, новую версию, оценку и официальный источник."
 
 
 def build_ai_activation_text(lang: str, model_title: str, plan: dict, used_today: int) -> str:
@@ -2380,6 +2381,194 @@ async def transcribe_voice_to_text(file_path: str) -> str:
             raise RuntimeError(
                 f"Vosk STT failed: {vosk_error}; OpenAI STT failed: {openai_error}"
             ) from openai_error
+
+
+AI_MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024
+AI_MAX_EXTRACTED_CHARS = 18000
+AI_AUDIO_MAX_DURATION_SECONDS = 300
+AI_TEXT_EXTENSIONS = {".txt"}
+AI_DOCX_EXTENSIONS = {".docx"}
+AI_PDF_EXTENSIONS = {".pdf"}
+AI_AUDIO_EXTENSIONS = {".ogg", ".oga", ".opus", ".wav", ".mp3", ".m4a", ".flac", ".aac", ".webm"}
+AI_SUPPORTED_FILE_EXTENSIONS = AI_TEXT_EXTENSIONS | AI_DOCX_EXTENSIONS | AI_PDF_EXTENSIONS | AI_AUDIO_EXTENSIONS
+
+
+class AIFileInputError(Exception):
+    pass
+
+
+def ai_file_error_text(lang: str, key: str, **kwargs) -> str:
+    texts = {
+        "ru": {
+            "unsupported": "❌ Поддерживаются только TXT, DOCX, PDF, голосовые и аудиофайлы.",
+            "too_large": "❌ Файл слишком большой. Максимальный размер: {mb} МБ.",
+            "too_long_audio": "❌ Аудио слишком длинное. Максимум: {minutes} минут.",
+            "empty": "❌ Не удалось извлечь текст из файла. Попробуйте другой файл или отправьте текстом.",
+            "dependency_docx": "❌ Для DOCX на сервере нужен пакет python-docx.",
+            "dependency_pdf": "❌ Для PDF на сервере нужен пакет pypdf.",
+        },
+        "en": {
+            "unsupported": "❌ Only TXT, DOCX, PDF, voice, and audio files are supported.",
+            "too_large": "❌ The file is too large. Maximum size: {mb} MB.",
+            "too_long_audio": "❌ The audio is too long. Maximum: {minutes} minutes.",
+            "empty": "❌ I could not extract text from the file. Try another file or send text.",
+            "dependency_docx": "❌ DOCX support requires python-docx on the server.",
+            "dependency_pdf": "❌ PDF support requires pypdf on the server.",
+        },
+        "tt": {
+            "unsupported": "❌ TXT, DOCX, PDF, тавыш һәм аудио файллар гына кабул ителә.",
+            "too_large": "❌ Файл артык зур. Максимум: {mb} МБ.",
+            "too_long_audio": "❌ Аудио артык озын. Максимум: {minutes} минут.",
+            "empty": "❌ Файлдан текст алып булмады. Башка файл яки текст җибәреп карагыз.",
+            "dependency_docx": "❌ DOCX өчен серверда python-docx пакеты кирәк.",
+            "dependency_pdf": "❌ PDF өчен серверда pypdf пакеты кирәк.",
+        },
+    }
+    template = texts.get(lang, texts["ru"]).get(key, texts["ru"][key])
+    return template.format(**kwargs) if kwargs else template
+
+
+def _limit_ai_input_text(text: str) -> str:
+    text = (text or "").strip()
+    if len(text) <= AI_MAX_EXTRACTED_CHARS:
+        return text
+    return f"{text[:AI_MAX_EXTRACTED_CHARS].rstrip()}\n\n[Текст файла сокращён до {AI_MAX_EXTRACTED_CHARS} символов.]"
+
+
+def _file_extension(file_name: str | None) -> str:
+    return os.path.splitext(file_name or "")[1].lower()
+
+
+def _decode_text_file(data: bytes) -> str:
+    for encoding in ("utf-8-sig", "utf-8", "cp1251", "latin-1"):
+        try:
+            return data.decode(encoding)
+        except UnicodeDecodeError:
+            continue
+    return data.decode("utf-8", errors="replace")
+
+
+async def _download_telegram_file(message: Message, file_id: str, suffix: str) -> str:
+    safe_suffix = suffix if suffix.startswith(".") else ".bin"
+    path = os.path.join(tempfile.gettempdir(), f"ai_input_{message.from_user.id}_{secrets.token_hex(8)}{safe_suffix}")
+    file = await message.bot.get_file(file_id)
+    await message.bot.download_file(file.file_path, destination=path)
+    return path
+
+
+async def _extract_txt_file(file_path: str) -> str:
+    async with aiofiles.open(file_path, "rb") as file:
+        data = await file.read()
+    return _decode_text_file(data)
+
+
+def _extract_docx_file_sync(file_path: str) -> str:
+    try:
+        from docx import Document
+    except ImportError as exc:
+        raise RuntimeError("dependency_docx") from exc
+
+    document = Document(file_path)
+    parts = [paragraph.text for paragraph in document.paragraphs if paragraph.text.strip()]
+    for table in document.tables:
+        for row in table.rows:
+            cells = [cell.text.strip() for cell in row.cells if cell.text.strip()]
+            if cells:
+                parts.append(" | ".join(cells))
+    return "\n".join(parts)
+
+
+def _extract_pdf_file_sync(file_path: str) -> str:
+    try:
+        from pypdf import PdfReader
+    except ImportError as exc:
+        raise RuntimeError("dependency_pdf") from exc
+
+    reader = PdfReader(file_path)
+    parts = []
+    for page in reader.pages:
+        page_text = page.extract_text() or ""
+        if page_text.strip():
+            parts.append(page_text.strip())
+        if sum(len(part) for part in parts) >= AI_MAX_EXTRACTED_CHARS:
+            break
+    return "\n\n".join(parts)
+
+
+def _with_file_context(source_name: str, text: str, caption: str | None = None) -> str:
+    chunks = [f"Источник: файл {source_name}", "", _limit_ai_input_text(text)]
+    if caption and caption.strip():
+        chunks.extend(["", f"Комментарий пользователя: {caption.strip()}"])
+    return "\n".join(chunks)
+
+
+async def _extract_document_input_text(message: Message, lang: str) -> str:
+    document = message.document
+    file_name = document.file_name or "file"
+    extension = _file_extension(file_name)
+    file_size = int(document.file_size or 0)
+
+    if extension not in AI_SUPPORTED_FILE_EXTENSIONS:
+        raise AIFileInputError(ai_file_error_text(lang, "unsupported"))
+    if file_size > AI_MAX_FILE_SIZE_BYTES:
+        raise AIFileInputError(ai_file_error_text(lang, "too_large", mb=AI_MAX_FILE_SIZE_BYTES // (1024 * 1024)))
+
+    file_path = await _download_telegram_file(message, document.file_id, extension or ".bin")
+    try:
+        if extension in AI_TEXT_EXTENSIONS:
+            extracted = await _extract_txt_file(file_path)
+        elif extension in AI_DOCX_EXTENSIONS:
+            try:
+                extracted = await asyncio.to_thread(_extract_docx_file_sync, file_path)
+            except RuntimeError as exc:
+                if str(exc) == "dependency_docx":
+                    raise AIFileInputError(ai_file_error_text(lang, "dependency_docx")) from exc
+                raise
+        elif extension in AI_PDF_EXTENSIONS:
+            try:
+                extracted = await asyncio.to_thread(_extract_pdf_file_sync, file_path)
+            except RuntimeError as exc:
+                if str(exc) == "dependency_pdf":
+                    raise AIFileInputError(ai_file_error_text(lang, "dependency_pdf")) from exc
+                raise
+        else:
+            extracted = await transcribe_voice_to_text(file_path)
+
+        if not extracted.strip():
+            raise AIFileInputError(ai_file_error_text(lang, "empty"))
+        return _with_file_context(file_name, extracted, message.caption)
+    finally:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+
+async def _extract_audio_input_text(message: Message, lang: str) -> str:
+    audio = message.audio or message.voice
+    duration = int(getattr(audio, "duration", 0) or 0)
+    if duration > AI_AUDIO_MAX_DURATION_SECONDS:
+        raise AIFileInputError(ai_file_error_text(lang, "too_long_audio", minutes=AI_AUDIO_MAX_DURATION_SECONDS // 60))
+
+    file_name = getattr(audio, "file_name", None) or ("voice.ogg" if message.voice else "audio.ogg")
+    extension = _file_extension(file_name) or ".ogg"
+    file_path = await _download_telegram_file(message, audio.file_id, extension)
+    try:
+        extracted = await transcribe_voice_to_text(file_path)
+        if not extracted.strip():
+            raise AIFileInputError(ai_file_error_text(lang, "empty"))
+        return _with_file_context(file_name, extracted, message.caption)
+    finally:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+
+async def extract_ai_input_text(message: Message, lang: str) -> str:
+    if message.text and message.text.strip():
+        return message.text.strip()
+    if message.document:
+        return await _extract_document_input_text(message, lang)
+    if message.voice or message.audio:
+        return await _extract_audio_input_text(message, lang)
+    raise AIFileInputError(ai_file_error_text(lang, "unsupported"))
 # ==============================================================================
 # 7. ХЕНДЛЕРЫ НАВИГАЦИИ
 # ==============================================================================
@@ -2943,8 +3132,8 @@ def clean_markdown(text: str) -> str:
 
 @router.message(AIChatState.waiting_for_message)
 async def handle_ai_message(message: Message, state: FSMContext):
-    """Обрабатывает текст пользователя и отправляет в AI"""
-    user_text = message.text or ""
+    """Обрабатывает текст, документы и аудио пользователя и отправляет в AI"""
+    user_text = ""
     user_id = message.from_user.id
     user_lang = await get_user_language(user_id)
     plan = await get_user_plan(user_id)
@@ -2968,6 +3157,7 @@ async def handle_ai_message(message: Message, state: FSMContext):
     )
 
     try:
+        user_text = await extract_ai_input_text(message, user_lang)
         bot_response = ""
         model_name = ""
 
@@ -3123,6 +3313,14 @@ async def handle_ai_message(message: Message, state: FSMContext):
         await save_ai_message(user_id, model_name, user_text, bot_response)
         await track_ai_message_sent(user_id)
 
+    except AIFileInputError as e:
+        try:
+            await thinking_msg.delete()
+        except Exception:
+            pass
+
+        await message.answer(str(e), reply_markup=get_exit_ai_inline(user_lang))
+
     except asyncio.TimeoutError:
         try:
             await thinking_msg.delete()
@@ -3179,10 +3377,14 @@ async def show_profile(callback: CallbackQuery):
 
     streak_emoji = "🔥" if stats['streak'] > 0 else "💤"
     premium_badge = f"{get_plan_badge(plan.get('plan_tier'))} {get_plan_title(plan.get('plan_tier'), user_lang)}"
+    full_name = clean_markdown(callback.from_user.full_name or "без имени")
+    username = f"@{callback.from_user.username}" if callback.from_user.username else "не указан"
 
     text = get_text(
         user_lang, 'profile',
         user_id=user_id,
+        full_name=full_name,
+        username=username,
         premium_badge=premium_badge,
         coins=economy['coins'],
         streak_emoji=streak_emoji,
