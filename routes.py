@@ -1384,6 +1384,7 @@ SUBSCRIPTION_TEXTS = {
         "game_bonus": "Бонус в играх",
         "premium_prompts": "Premium-промпты",
         "restricted_categories": "Restricted-категории",
+        "features": "Возможности",
         "yes": "Да",
         "no": "Нет",
         "unlimited": "без лимита",
@@ -1419,6 +1420,7 @@ SUBSCRIPTION_TEXTS = {
         "game_bonus": "Game bonus",
         "premium_prompts": "Premium prompts",
         "restricted_categories": "Restricted categories",
+        "features": "Features",
         "yes": "Yes",
         "no": "No",
         "unlimited": "unlimited",
@@ -1454,6 +1456,7 @@ SUBSCRIPTION_TEXTS = {
         "game_bonus": "Уен бонусы",
         "premium_prompts": "Premium-промптлар",
         "restricted_categories": "Restricted-категорияләр",
+        "features": "Мөмкинлекләр",
         "yes": "Әйе",
         "no": "Юк",
         "unlimited": "чиксез",
@@ -1500,21 +1503,143 @@ def _stars_text(stars: int) -> str:
     return f"{int(stars)} ⭐️"
 
 
-def _plan_price_text(tier: str) -> str:
+def _plan_price_text(tier: str, lang: str = "ru") -> str:
     plan = get_plan_config(tier)
     stars = int(plan["stars_price_month"])
-    return "Free" if stars == 0 else f"{_stars_text(stars)} / 30d"
+    if stars == 0:
+        if lang == "en":
+            return "0 ⭐️ (free)"
+        if lang == "tt":
+            return "0 ⭐️ (бушлай)"
+        return "0 ⭐️ (бесплатно)"
+
+    period = "30d" if lang == "en" else "30 дней"
+    return f"{_stars_text(stars)} / {period}"
+
+
+PLAN_FEATURE_LINES = {
+    "ru": {
+        "free": [
+            "доступ к бесплатным промптам;",
+            "4 premium-промпта в месяц;",
+            "10 AI-анализов промптов в день;",
+            "базовые уроки по prompt engineering;",
+            "базовые мини-игры;",
+            "стрик;",
+            "токены;",
+            "2 заморозки стрика;",
+            "1 промпт на модерацию в неделю.",
+        ],
+        "starter": [
+            "15 premium-промптов в месяц;",
+            "25 AI-анализов промптов в день;",
+            "доступ к базовым и средним урокам;",
+            "готовые наборы промптов для учебы;",
+            "сохранение избранных промптов;",
+            "+20% токенов в играх;",
+            "4 заморозки стрика;",
+            "5 отправок промптов на модерацию в неделю;",
+            "все возможности уровня Free.",
+        ],
+        "pro": [
+            "30 premium-промптов в месяц;",
+            "80 AI-анализов промптов в день;",
+            "доступ к сложным многоуровневым промптам;",
+            "анализ TXT/DOCX/PDF/голосовых;",
+            "+50% токенов;",
+            "5 заморозок;",
+            "15 отправок промптов на модерацию в неделю;",
+            "приоритетная модерация;",
+            "история улучшений промптов;",
+            "бейдж «Pro»;",
+            "улучшенный анализ промптов;",
+            "все возможности уровня Starter.",
+        ],
+        "enterprise": [
+            "60 premium-промптов в месяц;",
+            "расширенный AI-доступ;",
+            "наилучший уровень анализа промптов;",
+            "все категории;",
+            "все уроки;",
+            "30 отправок промптов на модерацию в неделю;",
+            "максимальный приоритет модерации;",
+            "бейдж «Автор»;",
+            "подборка лучших промптов автора;",
+            "+100% токенов;",
+            "7 заморозок;",
+            "ранний доступ к новым функциям и промптам;",
+            "закрытые задания для авторов;",
+            "закрытый чат для владельцев уровня MAX в Telegram;",
+            "возможность попасть в «топ авторов недели»;",
+            "все возможности всех уровней.",
+        ],
+    },
+    "en": {
+        "free": [
+            "access to free prompts;",
+            "4 premium prompts per month;",
+            "10 AI prompt analyses per day;",
+            "basic prompt engineering lessons;",
+            "basic mini-games;",
+            "streak;",
+            "tokens;",
+            "2 streak freezes;",
+            "1 prompt submission for moderation per week.",
+        ],
+        "starter": [
+            "15 premium prompts per month;",
+            "25 AI prompt analyses per day;",
+            "basic and intermediate lessons;",
+            "ready-made prompt packs for study;",
+            "saved favorite prompts;",
+            "+20% tokens in games;",
+            "4 streak freezes;",
+            "5 prompt submissions for moderation per week;",
+            "all Free features.",
+        ],
+        "pro": [
+            "30 premium prompts per month;",
+            "80 AI prompt analyses per day;",
+            "complex multi-level prompts;",
+            "TXT/DOCX/PDF/voice analysis;",
+            "+50% tokens;",
+            "5 freezes;",
+            "15 prompt submissions for moderation per week;",
+            "priority moderation;",
+            "prompt improvement history;",
+            "“Pro” badge;",
+            "advanced prompt analysis;",
+            "all Starter features.",
+        ],
+        "enterprise": [
+            "60 premium prompts per month;",
+            "extended AI access;",
+            "best prompt analysis level;",
+            "all categories;",
+            "all lessons;",
+            "30 prompt submissions for moderation per week;",
+            "maximum moderation priority;",
+            "“Author” badge;",
+            "best prompts by the author selection;",
+            "+100% tokens;",
+            "7 freezes;",
+            "early access to new features and prompts;",
+            "private author tasks;",
+            "private Telegram chat for MAX subscribers;",
+            "chance to get into “top authors of the week”;",
+            "all features from every level.",
+        ],
+    },
+}
 
 
 def _plan_feature_lines(lang: str, tier: str) -> list[str]:
-    plan = get_plan_config(tier)
+    features_by_lang = PLAN_FEATURE_LINES.get(lang, PLAN_FEATURE_LINES["ru"])
+    features = features_by_lang.get(tier, PLAN_FEATURE_LINES["ru"][tier])
     return [
-        f"{st(lang, 'price')}: **{_plan_price_text(tier)}**",
-        f"{st(lang, 'ai_daily_limit')}: **{_limit_text(lang, int(plan['ai_daily_limit']))}**",
-        f"{st(lang, 'freeze_limit')}: **{_limit_text(lang, int(plan['max_freezes']))}**",
-        f"{st(lang, 'game_bonus')}: **+{int(plan['coin_bonus_percent'])}%**",
-        f"{st(lang, 'premium_prompts')}: **{_bool_text(lang, bool(plan['premium_prompts']))}**",
-        f"{st(lang, 'restricted_categories')}: **{_bool_text(lang, bool(plan['restricted_categories']))}**",
+        f"{st(lang, 'price')}: **{_plan_price_text(tier, lang)}**",
+        f"{st(lang, 'features')}:",
+        *(f"  • {feature}" for feature in features),
     ]
 
 
@@ -1537,7 +1662,7 @@ def build_tariffs_text(lang: str, current_plan: dict) -> str:
     for tier in ("free", *PAID_PLAN_ORDER):
         lines.append("")
         lines.append(f"{get_plan_badge(tier)} **{get_plan_title(tier, lang)}**")
-        lines.extend(f"• {line}" for line in _plan_feature_lines(lang, tier))
+        lines.extend(_plan_feature_lines(lang, tier))
 
     return "\n".join(lines)
 
@@ -3684,7 +3809,7 @@ async def tariff_buy(callback: CallbackQuery):
     text = (
         f"{get_plan_badge(tier)} **{get_plan_title(tier, user_lang)}**\n\n"
         f"{st(user_lang, 'checkout_ready')}\n\n"
-        + "\n".join(f"• {line}" for line in _plan_feature_lines(user_lang, tier))
+        + "\n".join(_plan_feature_lines(user_lang, tier))
     )
     await callback.message.edit_text(
         text,
