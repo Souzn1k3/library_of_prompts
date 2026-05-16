@@ -1016,6 +1016,7 @@ AI_MODELS_DB = [
     {"id": "nemotron", "name": "NVIDIA Nemotron 3 Super 🇺🇸", "description": "Гибридная модель от NVIDIA для сложных задач, программирования и анализа"},
     {"id": "gemini", "name": "Gemini Pro 🇺🇸", "description": "Мультимодальная модель от Google"},
     {"id": "gptoss", "name": "OpenAI gpt-oss-120b 🇺🇸", "description": "Сильная open-weight модель для логики, кода и сложных рассуждений"},
+    {"id": "deepseek", "name": "DeepSeek V4 Flash 🇨🇳", "description": "Быстрая бесплатная модель DeepSeek через OpenRouter для анализа промптов"},
     {"id": "claude", "name": "Claude 3 🇺🇸", "description": "Безопасная и мощная модель от Anthropic"},
     {"id": "llama", "name": "Llama 3 🇺🇸", "description": "Открытая модель от Meta"},
 ]
@@ -1027,6 +1028,7 @@ AI_MODEL_SOURCE_URLS = {
     "zai": "https://z.ai/",
     "nemotron": "https://www.nvidia.com/en-us/ai/",
     "gptoss": "https://openai.com/open-models/",
+    "deepseek": "https://www.deepseek.com/",
     "gemini": "https://gemini.google.com/",
     "claude": "https://www.anthropic.com/claude",
     "llama": "https://ai.meta.com/llama/",
@@ -2103,6 +2105,7 @@ def get_catalog_ai_inline(lang: str = 'ru'):
         [InlineKeyboardButton(text=get_text(lang, 'z_ai_btn'), callback_data="ai_model_zai")],
         [InlineKeyboardButton(text=get_text(lang, 'nemotron_btn'), callback_data="ai_model_nemotron")],
         [InlineKeyboardButton(text=get_text(lang, 'gpt_oss_btn'), callback_data="ai_model_gptoss")],
+        [InlineKeyboardButton(text=get_text(lang, 'deepseek_btn'), callback_data="ai_model_deepseek")],
         [InlineKeyboardButton(text=get_text(lang, 'back'), callback_data="back_main_menu")]
     ])
 
@@ -3503,7 +3506,7 @@ async def launch_model_from_search(callback: CallbackQuery, state: FSMContext):
     model = next((m for m in AI_MODELS_DB if m["id"] == model_id), None)
 
     if model:
-        if model_id in ["mistral", "qwen", "zai", "nemotron", "gptoss"]:
+        if model_id in ["mistral", "qwen", "zai", "nemotron", "gptoss", "deepseek"]:
             await start_ai_session(
                 callback,
                 state,
@@ -3582,6 +3585,11 @@ async def start_nemotron_chat(callback: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == "ai_model_gptoss")
 async def start_gptoss_chat(callback: CallbackQuery, state: FSMContext):
     await start_ai_session(callback, state, model_key="gptoss", model_title="🧠 OpenAI gpt-oss")
+
+@router.callback_query(F.data == "ai_model_deepseek")
+async def start_deepseek_chat(callback: CallbackQuery, state: FSMContext):
+    """Активирует режим анализа промптов через DeepSeek."""
+    await start_ai_session(callback, state, model_key="deepseek", model_title="⚡ DeepSeek V4 Flash")
 
 @router.callback_query(F.data == "exit_ai_chat")
 async def exit_ai_chat(callback: CallbackQuery, state: FSMContext):
@@ -3752,6 +3760,26 @@ async def handle_ai_message(message: Message, state: FSMContext):
                 else:
                     bot_response = f"(Демо-режим gpt-oss) Вы написали: '{user_text}'\nДобавьте OPENROUTER_API_KEY в .env"
 
+        elif current_model == "deepseek":
+            model_name = "deepseek/deepseek-v4-flash:free"
+
+            if QWEN_API_KEY:
+                bot_response = await call_openrouter_model(
+                    api_url=QWEN_API_URL,
+                    api_key=QWEN_API_KEY,
+                    model="deepseek/deepseek-v4-flash:free",
+                    user_text=user_text,
+                    model_key="deepseek",
+                )
+            else:
+                await asyncio.sleep(1)
+                if user_lang == "en":
+                    bot_response = f"(DeepSeek demo mode) You wrote: '{user_text}'\nAdd OPENROUTER_API_KEY to .env"
+                elif user_lang == "tt":
+                    bot_response = f"(DeepSeek демо режимы) Сез яздыгыз: '{user_text}'\nOPENROUTER_API_KEY ны .env ка өстәгез"
+                else:
+                    bot_response = f"(Демо-режим DeepSeek) Вы написали: '{user_text}'\nДобавьте OPENROUTER_API_KEY в .env"
+
         if bot_response:
             bot_response = clean_markdown(bot_response)
             bot_response = ensure_model_source_link(current_model, bot_response)
@@ -3768,6 +3796,8 @@ async def handle_ai_message(message: Message, state: FSMContext):
             model_emoji = "🟢"
         elif current_model == "gptoss":
             model_emoji = "🧠"
+        elif current_model == "deepseek":
+            model_emoji = "⚡"
         else:
             model_emoji = "🤖"
 
@@ -3777,6 +3807,7 @@ async def handle_ai_message(message: Message, state: FSMContext):
             "zai": "Z AI",
             "nemotron": "Nemotron",
             "gptoss": "gpt-oss",
+            "deepseek": "DeepSeek",
         }.get(current_model, current_model.capitalize())
 
         full_text = f"{model_emoji} {display_name}:\n\n{bot_response}"

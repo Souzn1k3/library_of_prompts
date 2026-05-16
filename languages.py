@@ -10,7 +10,7 @@ TRANSLATIONS = {
         'thinking': "🤔 *Нейросеть думает...*...",
         'profile': "👤 **Профиль пользователя**: {full_name}\n\nID: `{user_id}`\nНик: `{username}`\nСтатус: {premium_badge}\n\n📊 **Ваши достижения**:\n🪙 Баланс: **{coins}** койнов\n{streak_emoji} Ударный режим: **{streak}** дн.\n📅 В боте: **{days}** дн.\n\nВыполняйте миссии и общайтесь с ИИ, чтобы зарабатывать!",
         'search_prompt': "🔍 **Поиск AI моделей** 🔍\n\nВведите название модели для поиска:\n\nПримеры:\n• `mistral` → Mistral AI\n• `qwen` → Qwen AI\n• `gemini` → Gemini Pro\n\nПросто напишите слово в чат:\n\n❌ Чтобы отменить поиск, нажмите /cancel",
-        'search_no_results': "❌ **Ничего не найдено по запросу ❌\"{query}\"**\n\nПопробуйте другой запрос:\n• mistral\n• qwen\n• gemini\n• gpt\n• claude",
+        'search_no_results': "❌ **Ничего не найдено по запросу ❌\"{query}\"**\n\nПопробуйте другой запрос:\n• mistral\n• qwen\n• deepseek\n• gpt\n• claude",
         'search_results': "✅ **Найдено моделей: {count}**\n\n{results}\n\nВыберите модель из списка ниже 👇",
         'model_detail': "**{model_name}**\n\n{description}\n\n**ID модели:** `{model_id}`\n\nГотовы запустить эту модель?",
         'notifications': "🔔 **Настройки уведомлений** 🔔\n\nОбщий статус: **{status}**\n\nПараметры:\n{daily} Ежедневные напоминания\n{news} Новости сервиса\n{missions} Миссии и задания\n\nУправляйте нажатием на кнопки:",
@@ -41,6 +41,7 @@ TRANSLATIONS = {
         'z_ai_btn': "Z AI 🇨🇳",
         'nemotron_btn': "NVIDIA Nemotron 🇺🇸",
         'gpt_oss_btn': "ChatGPT 🇺🇸",
+        'deepseek_btn': "DeepSeek V4 Flash 🇨🇳",
         'daily_reminder': "🔔 **Напоминание из AI Hub!**\n\nНе забудь зайти сегодня, чтобы не прервать ударный режим! 🔥\nВыполняй миссии и зарабатывай койны.",
 
         # ==========================================================================
@@ -93,7 +94,7 @@ TRANSLATIONS = {
         'thinking': "🤔 *AI is thinking...*...",
         'profile': "👤 **User Profile**: {full_name}\n\nID: `{user_id}`\nUsername: `{username}`\nStatus: {premium_badge}\n\n📊 **Your Achievements**:\n🪙 Balance: **{coins}** coins\n{streak_emoji} Streak: **{streak}** days\n📅 In bot: **{days}** days\n\nComplete missions and chat with AI to earn!",
         'search_prompt': "🔍 **AI Models Search** 🔍\n\nEnter model name to search:\n\nExamples:\n• `mistral` → Mistral AI\n• `qwen` → Qwen AI\n• `gemini` → Gemini Pro\n\nJust type a word:\n\n❌ To cancel search, press /cancel",
-        'search_no_results': "❌ **No results for ❌\"{query}\"**\n\nTry another query:\n• mistral\n• qwen\n• gemini\n• gpt\n• claude",
+        'search_no_results': "❌ **No results for ❌\"{query}\"**\n\nTry another query:\n• mistral\n• qwen\n• deepseek\n• gpt\n• claude",
         'search_results': "✅ **Found: {count} models**\n\n{results}\n\nSelect a model from the list 👇",
         'model_detail': "**{model_name}**\n\n{description}\n\n**Model ID:** `{model_id}`\n\nReady to launch this model?",
         'notifications': "🔔 **Notification Settings** 🔔\n\nGeneral status: **{status}**\n\nParameters:\n{daily} Daily reminders\n{news} Service news\n{missions} Missions and tasks\n\nManage by pressing buttons:",
@@ -124,6 +125,7 @@ TRANSLATIONS = {
         'z_ai_btn': "Z AI 🇨🇳",
         'nemotron_btn': "NVIDIA Nemotron 🇺🇸",
         'gpt_oss_btn': "ChatGPT 🇺🇸",
+        'deepseek_btn': "DeepSeek V4 Flash 🇨🇳",
         'daily_reminder': "🔔 **Reminder from AI Hub!**\n\nDon't forget to check in today to keep your streak! 🔥\nComplete missions and earn coins.",
 
         # ==========================================================================
@@ -176,7 +178,7 @@ TRANSLATIONS = {
         'thinking': "🤔 *Нейрочелтәр уйлый...*...",
         'profile': "👤 **Кулланучы профиле**: {full_name}\n\nID: `{user_id}`\nНик: `{username}`\nСтатус: {premium_badge}\n\n📊 **Сезнең казанышларыгыз**:\n🪙 Баланс: **{coins}** коин\n{streak_emoji} Удар режимы: **{streak}** көн\n📅 Ботта: **{days}** көн\n\nМиссияләрне үтәгез һәм ИИ белән аралашыгыз!",
         'search_prompt': "🔍 **AI модельләр эзләү** 🔍\n\nЭзләү өчен модель исемен кертегез:\n\nҮрнәкләр:\n• `mistral` → Mistral AI\n• `qwen` → Qwen AI\n• `gemini` → Gemini Pro\n\nСүзне чатка языгыз:\n\n❌ Эзләүне бетерү өчен /cancel басыгыз",
-        'search_no_results': "❌ **\"{query}\" буенча нәтиҗәләр юк** ❌\n\nБашка сорау кертеп карагыз:\n• mistral\n• qwen\n• gemini\n• gpt\n• claude",
+        'search_no_results': "❌ **\"{query}\" буенча нәтиҗәләр юк** ❌\n\nБашка сорау кертеп карагыз:\n• mistral\n• qwen\n• deepseek\n• gpt\n• claude",
         'search_results': "✅ **Табылды: {count} модель**\n\n{results}\n\nИсемлектән модель сайлагыз 👇",
         'model_detail': "**{model_name}**\n\n{description}\n\n**Модель ID:** `{model_id}`\n\nБу модельне эшләтергә әзерме?",
         'notifications': "🔔 **Белдерү көйләмәләре** 🔔\n\nГомуми статус: **{status}**\n\nПараметрлар:\n{daily} Көндәлек искәртмәләр\n{news} Сервис яңалыклары\n{missions} Миссияләр һәм биремнәр\n\nТөймәләрне басып идарә итегез:",
@@ -207,6 +209,7 @@ TRANSLATIONS = {
         'z_ai_btn': "Z AI 🇨🇳",
         'nemotron_btn': "NVIDIA Nemotron 🇺🇸",
         'gpt_oss_btn': "ChatGPT 🇺🇸",
+        'deepseek_btn': "DeepSeek V4 Flash 🇨🇳",
         'daily_reminder': "🔔 **AI Hub искәртмәсе!**\n\nБүген керергә онытмагыз, удар режимын өзмәс өчен! 🔥\nМиссияләрне үтәгез һәм коиннар эшләгез.",
 
         # ==========================================================================
