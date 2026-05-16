@@ -385,8 +385,10 @@
 
 
 import asyncpg
+import json
 import os
 import random
+import tempfile
 
 from dotenv import load_dotenv
 from typing import Any, Dict, List, Optional
@@ -1438,7 +1440,360 @@ async def track_buy_freeze(user_id: int):
     await update_mission_progress(user_id, "perm_buy_freeze_1", 1)
 
 # ==============================================================================
-# 9. ЗАКРЫТИЕ БАЗЫ
+# 9. АДМИНСКИЕ ОБЗОРЫ БД
+# ==============================================================================
+
+ADMIN_EXPORT_TABLE_LIMITS = {
+    "users": 5000,
+    "notifications": 5000,
+    "user_missions": 5000,
+    "ai_chat_history": 1000,
+    "prompts": 2000,
+    "user_saved_prompts": 5000,
+}
+
+
+def _admin_safe_limit(limit: int, *, default: int = 20, maximum: int = 100) -> int:
+    try:
+        value = int(limit)
+    except (TypeError, ValueError):
+        value = default
+    return max(1, min(value, maximum))
+
+
+async def _admin_table_columns(conn, table_name: str) -> set[str]:
+    try:
+        rows = await conn.fetch(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = current_schema()
+              AND table_name = $1
+            """,
+            table_name,
+        )
+    except Exception:
+        return set()
+    return {row["column_name"] for row in rows}
+
+
+def _admin_select_column(columns: set[str], column: str, fallback: str = "NULL") -> str:
+    if column in columns:
+        return column
+    return f"{fallback} AS {column}"
+
+
+def _admin_order_clause(table_name: str, columns: set[str]) -> str:
+    order_preferences = {
+        "users": ["last_active", "joined_at", "user_id"],
+        "notifications": ["last_notification", "created_at", "user_id"],
+        "user_missions": ["created_at", "assigned_date", "id"],
+        "ai_chat_history": ["created_at", "id"],
+        "prompts": ["created_at", "id"],
+        "user_saved_prompts": ["saved_at", "id"],
+    }
+    parts: list[str] = []
+    for column in order_preferences.get(table_name, ["id"]):
+        if column in columns:
+            parts.append(f"{column} DESC NULLS LAST")
+    return f"ORDER BY {', '.join(parts)}" if parts else ""
+
+
+async def _admin_count(conn, table_name: str, where: str = "") -> int:
+    columns = await _admin_table_columns(conn, table_name)
+    if not columns:
+        return 0
+    try:
+        value = await conn.fetchval(f"SELECT COUNT(*) FROM {table_name} {where}")
+    except Exception:
+        return 0
+    return int(value or 0)
+
+
+def _admin_json_value(value: Any) -> Any:
+    if isinstance(value, (datetime, date)):
+        return value.isoformat()
+    if isinstance(value, bytes):
+        return value.decode("utf-8", errors="replace")
+    return value
+
+
+def _admin_rows_to_dicts(rows) -> list[dict]:
+    result = []
+    for row in rows:
+        result.append({key: _admin_json_value(value) for key, value in dict(row).items()})
+    return result
+
+
+async def _admin_fetch_table_preview(conn, table_name: str, limit: int = 10) -> list[dict]:
+    columns = await _admin_table_columns(conn, table_name)
+    if not columns:
+        return []
+    order_clause = _admin_order_clause(table_name, columns)
+    try:
+        rows = await conn.fetch(
+            f"SELECT * FROM {table_name} {order_clause} LIMIT $1",
+            _admin_safe_limit(limit, default=10, maximum=50),
+        )
+    except Exception:
+        return []
+    return _admin_rows_to_dicts(rows)
+
+
+async def get_admin_db_summary() -> dict:
+    summary = {
+        "users_count": 0,
+        "active_users_count": 0,
+        "premium_users_count": 0,
+        "total_coins": 0,
+        "total_ai_messages": 0,
+        "total_prompts": 0,
+        "total_missions": 0,
+        "completed_missions": 0,
+        "total_notifications": 0,
+        "users_today": 0,
+        "ai_messages_today": 0,
+    }
+
+    async with db_pool.acquire() as conn:
+        users_columns = await _admin_table_columns(conn, "users")
+        if users_columns:
+            summary["users_count"] = await _admin_count(conn, "users")
+            if "is_active" in users_columns:
+                summary["active_users_count"] = await _admin_count(conn, "users", "WHERE is_active = TRUE")
+            if "is_premium" in users_columns:
+                summary["premium_users_count"] = await _admin_count(conn, "users", "WHERE is_premium = TRUE")
+            if "coins" in users_columns:
+                try:
+                    summary["total_coins"] = int(await conn.fetchval("SELECT COALESCE(SUM(coins), 0) FROM users") or 0)
+                except Exception:
+                    summary["total_coins"] = 0
+            if "joined_at" in users_columns:
+                summary["users_today"] = await _admin_count(
+                    conn,
+                    "users",
+                    "WHERE joined_at >= date_trunc('day', CURRENT_TIMESTAMP)",
+                )
+
+        ai_columns = await _admin_table_columns(conn, "ai_chat_history")
+        if ai_columns:
+            summary["total_ai_messages"] = await _admin_count(conn, "ai_chat_history")
+            if "created_at" in ai_columns:
+                summary["ai_messages_today"] = await _admin_count(
+                    conn,
+                    "ai_chat_history",
+                    "WHERE created_at >= date_trunc('day', CURRENT_TIMESTAMP)",
+                )
+
+        summary["total_prompts"] = await _admin_count(conn, "prompts")
+
+        missions_columns = await _admin_table_columns(conn, "user_missions")
+        if missions_columns:
+            summary["total_missions"] = await _admin_count(conn, "user_missions")
+            if "is_completed" in missions_columns:
+                summary["completed_missions"] = await _admin_count(
+                    conn,
+                    "user_missions",
+                    "WHERE is_completed = TRUE",
+                )
+
+        summary["total_notifications"] = await _admin_count(conn, "notifications")
+
+    return summary
+
+
+async def get_admin_users_preview(limit: int = 20) -> list[dict]:
+    safe_limit = _admin_safe_limit(limit)
+    async with db_pool.acquire() as conn:
+        columns = await _admin_table_columns(conn, "users")
+        if not columns:
+            return []
+
+        select_columns = [
+            _admin_select_column(columns, "user_id", "NULL::bigint"),
+            _admin_select_column(columns, "username", "NULL::text"),
+            _admin_select_column(columns, "first_name", "NULL::text"),
+            _admin_select_column(columns, "last_name", "NULL::text"),
+            _admin_select_column(columns, "language", "NULL::text"),
+            _admin_select_column(columns, "coins", "0"),
+            _admin_select_column(columns, "streak", "0"),
+            _admin_select_column(columns, "freeze_count", "0"),
+            _admin_select_column(columns, "is_premium", "FALSE"),
+            _admin_select_column(columns, "is_active", "FALSE"),
+            _admin_select_column(columns, "joined_at", "NULL::timestamp"),
+            _admin_select_column(columns, "last_active", "NULL::timestamp"),
+        ]
+        order_clause = _admin_order_clause("users", columns)
+        rows = await conn.fetch(
+            f"""
+            SELECT {', '.join(select_columns)}
+            FROM users
+            {order_clause}
+            LIMIT $1
+            """,
+            safe_limit,
+        )
+    return _admin_rows_to_dicts(rows)
+
+
+async def get_admin_missions_preview(limit: int = 20) -> list[dict]:
+    safe_limit = _admin_safe_limit(limit)
+    async with db_pool.acquire() as conn:
+        columns = await _admin_table_columns(conn, "user_missions")
+        if not columns:
+            return []
+
+        select_columns = [
+            _admin_select_column(columns, "user_id", "NULL::bigint"),
+            _admin_select_column(columns, "mission_code", "NULL::text"),
+            _admin_select_column(columns, "title", "NULL::text"),
+            _admin_select_column(columns, "mission_type", "NULL::text"),
+            _admin_select_column(columns, "progress", "0"),
+            _admin_select_column(columns, "target_value", "0"),
+            _admin_select_column(columns, "reward", "0"),
+            _admin_select_column(columns, "is_completed", "FALSE"),
+            _admin_select_column(columns, "assigned_date", "NULL::date"),
+            _admin_select_column(columns, "completed_at", "NULL::timestamp"),
+        ]
+        order_clause = _admin_order_clause("user_missions", columns)
+        rows = await conn.fetch(
+            f"""
+            SELECT {', '.join(select_columns)}
+            FROM user_missions
+            {order_clause}
+            LIMIT $1
+            """,
+            safe_limit,
+        )
+    return _admin_rows_to_dicts(rows)
+
+
+async def get_admin_ai_history_preview(limit: int = 20) -> list[dict]:
+    safe_limit = _admin_safe_limit(limit)
+    async with db_pool.acquire() as conn:
+        columns = await _admin_table_columns(conn, "ai_chat_history")
+        if not columns:
+            return []
+
+        user_message_expr = (
+            "LEFT(COALESCE(user_message, ''), 120) AS user_message"
+            if "user_message" in columns
+            else "NULL::text AS user_message"
+        )
+        bot_response_expr = (
+            "LEFT(COALESCE(bot_response, ''), 120) AS bot_response"
+            if "bot_response" in columns
+            else "NULL::text AS bot_response"
+        )
+        select_columns = [
+            _admin_select_column(columns, "user_id", "NULL::bigint"),
+            _admin_select_column(columns, "model_name", "NULL::text"),
+            user_message_expr,
+            bot_response_expr,
+            _admin_select_column(columns, "created_at", "NULL::timestamp"),
+        ]
+        order_clause = _admin_order_clause("ai_chat_history", columns)
+        rows = await conn.fetch(
+            f"""
+            SELECT {', '.join(select_columns)}
+            FROM ai_chat_history
+            {order_clause}
+            LIMIT $1
+            """,
+            safe_limit,
+        )
+    return _admin_rows_to_dicts(rows)
+
+
+async def get_admin_subscriptions_preview(limit: int = 20) -> list[dict]:
+    safe_limit = _admin_safe_limit(limit)
+    async with db_pool.acquire() as conn:
+        columns = await _admin_table_columns(conn, "users")
+        if not columns:
+            return []
+
+        plan_columns = {"plan_tier", "plan_expires_at", "plan_ai_limit", "plan_coin_bonus_pct", "plan_max_freezes"}
+        has_plan_columns = plan_columns.issubset(columns)
+        select_columns = [
+            _admin_select_column(columns, "user_id", "NULL::bigint"),
+            _admin_select_column(columns, "username", "NULL::text"),
+            _admin_select_column(columns, "first_name", "NULL::text"),
+            _admin_select_column(columns, "last_name", "NULL::text"),
+            _admin_select_column(columns, "is_premium", "FALSE"),
+        ]
+        if has_plan_columns:
+            select_columns.extend(
+                [
+                    "plan_tier",
+                    "plan_expires_at",
+                    "plan_ai_limit",
+                    "plan_coin_bonus_pct",
+                    "plan_max_freezes",
+                ]
+            )
+
+        order_clause = _admin_order_clause("users", columns)
+        rows = await conn.fetch(
+            f"""
+            SELECT {', '.join(select_columns)}
+            FROM users
+            {order_clause}
+            LIMIT $1
+            """,
+            safe_limit,
+        )
+    return _admin_rows_to_dicts(rows)
+
+
+async def get_admin_db_dump_preview() -> dict:
+    async with db_pool.acquire() as conn:
+        notifications = await _admin_fetch_table_preview(conn, "notifications", 10)
+
+    return {
+        "users": await get_admin_users_preview(limit=10),
+        "missions": await get_admin_missions_preview(limit=10),
+        "ai_history": await get_admin_ai_history_preview(limit=10),
+        "notifications": notifications,
+    }
+
+
+async def export_admin_db_json() -> str:
+    export_data = {
+        "exported_at": datetime.now(timezone.utc).isoformat(),
+        "limits": ADMIN_EXPORT_TABLE_LIMITS,
+        "tables": {},
+    }
+
+    async with db_pool.acquire() as conn:
+        for table_name, limit in ADMIN_EXPORT_TABLE_LIMITS.items():
+            columns = await _admin_table_columns(conn, table_name)
+            if not columns:
+                export_data["tables"][table_name] = []
+                continue
+
+            order_clause = _admin_order_clause(table_name, columns)
+            try:
+                rows = await conn.fetch(
+                    f"SELECT * FROM {table_name} {order_clause} LIMIT $1",
+                    limit,
+                )
+            except Exception:
+                export_data["tables"][table_name] = []
+                continue
+
+            export_data["tables"][table_name] = _admin_rows_to_dicts(rows)
+
+    fd, path = tempfile.mkstemp(
+        prefix="telegram_bot_db_export_",
+        suffix=".json",
+        text=True,
+    )
+    with os.fdopen(fd, "w", encoding="utf-8") as file:
+        json.dump(export_data, file, ensure_ascii=False, indent=2)
+    return path
+
+# ==============================================================================
+# 10. ЗАКРЫТИЕ БАЗЫ
 # ==============================================================================
 
 async def close_db():

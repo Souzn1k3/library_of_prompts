@@ -845,6 +845,7 @@ from aiogram.types import (
     CallbackQuery,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
+    FSInputFile,
     LabeledPrice,
     Message,
     PreCheckoutQuery,
@@ -868,6 +869,13 @@ from bot_plans import (
 from database import (
     add_or_update_user,
     count_ai_messages_today,
+    export_admin_db_json,
+    get_admin_ai_history_preview,
+    get_admin_db_dump_preview,
+    get_admin_db_summary,
+    get_admin_missions_preview,
+    get_admin_subscriptions_preview,
+    get_admin_users_preview,
     get_user_plan,
     get_user_profile_stats,
     get_user_notification_settings,
@@ -2053,6 +2061,22 @@ def get_main_menu_inline(lang: str = 'ru'):
          InlineKeyboardButton(text=get_text(lang, 'profile_btn'), callback_data="menu_profile")],
     ])
 
+
+def get_admin_panel_inline():
+    """Главная клавиатура Telegram-админки."""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="📊 Статистика БД", callback_data="admin_stats")],
+        [InlineKeyboardButton(text="👥 Последние пользователи", callback_data="admin_users")],
+        [InlineKeyboardButton(text="🎯 Миссии", callback_data="admin_missions")],
+        [InlineKeyboardButton(text="🤖 AI-история", callback_data="admin_ai_history")],
+        [InlineKeyboardButton(text="💎 Подписки", callback_data="admin_subscriptions")],
+        [InlineKeyboardButton(text="📦 Быстрый обзор БД", callback_data="admin_db_preview")],
+        [InlineKeyboardButton(text="📁 Экспорт БД JSON", callback_data="admin_export_json")],
+        [InlineKeyboardButton(text="📝 Модерация", callback_data="mod:queue:0")],
+        [InlineKeyboardButton(text="⬅️ В главное меню", callback_data="back_main_menu")],
+    ])
+
+
 def get_leaderboard_menu_inline(lang: str = 'ru'):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=lt(lang, 'leaderboard_best_btn'), callback_data="leaderboard_best")],
@@ -2358,6 +2382,225 @@ async def safe_send_long_message(message: Message, text: str, reply_markup=None)
             await message.answer(chunk, reply_markup=reply_markup)
         else:
             await message.answer(chunk)
+
+
+def admin_panel_text() -> str:
+    return "🛠 Telegram-админка\n\nВыберите раздел:"
+
+
+def admin_plain_value(value, limit: int = 160) -> str:
+    if value is None:
+        return "—"
+    text = str(value).replace("\r", " ").replace("\n", " ").strip()
+    text = re.sub(r"\s+", " ", text)
+    if not text:
+        return "—"
+    if limit and len(text) > limit:
+        return f"{text[:limit].rstrip()}…"
+    return text
+
+
+def admin_bool_text(value) -> str:
+    return "да" if bool(value) else "нет"
+
+
+def admin_format_date(value) -> str:
+    if isinstance(value, datetime):
+        return value.strftime("%Y-%m-%d %H:%M")
+    return admin_plain_value(value, limit=32)
+
+
+async def admin_send_callback_text(callback: CallbackQuery, text: str):
+    reply_markup = get_admin_panel_inline()
+    if len(text) <= 3500:
+        try:
+            await callback.message.edit_text(text, reply_markup=reply_markup)
+        except Exception:
+            await callback.message.answer(text, reply_markup=reply_markup)
+        return
+
+    await safe_send_long_message(callback.message, text, reply_markup=reply_markup)
+
+
+async def ensure_admin_callback(callback: CallbackQuery) -> bool:
+    if is_admin_user(callback.from_user.id):
+        return True
+    await callback.answer("⛔ Нет доступа", show_alert=True)
+    return False
+
+
+def build_admin_stats_text(summary: dict) -> str:
+    return "\n".join([
+        "📊 Статистика БД",
+        "",
+        f"👥 Пользователи: {summary.get('users_count', 0)}",
+        f"✅ Активные: {summary.get('active_users_count', 0)}",
+        f"💎 Premium: {summary.get('premium_users_count', 0)}",
+        f"🆕 Новые сегодня: {summary.get('users_today', 0)}",
+        "",
+        f"🪙 Токены в системе: {summary.get('total_coins', 0)}",
+        f"🤖 AI-сообщений всего: {summary.get('total_ai_messages', 0)}",
+        f"🤖 AI-сообщений сегодня: {summary.get('ai_messages_today', 0)}",
+        "",
+        f"🎯 Миссий всего: {summary.get('total_missions', 0)}",
+        f"✅ Выполнено миссий: {summary.get('completed_missions', 0)}",
+        "",
+        f"📝 Промптов всего: {summary.get('total_prompts', 0)}",
+        f"🔔 Настроек уведомлений: {summary.get('total_notifications', 0)}",
+    ])
+
+
+def build_admin_users_text(users: list[dict]) -> str:
+    lines = ["👥 Последние пользователи"]
+    if not users:
+        return "\n\n".join([lines[0], "Нет данных."])
+
+    for index, user in enumerate(users, start=1):
+        full_name = " ".join(
+            part for part in [
+                admin_plain_value(user.get("first_name"), 80) if user.get("first_name") else "",
+                admin_plain_value(user.get("last_name"), 80) if user.get("last_name") else "",
+            ]
+            if part
+        ) or "—"
+        lines.extend([
+            "",
+            f"{index}. ID: {admin_plain_value(user.get('user_id'), 40)}",
+            f"Username: {admin_plain_value(user.get('username'), 80)}",
+            f"Имя: {full_name}",
+            f"Язык: {admin_plain_value(user.get('language'), 20)}",
+            f"Токены: {admin_plain_value(user.get('coins'), 20)}",
+            f"Стрик: {admin_plain_value(user.get('streak'), 20)}",
+            f"Заморозки: {admin_plain_value(user.get('freeze_count'), 20)}",
+            f"Premium: {admin_bool_text(user.get('is_premium'))}",
+            f"Активен: {admin_bool_text(user.get('is_active'))}",
+            f"Регистрация: {admin_format_date(user.get('joined_at'))}",
+            f"Последняя активность: {admin_format_date(user.get('last_active'))}",
+        ])
+    return "\n".join(lines)
+
+
+def build_admin_missions_text(missions: list[dict]) -> str:
+    lines = ["🎯 Последние миссии"]
+    if not missions:
+        return "\n\n".join([lines[0], "Нет данных."])
+
+    for index, mission in enumerate(missions, start=1):
+        lines.extend([
+            "",
+            f"{index}. User ID: {admin_plain_value(mission.get('user_id'), 40)}",
+            f"Код: {admin_plain_value(mission.get('mission_code'), 80)}",
+            f"Название: {admin_plain_value(mission.get('title'), 120)}",
+            f"Тип: {admin_plain_value(mission.get('mission_type'), 40)}",
+            f"Прогресс: {admin_plain_value(mission.get('progress'), 20)}/{admin_plain_value(mission.get('target_value'), 20)}",
+            f"Награда: {admin_plain_value(mission.get('reward'), 20)}",
+            f"Выполнена: {admin_bool_text(mission.get('is_completed'))}",
+            f"Назначена: {admin_format_date(mission.get('assigned_date'))}",
+            f"Завершена: {admin_format_date(mission.get('completed_at'))}",
+        ])
+    return "\n".join(lines)
+
+
+def build_admin_ai_history_text(items: list[dict]) -> str:
+    lines = ["🤖 Последние AI-запросы"]
+    if not items:
+        return "\n\n".join([lines[0], "Нет данных."])
+
+    for index, item in enumerate(items, start=1):
+        lines.extend([
+            "",
+            f"{index}. User ID: {admin_plain_value(item.get('user_id'), 40)}",
+            f"Модель: {admin_plain_value(item.get('model_name'), 80)}",
+            f"Запрос: {admin_plain_value(item.get('user_message'), 140)}",
+            f"Ответ: {admin_plain_value(item.get('bot_response'), 140)}",
+            f"Дата: {admin_format_date(item.get('created_at'))}",
+        ])
+    return "\n".join(lines)
+
+
+def build_admin_subscriptions_text(items: list[dict]) -> str:
+    lines = ["💎 Последние подписки / планы пользователей"]
+    if not items:
+        return "\n\n".join([lines[0], "Нет данных."])
+
+    for index, item in enumerate(items, start=1):
+        full_name = " ".join(
+            part for part in [
+                admin_plain_value(item.get("first_name"), 80) if item.get("first_name") else "",
+                admin_plain_value(item.get("last_name"), 80) if item.get("last_name") else "",
+            ]
+            if part
+        ) or "—"
+        lines.extend([
+            "",
+            f"{index}. ID: {admin_plain_value(item.get('user_id'), 40)}",
+            f"Username: {admin_plain_value(item.get('username'), 80)}",
+            f"Имя: {full_name}",
+            f"Premium: {admin_bool_text(item.get('is_premium'))}",
+        ])
+        if "plan_tier" in item:
+            lines.extend([
+                f"План: {admin_plain_value(item.get('plan_tier'), 40)}",
+                f"Активна до: {admin_format_date(item.get('plan_expires_at'))}",
+                f"AI-лимит: {admin_plain_value(item.get('plan_ai_limit'), 20)}",
+                f"Бонус токенов: {admin_plain_value(item.get('plan_coin_bonus_pct'), 20)}%",
+                f"Заморозки: {admin_plain_value(item.get('plan_max_freezes'), 20)}",
+            ])
+    return "\n".join(lines)
+
+
+def build_admin_db_preview_text(preview: dict) -> str:
+    lines = ["📦 Быстрый обзор БД"]
+
+    users = preview.get("users") or []
+    lines.extend(["", "users:"])
+    if users:
+        for item in users[:10]:
+            lines.append(
+                f"- {admin_plain_value(item.get('user_id'), 40)} | "
+                f"{admin_plain_value(item.get('username'), 80)} | "
+                f"{admin_plain_value(item.get('coins'), 20)} токенов"
+            )
+    else:
+        lines.append("- нет данных")
+
+    missions = preview.get("missions") or []
+    lines.extend(["", "user_missions:"])
+    if missions:
+        for item in missions[:10]:
+            lines.append(
+                f"- {admin_plain_value(item.get('user_id'), 40)} | "
+                f"{admin_plain_value(item.get('mission_code'), 80)} | "
+                f"{admin_plain_value(item.get('progress'), 20)}/{admin_plain_value(item.get('target_value'), 20)}"
+            )
+    else:
+        lines.append("- нет данных")
+
+    ai_history = preview.get("ai_history") or []
+    lines.extend(["", "ai_chat_history:"])
+    if ai_history:
+        for item in ai_history[:10]:
+            lines.append(
+                f"- {admin_plain_value(item.get('user_id'), 40)} | "
+                f"{admin_plain_value(item.get('model_name'), 60)} | "
+                f"{admin_plain_value(item.get('user_message'), 90)}"
+            )
+    else:
+        lines.append("- нет данных")
+
+    notifications = preview.get("notifications") or []
+    lines.extend(["", "notifications:"])
+    if notifications:
+        for item in notifications[:10]:
+            lines.append(
+                f"- {admin_plain_value(item.get('user_id'), 40)} | "
+                f"enabled={admin_bool_text(item.get('is_enabled'))} | "
+                f"news={admin_bool_text(item.get('news'))}"
+            )
+    else:
+        lines.append("- нет данных")
+
+    return "\n".join(lines)
 
 
 async def call_openrouter_model(api_url: str, api_key: str, model: str, user_text: str, model_key: str) -> str:
@@ -3027,6 +3270,115 @@ async def toggle_missions_notif(callback: CallbackQuery):
 # ==============================================================================
 # 9. АДМИНКА: РАССЫЛКА
 # ==============================================================================
+
+@router.message(Command("admin"))
+async def admin_panel(message: Message, state: FSMContext):
+    """Открывает Telegram-админку для пользователей из ADMIN_TELEGRAM_IDS."""
+    if not is_admin_user(message.from_user.id):
+        await message.answer("⛔ Нет доступа")
+        return
+
+    await state.clear()
+    await message.answer(admin_panel_text(), reply_markup=get_admin_panel_inline())
+
+
+async def admin_load_and_show(callback: CallbackQuery, loader, formatter, error_text: str):
+    if not await ensure_admin_callback(callback):
+        return
+
+    try:
+        data = await loader()
+        text = formatter(data)
+    except Exception:
+        text = f"❌ {error_text}\nПопробуйте позже или проверьте логи сервера."
+
+    await admin_send_callback_text(callback, text)
+    await callback.answer()
+
+
+@router.callback_query(F.data == "admin_stats")
+async def admin_stats(callback: CallbackQuery):
+    await admin_load_and_show(
+        callback,
+        get_admin_db_summary,
+        build_admin_stats_text,
+        "Не удалось загрузить статистику БД.",
+    )
+
+
+@router.callback_query(F.data == "admin_users")
+async def admin_users(callback: CallbackQuery):
+    await admin_load_and_show(
+        callback,
+        lambda: get_admin_users_preview(limit=20),
+        build_admin_users_text,
+        "Не удалось загрузить пользователей.",
+    )
+
+
+@router.callback_query(F.data == "admin_missions")
+async def admin_missions(callback: CallbackQuery):
+    await admin_load_and_show(
+        callback,
+        lambda: get_admin_missions_preview(limit=20),
+        build_admin_missions_text,
+        "Не удалось загрузить миссии.",
+    )
+
+
+@router.callback_query(F.data == "admin_ai_history")
+async def admin_ai_history(callback: CallbackQuery):
+    await admin_load_and_show(
+        callback,
+        lambda: get_admin_ai_history_preview(limit=20),
+        build_admin_ai_history_text,
+        "Не удалось загрузить AI-историю.",
+    )
+
+
+@router.callback_query(F.data == "admin_subscriptions")
+async def admin_subscriptions(callback: CallbackQuery):
+    await admin_load_and_show(
+        callback,
+        lambda: get_admin_subscriptions_preview(limit=20),
+        build_admin_subscriptions_text,
+        "Не удалось загрузить подписки.",
+    )
+
+
+@router.callback_query(F.data == "admin_db_preview")
+async def admin_db_preview(callback: CallbackQuery):
+    await admin_load_and_show(
+        callback,
+        get_admin_db_dump_preview,
+        build_admin_db_preview_text,
+        "Не удалось загрузить быстрый обзор БД.",
+    )
+
+
+@router.callback_query(F.data == "admin_export_json")
+async def admin_export_json(callback: CallbackQuery):
+    if not await ensure_admin_callback(callback):
+        return
+
+    export_path = None
+    await callback.answer("Готовлю JSON-экспорт...")
+    try:
+        export_path = await export_admin_db_json()
+        await callback.message.answer_document(
+            FSInputFile(export_path),
+            caption="📁 Экспорт БД JSON",
+        )
+        await callback.message.answer(admin_panel_text(), reply_markup=get_admin_panel_inline())
+    except Exception:
+        await callback.message.answer(
+            "❌ Не удалось сформировать или отправить JSON-экспорт.",
+            reply_markup=get_admin_panel_inline(),
+        )
+    finally:
+        if export_path and os.path.exists(export_path):
+            os.remove(export_path)
+
 
 @router.message(Command("broadcast"))
 async def broadcast_command(message: Message):
