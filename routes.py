@@ -2120,7 +2120,6 @@ def get_exit_ai_inline(lang: str = 'ru'):
 def get_profile_menu_inline(lang: str = 'ru'):
     """Меню профиля"""
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=get_text(lang, 'update'), callback_data="menu_profile")],
         [InlineKeyboardButton(text=lt(lang, 'streak_btn'), callback_data="menu_streak"),
          InlineKeyboardButton(text=lt(lang, 'missions_btn_new'), callback_data="menu_missions")],
         [InlineKeyboardButton(text=get_text(lang, 'language_settings'), callback_data="menu_language")],
