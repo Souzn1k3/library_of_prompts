@@ -1685,7 +1685,7 @@ def get_tariffs_menu_inline(lang: str, current_tier: str) -> InlineKeyboardMarku
         if has_same_or_higher_plan(current_tier, tier):
             label = f"{get_plan_badge(tier)} {get_plan_title(tier, lang)} · {st(lang, 'included')}"
             callback = "tariff_noop"
-        rows.append([InlineKeyboardButton(text=label, callback_data=callback)])
+        rows.append([InlineKeyboardButton(text=label, callback_data=callback, style="success")])
     rows.append([InlineKeyboardButton(text=get_text(lang, "back"), callback_data="back_main_menu")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
@@ -2120,7 +2120,7 @@ def get_exit_ai_inline(lang: str = 'ru'):
 def get_profile_menu_inline(lang: str = 'ru'):
     """Меню профиля"""
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=lt(lang, 'streak_btn'), callback_data="menu_streak"),
+        [InlineKeyboardButton(text=lt(lang, 'streak_btn'), callback_data="menu_streak", style="success"),
          InlineKeyboardButton(text=lt(lang, 'missions_btn_new'), callback_data="menu_missions")],
         [InlineKeyboardButton(text=get_text(lang, 'language_settings'), callback_data="menu_language")],
         [InlineKeyboardButton(text=get_text(lang, 'notifications_settings'), callback_data="menu_notifications")],
@@ -2158,9 +2158,9 @@ def get_language_inline(lang: str = 'ru'):
     tt_text = "✅ Татарча" if lang == "tt" else " Татарча"
 
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=ru_text, callback_data="lang_ru")],
-        [InlineKeyboardButton(text=en_text, callback_data="lang_en")],
-        [InlineKeyboardButton(text=tt_text, callback_data="lang_tt")],
+        [InlineKeyboardButton(text=ru_text, callback_data="lang_ru", style="danger")],
+        [InlineKeyboardButton(text=en_text, callback_data="lang_en", style="primary")],
+        [InlineKeyboardButton(text=tt_text, callback_data="lang_tt", style="success")],
         [InlineKeyboardButton(text=get_text(lang, 'back'), callback_data="menu_profile")],
     ])
 
@@ -2201,7 +2201,7 @@ def get_notifications_inline(settings: dict, lang: str = 'ru'):
 
 def get_streak_menu_inline(lang: str = 'ru'):
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=lt(lang, 'claim_streak_btn'), callback_data="claim_streak")],
+        [InlineKeyboardButton(text=lt(lang, 'claim_streak_btn'), callback_data="claim_streak", style="success")],
         [InlineKeyboardButton(text=lt(lang, 'buy_freeze_btn'), callback_data="buy_freeze")],
         [InlineKeyboardButton(text=lt(lang, 'missions_btn_new'), callback_data="menu_missions")],
         [InlineKeyboardButton(text=lt(lang, 'back_to_profile'), callback_data="menu_profile")],
@@ -2210,7 +2210,7 @@ def get_streak_menu_inline(lang: str = 'ru'):
 
 def get_missions_menu_inline(lang: str = 'ru'):
     return InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text=lt(lang, 'streak_btn'), callback_data="menu_streak")],
+        [InlineKeyboardButton(text=lt(lang, 'streak_btn'), callback_data="menu_streak", style="success")],
         [InlineKeyboardButton(text=lt(lang, 'back_to_profile'), callback_data="menu_profile")],
     ])
 
