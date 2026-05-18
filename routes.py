@@ -3868,6 +3868,8 @@ async def show_profile(callback: CallbackQuery):
     """Показывает статистику пользователя"""
     user_id = callback.from_user.id
     user_lang = await get_user_language(user_id)
+
+    # Обновляем данные пользователя в кэше подписки
     plan = await sync_subscription_cache(
         user_id,
         username=callback.from_user.username,
@@ -3876,10 +3878,12 @@ async def show_profile(callback: CallbackQuery):
         language=user_lang,
     )
 
+    # Обновляем миссии и отслеживаем открытие профиля
     await ensure_daily_missions(user_id)
     await ensure_permanent_missions(user_id)
     await track_profile_open(user_id)
 
+    # Получаем актуальную статистику и экономику
     stats = await get_user_profile_stats(user_id)
     economy = await get_user_economy(user_id)
 
@@ -3903,12 +3907,21 @@ async def show_profile(callback: CallbackQuery):
     text += lt(user_lang, "menu_profile_extra", freeze_count=economy['freeze_count'])
     text += build_profile_plan_block(user_lang, plan)
 
-    await callback.message.edit_text(
-        text,
-        reply_markup=get_profile_menu_inline(user_lang),
-        parse_mode="Markdown"
-    )
-    await callback.answer()
+    try:
+        await callback.message.edit_text(
+            text,
+            reply_markup=get_profile_menu_inline(user_lang),
+            parse_mode="Markdown"
+        )
+    except Exception:
+        # Если сообщение не изменилось или другая ошибка, отправляем новое
+        await callback.message.answer(
+            text,
+            reply_markup=get_profile_menu_inline(user_lang),
+            parse_mode="Markdown"
+        )
+
+    await callback.answer("✅ Профиль обновлён!", show_alert=False)
 
 
 # ==============================================================================
