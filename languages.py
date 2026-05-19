@@ -42,7 +42,7 @@ TRANSLATIONS = {
         'nemotron_btn': "NVIDIA Nemotron 🇺🇸",
         'gpt_oss_btn': "ChatGPT 🇺🇸",
         'deepseek_btn': "DeepSeek V4 Flash 🇨🇳",
-        'daily_reminder': "🔔 **Напоминание из AI Hub!**\n\nНе забудь зайти сегодня, чтобы не прервать ударный режим! 🔥\nВыполняй миссии и зарабатывай койны.",
+        'daily_reminder': "🔔 **Напоминание от Копилки Промптов!**\n\nНе забудьте зайти сегодня, чтобы не прерывать ударный режим! 🔥\nВыполняйте миссии и зарабатывайте токены.",
 
         # ==========================================================================
         # НОВОЕ: МИССИИ / СТРИК / ЭКОНОМИКА
@@ -126,7 +126,7 @@ TRANSLATIONS = {
         'nemotron_btn': "NVIDIA Nemotron 🇺🇸",
         'gpt_oss_btn': "ChatGPT 🇺🇸",
         'deepseek_btn': "DeepSeek V4 Flash 🇨🇳",
-        'daily_reminder': "🔔 **Reminder from AI Hub!**\n\nDon't forget to check in today to keep your streak! 🔥\nComplete missions and earn coins.",
+        'daily_reminder': "🔔 **Reminder from Prompt Vault!**\n\nDon't forget to check in today to keep your streak! 🔥\nComplete missions and earn tokens.",
 
         # ==========================================================================
         # NEW: MISSIONS / STREAK / ECONOMY
@@ -210,7 +210,7 @@ TRANSLATIONS = {
         'nemotron_btn': "NVIDIA Nemotron 🇺🇸",
         'gpt_oss_btn': "ChatGPT 🇺🇸",
         'deepseek_btn': "DeepSeek V4 Flash 🇨🇳",
-        'daily_reminder': "🔔 **AI Hub искәртмәсе!**\n\nБүген керергә онытмагыз, удар режимын өзмәс өчен! 🔥\nМиссияләрне үтәгез һәм коиннар эшләгез.",
+        'daily_reminder': "🔔 **Копилка Промптов искәртмәсе!**\n\nБүген керергә онытмагыз, удар режимын өзмәс өчен! 🔥\nМиссияләрне үтәгез һәм токеннар эшләгез.",
 
         # ==========================================================================
         # ЯҢА: МИССИЯЛӘР / СТРИК / ЭКОНОМИКА
