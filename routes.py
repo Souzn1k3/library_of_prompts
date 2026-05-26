@@ -557,7 +557,7 @@
 #
 #         # ✅ QWEN AI через OPENROUTER
 #         elif current_model == "qwen":
-#             model_name = "qwen/qwen-2.5-7b-instruct"
+#             model_name = "qwen/qwen3-next-80b-a3b-instruct:free"
 #             if QWEN_API_KEY:
 #                 async with aiohttp.ClientSession() as session:
 #                     headers = {
@@ -567,7 +567,7 @@
 #                         "X-Title": "AI Hub Bot"
 #                     }
 #                     payload = {
-#                         "model": "qwen/qwen-2.5-7b-instruct",
+#                         "model": "qwen/qwen3-next-80b-a3b-instruct:free",
 #                         "messages": [{"role": "user", "content": user_text}]
 #                     }
 #                     async with session.post(QWEN_API_URL, json=payload, headers=headers) as resp:
@@ -3677,13 +3677,13 @@ async def handle_ai_message(message: Message, state: FSMContext):
                     bot_response = f"(Демо-режим Mistral) Вы написали: '{user_text}'"
 
         elif current_model == "qwen":
-            model_name = "qwen/qwen-2.5-7b-instruct"
+            model_name = "qwen/qwen3-next-80b-a3b-instruct:free"
 
             if QWEN_API_KEY:
                 bot_response = await call_openrouter_model(
                     api_url=QWEN_API_URL,
                     api_key=QWEN_API_KEY,
-                    model="qwen/qwen-2.5-7b-instruct",
+                    model="qwen/qwen3-next-80b-a3b-instruct:free",
                     user_text=user_text,
                     model_key="qwen",
                 )
@@ -5249,7 +5249,7 @@ async def cmd_hello(message: Message):
 #
 #         # ✅ QWEN AI через OPENROUTER (ИСПРАВЛЕНО!)
 #         elif current_model == "qwen":
-#             model_name = "qwen/qwen-2.5-7b-instruct"  # ✅ Формат OpenRouter
+#             model_name = "qwen/qwen3-next-80b-a3b-instruct:free"  # ✅ Формат OpenRouter
 #             if QWEN_API_KEY:
 #                 async with aiohttp.ClientSession() as session:
 #                     headers = {
@@ -5259,7 +5259,7 @@ async def cmd_hello(message: Message):
 #                         "X-Title": "AI Hub Bot"  # ✅ Требуется OpenRouter
 #                     }
 #                     payload = {
-#                         "model": "qwen/qwen-2.5-7b-instruct",  # ✅ Формат OpenRouter
+#                         "model": "qwen/qwen3-next-80b-a3b-instruct:free",  # ✅ Формат OpenRouter
 #                         "messages": [{"role": "user", "content": user_text}]
 #                     }
 #                     async with session.post(QWEN_API_URL, json=payload, headers=headers) as resp:
