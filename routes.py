@@ -969,6 +969,10 @@ MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions"
 
 QWEN_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 QWEN_API_URL = "https://openrouter.ai/api/v1/chat/completions"
+QWEN_OPENROUTER_MODELS = (
+    "qwen/qwen3-next-80b-a3b-instruct:free",
+    "qwen/qwen3-coder:free",
+)
 
 VOSK_MODEL_PATH = os.getenv(
     "VOSK_MODEL_PATH",
@@ -2605,7 +2609,51 @@ def build_admin_db_preview_text(preview: dict) -> str:
     return "\n".join(lines)
 
 
-async def call_openrouter_model(api_url: str, api_key: str, model: str, user_text: str, model_key: str) -> str:
+class OpenRouterAPIError(Exception):
+    def __init__(
+        self,
+        *,
+        model: str,
+        status_code: int,
+        error_text: str,
+        retry_after_seconds: int | None = None,
+    ):
+        self.model = model
+        self.status_code = status_code
+        self.error_text = error_text
+        self.retry_after_seconds = retry_after_seconds
+        super().__init__(f"OpenRouter API {model}: {status_code}")
+
+
+def extract_openrouter_retry_after(headers, error_text: str) -> int | None:
+    raw_retry_after = headers.get("Retry-After") if headers else None
+    if raw_retry_after:
+        try:
+            return max(int(float(raw_retry_after)), 0)
+        except ValueError:
+            pass
+
+    try:
+        data = json.loads(error_text)
+        metadata = (data.get("error") or {}).get("metadata") or {}
+        raw_value = metadata.get("retry_after_seconds") or metadata.get("retry_after_seconds_raw")
+        if raw_value is not None:
+            return max(int(float(raw_value)), 0)
+    except Exception:
+        return None
+
+    return None
+
+
+async def call_openrouter_model(
+    api_url: str,
+    api_key: str,
+    model: str,
+    user_text: str,
+    model_key: str,
+    *,
+    max_attempts: int = 3,
+) -> str:
     timeout = aiohttp.ClientTimeout(total=180, connect=20, sock_connect=20, sock_read=180)
 
     headers = {
@@ -2623,7 +2671,9 @@ async def call_openrouter_model(api_url: str, api_key: str, model: str, user_tex
 
     last_error = None
 
-    for attempt in range(3):
+    attempts = max(1, int(max_attempts))
+
+    for attempt in range(attempts):
         try:
             async with aiohttp.ClientSession(timeout=timeout) as session:
                 async with session.post(api_url, json=payload, headers=headers) as resp:
@@ -2632,17 +2682,30 @@ async def call_openrouter_model(api_url: str, api_key: str, model: str, user_tex
                         return data["choices"][0]["message"]["content"]
 
                     error_text = await resp.text()
-                    last_error = Exception(f"Ошибка API {model}: {resp.status}\n{error_text}")
+                    retry_after = extract_openrouter_retry_after(resp.headers, error_text)
+                    last_error = OpenRouterAPIError(
+                        model=model,
+                        status_code=resp.status,
+                        error_text=error_text,
+                        retry_after_seconds=retry_after,
+                    )
 
-            await asyncio.sleep(2 * (attempt + 1))
+            if attempt + 1 < attempts:
+                if isinstance(last_error, OpenRouterAPIError) and last_error.status_code == 429:
+                    delay = min(max(last_error.retry_after_seconds or 10, 3), 30)
+                else:
+                    delay = 2 * (attempt + 1)
+                await asyncio.sleep(delay)
 
         except asyncio.TimeoutError as e:
             last_error = e
-            await asyncio.sleep(2 * (attempt + 1))
+            if attempt + 1 < attempts:
+                await asyncio.sleep(2 * (attempt + 1))
 
         except aiohttp.ClientError as e:
             last_error = e
-            await asyncio.sleep(2 * (attempt + 1))
+            if attempt + 1 < attempts:
+                await asyncio.sleep(2 * (attempt + 1))
 
     raise last_error if last_error else Exception("Неизвестная ошибка OpenRouter")
 
@@ -3677,17 +3740,31 @@ async def handle_ai_message(message: Message, state: FSMContext):
                     bot_response = f"(Демо-режим Mistral) Вы написали: '{user_text}'"
 
         elif current_model == "qwen":
-            model_name = "qwen/qwen3-next-80b-a3b-instruct:free"
+            qwen_error = None
 
             if QWEN_API_KEY:
-                bot_response = await call_openrouter_model(
-                    api_url=QWEN_API_URL,
-                    api_key=QWEN_API_KEY,
-                    model="qwen/qwen3-next-80b-a3b-instruct:free",
-                    user_text=user_text,
-                    model_key="qwen",
-                )
+                for qwen_model in QWEN_OPENROUTER_MODELS:
+                    try:
+                        model_name = qwen_model
+                        bot_response = await call_openrouter_model(
+                            api_url=QWEN_API_URL,
+                            api_key=QWEN_API_KEY,
+                            model=qwen_model,
+                            user_text=user_text,
+                            model_key="qwen",
+                            max_attempts=1,
+                        )
+                        break
+                    except OpenRouterAPIError as e:
+                        qwen_error = e
+                        if e.status_code in {429, 502, 503, 504}:
+                            continue
+                        raise
+
+                if not bot_response and qwen_error:
+                    raise qwen_error
             else:
+                model_name = QWEN_OPENROUTER_MODELS[0]
                 await asyncio.sleep(1)
                 if user_lang == "en":
                     bot_response = f"(Qwen demo mode) You wrote: '{user_text}'\nAdd OPENROUTER_API_KEY to .env"
@@ -3828,6 +3905,44 @@ async def handle_ai_message(message: Message, state: FSMContext):
 
         await message.answer(str(e), reply_markup=get_exit_ai_inline(user_lang))
 
+    except OpenRouterAPIError as e:
+        try:
+            await thinking_msg.delete()
+        except Exception:
+            pass
+
+        if e.model.startswith("qwen/"):
+            model_display = "Qwen"
+        elif user_lang == "en":
+            model_display = "OpenRouter model"
+        elif user_lang == "tt":
+            model_display = "OpenRouter моделе"
+        else:
+            model_display = "OpenRouter-модель"
+        if e.status_code == 429:
+            if user_lang == "en":
+                error_text = f"⚠️ {model_display} is temporarily overloaded on OpenRouter. Please try again in a minute or choose another model."
+            elif user_lang == "tt":
+                error_text = f"⚠️ {model_display} OpenRouter ягында вакытлыча артык йөкләнгән. Бер минуттан кабатлап карагыз яки башка модель сайлагыз."
+            else:
+                error_text = f"⚠️ {model_display} временно перегружена на стороне OpenRouter. Попробуйте ещё раз через минуту или выберите другую модель."
+        elif e.status_code == 402:
+            if user_lang == "en":
+                error_text = f"⚠️ OpenRouter rejected the {model_display} request because the account has no available credits. Try a free model or add credits in OpenRouter."
+            elif user_lang == "tt":
+                error_text = f"⚠️ OpenRouter {model_display} соравын кабул итмәде: аккаунтта кредитлар юк. Бушлай модель сайлагыз яки OpenRouter балансын тулыландырыгыз."
+            else:
+                error_text = f"⚠️ OpenRouter отклонил запрос к {model_display}: на аккаунте нет доступных кредитов. Выберите бесплатную модель или пополните баланс OpenRouter."
+        else:
+            if user_lang == "en":
+                error_text = f"⚠️ {model_display} did not return a response right now. OpenRouter status: {e.status_code}."
+            elif user_lang == "tt":
+                error_text = f"⚠️ {model_display} хәзер җавап кайтармады. OpenRouter статусы: {e.status_code}."
+            else:
+                error_text = f"⚠️ {model_display} сейчас не вернула ответ. Статус OpenRouter: {e.status_code}."
+
+        await message.answer(error_text, reply_markup=get_exit_ai_inline(user_lang))
+
     except asyncio.TimeoutError:
         try:
             await thinking_msg.delete()
@@ -3855,6 +3970,23 @@ async def handle_ai_message(message: Message, state: FSMContext):
             error_text = f"🌐 AI сервисы белән тоташу хатасы: {str(e)}"
         else:
             error_text = f"🌐 Ошибка соединения с AI сервисом: {str(e)}"
+
+        await message.answer(error_text, reply_markup=get_exit_ai_inline(user_lang))
+
+    except Exception as e:
+        try:
+            await thinking_msg.delete()
+        except Exception:
+            pass
+
+        print(f"❌ Unexpected AI handler error: {type(e).__name__}: {e}")
+
+        if user_lang == "en":
+            error_text = "⚠️ I could not get a response from the AI right now. Please try again or choose another model."
+        elif user_lang == "tt":
+            error_text = "⚠️ Хәзер AI җавабын алып булмады. Кабатлап карагыз яки башка модель сайлагыз."
+        else:
+            error_text = "⚠️ Сейчас не удалось получить ответ от ИИ. Попробуйте ещё раз или выберите другую модель."
 
         await message.answer(error_text, reply_markup=get_exit_ai_inline(user_lang))
 
