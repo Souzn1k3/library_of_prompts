@@ -904,6 +904,9 @@ from database import (
     get_top_best_users,
     get_user_rank_best,
     grant_game_reward,
+    has_game_attempt,
+    save_game_attempt,
+    update_mission_progress,
     update_user_plan,
     update_user_coins,
 )
@@ -996,6 +999,7 @@ class SearchState(StatesGroup):
 class GamesState(StatesGroup):
     in_ai_quiz = State()
     in_prompt_puzzle = State()
+    in_prompt_battle = State()
 
 class PromptReviewState(StatesGroup):
     waiting_for_prompt = State()
@@ -1188,6 +1192,85 @@ PROMPT_PUZZLES = [
         }
     }
 ]
+
+PROMPT_BATTLE_PARTICIPATION_REWARD = 2
+PROMPT_BATTLE_CORRECT_REWARD = 5
+PROMPT_BATTLE_GAME_CODE = "prompt_battle"
+
+PROMPT_BATTLES = [
+    {
+        "id": 1,
+        "task": {
+            "ru": "Нужно получить от ИИ контент-план для Telegram-канала на 7 дней.",
+            "en": "You need an AI-generated 7-day content plan for a Telegram channel.",
+            "tt": "Telegram каналы өчен 7 көнлек контент-план кирәк.",
+        },
+        "option_a": {
+            "ru": "Напиши контент-план для Telegram.",
+            "en": "Write a content plan for Telegram.",
+            "tt": "Telegram өчен контент-план яз.",
+        },
+        "option_b": {
+            "ru": "Ты — SMM-стратег. Составь контент-план на 7 дней для Telegram-канала про AI и заработок. Формат: день, тема поста, хук, CTA. Стиль — простой, дерзкий, без воды.",
+            "en": "Act as an SMM strategist. Create a 7-day content plan for a Telegram channel about AI and earning money. Format: day, post topic, hook, CTA. Style: simple, bold, no fluff.",
+            "tt": "Син SMM-стратег. AI һәм акча эшләү турында Telegram каналы өчен 7 көнлек контент-план төзе. Формат: көн, пост темасы, хук, CTA. Стиль: гади, кыю, сузмыйча.",
+        },
+        "correct": "b",
+        "explanation": {
+            "ru": "Вариант B сильнее: есть роль, ниша, срок, формат результата и стиль. Вариант A слишком общий.",
+            "en": "Option B is stronger: it includes role, niche, timeframe, output format, and style. Option A is too vague.",
+            "tt": "B варианты көчлерәк: роль, ниша, вакыт, җавап форматы һәм стиль бар. A варианты артык гомуми.",
+        },
+    },
+    {
+        "id": 2,
+        "task": {
+            "ru": "Нужно получить от ИИ идею для продающего лендинга проекта Prompt Vault.",
+            "en": "You need an AI-generated landing page idea for Prompt Vault.",
+            "tt": "Prompt Vault проекты өчен сату лендингы идеясе кирәк.",
+        },
+        "option_a": {
+            "ru": "Сделай лендинг для сайта с промптами.",
+            "en": "Make a landing page for a prompt website.",
+            "tt": "Промптлар сайты өчен лендинг яса.",
+        },
+        "option_b": {
+            "ru": "Ты — продуктовый маркетолог. Разработай структуру лендинга для Prompt Vault: AI-платформы с промптами, workflow и токенами. ЦА: фрилансеры и Telegram-предприниматели. Дай блоки: оффер, боль, решение, преимущества, CTA.",
+            "en": "Act as a product marketer. Design a landing structure for Prompt Vault: an AI platform with prompts, workflows, and tokens. Target audience: freelancers and Telegram entrepreneurs. Include: offer, pain, solution, benefits, CTA.",
+            "tt": "Син продукт маркетолог. Prompt Vault өчен лендинг структурасын төзе: промптлар, workflow һәм токеннар булган AI-платформа. Аудитория: фрилансерлар һәм Telegram эшмәкәрләре. Блоклар: оффер, проблема, чишелеш, өстенлекләр, CTA.",
+        },
+        "correct": "b",
+        "explanation": {
+            "ru": "Вариант B лучше, потому что задаёт роль, продукт, целевую аудиторию и структуру ответа.",
+            "en": "Option B is better because it defines the role, product, target audience, and response structure.",
+            "tt": "B варианты яхшырак, чөнки роль, продукт, аудитория һәм җавап структурасы күрсәтелгән.",
+        },
+    },
+    {
+        "id": 3,
+        "task": {
+            "ru": "Нужно попросить ИИ разобрать слабые места бизнес-идеи.",
+            "en": "You need AI to analyze weak points of a business idea.",
+            "tt": "Бизнес идеянең зәгыйфь якларын анализларга кирәк.",
+        },
+        "option_a": {
+            "ru": "Что думаешь про мою идею?",
+            "en": "What do you think about my idea?",
+            "tt": "Минем идея турында нәрсә уйлыйсың?",
+        },
+        "option_b": {
+            "ru": "Ты — жёсткий бизнес-аналитик. Разбери мою идею по пунктам: ЦА, проблема, ценность, конкуренты, монетизация, риски, слабые места. В конце дай оценку от 1 до 10 и 5 конкретных улучшений.",
+            "en": "Act as a strict business analyst. Analyze my idea by: target audience, problem, value, competitors, monetization, risks, weak points. End with a 1-10 score and 5 concrete improvements.",
+            "tt": "Син кырыс бизнес-аналитик. Минем идеяне пунктлар буенча анализла: аудитория, проблема, кыйммәт, көндәшләр, монетизация, рисклар, зәгыйфь яклар. Ахырда 1-10 бәя һәм 5 конкрет яхшырту бир.",
+        },
+        "correct": "b",
+        "explanation": {
+            "ru": "Вариант B лучше: он заставляет ИИ анализировать по критериям, а не отвечать общими словами.",
+            "en": "Option B is better: it forces AI to analyze by criteria instead of giving a generic opinion.",
+            "tt": "B варианты яхшырак: ул ИИны гомуми фикер түгел, ә критерийлар буенча анализларга мәҗбүр итә.",
+        },
+    },
+]
 # ==============================================================================
 # 4. ЛОКАЛЬНЫЕ ТЕКСТЫ ДЛЯ МИССИЙ / СТРИКА
 #    (чтобы не ломать languages.py и не требовать ручных изменений)
@@ -1251,6 +1334,20 @@ LOCAL_TEXTS = {
         "prompt_puzzle_correct": "✅ Правильно! Вы получили **+{reward}** токенов.\n\n{explanation}",
         "prompt_puzzle_wrong": "❌ Пока неправильно.\n\n{explanation}",
         "next_puzzle_btn": "➡️ Следующий пазл",
+        "prompt_battle_btn": "⚔️ Битва промптов",
+        "prompt_battle_title": "⚔️ **Битва промптов**",
+        "prompt_battle_task": "**Задача:**",
+        "prompt_battle_choose": "**Какой промпт сильнее?**",
+        "prompt_battle_option_a": "Выбрать A",
+        "prompt_battle_option_b": "Выбрать B",
+        "prompt_battle_correct": "✅ Верно!",
+        "prompt_battle_wrong": "❌ Неверно.",
+        "prompt_battle_participation_reward": "+{reward} токенов за участие",
+        "prompt_battle_total_reward": "+{reward} токенов",
+        "prompt_battle_next_btn": "➡️ Следующая битва",
+        "prompt_battle_finished": "🏁 **Битвы закончились.**\n\nВозвращайся позже — скоро будут новые.",
+        "prompt_battle_already_answered": "Повторная награда за эту битву уже не начисляется.",
+        "prompt_battle_why": "**Почему:**",
         "prompt_review_start": "📝 Пришлите ваш промпт одним сообщением.",
         "prompt_review_sent": "✅ Ваш промпт отправлен на редакцию.",
         "prompt_review_empty": "❌ Пожалуйста, отправьте текстовый промпт.",
@@ -1312,6 +1409,20 @@ LOCAL_TEXTS = {
         "prompt_puzzle_correct": "✅ Correct! You earned **+{reward}** tokens.\n\n{explanation}",
         "prompt_puzzle_wrong": "❌ Not correct yet.\n\n{explanation}",
         "next_puzzle_btn": "➡️ Next puzzle",
+        "prompt_battle_btn": "⚔️ Prompt Battle",
+        "prompt_battle_title": "⚔️ **Prompt Battle**",
+        "prompt_battle_task": "**Task:**",
+        "prompt_battle_choose": "**Which prompt is stronger?**",
+        "prompt_battle_option_a": "Choose A",
+        "prompt_battle_option_b": "Choose B",
+        "prompt_battle_correct": "✅ Correct!",
+        "prompt_battle_wrong": "❌ Wrong.",
+        "prompt_battle_participation_reward": "+{reward} tokens for participation",
+        "prompt_battle_total_reward": "+{reward} tokens",
+        "prompt_battle_next_btn": "➡️ Next battle",
+        "prompt_battle_finished": "🏁 **Battles are finished.**\n\nCome back later — new ones are coming soon.",
+        "prompt_battle_already_answered": "The repeat reward for this battle is not granted.",
+        "prompt_battle_why": "**Why:**",
         "prompt_review_start": "📝 Send your prompt in one message.",
         "prompt_review_sent": "✅ Your prompt has been sent for review.",
         "prompt_review_empty": "❌ Please send a text prompt.",
@@ -1368,6 +1479,20 @@ LOCAL_TEXTS = {
         "prompt_puzzle_correct": "✅ Дөрес! Сез **+{reward}** токен алдыгыз.\n\n{explanation}",
         "prompt_puzzle_wrong": "❌ Әлегә дөрес түгел.\n\n{explanation}",
         "next_puzzle_btn": "➡️ Киләсе пазл",
+        "prompt_battle_btn": "⚔️ Промпт баттлы",
+        "prompt_battle_title": "⚔️ **Промпт баттлы**",
+        "prompt_battle_task": "**Бирем:**",
+        "prompt_battle_choose": "**Кайсы промпт көчлерәк?**",
+        "prompt_battle_option_a": "A сайлау",
+        "prompt_battle_option_b": "B сайлау",
+        "prompt_battle_correct": "✅ Дөрес!",
+        "prompt_battle_wrong": "❌ Дөрес түгел.",
+        "prompt_battle_participation_reward": "Катнашу өчен +{reward} токен",
+        "prompt_battle_total_reward": "+{reward} токен",
+        "prompt_battle_next_btn": "➡️ Киләсе баттл",
+        "prompt_battle_finished": "🏁 **Баттллар тәмамланды.**\n\nСоңрак кире кайт — яңалары тиздән булачак.",
+        "prompt_battle_already_answered": "Бу баттл өчен кабат бүләк бирелми.",
+        "prompt_battle_why": "**Ни өчен:**",
         "prompt_review_start": "📝 Промптыгызны бер хәбәр белән җибәрегез.",
         "prompt_review_sent": "✅ Сезнең промпт редакциягә җибәрелде.",
         "prompt_review_empty": "❌ Зинһар, текстлы промпт җибәрегез.",
@@ -2125,7 +2250,7 @@ def get_profile_menu_inline(lang: str = 'ru'):
     """Меню профиля"""
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=lt(lang, 'streak_btn'), callback_data="menu_streak", style="success"),
-         InlineKeyboardButton(text=lt(lang, 'missions_btn_new'), callback_data="menu_missions")],
+         InlineKeyboardButton(text=lt(lang, 'missions_btn_new'), callback_data="profile_missions")],
         [InlineKeyboardButton(text=get_text(lang, 'language_settings'), callback_data="menu_language")],
         [InlineKeyboardButton(text=get_text(lang, 'notifications_settings'), callback_data="menu_notifications")],
         [InlineKeyboardButton(text=get_text(lang, 'back'), callback_data="back_main_menu")],
@@ -2207,12 +2332,19 @@ def get_streak_menu_inline(lang: str = 'ru'):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=lt(lang, 'claim_streak_btn'), callback_data="claim_streak", style="success")],
         [InlineKeyboardButton(text=lt(lang, 'buy_freeze_btn'), callback_data="buy_freeze")],
-        [InlineKeyboardButton(text=lt(lang, 'missions_btn_new'), callback_data="menu_missions")],
+        [InlineKeyboardButton(text=lt(lang, 'missions_btn_new'), callback_data="profile_missions")],
         [InlineKeyboardButton(text=lt(lang, 'back_to_profile'), callback_data="menu_profile")],
     ])
 
 
-def get_missions_menu_inline(lang: str = 'ru'):
+def get_missions_main_menu_inline(lang: str = 'ru'):
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=lt(lang, 'streak_btn'), callback_data="menu_streak", style="success")],
+        [InlineKeyboardButton(text=get_text(lang, 'back_to_menu'), callback_data="back_main_menu")],
+    ])
+
+
+def get_missions_profile_menu_inline(lang: str = 'ru'):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=lt(lang, 'streak_btn'), callback_data="menu_streak", style="success")],
         [InlineKeyboardButton(text=lt(lang, 'back_to_profile'), callback_data="menu_profile")],
@@ -2222,6 +2354,7 @@ def get_games_menu_inline(lang: str = 'ru'):
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text=lt(lang, 'ai_quiz_btn'), callback_data="game_ai_quiz")],
         [InlineKeyboardButton(text=lt(lang, 'prompt_puzzle_btn'), callback_data="game_prompt_puzzle")],
+        [InlineKeyboardButton(text=lt(lang, 'prompt_battle_btn'), callback_data="game_prompt_battle")],
         [InlineKeyboardButton(text=get_text(lang, 'back'), callback_data="back_main_menu")],
     ])
 
@@ -2234,6 +2367,27 @@ def get_ai_quiz_options_inline(question_id: int, lang: str = 'ru'):
         ],
         [InlineKeyboardButton(text=lt(lang, 'back_to_games_btn'), callback_data="menu_games")],
     ])
+
+def get_prompt_battle_inline(battle_id: int, lang: str = 'ru'):
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text=f"🅰️ {lt(lang, 'prompt_battle_option_a')}", callback_data=f"battle_answer:{battle_id}:a"),
+            InlineKeyboardButton(text=f"🅱️ {lt(lang, 'prompt_battle_option_b')}", callback_data=f"battle_answer:{battle_id}:b"),
+        ],
+        [InlineKeyboardButton(text=lt(lang, 'back_to_games_btn'), callback_data="menu_games")],
+    ])
+
+
+def get_prompt_battle_result_inline(next_index: int, total_battles: int, lang: str = 'ru'):
+    buttons = []
+    if next_index <= total_battles:
+        buttons.append([
+            InlineKeyboardButton(text=lt(lang, 'prompt_battle_next_btn'), callback_data=f"battle_next:{next_index}")
+        ])
+    buttons.append([InlineKeyboardButton(text=lt(lang, 'back_to_games_btn'), callback_data="menu_games")])
+
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
+
 
 def get_prompt_puzzle_inline(puzzle_id: int, pieces: list[str], lang: str = 'ru'):
     keyboard = []
@@ -2272,19 +2426,28 @@ def get_ai_quiz_result_inline(next_index: int, total_questions: int, lang: str =
 # 6. СЛУЖЕБНЫЕ ФУНКЦИИ ОТОБРАЖЕНИЯ
 # ==============================================================================
 
+def get_localized_mission_title(lang: str, mission: dict) -> str:
+    mission_code = mission.get("mission_code")
+    if mission_code:
+        translated = get_text(lang, mission_code)
+        if translated != mission_code:
+            return translated
+    return mission.get("title", "")
+
+
 def build_missions_text(lang: str, economy: dict, missions: dict) -> str:
     daily_lines = []
     for m in missions["daily"]:
         status = "✅" if m["is_completed"] else "⬜"
         daily_lines.append(
-            f"{status} {m['title']} — {m['progress']}/{m['target_value']} (+{m['reward']})"
+            f"{status} {get_localized_mission_title(lang, m)} — {m['progress']}/{m['target_value']} (+{m['reward']})"
         )
 
     permanent_lines = []
     for m in missions["permanent"]:
         status = "✅" if m["is_completed"] else "⬜"
         permanent_lines.append(
-            f"{status} {m['title']} — {m['progress']}/{m['target_value']} (+{m['reward']})"
+            f"{status} {get_localized_mission_title(lang, m)} — {m['progress']}/{m['target_value']} (+{m['reward']})"
         )
 
     text = (
@@ -2313,6 +2476,47 @@ async def render_ai_quiz_question(message_obj, question_index: int, user_lang: s
         reply_markup=get_ai_quiz_options_inline(question["id"], user_lang),
         parse_mode="Markdown"
     )
+
+
+def get_prompt_battle_by_id(battle_id: int) -> tuple[int, dict | None]:
+    for index, battle in enumerate(PROMPT_BATTLES):
+        if battle["id"] == battle_id:
+            return index, battle
+    return -1, None
+
+
+def get_prompt_battle_text(battle: dict, field: str, lang: str) -> str:
+    values = battle[field]
+    return values.get(lang) or values["ru"]
+
+
+async def render_prompt_battle(message_obj, battle_index: int, user_lang: str):
+    if battle_index >= len(PROMPT_BATTLES):
+        await message_obj.edit_text(
+            lt(user_lang, "prompt_battle_finished"),
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text=lt(user_lang, 'back_to_games_btn'), callback_data="menu_games")]
+            ]),
+            parse_mode="Markdown"
+        )
+        return
+
+    battle = PROMPT_BATTLES[battle_index]
+    text = (
+        f"{lt(user_lang, 'prompt_battle_title')}\n\n"
+        f"{lt(user_lang, 'prompt_battle_task')}\n"
+        f"{get_prompt_battle_text(battle, 'task', user_lang)}\n\n"
+        f"{lt(user_lang, 'prompt_battle_choose')}\n\n"
+        f"🅰️ {get_prompt_battle_text(battle, 'option_a', user_lang)}\n\n"
+        f"🅱️ {get_prompt_battle_text(battle, 'option_b', user_lang)}"
+    )
+
+    await message_obj.edit_text(
+        text,
+        reply_markup=get_prompt_battle_inline(battle["id"], user_lang),
+        parse_mode="Markdown"
+    )
+
 
 async def render_prompt_puzzle(message_obj, puzzle_index: int, user_lang: str, selected_order: list[int] | None = None):
     puzzle = PROMPT_PUZZLES[puzzle_index]
@@ -3142,6 +3346,112 @@ async def next_ai_quiz_question(callback: CallbackQuery, state: FSMContext):
 
     await render_ai_quiz_question(callback.message, next_index, user_lang)
     await callback.answer()
+
+
+@router.callback_query(F.data == "game_prompt_battle")
+async def start_prompt_battle(callback: CallbackQuery, state: FSMContext):
+    user_id = callback.from_user.id
+    user_lang = await get_user_language(user_id)
+    await sync_subscription_cache(user_id, language=user_lang)
+
+    await state.set_state(GamesState.in_prompt_battle)
+    await state.update_data(prompt_battle_index=0)
+
+    await render_prompt_battle(callback.message, 0, user_lang)
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("battle_answer:"))
+async def process_prompt_battle_answer(callback: CallbackQuery, state: FSMContext):
+    user_id = callback.from_user.id
+    user_lang = await get_user_language(user_id)
+
+    parts = callback.data.split(":")
+    if len(parts) != 3:
+        await callback.answer("Battle not found", show_alert=True)
+        return
+
+    battle_id = int(parts[1])
+    user_answer = parts[2]
+    battle_index, battle = get_prompt_battle_by_id(battle_id)
+    if not battle or user_answer not in {"a", "b"}:
+        await callback.answer("Battle not found", show_alert=True)
+        return
+
+    await state.set_state(GamesState.in_prompt_battle)
+    await state.update_data(prompt_battle_index=battle_index)
+
+    is_correct = user_answer == battle["correct"]
+    base_reward = PROMPT_BATTLE_PARTICIPATION_REWARD
+    if is_correct:
+        base_reward += PROMPT_BATTLE_CORRECT_REWARD
+
+    already_answered = await has_game_attempt(user_id, PROMPT_BATTLE_GAME_CODE, battle_id)
+    reward_info = None
+
+    if not already_answered:
+        saved = await save_game_attempt(
+            user_id,
+            PROMPT_BATTLE_GAME_CODE,
+            battle_id,
+            is_correct,
+            base_reward,
+        )
+        if saved:
+            reward_info = await grant_game_reward(user_id, base_reward)
+            await ensure_permanent_missions(user_id)
+            await update_mission_progress(user_id, "perm_prompt_battle_10", 1)
+        else:
+            already_answered = True
+
+    if already_answered:
+        reward_line = lt(user_lang, "prompt_battle_already_answered")
+    elif is_correct:
+        reward_line = lt(user_lang, "prompt_battle_total_reward", reward=reward_info["total_reward"])
+    else:
+        reward_line = lt(user_lang, "prompt_battle_participation_reward", reward=reward_info["total_reward"])
+
+    text = (
+        f"{lt(user_lang, 'prompt_battle_correct' if is_correct else 'prompt_battle_wrong')}\n"
+        f"{reward_line}\n\n"
+        f"{lt(user_lang, 'prompt_battle_why')}\n"
+        f"{get_prompt_battle_text(battle, 'explanation', user_lang)}"
+    )
+
+    if reward_info and reward_info["bonus_reward"] > 0:
+        text += "\n\n" + st(
+            user_lang,
+            "game_bonus_line",
+            bonus=reward_info["bonus_reward"],
+            pct=reward_info["bonus_pct"],
+        )
+
+    await callback.message.edit_text(
+        text,
+        reply_markup=get_prompt_battle_result_inline(battle_index + 1, len(PROMPT_BATTLES), user_lang),
+        parse_mode="Markdown"
+    )
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("battle_next:"))
+async def next_prompt_battle(callback: CallbackQuery, state: FSMContext):
+    user_id = callback.from_user.id
+    user_lang = await get_user_language(user_id)
+
+    next_index = int(callback.data.split(":")[1])
+    if next_index >= len(PROMPT_BATTLES):
+        await state.clear()
+        await render_prompt_battle(callback.message, next_index, user_lang)
+        await callback.answer()
+        return
+
+    await state.set_state(GamesState.in_prompt_battle)
+    await state.update_data(prompt_battle_index=next_index)
+
+    await render_prompt_battle(callback.message, next_index, user_lang)
+    await callback.answer()
+
 
 @router.callback_query(F.data == "game_prompt_puzzle")
 async def start_prompt_puzzle(callback: CallbackQuery, state: FSMContext):
@@ -4047,6 +4357,7 @@ async def show_profile(callback: CallbackQuery):
 # ==============================================================================
 
 @router.callback_query(F.data == "menu_missions")
+@router.callback_query(F.data == "profile_missions")
 async def show_missions(callback: CallbackQuery):
     """Показывает миссии пользователя"""
     user_id = callback.from_user.id
@@ -4059,10 +4370,27 @@ async def show_missions(callback: CallbackQuery):
     economy = await get_user_economy(user_id)
 
     text = build_missions_text(user_lang, economy, missions)
+    source_is_profile = callback.data == "profile_missions"
+    if callback.message and callback.message.reply_markup:
+        source_callbacks = {
+            button.callback_data
+            for row in callback.message.reply_markup.inline_keyboard
+            for button in row
+            if button.callback_data
+        }
+        source_is_profile = source_is_profile or bool(
+            {"menu_streak", "claim_streak", "buy_freeze"} & source_callbacks
+        )
+
+    reply_markup = (
+        get_missions_profile_menu_inline(user_lang)
+        if source_is_profile
+        else get_missions_main_menu_inline(user_lang)
+    )
 
     await callback.message.edit_text(
         text,
-        reply_markup=get_missions_menu_inline(user_lang),
+        reply_markup=reply_markup,
         parse_mode="Markdown"
     )
     await callback.answer()

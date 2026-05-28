@@ -82,6 +82,7 @@ TRANSLATIONS = {
         'perm_streak_3': "Продержать ударный режим 3 дня",
         'perm_streak_7': "Продержать ударный режим 7 дней",
         'perm_buy_freeze_1': "Купить первую заморозку",
+        'perm_prompt_battle_10': "Пройти 10 битв промптов",
         'daily_all_completed_bonus': "Выполнить все ежедневные миссии",
     },
 
@@ -166,6 +167,7 @@ TRANSLATIONS = {
         'perm_streak_3': "Keep streak for 3 days",
         'perm_streak_7': "Keep streak for 7 days",
         'perm_buy_freeze_1': "Buy your first freeze",
+        'perm_prompt_battle_10': "Complete 10 prompt battles",
         'daily_all_completed_bonus': "Complete all daily missions",
     },
 
@@ -250,6 +252,7 @@ TRANSLATIONS = {
         'perm_streak_3': "Удар режимын 3 көн саклау",
         'perm_streak_7': "Удар режимын 7 көн саклау",
         'perm_buy_freeze_1': "Беренче туңдыруны сатып алу",
+        'perm_prompt_battle_10': "10 промпт баттлын үтү",
         'daily_all_completed_bonus': "Барлык көндәлек миссияләрне үтәү",
     }
 }

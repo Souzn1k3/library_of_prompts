@@ -436,6 +436,7 @@ PERMANENT_MISSIONS_POOL = [
     {"code": "perm_streak_3", "title": "Продержать ударный режим 3 дня", "target": 3, "reward": 15},
     {"code": "perm_streak_7", "title": "Продержать ударный режим 7 дней", "target": 7, "reward": 35},
     {"code": "perm_buy_freeze_1", "title": "Купить первую заморозку", "target": 1, "reward": 10},
+    {"code": "perm_prompt_battle_10", "title": "Пройти 10 битв промптов", "target": 10, "reward": 25},
 ]
 
 # ==============================================================================
@@ -574,6 +575,12 @@ async def init_db():
             """)
             print("✅ Таблица user_missions готова")
 
+            # ------------------------------------------------------------------
+            # GAME ATTEMPTS
+            # ------------------------------------------------------------------
+            await _ensure_game_attempts_table(conn)
+            print("✅ Таблица game_attempts готова")
+
         print("✅ Все таблицы проверены и готовы")
 
     except Exception as e:
@@ -625,6 +632,56 @@ async def add_column_if_not_exists(conn, table_name: str, column_name: str, colu
         print(f"✅ Колонка {column_name} добавлена")
     else:
         print(f"✓ Колонка {column_name} уже существует")
+
+
+async def _ensure_game_attempts_table(conn):
+    await conn.execute("""
+        CREATE TABLE IF NOT EXISTS game_attempts (
+            id SERIAL PRIMARY KEY,
+            user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+            game_code VARCHAR(100) NOT NULL,
+            item_id INT NOT NULL,
+            is_correct BOOLEAN DEFAULT FALSE,
+            reward INT DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT uq_game_attempts_user_game_item UNIQUE(user_id, game_code, item_id)
+        )
+    """)
+    await conn.execute("""
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_game_attempts_user_game_item
+        ON game_attempts (user_id, game_code, item_id)
+    """)
+
+
+async def ensure_game_attempts_table():
+    """Создаёт таблицу попыток игр, если она ещё не создана."""
+    async with db_pool.acquire() as conn:
+        await _ensure_game_attempts_table(conn)
+
+
+async def has_game_attempt(user_id: int, game_code: str, item_id: int) -> bool:
+    """Проверяет, получал ли пользователь награду за конкретный элемент игры."""
+    async with db_pool.acquire() as conn:
+        return bool(await conn.fetchval("""
+            SELECT EXISTS(
+                SELECT 1
+                FROM game_attempts
+                WHERE user_id = $1
+                  AND game_code = $2
+                  AND item_id = $3
+            )
+        """, user_id, game_code, item_id))
+
+
+async def save_game_attempt(user_id: int, game_code: str, item_id: int, is_correct: bool, reward: int) -> bool:
+    """Сохраняет первую попытку пользователя в игре."""
+    async with db_pool.acquire() as conn:
+        result = await conn.execute("""
+            INSERT INTO game_attempts (user_id, game_code, item_id, is_correct, reward)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (user_id, game_code, item_id) DO NOTHING
+        """, user_id, game_code, item_id, is_correct, reward)
+        return result == "INSERT 0 1"
 
 # ==============================================================================
 # 4. ПОЛЬЗОВАТЕЛИ
