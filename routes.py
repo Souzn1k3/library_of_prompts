@@ -3498,6 +3498,16 @@ async def cancel_search(message: Message, state: FSMContext):
 # 19. ДОПОЛНИТЕЛЬНЫЕ КОМАНДЫ
 # ==============================================================================
 
+@router.message(Command("help"))
+async def help_command(message: Message):
+    """Показывает краткую помощь по основным сценариям бота."""
+    user_lang = await get_user_language(message.from_user.id)
+    await message.answer(
+        get_text(user_lang, "help_text"),
+        parse_mode="Markdown",
+    )
+
+
 @router.message(Command("news"))
 async def news(message: Message):
     await message.answer("📰 Новости сервиса")

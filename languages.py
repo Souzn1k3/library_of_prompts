@@ -19,6 +19,7 @@ TRANSLATIONS = {
         'games_stub': "🎮 **Игры** 🎮\n\nМини-игры для заработка койнов в разработке.",
         'search_stub': "🔍 **Поиск** 🔍\n\nФункционал в разработке...",
         'cancel': "❌ **Поиск отменён** ❌\n\nВы вернулись в главное меню.",
+        'help_text': "❓ **Помощь по Копилке Промптов**\n\nГлавное действие: пришлите свой промпт, и бот поможет сделать его сильнее.\n\n**Что умеет бот:**\n• анализирует промпт и показывает слабые места;\n• ставит оценку от 1 до 10;\n• переписывает промпт в более сильную версию;\n• принимает текст, документы и голосовые сообщения;\n• помогает тренироваться через миссии и мини-игры;\n• показывает тарифы и подписку Prompts Vault.\n\n**С чего начать:**\n1. Нажмите «Каталог ИИ» в меню или выберите AI-модель.\n2. Отправьте свой промпт одним сообщением.\n3. Получите разбор, рекомендации и улучшенную версию.\n\n**Полезные команды:**\n/start — открыть главное меню\n/sub — посмотреть тарифы\n/site — открыть сайт\n/about — о проекте\n/report — сообщить о проблеме",
         'language_menu': "🌐 **Выберите язык / Select Language / Тел сайлау** 🌐",
         'language_changed': "✅ **Язык изменён на {lang}** ✅",
 
@@ -102,6 +103,7 @@ TRANSLATIONS = {
         'games_stub': "🎮 **Games** 🎮\n\nMini-games for earning coins in development.",
         'search_stub': "🔍 **Search** 🔍\n\nFeature in development...",
         'cancel': "❌ **Search Cancelled** ❌\n\nYou're back to main menu.",
+        'help_text': "❓ **Prompt Vault Help**\n\nMain action: send your prompt, and the bot will help make it stronger.\n\n**What the bot can do:**\n• analyze your prompt and show weak spots;\n• rate it from 1 to 10;\n• rewrite it into a stronger version;\n• accept text, documents, and voice messages;\n• help you practice through missions and mini-games;\n• show Prompts Vault plans and subscription status.\n\n**How to start:**\n1. Tap “AI Catalog” in the menu or choose an AI model.\n2. Send your prompt in one message.\n3. Get analysis, recommendations, and an improved version.\n\n**Useful commands:**\n/start — open main menu\n/sub — view plans\n/site — open website\n/about — about the project\n/report — report a problem",
         'language_menu': "🌐 **Select Language / Выберите язык / Тел сайлау** 🌐",
         'language_changed': "✅ **Language changed to {lang}** ✅",
 
@@ -185,6 +187,7 @@ TRANSLATIONS = {
         'games_stub': "🎮 **Уеннар** 🎮\n\nКоин эшләү өчен мини-уеннар эшләнү өстендә.",
         'search_stub': "🔍 **Эзләү** 🔍\n\nФункционал эшләнү өстендә...",
         'cancel': "❌ **Эзләү туктатылды** ❌\n\nСез төп менюга кайттыгыз.",
+        'help_text': "❓ **Копилка Промптов буенча ярдәм**\n\nТөп гамәл: промптыгызны җибәрегез, бот аны көчлерәк итәргә ярдәм итәчәк.\n\n**Бот нәрсә эшли:**\n• промптны анализлый һәм зәгыйфь урыннарын күрсәтә;\n• 1 дән 10 га кадәр бәя куя;\n• промптны көчлерәк версиягә үзгәртеп яза;\n• текст, документлар һәм тавыш хәбәрләрен кабул итә;\n• миссияләр һәм мини-уеннар аша күнегергә ярдәм итә;\n• Prompts Vault тарифларын һәм язылуны күрсәтә.\n\n**Ничек башларга:**\n1. Менюда «ИИ Каталогы» төймәсенә басыгыз яки AI-модель сайлагыз.\n2. Промптыгызны бер хәбәр белән җибәрегез.\n3. Анализ, киңәшләр һәм яхшыртылган версия алыгыз.\n\n**Файдалы командалар:**\n/start — төп менюны ачу\n/sub — тарифларны карау\n/site — сайтны ачу\n/about — проект турында\n/report — проблема турында хәбәр итү",
         'language_menu': "🌐 **Тел сайлау / Выберите язык / Select Language** 🌐",
         'language_changed': "✅ **Тел үзгәртелде: {lang}** ✅",
 
