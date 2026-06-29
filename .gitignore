@@ -8,3 +8,4 @@ models/
 temp_voice_*
 *.bak_*
 *.last_uploaded_check
+~$*

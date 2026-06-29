@@ -396,7 +396,7 @@ from datetime import date, datetime, timedelta, timezone
 
 load_dotenv()
 
-from bot_plans import get_plan_config, is_paid_tier, normalize_plan_tier, parse_datetime
+from bot_plans import get_plan_config, get_usage_period, is_paid_tier, normalize_plan_tier, parse_datetime
 from website_api import (
     delete_saved_prompt as website_delete_saved_prompt,
     get_prompts as website_get_prompts,
@@ -429,6 +429,16 @@ DAILY_MISSIONS_POOL = [
     {"code": "daily_send_3_ai", "title": "Отправить 3 сообщения ИИ", "target": 3, "reward": 8},
     {"code": "daily_use_search", "title": "Использовать поиск моделей", "target": 1, "reward": 3},
 ]
+BASE_DAILY_MISSION_COUNT = 3
+
+PREMIUM_DAILY_MISSIONS_POOL = [
+    {"code": "premium_daily_send_5_ai", "title": "Premium: отправить 5 сообщений ИИ", "target": 5, "reward": 14},
+    {"code": "premium_daily_use_search_2", "title": "Premium: использовать поиск моделей 2 раза", "target": 2, "reward": 8},
+    {"code": "premium_daily_claim_streak", "title": "Premium: продлить ударный режим", "target": 1, "reward": 10},
+    {"code": "premium_daily_prompt_battle", "title": "Premium: пройти битву промптов", "target": 1, "reward": 12},
+]
+PREMIUM_DAILY_MISSION_COUNT = 2
+PREMIUM_DAILY_MISSION_CODES = {mission["code"] for mission in PREMIUM_DAILY_MISSIONS_POOL}
 
 PERMANENT_MISSIONS_POOL = [
     {"code": "perm_ai_10", "title": "Написать 10 сообщений ИИ", "target": 10, "reward": 20},
@@ -444,7 +454,19 @@ PERMANENT_MISSIONS_POOL = [
 # ==============================================================================
 
 async def init_db():
-    """Инициализация пула соединений и миграция таблиц."""
+    """
+    Инициализирует пул соединений с БД и выполняет миграцию таблиц.
+
+    Создаёт таблицы users, notifications, prompts, ai_chat_history,
+    user_saved_prompts, user_missions и game_attempts,
+    если они ещё не существуют. Добавляет недостающие колонки.
+
+    Аргументы:
+        Нет.
+
+    Возвращает:
+        None
+    """
     global db_pool
 
     try:
@@ -535,6 +557,24 @@ async def init_db():
             print("✅ Таблица ai_chat_history готова")
 
             # ------------------------------------------------------------------
+            # USER LIMIT USAGE
+            # ------------------------------------------------------------------
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS user_limit_usage (
+                    id SERIAL PRIMARY KEY,
+                    user_id BIGINT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+                    limit_name VARCHAR(100) NOT NULL,
+                    amount INT NOT NULL DEFAULT 1,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            await conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_user_limit_usage_user_limit_created
+                ON user_limit_usage (user_id, limit_name, created_at)
+            """)
+            print("✅ Таблица user_limit_usage готова")
+
+            # ------------------------------------------------------------------
             # USER SAVED PROMPTS
             # ------------------------------------------------------------------
             await conn.execute("""
@@ -589,7 +629,15 @@ async def init_db():
 
 
 async def create_users_table(conn):
-    """Создаёт таблицу users с полной актуальной структурой."""
+    """
+    Создаёт таблицу users с полной актуальной структурой.
+
+    Аргументы:
+        conn: Объект подключения к БД.
+
+    Возвращает:
+        None
+    """
     await conn.execute("""
         CREATE TABLE users (
             user_id BIGINT PRIMARY KEY,
@@ -619,7 +667,18 @@ async def create_users_table(conn):
 
 
 async def add_column_if_not_exists(conn, table_name: str, column_name: str, column_type: str):
-    """Добавляет колонку, если она отсутствует."""
+    """
+    Добавляет колонку в таблицу, если она ещё не существует.
+
+    Аргументы:
+        conn: Объект подключения к БД.
+        table_name (str): Имя таблицы.
+        column_name (str): Имя колонки.
+        column_type (str): SQL-тип колонки (например 'VARCHAR(10)').
+
+    Возвращает:
+        None
+    """
     exists = await conn.fetchval(f"""
         SELECT EXISTS (
             SELECT FROM information_schema.columns
@@ -635,6 +694,15 @@ async def add_column_if_not_exists(conn, table_name: str, column_name: str, colu
 
 
 async def _ensure_game_attempts_table(conn):
+    """
+    Создаёт таблицу game_attempts, если она ещё не существует.
+
+    Аргументы:
+        conn: Объект подключения к БД.
+
+    Возвращает:
+        None
+    """
     await conn.execute("""
         CREATE TABLE IF NOT EXISTS game_attempts (
             id SERIAL PRIMARY KEY,
@@ -654,13 +722,33 @@ async def _ensure_game_attempts_table(conn):
 
 
 async def ensure_game_attempts_table():
-    """Создаёт таблицу попыток игр, если она ещё не создана."""
+    """
+    Создаёт таблицу попыток игр, если она ещё не создана.
+
+    Публичная обёртка вокруг _ensure_game_attempts_table.
+
+    Аргументы:
+        Нет.
+
+    Возвращает:
+        None
+    """
     async with db_pool.acquire() as conn:
         await _ensure_game_attempts_table(conn)
 
 
 async def has_game_attempt(user_id: int, game_code: str, item_id: int) -> bool:
-    """Проверяет, получал ли пользователь награду за конкретный элемент игры."""
+    """
+    Проверяет, получал ли пользователь награду за конкретный элемент игры.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+        game_code (str): Код игры.
+        item_id (int): ID элемента игры.
+
+    Возвращает:
+        bool: True, если попытка уже была, иначе False.
+    """
     async with db_pool.acquire() as conn:
         return bool(await conn.fetchval("""
             SELECT EXISTS(
@@ -674,7 +762,19 @@ async def has_game_attempt(user_id: int, game_code: str, item_id: int) -> bool:
 
 
 async def save_game_attempt(user_id: int, game_code: str, item_id: int, is_correct: bool, reward: int) -> bool:
-    """Сохраняет первую попытку пользователя в игре."""
+    """
+    Сохраняет первую попытку пользователя в игре.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+        game_code (str): Код игры.
+        item_id (int): ID элемента игры.
+        is_correct (bool): Правильность ответа.
+        reward (int): Количество начисленных токенов.
+
+    Возвращает:
+        bool: True, если попытка сохранена, False при конфликте.
+    """
     async with db_pool.acquire() as conn:
         result = await conn.execute("""
             INSERT INTO game_attempts (user_id, game_code, item_id, is_correct, reward)
@@ -757,7 +857,15 @@ async def add_or_update_user(
 
 
 async def get_user_profile_stats(user_id: int) -> dict:
-    """Получает статистику профиля пользователя."""
+    """
+    Получает статистику профиля пользователя.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+
+    Возвращает:
+        dict: Словарь с ключами coins, streak, is_premium, days_in_bot, plan_tier, plan_expires_at.
+    """
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow("""
             SELECT coins, streak, is_premium, joined_at, plan_tier, plan_expires_at
@@ -797,6 +905,20 @@ async def update_user_plan(
     plan_expires_at: Any = None,
     benefits: Optional[Dict[str, Any]] = None,
 ) -> dict:
+    """
+    Обновляет тарифный план пользователя.
+
+    Применяет бонусы и синхронизирует лимиты плана с таблицей users.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+        plan_tier (str): Название тарифа.
+        plan_expires_at (Any): Дата истечения плана.
+        benefits (Optional[Dict[str, Any]]): Дополнительные бонусы.
+
+    Возвращает:
+        dict: Обновлённый план пользователя (см. get_user_plan).
+    """
     tier = normalize_plan_tier(plan_tier)
     plan = get_plan_config(tier)
     merged = {
@@ -818,6 +940,10 @@ async def update_user_plan(
                 ),
             }
         )
+    if tier == "enterprise":
+        max_ai_limit = int(plan["ai_daily_limit"])
+        if merged["ai_daily_limit"] == 0 or merged["ai_daily_limit"] > max_ai_limit:
+            merged["ai_daily_limit"] = max_ai_limit
 
     expires_at = parse_datetime(plan_expires_at)
     is_premium = bool(is_paid_tier(tier) or merged["premium_prompts"])
@@ -870,6 +996,17 @@ async def update_user_plan(
 
 
 async def get_user_plan(user_id: int) -> dict:
+    """
+    Возвращает информацию о тарифном плане пользователя.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+
+    Возвращает:
+        dict: Словарь с ключами plan_tier, plan_expires_at, plan_coin_bonus_pct,
+              plan_max_freezes, plan_ai_limit, plan_premium_prompts,
+              plan_restricted_cats, is_premium.
+    """
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(
             """
@@ -926,7 +1063,16 @@ async def get_user_plan(user_id: int) -> dict:
 
 
 async def update_user_coins(user_id: int, amount: int):
-    """Меняет баланс токенов пользователя."""
+    """
+    Изменяет баланс токенов пользователя.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+        amount (int): Сумма изменения (может быть отрицательной).
+
+    Возвращает:
+        None
+    """
     async with db_pool.acquire() as conn:
         await conn.execute("""
             UPDATE users
@@ -936,6 +1082,16 @@ async def update_user_coins(user_id: int, amount: int):
 
 
 async def grant_game_reward(user_id: int, base_reward: int) -> dict:
+    """
+    Начисляет награду за игру с учётом бонуса от плана пользователя.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+        base_reward (int): Базовая награда.
+
+    Возвращает:
+        dict: Словарь с ключами base_reward, bonus_reward, total_reward, bonus_pct.
+    """
     plan = await get_user_plan(user_id)
     bonus_pct = int(plan["plan_coin_bonus_pct"])
     bonus = (base_reward * bonus_pct) // 100
@@ -950,7 +1106,18 @@ async def grant_game_reward(user_id: int, base_reward: int) -> dict:
 
 
 async def save_ai_message(user_id: int, model: str, user_msg: str, bot_msg: str):
-    """Сохраняет историю диалога с ИИ."""
+    """
+    Сохраняет историю диалога с ИИ в таблицу ai_chat_history.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+        model (str): Название модели ИИ.
+        user_msg (str): Сообщение пользователя.
+        bot_msg (str): Ответ бота.
+
+    Возвращает:
+        None
+    """
     async with db_pool.acquire() as conn:
         await conn.execute("""
             INSERT INTO ai_chat_history (user_id, model_name, user_message, bot_response)
@@ -959,6 +1126,15 @@ async def save_ai_message(user_id: int, model: str, user_msg: str, bot_msg: str)
 
 
 async def count_ai_messages_today(user_id: int) -> int:
+    """
+    Считает количество AI-сообщений пользователя за сегодня.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+
+    Возвращает:
+        int: Количество сообщений, отправленных ИИ сегодня.
+    """
     async with db_pool.acquire() as conn:
         return int(
             await conn.fetchval(
@@ -973,12 +1149,101 @@ async def count_ai_messages_today(user_id: int) -> int:
             or 0
         )
 
+
+def _usage_period_start_sql(limit_name: str) -> str | None:
+    """Возвращает SQL-границу текущего периода для лимита."""
+    period = get_usage_period(limit_name)
+    if period == "daily":
+        return "date_trunc('day', CURRENT_TIMESTAMP)"
+    if period == "weekly":
+        return "date_trunc('week', CURRENT_TIMESTAMP)"
+    if period == "monthly":
+        return "date_trunc('month', CURRENT_TIMESTAMP)"
+    return None
+
+
+async def count_limit_usage(user_id: int, limit_name: str) -> int:
+    """Считает расход конкретного лимита пользователя за текущий период."""
+    period_start_sql = _usage_period_start_sql(limit_name)
+    where_period = f"AND created_at >= {period_start_sql}" if period_start_sql else ""
+    async with db_pool.acquire() as conn:
+        return int(
+            await conn.fetchval(
+                f"""
+                SELECT COALESCE(SUM(amount), 0)
+                FROM user_limit_usage
+                WHERE user_id = $1
+                  AND limit_name = $2
+                  {where_period}
+                """,
+                user_id,
+                limit_name,
+            )
+            or 0
+        )
+
+
+async def add_limit_usage(user_id: int, limit_name: str, amount: int = 1) -> None:
+    """Записывает расход конкретного лимита пользователя."""
+    safe_amount = max(1, int(amount))
+    async with db_pool.acquire() as conn:
+        await conn.execute(
+            """
+            INSERT INTO user_limit_usage (user_id, limit_name, amount)
+            VALUES ($1, $2, $3)
+            """,
+            user_id,
+            limit_name,
+            safe_amount,
+        )
+
+
+# ==============================================================================
+# 4.1. ИГРОВЫЕ ЛИМИТЫ (ежедневные)
+# ==============================================================================
+
+async def count_game_plays_today(user_id: int, game_code: str) -> int:
+    """
+    Считает количество запусков конкретной игры за сегодня.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+        game_code (str): Код игры (ai_quiz, prompt_puzzle, prompt_battle).
+
+    Возвращает:
+        int: Количество запусков игры за сегодня.
+    """
+    return await count_limit_usage(user_id, f"game_play_{game_code}")
+
+
+async def add_game_play(user_id: int, game_code: str) -> None:
+    """
+    Записывает одну попытку запуска игры.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+        game_code (str): Код игры (ai_quiz, prompt_puzzle, prompt_battle).
+
+    Возвращает:
+        None
+    """
+    await add_limit_usage(user_id, f"game_play_{game_code}")
+
+
 # ==============================================================================
 # 5. УВЕДОМЛЕНИЯ
 # ==============================================================================
 
 async def get_all_active_users() -> List[int]:
-    """Список активных пользователей с включёнными уведомлениями."""
+    """
+    Возвращает список активных пользователей с включёнными уведомлениями.
+
+    Аргументы:
+        Нет.
+
+    Возвращает:
+        List[int]: Список Telegram ID активных пользователей.
+    """
     async with db_pool.acquire() as conn:
         rows = await conn.fetch("""
             SELECT n.user_id
@@ -991,7 +1256,17 @@ async def get_all_active_users() -> List[int]:
 
 
 async def get_user_notification_settings(user_id: int) -> dict:
-    """Получает настройки уведомлений пользователя."""
+    """
+    Получает настройки уведомлений пользователя.
+
+    Если записи нет, создаёт её со значениями по умолчанию.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+
+    Возвращает:
+        dict: Словарь с ключами is_enabled, daily_reminder, news, missions.
+    """
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow("""
             SELECT * FROM notifications
@@ -1016,7 +1291,20 @@ async def get_user_notification_settings(user_id: int) -> dict:
 
 
 async def update_notification_setting(user_id: int, setting: str, value: bool):
-    """Обновляет одну настройку уведомлений."""
+    """
+    Обновляет одну настройку уведомлений пользователя.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+        setting (str): Название настройки (is_enabled, daily_reminder, news, missions).
+        value (bool): Новое значение.
+
+    Возвращает:
+        None
+
+    Исключения:
+        ValueError: Если название настройки недопустимо.
+    """
     allowed_settings = ["is_enabled", "daily_reminder", "news", "missions"]
     if setting not in allowed_settings:
         raise ValueError(f"Недопустимая настройка: {setting}")
@@ -1030,7 +1318,15 @@ async def update_notification_setting(user_id: int, setting: str, value: bool):
 
 
 async def update_last_notification_time(user_id: int):
-    """Обновляет время последнего уведомления."""
+    """
+    Обновляет время последнего уведомления для пользователя.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+
+    Возвращает:
+        None
+    """
     async with db_pool.acquire() as conn:
         await conn.execute("""
             UPDATE notifications
@@ -1040,7 +1336,18 @@ async def update_last_notification_time(user_id: int):
 
 
 async def get_users_for_daily_reminder() -> List[int]:
-    """Получает пользователей для ежедневного напоминания."""
+    """
+    Получает список пользователей для ежедневного напоминания.
+
+    Учитывает тех, у кого включены уведомления и daily_reminder,
+    а также прошло более 20 часов с последнего уведомления.
+
+    Аргументы:
+        Нет.
+
+    Возвращает:
+        List[int]: Список Telegram ID пользователей.
+    """
     async with db_pool.acquire() as conn:
         rows = await conn.fetch("""
             SELECT n.user_id
@@ -1058,7 +1365,15 @@ async def get_users_for_daily_reminder() -> List[int]:
 # ==============================================================================
 
 async def get_user_language(user_id: int) -> str:
-    """Получает язык пользователя."""
+    """
+    Получает язык пользователя.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+
+    Возвращает:
+        str: Код языка (по умолчанию 'ru').
+    """
     async with db_pool.acquire() as conn:
         try:
             result = await conn.fetchval("""
@@ -1072,7 +1387,16 @@ async def get_user_language(user_id: int) -> str:
 
 
 async def set_user_language(user_id: int, language: str):
-    """Устанавливает язык пользователя."""
+    """
+    Устанавливает язык пользователя.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+        language (str): Код языка (например 'ru', 'en').
+
+    Возвращает:
+        None
+    """
     async with db_pool.acquire() as conn:
         await conn.execute("""
             UPDATE users
@@ -1082,7 +1406,15 @@ async def set_user_language(user_id: int, language: str):
 
 
 async def get_user_premium_status(user_id: int) -> bool:
-    """Проверяет, есть ли premium у пользователя."""
+    """
+    Проверяет, есть ли у пользователя премиум-статус.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+
+    Возвращает:
+        bool: True, если пользователь имеет премиум.
+    """
     async with db_pool.acquire() as conn:
         try:
             result = await conn.fetchval("""
@@ -1100,7 +1432,17 @@ async def get_prompts_by_subcategory(
     language: str,
     telegram_user_id: int | None = None,
 ) -> List[Dict]:
-    """Получает промпты из API сайта для конкретной подкатегории и языка."""
+    """
+    Получает промпты из API сайта для конкретной подкатегории и языка.
+
+    Аргументы:
+        subcategory (str): Ключ подкатегории.
+        language (str): Код языка.
+        telegram_user_id (int | None): Telegram ID для проверки доступа.
+
+    Возвращает:
+        List[Dict]: Список промптов с ключами id, slug, title, content, is_premium, body_locked.
+    """
     prompts = await website_get_prompts(
         subcategory_key=subcategory,
         language=language,
@@ -1120,7 +1462,15 @@ async def get_prompts_by_subcategory(
 
 
 async def get_saved_prompts(user_id: int) -> List[Dict]:
-    """Возвращает сохранённые промпты пользователя в формате, понятном боту."""
+    """
+    Возвращает сохранённые промпты пользователя в формате, понятном боту.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+
+    Возвращает:
+        List[Dict]: Список сохранённых промптов.
+    """
     prompts = await website_get_saved_prompts(user_id)
     result: List[Dict] = []
     for prompt in prompts:
@@ -1160,7 +1510,16 @@ async def save_prompt_for_user(user_id: int, website_prompt_id: str) -> bool:
 
 
 async def remove_saved_prompt_for_user(user_id: int, website_prompt_id: str) -> bool:
-    """Удаляет сохранённый промпт пользователя через сайт и локальный кэш."""
+    """
+    Удаляет сохранённый промпт пользователя через сайт и локальный кэш.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+        website_prompt_id (str): UUID промпта на сайте.
+
+    Возвращает:
+        bool: True, если удаление успешно, иначе False.
+    """
     if not website_prompt_id:
         return False
 
@@ -1181,7 +1540,15 @@ async def remove_saved_prompt_for_user(user_id: int, website_prompt_id: str) -> 
 # ==============================================================================
 
 async def ensure_permanent_missions(user_id: int):
-    """Создаёт постоянные миссии, если их ещё нет."""
+    """
+    Создаёт постоянные миссии для пользователя, если их ещё нет.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+
+    Возвращает:
+        None
+    """
     async with db_pool.acquire() as conn:
         for mission in PERMANENT_MISSIONS_POOL:
             exists = await conn.fetchval("""
@@ -1202,56 +1569,118 @@ async def ensure_permanent_missions(user_id: int):
                 """, user_id, mission["code"], mission["title"], mission["target"], mission["reward"])
 
 
+def _is_active_paid_plan(plan_tier: Any, plan_expires_at: Any = None) -> bool:
+    """Проверяет, должен ли пользователь получать подписочные ежедневные миссии."""
+    tier = normalize_plan_tier(plan_tier)
+    if not is_paid_tier(tier):
+        return False
+
+    expires_at = parse_datetime(plan_expires_at)
+    if expires_at is not None and expires_at <= datetime.utcnow():
+        return False
+    return True
+
+
+async def _user_has_active_paid_plan(conn, user_id: int) -> bool:
+    row = await conn.fetchrow(
+        """
+        SELECT plan_tier, plan_expires_at
+        FROM users
+        WHERE user_id = $1
+        """,
+        user_id,
+    )
+    if not row:
+        return False
+    return _is_active_paid_plan(row["plan_tier"], row["plan_expires_at"])
+
+
+async def _insert_daily_missions(conn, user_id: int, missions: list[dict]) -> None:
+    for mission in missions:
+        exists = await conn.fetchval("""
+            SELECT EXISTS(
+                SELECT 1
+                FROM user_missions
+                WHERE user_id = $1
+                  AND mission_code = $2
+                  AND mission_type = 'daily'
+                  AND assigned_date = CURRENT_DATE
+            )
+        """, user_id, mission["code"])
+
+        if not exists:
+            await conn.execute("""
+                INSERT INTO user_missions
+                (user_id, mission_code, title, mission_type, target_value, reward, assigned_date)
+                VALUES ($1, $2, $3, 'daily', $4, $5, CURRENT_DATE)
+            """, user_id, mission["code"], mission["title"], mission["target"], mission["reward"])
+
+
 async def ensure_daily_missions(user_id: int):
-    """Каждый день выдаёт пользователю 3 случайные ежедневные миссии."""
+    """
+    Выдаёт ежедневные миссии на текущий день.
+
+    Free получает 3 обычные миссии, Starter/Pro/MAX получают ещё 2 подписочные миссии.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+
+    Возвращает:
+        None
+    """
     async with db_pool.acquire() as conn:
-        count_today = await conn.fetchval("""
-            SELECT COUNT(*)
+        has_paid_plan = await _user_has_active_paid_plan(conn, user_id)
+        rows_today = await conn.fetch("""
+            SELECT mission_code
             FROM user_missions
             WHERE user_id = $1
               AND mission_type = 'daily'
               AND assigned_date = CURRENT_DATE
         """, user_id)
+        codes_today = {row["mission_code"] for row in rows_today}
 
-        if count_today and count_today >= 3:
+        base_codes_today = {code for code in codes_today if code in {mission["code"] for mission in DAILY_MISSIONS_POOL}}
+        base_needed = max(BASE_DAILY_MISSION_COUNT - len(base_codes_today), 0)
+        if base_needed:
+            available = [mission for mission in DAILY_MISSIONS_POOL if mission["code"] not in codes_today]
+            await _insert_daily_missions(conn, user_id, random.sample(available, min(base_needed, len(available))))
+
+        if not has_paid_plan:
             return
 
-        selected = random.sample(DAILY_MISSIONS_POOL, 3)
-
-        for mission in selected:
-            exists = await conn.fetchval("""
-                SELECT EXISTS(
-                    SELECT 1
-                    FROM user_missions
-                    WHERE user_id = $1
-                      AND mission_code = $2
-                      AND mission_type = 'daily'
-                      AND assigned_date = CURRENT_DATE
-                )
-            """, user_id, mission["code"])
-
-            if not exists:
-                await conn.execute("""
-                    INSERT INTO user_missions
-                    (user_id, mission_code, title, mission_type, target_value, reward, assigned_date)
-                    VALUES ($1, $2, $3, 'daily', $4, $5, CURRENT_DATE)
-                """, user_id, mission["code"], mission["title"], mission["target"], mission["reward"])
+        premium_codes_today = {code for code in codes_today if code in PREMIUM_DAILY_MISSION_CODES}
+        premium_needed = max(PREMIUM_DAILY_MISSION_COUNT - len(premium_codes_today), 0)
+        if premium_needed:
+            available = [mission for mission in PREMIUM_DAILY_MISSIONS_POOL if mission["code"] not in codes_today]
+            await _insert_daily_missions(conn, user_id, random.sample(available, min(premium_needed, len(available))))
 
 
 async def get_user_missions(user_id: int) -> dict:
-    """Возвращает ежедневные и постоянные миссии пользователя."""
+    """
+    Возвращает ежедневные и постоянные миссии пользователя.
+
+    Автоматически создаёт миссии, если они ещё не назначены.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+
+    Возвращает:
+        dict: Словарь с ключами daily (list) и permanent (list).
+    """
     await ensure_daily_missions(user_id)
     await ensure_permanent_missions(user_id)
 
     async with db_pool.acquire() as conn:
+        has_paid_plan = await _user_has_active_paid_plan(conn, user_id)
         daily_rows = await conn.fetch("""
             SELECT *
             FROM user_missions
             WHERE user_id = $1
               AND mission_type = 'daily'
               AND assigned_date = CURRENT_DATE
+              AND ($2::boolean OR NOT (mission_code = ANY($3::text[])))
             ORDER BY id
-        """, user_id)
+        """, user_id, has_paid_plan, list(PREMIUM_DAILY_MISSION_CODES))
 
         permanent_rows = await conn.fetch("""
             SELECT *
@@ -1268,8 +1697,21 @@ async def get_user_missions(user_id: int) -> dict:
 
 
 async def update_mission_progress(user_id: int, mission_code: str, amount: int = 1):
-    """Обновляет прогресс миссии и начисляет награду при завершении."""
+    """
+    Обновляет прогресс миссии и начисляет награду при завершении.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+        mission_code (str): Код миссии.
+        amount (int): На сколько увеличить прогресс (по умолчанию 1).
+
+    Возвращает:
+        bool: True, если миссия завершена, иначе False.
+    """
     async with db_pool.acquire() as conn:
+        if mission_code in PREMIUM_DAILY_MISSION_CODES and not await _user_has_active_paid_plan(conn, user_id):
+            return False
+
         row = await conn.fetchrow("""
             SELECT *
             FROM user_missions
@@ -1311,15 +1753,26 @@ async def update_mission_progress(user_id: int, mission_code: str, amount: int =
 
 
 async def grant_daily_bonus_if_all_completed(user_id: int):
-    """Бонус за выполнение всех daily-миссий за день."""
+    """
+    Начисляет бонус за выполнение всех ежедневных миссий за день.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+
+    Возвращает:
+        None
+    """
     async with db_pool.acquire() as conn:
+        has_paid_plan = await _user_has_active_paid_plan(conn, user_id)
         rows = await conn.fetch("""
             SELECT is_completed
             FROM user_missions
             WHERE user_id = $1
               AND mission_type = 'daily'
               AND assigned_date = CURRENT_DATE
-        """, user_id)
+              AND mission_code <> 'daily_all_completed_bonus'
+              AND ($2::boolean OR NOT (mission_code = ANY($3::text[])))
+        """, user_id, has_paid_plan, list(PREMIUM_DAILY_MISSION_CODES))
 
         if len(rows) < 3:
             return
@@ -1351,7 +1804,16 @@ async def grant_daily_bonus_if_all_completed(user_id: int):
 
 
 async def get_user_economy(user_id: int) -> dict:
-    """Возвращает экономику пользователя."""
+    """
+    Возвращает экономические показатели пользователя.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+
+    Возвращает:
+        dict: Словарь с ключами coins, streak, freeze_count,
+              last_streak_claim_date, plan_max_freezes.
+    """
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow("""
             SELECT coins, streak, freeze_count, last_streak_claim_date, plan_max_freezes
@@ -1436,7 +1898,17 @@ async def claim_daily_streak(user_id: int) -> dict:
 
 
 async def buy_freeze(user_id: int, price: int = 30, max_freezes: int = 2) -> dict:
-    """Покупает заморозку за токены."""
+    """
+    Покупает заморозку за токены.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+        price (int): Стоимость заморозки в токенах (по умолчанию 30).
+        max_freezes (int): Максимальное количество заморозок (по умолчанию 2).
+
+    Возвращает:
+        dict: Словарь с ключами ok (bool) и message (str).
+    """
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow("""
             SELECT coins, freeze_count
@@ -1470,22 +1942,62 @@ async def buy_freeze(user_id: int, price: int = 30, max_freezes: int = 2) -> dic
 # ==============================================================================
 
 async def track_ai_message_sent(user_id: int):
+    """
+    Обновляет прогресс миссий, связанных с отправкой ИИ-сообщений.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+
+    Возвращает:
+        None
+    """
     await update_mission_progress(user_id, "daily_send_1_ai", 1)
     await update_mission_progress(user_id, "daily_send_3_ai", 1)
+    await update_mission_progress(user_id, "premium_daily_send_5_ai", 1)
     await update_mission_progress(user_id, "perm_ai_10", 1)
     await update_mission_progress(user_id, "perm_ai_25", 1)
 
 
 async def track_profile_open(user_id: int):
+    """
+    Обновляет прогресс миссии по открытию профиля.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+
+    Возвращает:
+        None
+    """
     await update_mission_progress(user_id, "daily_open_profile", 1)
 
 
 async def track_search_used(user_id: int):
+    """
+    Обновляет прогресс миссии по использованию поиска моделей.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+
+    Возвращает:
+        None
+    """
     await update_mission_progress(user_id, "daily_use_search", 1)
+    await update_mission_progress(user_id, "premium_daily_use_search_2", 1)
 
 
 async def track_streak_claim(user_id: int, streak_value: int):
+    """
+    Обновляет прогресс миссий, связанных с продлением ударного режима.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+        streak_value (int): Текущее значение стрика.
+
+    Возвращает:
+        None
+    """
     await update_mission_progress(user_id, "daily_claim_streak", 1)
+    await update_mission_progress(user_id, "premium_daily_claim_streak", 1)
 
     if streak_value >= 3:
         await update_mission_progress(user_id, "perm_streak_3", streak_value)
@@ -1494,6 +2006,15 @@ async def track_streak_claim(user_id: int, streak_value: int):
 
 
 async def track_buy_freeze(user_id: int):
+    """
+    Обновляет прогресс миссии по покупке заморозки.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+
+    Возвращает:
+        None
+    """
     await update_mission_progress(user_id, "perm_buy_freeze_1", 1)
 
 # ==============================================================================
@@ -1511,6 +2032,17 @@ ADMIN_EXPORT_TABLE_LIMITS = {
 
 
 def _admin_safe_limit(limit: int, *, default: int = 20, maximum: int = 100) -> int:
+    """
+    Безопасно ограничивает значение лимита для административных запросов.
+
+    Аргументы:
+        limit (int): Запрашиваемый лимит.
+        default (int): Значение по умолчанию (20).
+        maximum (int): Максимально допустимое значение (100).
+
+    Возвращает:
+        int: Ограниченное значение в диапазоне [1, maximum].
+    """
     try:
         value = int(limit)
     except (TypeError, ValueError):
@@ -1519,6 +2051,16 @@ def _admin_safe_limit(limit: int, *, default: int = 20, maximum: int = 100) -> i
 
 
 async def _admin_table_columns(conn, table_name: str) -> set[str]:
+    """
+    Возвращает множество названий колонок таблицы.
+
+    Аргументы:
+        conn: Объект подключения к БД.
+        table_name (str): Имя таблицы.
+
+    Возвращает:
+        set[str]: Множество имён колонок. Пустое множество при ошибке.
+    """
     try:
         rows = await conn.fetch(
             """
@@ -1535,12 +2077,33 @@ async def _admin_table_columns(conn, table_name: str) -> set[str]:
 
 
 def _admin_select_column(columns: set[str], column: str, fallback: str = "NULL") -> str:
+    """
+    Выбирает колонку для SQL-запроса, если она существует, иначе возвращает fallback.
+
+    Аргументы:
+        columns (set[str]): Множество существующих колонок.
+        column (str): Проверяемая колонка.
+        fallback (str): Значение по умолчанию (по умолчанию 'NULL').
+
+    Возвращает:
+        str: SQL-выражение для SELECT.
+    """
     if column in columns:
         return column
     return f"{fallback} AS {column}"
 
 
 def _admin_order_clause(table_name: str, columns: set[str]) -> str:
+    """
+    Формирует SQL-выражение ORDER BY для таблицы с учётом существующих колонок.
+
+    Аргументы:
+        table_name (str): Имя таблицы.
+        columns (set[str]): Множество существующих колонок.
+
+    Возвращает:
+        str: Строка ORDER BY или пустая строка.
+    """
     order_preferences = {
         "users": ["last_active", "joined_at", "user_id"],
         "notifications": ["last_notification", "created_at", "user_id"],
@@ -1557,6 +2120,17 @@ def _admin_order_clause(table_name: str, columns: set[str]) -> str:
 
 
 async def _admin_count(conn, table_name: str, where: str = "") -> int:
+    """
+    Выполняет COUNT(*) в таблице с опциональным условием WHERE.
+
+    Аргументы:
+        conn: Объект подключения к БД.
+        table_name (str): Имя таблицы.
+        where (str): SQL-условие WHERE (по умолчанию '').
+
+    Возвращает:
+        int: Количество записей.
+    """
     columns = await _admin_table_columns(conn, table_name)
     if not columns:
         return 0
@@ -1568,6 +2142,15 @@ async def _admin_count(conn, table_name: str, where: str = "") -> int:
 
 
 def _admin_json_value(value: Any) -> Any:
+    """
+    Преобразует значение в JSON-совместимый формат.
+
+    Аргументы:
+        value (Any): Исходное значение.
+
+    Возвращает:
+        Any: Значение, пригодное для JSON-сериализации.
+    """
     if isinstance(value, (datetime, date)):
         return value.isoformat()
     if isinstance(value, bytes):
@@ -1576,6 +2159,15 @@ def _admin_json_value(value: Any) -> Any:
 
 
 def _admin_rows_to_dicts(rows) -> list[dict]:
+    """
+    Преобразует строки результата запроса в список словарей.
+
+    Аргументы:
+        rows: Результат запроса asyncpg.
+
+    Возвращает:
+        list[dict]: Список словарей с JSON-совместимыми значениями.
+    """
     result = []
     for row in rows:
         result.append({key: _admin_json_value(value) for key, value in dict(row).items()})
@@ -1583,6 +2175,17 @@ def _admin_rows_to_dicts(rows) -> list[dict]:
 
 
 async def _admin_fetch_table_preview(conn, table_name: str, limit: int = 10) -> list[dict]:
+    """
+    Получает превью записей из таблицы для админ-панели.
+
+    Аргументы:
+        conn: Объект подключения к БД.
+        table_name (str): Имя таблицы.
+        limit (int): Максимальное количество записей (по умолчанию 10).
+
+    Возвращает:
+        list[dict]: Список записей в виде словарей.
+    """
     columns = await _admin_table_columns(conn, table_name)
     if not columns:
         return []
@@ -1598,6 +2201,15 @@ async def _admin_fetch_table_preview(conn, table_name: str, limit: int = 10) -> 
 
 
 async def get_admin_db_summary() -> dict:
+    """
+    Возвращает сводную статистику по базе данных для админ-панели.
+
+    Аргументы:
+        Нет.
+
+    Возвращает:
+        dict: Словарь с количеством пользователей, сообщений, миссий и т.д.
+    """
     summary = {
         "users_count": 0,
         "active_users_count": 0,
@@ -1660,6 +2272,15 @@ async def get_admin_db_summary() -> dict:
 
 
 async def get_admin_users_preview(limit: int = 20) -> list[dict]:
+    """
+    Возвращает превью таблицы users для админ-панели.
+
+    Аргументы:
+        limit (int): Максимальное количество записей (по умолчанию 20).
+
+    Возвращает:
+        list[dict]: Список пользователей.
+    """
     safe_limit = _admin_safe_limit(limit)
     async with db_pool.acquire() as conn:
         columns = await _admin_table_columns(conn, "users")
@@ -1694,6 +2315,15 @@ async def get_admin_users_preview(limit: int = 20) -> list[dict]:
 
 
 async def get_admin_missions_preview(limit: int = 20) -> list[dict]:
+    """
+    Возвращает превью таблицы user_missions для админ-панели.
+
+    Аргументы:
+        limit (int): Максимальное количество записей (по умолчанию 20).
+
+    Возвращает:
+        list[dict]: Список миссий.
+    """
     safe_limit = _admin_safe_limit(limit)
     async with db_pool.acquire() as conn:
         columns = await _admin_table_columns(conn, "user_missions")
@@ -1726,6 +2356,15 @@ async def get_admin_missions_preview(limit: int = 20) -> list[dict]:
 
 
 async def get_admin_ai_history_preview(limit: int = 20) -> list[dict]:
+    """
+    Возвращает превью таблицы ai_chat_history для админ-панели.
+
+    Аргументы:
+        limit (int): Максимальное количество записей (по умолчанию 20).
+
+    Возвращает:
+        list[dict]: Список сообщений ИИ (сокращённых до 120 символов).
+    """
     safe_limit = _admin_safe_limit(limit)
     async with db_pool.acquire() as conn:
         columns = await _admin_table_columns(conn, "ai_chat_history")
@@ -1763,6 +2402,15 @@ async def get_admin_ai_history_preview(limit: int = 20) -> list[dict]:
 
 
 async def get_admin_subscriptions_preview(limit: int = 20) -> list[dict]:
+    """
+    Возвращает превью подписок пользователей для админ-панели.
+
+    Аргументы:
+        limit (int): Максимальное количество записей (по умолчанию 20).
+
+    Возвращает:
+        list[dict]: Список пользователей с информацией о плане.
+    """
     safe_limit = _admin_safe_limit(limit)
     async with db_pool.acquire() as conn:
         columns = await _admin_table_columns(conn, "users")
@@ -1803,6 +2451,15 @@ async def get_admin_subscriptions_preview(limit: int = 20) -> list[dict]:
 
 
 async def get_admin_db_dump_preview() -> dict:
+    """
+    Возвращает компактный дамп всех таблиц для админ-панели.
+
+    Аргументы:
+        Нет.
+
+    Возвращает:
+        dict: Словарь с ключами users, missions, ai_history, notifications.
+    """
     async with db_pool.acquire() as conn:
         notifications = await _admin_fetch_table_preview(conn, "notifications", 10)
 
@@ -1815,6 +2472,15 @@ async def get_admin_db_dump_preview() -> dict:
 
 
 async def export_admin_db_json() -> str:
+    """
+    Экспортирует все таблицы БД в JSON-файл во временную директорию.
+
+    Аргументы:
+        Нет.
+
+    Возвращает:
+        str: Путь к созданному JSON-файлу.
+    """
     export_data = {
         "exported_at": datetime.now(timezone.utc).isoformat(),
         "limits": ADMIN_EXPORT_TABLE_LIMITS,
@@ -1854,7 +2520,15 @@ async def export_admin_db_json() -> str:
 # ==============================================================================
 
 async def close_db():
-    """Закрывает пул соединений."""
+    """
+    Закрывает пул соединений с базой данных.
+
+    Аргументы:
+        Нет.
+
+    Возвращает:
+        None
+    """
     global db_pool
     if db_pool:
         await db_pool.close()
@@ -1867,6 +2541,17 @@ async def close_db():
 # ==============================================================================
 
 def _display_name_sql() -> str:
+    """
+    Формирует SQL-выражение для отображения имени пользователя.
+
+    Приоритет: first_name > username > 'Игрок #ID'.
+
+    Аргументы:
+        Нет.
+
+    Возвращает:
+        str: SQL-выражение CASE для SELECT.
+    """
     return """
         CASE
             WHEN first_name IS NOT NULL AND first_name <> '' THEN first_name
@@ -1877,11 +2562,22 @@ def _display_name_sql() -> str:
 
 
 async def get_top_users_by_coins(limit: int = 10) -> list[dict]:
+    """
+    Возвращает топ пользователей по количеству токенов.
+
+    Аргументы:
+        limit (int): Количество записей (по умолчанию 10).
+
+    Возвращает:
+        list[dict]: Список лидеров с user_id, display_name, coins.
+    """
     async with db_pool.acquire() as conn:
         rows = await conn.fetch(f"""
             SELECT
                 user_id,
                 {_display_name_sql()} AS display_name,
+                plan_tier,
+                plan_expires_at,
                 coins
             FROM users
             WHERE is_active = TRUE
@@ -1893,12 +2589,23 @@ async def get_top_users_by_coins(limit: int = 10) -> list[dict]:
 
 
 async def get_user_rank_by_coins(user_id: int) -> dict:
+    """
+    Возвращает место пользователя в топе по токенам.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+
+    Возвращает:
+        dict: Словарь с ключами rank, coins, display_name.
+    """
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(f"""
             WITH ranked AS (
                 SELECT
                     user_id,
                     {_display_name_sql()} AS display_name,
+                    plan_tier,
+                    plan_expires_at,
                     coins,
                     ROW_NUMBER() OVER (ORDER BY coins DESC, streak DESC, user_id ASC) AS rank
                 FROM users
@@ -1913,11 +2620,22 @@ async def get_user_rank_by_coins(user_id: int) -> dict:
 
 
 async def get_top_users_by_streak(limit: int = 10) -> list[dict]:
+    """
+    Возвращает топ пользователей по ударному режиму (streak).
+
+    Аргументы:
+        limit (int): Количество записей (по умолчанию 10).
+
+    Возвращает:
+        list[dict]: Список лидеров с user_id, display_name, streak.
+    """
     async with db_pool.acquire() as conn:
         rows = await conn.fetch(f"""
             SELECT
                 user_id,
                 {_display_name_sql()} AS display_name,
+                plan_tier,
+                plan_expires_at,
                 streak
             FROM users
             WHERE is_active = TRUE
@@ -1929,12 +2647,23 @@ async def get_top_users_by_streak(limit: int = 10) -> list[dict]:
 
 
 async def get_user_rank_by_streak(user_id: int) -> dict:
+    """
+    Возвращает место пользователя в топе по ударному режиму.
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+
+    Возвращает:
+        dict: Словарь с ключами rank, streak, display_name.
+    """
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(f"""
             WITH ranked AS (
                 SELECT
                     user_id,
                     {_display_name_sql()} AS display_name,
+                    plan_tier,
+                    plan_expires_at,
                     streak,
                     ROW_NUMBER() OVER (ORDER BY streak DESC, coins DESC, user_id ASC) AS rank
                 FROM users
@@ -1966,6 +2695,8 @@ async def get_top_best_users(limit: int = 10) -> list[dict]:
             SELECT
                 u.user_id,
                 {_display_name_sql().replace('user_id', 'u.user_id').replace('first_name', 'u.first_name').replace('username', 'u.username')} AS display_name,
+                u.plan_tier,
+                u.plan_expires_at,
                 u.coins,
                 u.streak,
                 COALESCE(ms.completed_daily, 0) AS completed_daily,
@@ -1987,6 +2718,16 @@ async def get_top_best_users(limit: int = 10) -> list[dict]:
 
 
 async def get_user_rank_best(user_id: int) -> dict:
+    """
+    Возвращает место пользователя в общем рейтинге (score).
+
+    Аргументы:
+        user_id (int): Telegram ID пользователя.
+
+    Возвращает:
+        dict: Словарь с ключами rank, score, coins, streak,
+              completed_daily, completed_permanent, display_name.
+    """
     async with db_pool.acquire() as conn:
         row = await conn.fetchrow(f"""
             WITH mission_stats AS (
@@ -2001,6 +2742,8 @@ async def get_user_rank_best(user_id: int) -> dict:
                 SELECT
                     u.user_id,
                     {_display_name_sql().replace('user_id', 'u.user_id').replace('first_name', 'u.first_name').replace('username', 'u.username')} AS display_name,
+                    u.plan_tier,
+                    u.plan_expires_at,
                     u.coins,
                     u.streak,
                     COALESCE(ms.completed_daily, 0) AS completed_daily,

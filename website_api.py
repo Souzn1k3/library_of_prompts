@@ -14,9 +14,19 @@ WEBSITE_BOT_API_KEY = os.getenv("WEBSITE_BOT_API_KEY", "")
 API_PREFIX = "/api-proxy/api/v1/telegram"
 REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=10)
 REQUEST_RETRIES = 3
+MAX_WEBSITE_CHARGE_ID_LENGTH = 128
 
 
 def _headers() -> Dict[str, str]:
+    """
+    Возвращает словарь HTTP-заголовков для запросов к API сайта.
+
+    Если задан WEBSITE_BOT_API_KEY, добавляет заголовок X-Telegram-Bot-Key
+    для аутентификации бота на стороне сайта.
+
+    Возвращает:
+        Dict[str, str]: Заголовки (Content-Type + опционально API-ключ).
+    """
     headers = {"Content-Type": "application/json"}
     if WEBSITE_BOT_API_KEY:
         headers["X-Telegram-Bot-Key"] = WEBSITE_BOT_API_KEY
@@ -24,7 +34,23 @@ def _headers() -> Dict[str, str]:
 
 
 def _url(path: str) -> str:
+    """
+    Собирает полный URL для запроса к API сайта.
+
+    Аргументы:
+        path (str): Относительный путь (например, '/users/upsert').
+
+    Возвращает:
+        str: Полный URL вида {WEBSITE_API_URL}{API_PREFIX}{path}.
+    """
     return f"{WEBSITE_API_URL}{API_PREFIX}{path}"
+
+
+def _limit_website_text(value: Optional[str], max_length: int = MAX_WEBSITE_CHARGE_ID_LENGTH) -> Optional[str]:
+    """Обрезает строковые поля до лимита текущего API сайта."""
+    if value is None:
+        return None
+    return str(value)[:max_length]
 
 
 async def _request_json(
@@ -34,6 +60,22 @@ async def _request_json(
     params: Optional[Dict[str, Any]] = None,
     payload: Optional[Dict[str, Any]] = None,
 ) -> Optional[Any]:
+    """
+    Внутренняя утилита: выполняет HTTP-запрос к API сайта и возвращает JSON-ответ.
+
+    Содержит логику повторных попыток (REQUEST_RETRIES) с экспоненциальной задержкой.
+    При 4xx/5xx ошибках логирует предупреждение и возвращает None.
+    При отсутствии WEBSITE_BOT_API_KEY сразу возвращает None.
+
+    Аргументы:
+        method (str): HTTP-метод (GET, POST, DELETE и т.д.).
+        path (str): Относительный путь API.
+        params (Optional[Dict[str, Any]]): Query-параметры URL.
+        payload (Optional[Dict[str, Any]]): Тело запроса (JSON).
+
+    Возвращает:
+        Optional[Any]: Распарсенный JSON-ответ или None при ошибке.
+    """
     if not WEBSITE_BOT_API_KEY:
         LOGGER.warning("website_api: WEBSITE_BOT_API_KEY is not configured")
         return None
@@ -78,6 +120,20 @@ async def _request_ok(
     *,
     payload: Optional[Dict[str, Any]] = None,
 ) -> bool:
+    """
+    Внутренняя утилита: выполняет HTTP-запрос и возвращает True/False в зависимости от успеха.
+
+    Аналог _request_json, но не возвращает тело ответа — только булев флаг.
+    Считает успешными статусы 200, 201, 204.
+
+    Аргументы:
+        method (str): HTTP-метод.
+        path (str): Относительный путь API.
+        payload (Optional[Dict[str, Any]]): Тело запроса (JSON).
+
+    Возвращает:
+        bool: True если статус ответа 200/201/204, иначе False.
+    """
     if not WEBSITE_BOT_API_KEY:
         LOGGER.warning("website_api: WEBSITE_BOT_API_KEY is not configured")
         return False
@@ -120,6 +176,22 @@ async def upsert_user(
     last_name: Optional[str] = None,
     language: str = "ru",
 ) -> Dict[str, Any]:
+    """
+    Создаёт или обновляет пользователя на сайте (upsert).
+
+    Отправляет POST-запрос на /users/upsert с данными пользователя.
+    Если пользователь уже существует — обновляет поля, если нет — создаёт.
+
+    Аргументы:
+        telegram_user_id (int): Telegram ID пользователя.
+        username (Optional[str]): Username в Telegram.
+        first_name (Optional[str]): Имя.
+        last_name (Optional[str]): Фамилия.
+        language (str): Код языка (по умолчанию 'ru').
+
+    Возвращает:
+        Dict[str, Any]: Ответ API (данные пользователя) или пустой словарь при ошибке.
+    """
     result = await _request_json(
         "POST",
         "/users/upsert",
@@ -140,6 +212,21 @@ async def get_prompts(
     language: str,
     telegram_user_id: Optional[int] = None,
 ) -> List[Dict[str, Any]]:
+    """
+    Получает список промптов для указанной подкатегории.
+
+    GET-запрос к /subcategories/{subcategory_key}/prompts.
+    Если передан telegram_user_id — учитывает статус подписки пользователя
+    (возвращает полные промпты только для подписчиков).
+
+    Аргументы:
+        subcategory_key (str): Ключ подкатегории.
+        language (str): Код языка для фильтрации промптов.
+        telegram_user_id (Optional[int]): ID пользователя для проверки подписки.
+
+    Возвращает:
+        List[Dict[str, Any]]: Список промптов или пустой список при ошибке.
+    """
     params: Dict[str, Any] = {"language": language}
     if telegram_user_id:
         params["telegram_user_id"] = telegram_user_id
@@ -148,19 +235,58 @@ async def get_prompts(
 
 
 async def get_saved_prompts(telegram_user_id: int) -> List[Dict[str, Any]]:
+    """
+    Получает список сохранённых (избранных) промптов пользователя.
+
+    Аргументы:
+        telegram_user_id (int): Telegram ID пользователя.
+
+    Возвращает:
+        List[Dict[str, Any]]: Список сохранённых промптов или пустой список при ошибке.
+    """
     result = await _request_json("GET", f"/users/{telegram_user_id}/saved-prompts")
     return result if isinstance(result, list) else []
 
 
 async def save_prompt(telegram_user_id: int, prompt_id: str) -> bool:
+    """
+    Сохраняет промпт в избранное пользователя.
+
+    Аргументы:
+        telegram_user_id (int): Telegram ID пользователя.
+        prompt_id (str): UUID промпта на сайте.
+
+    Возвращает:
+        bool: True если успешно сохранено, иначе False.
+    """
     return await _request_ok("POST", f"/users/{telegram_user_id}/saved-prompts/{prompt_id}")
 
 
 async def delete_saved_prompt(telegram_user_id: int, prompt_id: str) -> bool:
+    """
+    Удаляет промпт из избранного пользователя.
+
+    Аргументы:
+        telegram_user_id (int): Telegram ID пользователя.
+        prompt_id (str): UUID промпта на сайте.
+
+    Возвращает:
+        bool: True если успешно удалено, иначе False.
+    """
     return await _request_ok("DELETE", f"/users/{telegram_user_id}/saved-prompts/{prompt_id}")
 
 
 async def get_subscription_status(telegram_user_id: int) -> Dict[str, Any]:
+    """
+    Получает статус подписки пользователя с сайта.
+
+    Аргументы:
+        telegram_user_id (int): Telegram ID пользователя.
+
+    Возвращает:
+        Dict[str, Any]: Данные о подписке (tier, дата окончания и т.д.)
+                        или пустой словарь при ошибке.
+    """
     result = await _request_json("GET", f"/users/{telegram_user_id}/subscription")
     return result if isinstance(result, dict) else {}
 
@@ -180,13 +306,36 @@ async def activate_stars_subscription(
     is_recurring: bool = False,
     is_first_recurring: bool = False,
 ) -> Dict[str, Any]:
+    """
+    Активирует подписку, купленную за Telegram Stars.
+
+    Отправляет POST-запрос на /subscriptions/activate с данными
+    о платеже и подписке. Вызывается после успешной оплаты через Telegram Payments.
+
+    Аргументы:
+        telegram_user_id (int): ID пользователя в Telegram.
+        tier (str): Тариф подписки (например, 'monthly').
+        provider_subscription_id (str): ID подписки от Telegram.
+        invoice_payload (str): Payload инвойса (для верификации).
+        telegram_payment_charge_id (str): ID платежа от Telegram.
+        provider_payment_charge_id (Optional[str]): ID платежа от провайдера.
+        currency (str): Валюта (например, 'XTR' для Stars).
+        total_amount (int): Сумма платежа в минимальных единицах.
+        current_period_end (Optional[str]): Дата окончания текущего периода (ISO).
+        occurred_at (Optional[str]): Дата/время платежа (ISO).
+        is_recurring (bool): Это рекуррентный платёж?
+        is_first_recurring (bool): Это первый рекуррентный платёж?
+
+    Возвращает:
+        Dict[str, Any]: Данные активированной подписки или пустой словарь при ошибке.
+    """
     payload: Dict[str, Any] = {
         "telegram_user_id": telegram_user_id,
         "tier": tier,
         "provider_subscription_id": provider_subscription_id,
         "invoice_payload": invoice_payload,
-        "telegram_payment_charge_id": telegram_payment_charge_id,
-        "provider_payment_charge_id": provider_payment_charge_id,
+        "telegram_payment_charge_id": _limit_website_text(telegram_payment_charge_id),
+        "provider_payment_charge_id": _limit_website_text(provider_payment_charge_id),
         "currency": currency,
         "total_amount": total_amount,
         "is_recurring": is_recurring,
@@ -207,6 +356,18 @@ async def get_moderation_queue(
     skip: int = 0,
     limit: int = 20,
 ) -> List[Dict[str, Any]]:
+    """
+    Получает очередь промптов на модерацию с сайта.
+
+    Аргументы:
+        acting_telegram_user_id (int): ID модератора (для проверки прав).
+        skip (int): Смещение для пагинации.
+        limit (int): Лимит количества записей (по умолчанию 20).
+
+    Возвращает:
+        List[Dict[str, Any]]: Список промптов, ожидающих модерации,
+                              или пустой список при ошибке.
+    """
     result = await _request_json(
         "GET",
         "/moderation/queue",
@@ -224,6 +385,16 @@ async def get_moderation_prompt(
     *,
     acting_telegram_user_id: int,
 ) -> Dict[str, Any]:
+    """
+    Получает детальную информацию о конкретном промпте на модерации.
+
+    Аргументы:
+        prompt_id (str): UUID промпта.
+        acting_telegram_user_id (int): ID модератора (для проверки прав).
+
+    Возвращает:
+        Dict[str, Any]: Данные промпта или пустой словарь при ошибке.
+    """
     result = await _request_json(
         "GET",
         f"/moderation/prompts/{prompt_id}",
@@ -239,6 +410,21 @@ async def moderate_prompt(
     action: str,
     reason: Optional[str] = None,
 ) -> Dict[str, Any]:
+    """
+    Принимает решение по модерации промпта (одобрить / отклонить).
+
+    POST-запрос на /moderation/prompts/{prompt_id}/decision.
+    Может быть вызван только модератором.
+
+    Аргументы:
+        prompt_id (str): UUID промпта.
+        acting_telegram_user_id (int): ID модератора.
+        action (str): Действие ('approve' или 'reject').
+        reason (Optional[str]): Причина отклонения (обязательна при reject).
+
+    Возвращает:
+        Dict[str, Any]: Результат модерации или пустой словарь при ошибке.
+    """
     payload: Dict[str, Any] = {
         "acting_telegram_user_id": acting_telegram_user_id,
         "action": action,
